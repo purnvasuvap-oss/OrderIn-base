@@ -1,0 +1,15 @@
+{
+  "projects": {
+    "default": "orderin-7f8bc"
+  },
+  "targets": {
+    "orderin-7f8bc": {
+      "hosting": {
+        "orderin-admin": [
+          "orderin-admin"
+        ]
+      }
+    }
+  },
+  "etags": {}
+}
