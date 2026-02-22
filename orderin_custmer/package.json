@@ -9,6 +9,7 @@
     "@testing-library/user-event": "^13.5.0",
     "firebase": "^12.6.0",
     "html2pdf.js": "^0.14.0",
+    "i": "^0.3.7",
     "lucide-react": "^0.546.0",
     "qrcode": "^1.5.4",
     "react": "^19.2.0",

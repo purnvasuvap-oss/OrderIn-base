@@ -32,12 +32,17 @@ const CustomPieTooltip = (props: Record<string, unknown>) => {
 export const DashboardPage = () => {
   const { restaurants, transactions } = useAppStore();
 
+  // Filter to only include online transactions
+  const onlineTransactions = useMemo(() => {
+    return transactions.filter(t => ['online', 'Online'].includes(t.paymentMethod));
+  }, [transactions]);
+
   const stats = useMemo(() => {
     const totalRestaurants = restaurants.length;
-    const totalTransactions = transactions.length;
-    const totalGrossVolume = transactions.reduce((sum, t) => sum + t.grossAmount, 0);
-    const totalPlatformEarnings = transactions.reduce((sum, t) => sum + t.netPlatformEarnings, 0);
-    const totalGstPayable = transactions.reduce((sum, t) => sum + t.gst, 0);
+    const totalTransactions = onlineTransactions.length;
+    const totalGrossVolume = onlineTransactions.reduce((sum, t) => sum + t.grossAmount, 0);
+    const totalPlatformEarnings = onlineTransactions.reduce((sum, t) => sum + t.netPlatformEarnings, 0);
+    const totalGstPayable = onlineTransactions.reduce((sum, t) => sum + t.gst, 0);
 
     return {
       totalRestaurants,
@@ -46,11 +51,11 @@ export const DashboardPage = () => {
       totalPlatformEarnings,
       totalGstPayable,
     };
-  }, [restaurants, transactions]);
+  }, [restaurants, onlineTransactions]);
 
   const earningsByDate = useMemo(() => {
     const data: Record<string, { earnings: number; count: number }> = {};
-    transactions.forEach((t) => {
+    onlineTransactions.forEach((t) => {
       const date = format(new Date(t.createdAt), 'MMM dd');
       if (!data[date]) data[date] = { earnings: 0, count: 0 };
       data[date].earnings += t.netPlatformEarnings;
@@ -61,22 +66,22 @@ export const DashboardPage = () => {
       earnings: Math.round(earnings),
       transactions: count,
     }));
-  }, [transactions]);
+  }, [onlineTransactions]);
 
   const paymentMethodSplit = useMemo(() => {
     const data: Record<string, number> = {};
-    transactions.forEach((t) => {
+    onlineTransactions.forEach((t) => {
       data[t.paymentMethod] = (data[t.paymentMethod] || 0) + t.grossAmount;
     });
     return Object.entries(data).map(([method, amount]) => ({
       name: method,
       value: Math.round(amount),
     }));
-  }, [transactions]);
+  }, [onlineTransactions]);
 
   const topRestaurants = useMemo(() => {
     const volumeByRestaurant: Record<string, number> = {};
-    transactions.forEach((t) => {
+    onlineTransactions.forEach((t) => {
       volumeByRestaurant[t.restaurantId] = (volumeByRestaurant[t.restaurantId] || 0) + t.grossAmount;
     });
     return Object.entries(volumeByRestaurant)
@@ -86,7 +91,7 @@ export const DashboardPage = () => {
       })
       .sort((a, b) => b.volume - a.volume)
       .slice(0, 10);
-  }, [transactions, restaurants]);
+  }, [onlineTransactions, restaurants]);
 
   const colors = ['#06b6d4', '#a855f7', '#ec4899', '#f97316', '#10b981'];
 

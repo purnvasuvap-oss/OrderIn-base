@@ -12,6 +12,7 @@
   "dependencies": {
     "date-fns": "^4.1.0",
     "firebase": "^12.8.0",
+    "i": "^0.3.7",
     "lucide-react": "^0.562.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",

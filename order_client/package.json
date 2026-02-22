@@ -9,6 +9,7 @@
     "@testing-library/user-event": "^13.5.0",
     "bcryptjs": "^3.0.3",
     "firebase": "^12.6.0",
+    "i": "^0.3.7",
     "lucide-react": "^0.546.0",
     "react": "^19.2.0",
     "react-datepicker": "^8.8.0",
