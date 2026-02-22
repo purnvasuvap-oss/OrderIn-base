@@ -1,0 +1,235 @@
+.login-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background-image: url('/background-image.jpg');
+  background-size: cover;
+  background-position: center;
+  font-family: "Poppins", sans-serif;
+  padding: 20px;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+h2 {
+  color: #00796b;
+  margin-bottom: 20px;
+}
+
+.login-box {
+  background-color: #fff;
+  padding: 35px;
+  border-radius: 20px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  width: 320px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  align-items: center;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.orderin-logo {
+  width: 180px;
+  height: auto;
+  margin-bottom: 10px;
+}
+
+input {
+  padding: 12px 15px;
+  border: 1.5px solid #ddd;
+  border-radius: 12px;
+  font-size: 16px;
+  width: 87%;
+  box-sizing: border-box;
+  transition: all 0.3s ease;
+}
+
+input:hover {
+  border-color: #bbb;
+}
+
+input:focus {
+  border-color: #009688;
+  box-shadow: 0 0 0 3px rgba(0, 150, 136, 0.1);
+}
+
+.phone-input-container {
+  display: flex;
+  align-items: center;
+  border: 1.5px solid #ddd;
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 15px;
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.phone-input-container:hover {
+  border-color: #bbb;
+}
+
+.phone-input-container:focus-within {
+  border-color: #009688;
+  box-shadow: 0 0 0 3px rgba(0, 150, 136, 0.1);
+}
+
+.country-code-wrapper {
+  position: relative;
+  flex: 0 0 auto;
+  width: 60px;
+}
+
+.country-code-selector {
+  padding: 12px 10px;
+  background-color: #f9f9f9;
+  cursor: pointer;
+  font-size: 16px;
+  min-width: 60px;
+  text-align: center;
+  border-right: 1.5px solid #ddd;
+  border: none;
+  transition: all 0.3s ease;
+}
+
+.country-code-selector:hover {
+  background-color: #f0f0f0;
+}
+
+.country-code-selector:focus {
+  outline: none;
+  background-color: #e8f5e9;
+}
+
+.phone-input {
+  flex: 1;
+  border: none;
+  padding: 12px 15px;
+  font-size: 16px;
+}
+
+.phone-input:focus {
+  outline: none;
+}
+
+.country-dropdown {
+  position: absolute;
+  background-color: white;
+  border: 1.5px solid #ddd;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 1000;
+  width: 70px;
+  top: calc(100% + 5px);
+  left: 0;
+}
+
+.search-input {
+  width: 100%;
+  padding: 10px;
+  border: none;
+  border-bottom: 1px solid #ccc;
+  font-size: 16px;
+  box-sizing: border-box;
+}
+
+.dropdown-list {
+  max-height: 150px;
+  overflow-y: auto;
+}
+
+.dropdown-item {
+  padding: 10px;
+  cursor: pointer;
+  border-bottom: 1px solid #eee;
+}
+
+.dropdown-item:hover {
+  background-color: #f0f0f0;
+}
+
+button {
+  padding: 12px 20px;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+button:active {
+  transform: scale(0.98);
+}
+
+.otp-btn {
+  background-color: #009688;
+  color: #fff;
+  width: 87%;
+}
+
+.otp-btn:hover {
+  background-color: #00796b;
+  box-shadow: 0 4px 12px rgba(0, 150, 136, 0.3);
+}
+
+.otp-btn:disabled {
+  background-color: #bbb;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.login-btn {
+  background-color: #00695c;
+  color: white;
+  width: 87%;
+}
+
+.login-btn:hover {
+  background-color: #004d40;
+  box-shadow: 0 4px 12px rgba(0, 105, 92, 0.3);
+}
+
+.login-btn:disabled {
+  background-color: #bbb;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* Mobile keyboard visibility improvements */
+@media (max-width: 768px) {
+  input {
+    font-size: 16px;
+    -webkit-appearance: none;
+    -webkit-border-radius: 0;
+  }
+  
+  input:focus {
+    outline: none;
+    border-color: #009688;
+    box-shadow: 0 0 0 3px rgba(0, 150, 136, 0.1);
+  }
+  
+  .login-box {
+    width: 90%;
+    max-width: 320px;
+    padding: 20px;
+    margin: 0 auto;
+    flex-shrink: 0;
+  }
+  
+  .login-container {
+    min-height: 100vh;
+    justify-content: center;
+    padding-top: 20px;
+    padding-bottom: 100px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}

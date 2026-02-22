@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" href="/OrderInUni.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    
+    <meta name="theme-color" content="#000000" />
+    <meta
+      name="description"
+      content="Web site created using create-react-app"
+    />
+    <link rel="apple-touch-icon" href="/logo192.png" />
+    <link rel="manifest" href="/manifest.json" />
+    <title>OrderIn</title>
+  </head>
+  <body>
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <div id="root"></div>
+    <!-- Hidden container for reCAPTCHA verification -->
+    <div id="recaptcha-container" style="display: none;"></div>
+    <!-- Optional: Paste your reCAPTCHA v2 site key here for local testing.
+         Replace the string below with your site key or set VITE_RECAPTCHA_SITE_KEY in environment.
+         Example: window.__RECAPTCHA_SITE_KEY = '6Le7Z_0cAAAA...'; -->
+    <script>
+      // Development reCAPTCHA v2 site key (explicitly injected so client uses v2)
+      window.__RECAPTCHA_SITE_KEY = '6LcR4B8sAAAAAKleO8K1gJmiJpnNmDYXnr6J-8yz';
+    </script>
+    <!-- Load reCAPTCHA v2 (required for real phone auth SMS delivery) -->
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+    <script type="module" src="/src/index.jsx"></script>
+  </body>
+</html>

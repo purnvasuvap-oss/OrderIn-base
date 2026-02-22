@@ -1,0 +1,254 @@
+.itemdetails-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: calc(100vh - 60px); /* Leaves space for footer */
+  background: #fff;
+  z-index: 2000;
+  overflow-y: auto;
+  border-radius: 20px 20px 0 0;
+  animation: slideUp 0.35s ease;
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+/* HEADER */
+.itemdetails-header {
+  display: flex;
+  align-items: center;
+  padding: 12px;
+  position: sticky;
+  top: 0;
+  background: #fff;
+  z-index: 5;
+}
+
+.bac-button {
+  background: #b8b6b6;
+  border: none;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  color: black;
+  pointer-events: auto;
+  padding: 0;
+}
+
+/* IMAGE */
+.itemdetails-image-container {
+  position: relative;
+}
+
+.itemdetails-image {
+  width: 100%;
+  height: 230px;
+  object-fit: cover;
+}
+
+
+
+/* INFO */
+.itemdetails-info {
+  padding: 18px 0 200px; /* Reduced side padding - let elements control their own margins */
+  max-width: 100%;
+}
+
+.itemdetails-title {
+  font-size: 20px;
+  font-weight: 700;
+  margin-left: 18px;
+  margin-right: 18px;
+}
+
+.itemdetails-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-left: 18px;
+  margin-right: 18px;
+}
+
+.heart-icon {
+  color: #bbb;
+  cursor: pointer;
+  transition: color 0.3s ease;
+}
+
+.heart-icon.favorited {
+  color: #ff0000;
+}
+
+.itemdetails-meta {
+  display: flex;
+  gap: 16px;
+  font-size: 14px;
+  color: #666;
+  margin-top: 4px;
+}
+
+.itemdetails-description {
+  margin-top: 10px;
+  margin-left: 18px;
+  margin-right: 18px;
+  font-size: 14px;
+  color: #444;
+  line-height: 1.4;
+}
+
+/* Quantity Controls */
+.quantity-section {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 16px 0;
+  gap: 16px;
+}
+
+.qty-btn {
+  background: #f4f4f4;
+  border: none;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: black;
+  pointer-events: auto;
+  padding: 0;
+  cursor: pointer;
+}
+
+.qty-value {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+/* BOTTOM BAR */
+.bottom-bar {
+  position: fixed;
+  left: 12px;
+  right: 12px;
+  bottom: 78px; /* raised to sit above footer */
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #fff;
+  padding: 10px 12px;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+  z-index: 60;
+}
+
+.price-label {
+  font-size: 13px;
+  color: #777;
+}
+
+.price-value {
+  font-weight: 700;
+  font-size: 17px;
+  color: #000;
+}
+
+.add-to-cart-btn {
+  background: #008080;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 16px;
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: background-color 0.18s ease, transform 0.12s ease;
+}
+
+.add-to-cart-btn.added {
+  background: #28a745;
+  cursor: not-allowed;
+}
+
+/* MODAL */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 3000;
+}
+
+.modal-content {
+  background: #fff;
+  padding: 20px;
+  border-radius: 10px;
+  width: 90%;
+  max-width: 400px;
+  text-align: center;
+}
+
+.modal-content h3 {
+  margin-bottom: 15px;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.modal-content textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  font-size: 14px;
+  resize: vertical;
+  margin-bottom: 15px;
+}
+
+.modal-buttons {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+.cancel-btn, .save-btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.cancel-btn {
+  background: #f4f4f4;
+  color: #333;
+}
+
+.save-btn {
+  background: #008080;
+  color: #fff;
+}
+
+@media (max-width: 600px) {
+  .itemdetails-image {
+    height: 200px;
+  }
+
+  .itemdetails-title {
+    font-size: 18px;
+  }
+}

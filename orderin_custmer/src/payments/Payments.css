@@ -1,0 +1,263 @@
+/* Payments.css */
+.payments-container {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #f9fafb;
+  padding: 1rem;
+}
+
+.payments-card {
+  width: 100%;
+  max-width: 28rem;
+  background-color: #ffffff;
+  border-radius: 1rem;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  padding: 1rem;
+  position: relative;
+}
+
+@media (min-width: 640px) {
+  .payments-card {
+    padding: 1.5rem;
+  }
+}
+
+.close-button {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  color: #6b7280;
+}
+
+.close-button:hover {
+  color: #1f2937;
+}
+
+.checkout-header {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 1rem;
+}
+
+@media (min-width: 640px) {
+  .checkout-header {
+    font-size: 1.5rem;
+  }
+}
+
+.order-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.75rem;
+  padding: 0.75rem;
+  background-color: #f9fafb;
+  margin-bottom: 1rem;
+}
+
+.order-item-image {
+  width: 4rem;
+  height: 4rem;
+  object-fit: cover;
+  border-radius: 0.5rem;
+}
+
+.order-item-details {
+  flex: 1;
+}
+
+.order-item-name {
+  color: #1f2937;
+  font-weight: 500;
+  font-size: 0.875rem;
+}
+
+@media (min-width: 640px) {
+  .order-item-name {
+    font-size: 1rem;
+  }
+}
+
+.order-item-price {
+  color: #059669;
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin: 0.25rem 0;
+}
+
+.order-item-each {
+  color: #6b7280;
+  font-size: 0.75rem;
+  margin: 0;
+}
+
+.quantity-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.qty-button {
+  padding: 0.25rem;
+  border-radius: 0.5rem;
+  background-color: #f3f4f6;
+}
+
+.qty-button:hover {
+  background-color: #e5e7eb;
+}
+
+.qty-value {
+  padding: 0 0.5rem;
+  color: #1f2937;
+  font-weight: 600;
+}
+
+.remove-button {
+  padding: 0.25rem;
+  color: #ef4444;
+}
+
+.remove-button:hover {
+  color: #dc2626;
+}
+
+.cooking-preferences-btn {
+  width: 100%;
+  border: 1px solid #d1d5db;
+  border-radius: 0.75rem;
+  padding: 0.5rem;
+  color: #4b5563;
+  font-size: 0.875rem;
+  background-color: transparent;
+  margin-bottom: 1rem;
+}
+
+.cooking-preferences-btn:hover {
+  background-color: #f9fafb;
+}
+
+.billing-breakdown {
+  border-top: 1px solid #d1d5db;
+  padding-top: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.billing-header {
+  color: #1f2937;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.billing-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.875rem;
+  color: #4b5563;
+  margin-bottom: 0.25rem;
+}
+
+.billing-total {
+  display: flex;
+  justify-content: space-between;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #111827;
+  margin-top: 0.5rem;
+}
+
+.payment-methods {
+  margin-top: 1rem;
+}
+
+.payment-header {
+  color: #1f2937;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.payment-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+}
+
+.payment-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #d1d5db;
+  border-radius: 0.75rem;
+  padding: 0.75rem;
+  background-color: transparent;
+}
+
+.payment-option:hover {
+  background-color: #f0fdf4;
+}
+
+.payment-option:nth-child(2):hover {
+  background-color: #eff6ff;
+}
+
+.payment-option:nth-child(3):hover {
+  background-color: #fefce8;
+}
+
+.payment-option.selected {
+  border-color: #059669;
+  background-color: #f0fdf4;
+}
+
+.payment-option.selected:nth-child(2) {
+  border-color: #2563eb;
+  background-color: #eff6ff;
+}
+
+.payment-option.selected:nth-child(3) {
+  border-color: #d97706;
+  background-color: #fefce8;
+}
+
+.payment-icon-upi {
+  color: #059669;
+  margin-bottom: 0.25rem;
+}
+
+.payment-icon-card {
+  color: #2563eb;
+  margin-bottom: 0.25rem;
+}
+
+.payment-icon-cash {
+  color: #d97706;
+  margin-bottom: 0.25rem;
+}
+
+.payment-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+}
+
+.place-order-btn {
+  width: 100%;
+  background-color: #059669;
+  color: white;
+  border: none;
+  border-radius: 0.75rem;
+  padding: 0.75rem;
+  font-size: 1rem;
+  font-weight: 600;
+  margin-top: 1rem;
+  cursor: pointer;
+}
+
+.place-order-btn:hover {
+  background-color: #047857;
+}
