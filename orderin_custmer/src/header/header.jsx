@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useCart } from "../context/CartContext";
 import { useNavigate } from 'react-router-dom';
 import { useTableNumber } from '../hooks/useTableNumber';
+import { LogOut } from 'lucide-react';
 import './header.css';
 
 function Header() {
@@ -14,6 +15,28 @@ function Header() {
   };
   const navigate = useNavigate();
   const { getPathWithTable } = useTableNumber();
+
+  const handleLogout = () => {
+    // Clear user data from localStorage
+    localStorage.removeItem('user');
+    localStorage.removeItem('tableNo');
+    
+    // Clear cart if needed
+    sessionStorage.clear();
+    
+    // Disable back navigation by clearing history
+    window.history.pushState(null, null, window.location.href);
+    
+    // Add popstate listener to prevent browser back
+    const handlePopState = (e) => {
+      window.history.pushState(null, null, window.location.href);
+    };
+    window.addEventListener('popstate', handlePopState);
+    
+    // Close menu and navigate to login
+    setIsMenuOpen(false);
+    navigate('/login');
+  };
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -45,6 +68,9 @@ function Header() {
            <div className="menu-item" onClick={() => { navigate(getPathWithTable('/about-orderin')); setIsMenuOpen(false); }}>About OrderIn</div>
            <div className="menu-item" onClick={() => { navigate(getPathWithTable('/about')); setIsMenuOpen(false); }}>About Restaurant</div>
            <div className="menu-item" onClick={() => { navigate(getPathWithTable('/help')); setIsMenuOpen(false); }}>Help</div>
+           <div className="menu-item logout-item" onClick={handleLogout}>
+             <LogOut size={18} /> Logout
+           </div>
          </div>
        </div>
      </>

@@ -43,6 +43,23 @@ const Login = () => {
     fetchStatus();
   }, []);
 
+  // Disable back navigation after logout - make login the root page
+  useEffect(() => {
+    // Clear history stack
+    window.history.pushState(null, null, window.location.href);
+    
+    // Prevent browser back button
+    const handlePopState = (e) => {
+      window.history.pushState(null, null, window.location.href);
+    };
+    
+    window.addEventListener('popstate', handlePopState);
+    
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, []);
+
   // Handle mobile keyboard scrolling - ensure focused input stays visible
   useEffect(() => {
     const handleInputFocus = (e) => {

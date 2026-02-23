@@ -64,3 +64,15 @@
     border-bottom: none;
 }
 
+.logout-item {
+    color: #ff0000 !important;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.logout-item:hover {
+    background-color: #ffe6e6;
+}
+

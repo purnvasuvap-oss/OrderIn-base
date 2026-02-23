@@ -138,7 +138,10 @@ function ItemDetails() {
     }
   };
 
-  const handleBack = () => navigate(-1);
+  const handleBack = (e) => {
+    e.stopPropagation();
+    navigate(getPathWithTable('/menu'));
+  };
 
   const handleQuantityChange = (delta) => {
     setQuantity(prev => Math.max(1, prev + delta));
