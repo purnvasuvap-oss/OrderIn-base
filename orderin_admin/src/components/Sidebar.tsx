@@ -1,8 +1,11 @@
 import { LayoutDashboard, Building2, FileText, DollarSign, CreditCard, Settings, LogOut, ChevronRight } from 'lucide-react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useAppStore } from '../store';
 
 export const Sidebar = () => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const logout = useAppStore((s) => s.logout);
 
   const navItems = [
     { icon: LayoutDashboard, label: 'Dashboard', href: '/dashboard' },
@@ -67,7 +70,12 @@ export const Sidebar = () => {
       </nav>
 
       <div style={{ borderTop: '1px solid rgba(6, 182, 212, 0.1)', padding: '1rem', background: 'linear-gradient(180deg, transparent 0%, rgba(6, 182, 212, 0.05) 100%)' }}>
-        <button style={{
+        <button 
+          onClick={() => {
+            logout();
+            navigate('/login', { replace: true });
+          }}
+          style={{
           display: 'flex',
           alignItems: 'center',
           gap: '0.75rem',

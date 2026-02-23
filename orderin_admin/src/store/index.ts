@@ -84,6 +84,7 @@ interface AppState {
   createNextSettlementIfNeeded: (restaurantId: string) => void;
   loadPrimaryRestaurants: (limitCount?: number) => Promise<void>;
   loadCustomerTransactions: () => Promise<void>;
+  logout: () => void;
 }
 
 export const useAppStore = create<AppState>((set, get) => {
@@ -967,6 +968,21 @@ export const useAppStore = create<AppState>((set, get) => {
     } finally {
       set({ isLoadingTransactions: false });
     }
+  },
+
+  logout: () => {
+    // Clear all app state
+    set({
+      restaurants: [],
+      transactions: [],
+      settlements: [],
+      selectedDateRange: null,
+      searchQuery: '',
+      showStaticRestaurantInfo: false,
+      isLoadingTransactions: false,
+      defaultSettlementAmounts: {},
+      defaultSettlementStartDates: {},
+    });
   },
 };
 });

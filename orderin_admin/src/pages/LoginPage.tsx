@@ -23,7 +23,7 @@ export const LoginPage = () => {
     setIsLoading(true);
     setTimeout(() => {
       setIsLoading(false);
-      navigate('/dashboard');
+      navigate('/dashboard', { replace: true });
     }, 600);
   };
 
