@@ -9,35 +9,42 @@
 }
 
 .promotions-page-container {
-  background-color: var(--bg-light-neutral);
-  padding: 20px;
+  background-color: linear-gradient(135deg, #f5f7fa 0%, #eef2f5 100%);
+  padding: 12px;
   overflow-y: auto;
-  height: 100vh;
+  min-height: 100vh;
+  background-image: url('/images/Vectors.png');
+  background-size: cover;
+  background-position: center bottom;
+  background-attachment: fixed;
 }
 
 .promotions-page-content {
   background-color: var(--surface-white);
-  border-radius: 12px;
+  border-radius: 14px;
   max-width: 1200px;
   margin: 0 auto;
-  padding: 40px;
+  padding: 16px 14px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   position: relative;
   overflow-y: visible;
+  border: 1px solid #e5e7eb;
 }
 
 .promotions-back-btn {
   position: absolute;
-  top: 20px;
-  left: 20px;
-  background-color: var(--surface-white);
-  color: var(--primary-red);
-  padding: 8px 16px;
-  border: 1px solid var(--primary-red);
+  top: 16px;
+  left: 14px;
+  background: linear-gradient(135deg, #f87171 0%, #ef4444 100%);
+  color: white;
+  padding: 8px 12px;
+  border: none;
   border-radius: 8px;
   cursor: pointer;
-  font-size: 14px;
-  font-weight: 500;
+  font-size: 12px;
+  font-weight: 600;
+  box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3);
+  transition: all 0.2s ease;
 }
 
 .promotions-title {
@@ -275,3 +282,273 @@
   font-weight: 600;
 }
 
+/* ========== RESPONSIVE DESIGN ========== */
+
+/* Mobile (0px - 480px) */
+@media (max-width: 480px) {
+  .promotions-page-container {
+    padding: 12px;
+    background: linear-gradient(135deg, #f5f7fa 0%, #eef2f5 100%);
+    background-image: url('/images/Vectors.png');
+    background-size: cover;
+    background-position: center bottom;
+    background-attachment: fixed;
+  }
+
+  .promotions-page-content {
+    padding: 16px 14px;
+    margin: 8px;
+    border-radius: 14px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+
+  .promotions-back-btn {
+    top: 16px;
+    left: 14px;
+    padding: 8px 12px;
+    font-size: 12px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #f87171 0%, #ef4444 100%);
+    color: white;
+    border: none;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3);
+    transition: all 0.2s ease;
+  }
+
+  .promotions-back-btn:active {
+    transform: scale(0.96);
+  }
+
+  .promotions-title {
+    font-size: 18px;
+    margin-top: 40px;
+    margin-bottom: 16px;
+    font-weight: 700;
+    color: #1f2937;
+  }
+
+  .promotions-content {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .promotions-upload-section {
+    flex: none;
+  }
+
+  .promotions-upload-box {
+    padding: 24px 16px;
+    height: 220px;
+    border: 2px dashed #d1d5db;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+    transition: all 0.2s ease;
+  }
+
+  .promotions-upload-box:hover {
+    border-color: #00897B;
+    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  }
+
+  .promotions-upload-icon {
+    font-size: 40px;
+    color: #9ca3af;
+  }
+
+  .promotions-upload-text {
+    margin-top: 10px;
+    color: #6b7280;
+    font-weight: 500;
+    font-size: 13px;
+  }
+
+  .promotions-gallery {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .promotion-card {
+    max-width: 100%;
+    border-radius: 12px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+    transition: all 0.2s ease;
+  }
+
+  .promotion-card:active {
+    transform: scale(0.98);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+  }
+
+  .promotion-image-container {
+    height: 160px;
+    background: #f3f4f6;
+    position: relative;
+  }
+
+  .promotion-image-container img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .promotion-caption {
+    font-size: 16px;
+    font-weight: 600;
+    padding: 12px 12px 8px 12px;
+    color: #1f2937;
+  }
+
+  .promotion-description {
+    font-size: 12px;
+    padding: 0 12px 12px 12px;
+    color: #6b7280;
+    line-height: 1.4;
+  }
+
+  .promotion-card-actions {
+    display: flex;
+    gap: 8px;
+    padding: 12px;
+    border-top: 1px solid #e5e7eb;
+  }
+
+  .promotion-card-actions button {
+    flex: 1;
+    padding: 9px 12px;
+    font-size: 11px;
+    border-radius: 6px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .promotion-card-actions button:active {
+    transform: scale(0.94);
+  }
+}
+
+/* Tablet (481px - 768px) */
+@media (min-width: 481px) and (max-width: 768px) {
+  .promotions-page-content {
+    padding: 24px;
+    margin: 12px;
+  }
+
+  .promotions-back-btn {
+    top: 18px;
+    left: 18px;
+    padding: 7px 12px;
+    font-size: 13px;
+  }
+
+  .promotions-title {
+    font-size: 24px;
+    margin-top: 50px;
+    margin-bottom: 24px;
+  }
+
+  .promotions-content {
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .promotions-upload-box {
+    padding: 32px 16px;
+    height: 250px;
+  }
+
+  .promotions-upload-icon {
+    font-size: 48px;
+  }
+
+  .promotions-gallery {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .promotion-image-container {
+    height: 180px;
+  }
+
+  .promotion-caption {
+    font-size: 17px;
+  }
+}
+
+/* Tablet/Desktop (769px - 1023px) */
+@media (min-width: 769px) and (max-width: 1023px) {
+  .promotions-page-content {
+    padding: 32px;
+  }
+
+  .promotions-content {
+    flex-direction: row;
+    gap: 32px;
+  }
+
+  .promotions-upload-section {
+    flex: 0 0 40%;
+  }
+
+  .promotions-gallery {
+    grid-template-columns: repeat(2, 1fr);
+    flex: 1;
+  }
+
+  .promotion-image-container {
+    height: 180px;
+  }
+}
+
+/* Desktop (1024px and up) */
+@media (min-width: 1024px) {
+  .promotions-page-content {
+    padding: 40px;
+  }
+
+  .promotions-back-btn {
+    top: 20px;
+    left: 20px;
+  }
+
+  .promotions-title {
+    font-size: 28px;
+    margin-top: 60px;
+    margin-bottom: 30px;
+  }
+
+  .promotions-content {
+    flex-direction: row;
+    gap: 40px;
+  }
+
+  .promotions-upload-section {
+    flex: 1;
+    max-width: 400px;
+  }
+
+  .promotions-upload-box {
+    padding: 40px 20px;
+    height: 300px;
+  }
+
+  .promotions-gallery {
+    grid-template-columns: repeat(3, 1fr);
+    flex: 1;
+  }
+
+  .promotion-image-container {
+    height: 200px;
+  }
+
+  .promotion-caption {
+    font-size: 18px;
+  }
+
+  .promotion-description {
+    font-size: 14px;
+  }
+}
