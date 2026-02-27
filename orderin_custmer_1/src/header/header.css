@@ -1,0 +1,87 @@
+.header-bar{
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    height: 60px;
+    width: 100%;
+    background: linear-gradient(135deg, #2F2E2A 0%, #323236 100%);
+    border-bottom: 1px solid #3A3935;
+}
+.orderin-logo-header {
+    width: 80px;
+    height: auto;
+    margin-left: 10px;
+    filter: drop-shadow(0 0 6px rgba(255, 245, 180, 0.55)) drop-shadow(0 0 12px rgba(255, 245, 180, 0.4)) drop-shadow(0 0 18px rgba(255, 245, 180, 0.25));
+    transition: filter 0.3s ease;
+}
+
+.orderin-logo-header:hover {
+    filter: drop-shadow(0 0 8px rgba(255, 245, 180, 0.8)) drop-shadow(0 0 16px rgba(255, 245, 180, 0.6)) drop-shadow(0 0 24px rgba(255, 245, 180, 0.35));
+}
+.table-number {
+    font-size: 18px;
+    font-weight: bold;
+    color: #FFB703;
+    margin-right: 20px;
+}
+.menu-icon {
+    margin-right: 10px;
+    cursor: pointer;
+    color: #FFB703;
+}
+
+.side-menu {
+    position: fixed;
+    top: 60px;
+    right: -300px;
+    width: 300px;
+    height: calc(100vh - 60px);
+    background-color: #2A2A2A;
+    box-shadow: -2px 0 5px rgba(0, 0, 0, 0.5);
+    transition: right 0.3s ease;
+    z-index: 1000;
+    border-left: 1px solid #333333;
+}
+
+.side-menu.open {
+    right: 0;
+}
+
+.side-menu-content {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    color: #FFFFFF;
+}
+
+.menu-item {
+    padding: 15px;
+    border-bottom: 1px solid #444444;
+    cursor: pointer;
+    color: #FFFFFF;
+    font-size: 16px;
+    transition: background-color 0.2s ease;
+}
+
+.menu-item:hover {
+    background-color: #333333;
+}
+
+.menu-item:last-child {
+    border-bottom: none;
+}
+
+.logout-item {
+    color: #ff0000 !important;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.logout-item:hover {
+    background-color: rgba(155, 34, 38, 0.2);
+}
+

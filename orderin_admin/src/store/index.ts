@@ -83,6 +83,8 @@ interface AppState {
   setRestaurantStatus: (restaurantId: string, status: 'Active' | 'Inactive' | 'Suspended' | 'Off') => void;
   createNextSettlementIfNeeded: (restaurantId: string) => void;
   loadPrimaryRestaurants: (limitCount?: number) => Promise<void>;
+  reloadAllRestaurants: () => Promise<void>;
+  watchRestaurants: () => void;
   loadCustomerTransactions: () => Promise<void>;
   logout: () => void;
 }
@@ -90,6 +92,7 @@ interface AppState {
 export const useAppStore = create<AppState>((set, get) => {
   // Keep snapshot listeners per restaurant to provide realtime updates and avoid duplicate listeners
   const snapshotListeners: Record<string, Unsubscribe> = {};
+  let restaurantCollectionListener: Unsubscribe | null = null;
 
   const ensureSnapshotFor = (restaurantId: string) => {
     if (snapshotListeners[restaurantId]) return; // already listening
@@ -690,6 +693,16 @@ export const useAppStore = create<AppState>((set, get) => {
         size: snap.size
       });
       
+      // Log each document ID
+      console.log('[Store] loadPrimaryRestaurants: Debugging - total docs in snapshot:', snap.docs.length);
+      snap.docs.forEach((doc, index) => {
+        console.log(`[Store] loadPrimaryRestaurants: Doc ${index}:`, {
+          id: doc.id,
+          exists: doc.exists(),
+          data: doc.data()
+        });
+      });
+      
       if (snap.empty) {
         console.warn('[Store] loadPrimaryRestaurants: ⚠️ Firebase returned EMPTY result - no restaurants found in /Restaurant collection');
         console.warn('[Store] loadPrimaryRestaurants: Check: 1) Collection path is correct, 2) Data exists in Firebase, 3) Firebase rules allow read access');
@@ -730,7 +743,10 @@ export const useAppStore = create<AppState>((set, get) => {
         return restaurant;
       });
       
-      console.log('[Store] loadPrimaryRestaurants: mapped', fetched.length, 'restaurants to app state');
+      console.log('[Store] loadPrimaryRestaurants: TOTAL FETCHED:', fetched.length, 'restaurants');
+      fetched.forEach((rest, i) => {
+        console.log(`[Store] loadPrimaryRestaurants: Restaurant ${i}:`, rest.id, rest.Restaurant_name);
+      });
       
       // Fetch daily order counters for each restaurant and compute total orders
       const restaurantsWithOrders = await Promise.all(
@@ -753,6 +769,10 @@ export const useAppStore = create<AppState>((set, get) => {
       
       // Set restaurants list
       set({ restaurants: restaurantsWithOrders });
+      console.log('[Store] loadPrimaryRestaurants: SET STATE with', restaurantsWithOrders.length, 'restaurants');
+      restaurantsWithOrders.forEach((rest, i) => {
+        console.log(`[Store] loadPrimaryRestaurants: In State ${i}:`, rest.id, rest.Restaurant_name);
+      });
 
       // For each fetched restaurant fetch settlement doc (sequentially) and attach listener
       const settlementsAcc: Settlement[] = [];
@@ -847,6 +867,148 @@ export const useAppStore = create<AppState>((set, get) => {
     } catch (err) {
       console.error('❌ [Store] loadPrimaryRestaurants FAILED:', err);
       console.error('[Store] Error details:', { message: (err as Error)?.message, code: (err as Record<string, unknown>)?.code });
+    }
+  },
+
+  reloadAllRestaurants: async () => {
+    // Force reload all restaurants - used to sync missing restaurants
+    try {
+      console.log('[Store] reloadAllRestaurants: forcing fresh load of all restaurants');
+      
+      // First, do a diagnostic fetch
+      try {
+        const col = collection(db, 'Restaurant');
+        const diagnosticSnap = await getDocs(col);
+        console.log('[Store] reloadAllRestaurants: DIAGNOSTIC - Total docs in /Restaurant collection:', diagnosticSnap.docs.length);
+        diagnosticSnap.docs.forEach((doc, i) => {
+          console.log(`[Store] reloadAllRestaurants: DIAGNOSTIC Doc ${i}:`, doc.id, {
+            name: (doc.data() as Record<string, unknown>)?.Restaurant_name,
+            code: (doc.data() as Record<string, unknown>)?.code
+          });
+        });
+      } catch (diagErr) {
+        console.error('[Store] reloadAllRestaurants: DIAGNOSTIC ERROR:', diagErr);
+      }
+      
+      await get().loadPrimaryRestaurants(); // Call without limit to get ALL
+      console.log('[Store] reloadAllRestaurants: ✅ completed successfully');
+    } catch (err) {
+      console.error('❌ [Store] reloadAllRestaurants FAILED:', err);
+    }
+  },
+
+  watchRestaurants: () => {
+    // Set up a real-time listener on the /Restaurant collection to sync new restaurants automatically
+    try {
+      console.log('[Store] watchRestaurants: setting up real-time listener on /Restaurant collection');
+      
+      // Clean up existing listener if any
+      if (restaurantCollectionListener) {
+        restaurantCollectionListener();
+      }
+
+      const restaurantCol = collection(db, 'Restaurant');
+      
+      restaurantCollectionListener = onSnapshot(
+        restaurantCol,
+        async (snap) => {
+          try {
+            console.log('[Store] watchRestaurants: collection snapshot received with', snap.docs.length, 'restaurants');
+            
+            // Get the current restaurants in state
+            const currentRestaurants = get().restaurants;
+            const currentIds = new Set(currentRestaurants.map(r => r.id));
+            
+            // Map Firebase docs to Restaurant objects
+            const allUpdatedRestaurants: Restaurant[] = [];
+            
+            for (const docSnap of snap.docs) {
+              const data = docSnap.data() as Record<string, unknown>;
+              const s = (key: string) => (data[key] as string) || '';
+              
+              const restaurant: Restaurant = {
+                id: docSnap.id,
+                code: s('code') || docSnap.id,
+                Restaurant_name: s('Restaurant_name') || s('name'),
+                city: s('city'),
+                status: (data.status as unknown as RestaurantStatus) || 'Off',
+                totalOrders: (data.totalOrders as number) || 0,
+                totalVolume: (data.totalVolume as number) || 0,
+                earnings: (data.earnings as number) || 0,
+                Owner: s('Owner') || s('owner'),
+                Owner_Contact: s('Owner_Contact') || s('phone'),
+                email: s('email'),
+                address: s('address'),
+                account: s('account') || s('bankAccount'),
+                IFSC: s('IFSC') || s('ifsc'),
+                joinDate: new Date(),
+                inactiveTimestamp: (data.inactiveTimestamp as number) || undefined,
+              };
+              
+              allUpdatedRestaurants.push(restaurant);
+            }
+
+            // Check for new restaurants
+            const newRestaurants = allUpdatedRestaurants.filter(r => !currentIds.has(r.id));
+            console.log('[Store] watchRestaurants: current restaurants:', currentIds.size, 'updated restaurants:', allUpdatedRestaurants.length, 'new:', newRestaurants.length);
+            
+            // If there are new restaurants, process and add them
+            if (newRestaurants.length > 0) {
+              console.log('[Store] watchRestaurants: detected', newRestaurants.length, 'new restaurants:', newRestaurants.map(r => r.Restaurant_name));
+              
+              // Fetch daily order counters for new restaurants
+              const newRestaurantsWithOrders = await Promise.all(
+                newRestaurants.map(async (rest) => {
+                  try {
+                    const dailyCountersCol = collection(db, 'Restaurant', rest.id, 'dailyOrderCounters');
+                    const countersSnap = await getDocs(dailyCountersCol);
+                    const totalOrders = countersSnap.docs.reduce((sum: number, doc) => {
+                      const data = doc.data() as FirebaseRestaurantData;
+                      return sum + ((data.count as number) || 0);
+                    }, 0);
+                    console.log('[Store] watchRestaurants: fetched daily order counters for', rest.id, { totalOrders });
+                    return { ...rest, totalOrders };
+                  } catch (e) {
+                    console.error('[Store] watchRestaurants: failed to fetch daily counters for', rest.id, e);
+                    return rest;
+                  }
+                })
+              );
+
+              // Update state: keep existing restaurants + add new ones
+              set((s) => {
+                const merged = [
+                  ...s.restaurants.filter(r => allUpdatedRestaurants.some(u => u.id === r.id)), // Keep existing
+                  ...newRestaurantsWithOrders, // Add new
+                ];
+                console.log('[Store] watchRestaurants: merged total restaurants:', merged.length);
+                return { restaurants: merged };
+              });
+
+              // Ensure monthly settlement for new restaurants
+              for (const rest of newRestaurants) {
+                try {
+                  const ensureFn = get().ensureMonthlySettlement;
+                  if (typeof ensureFn === 'function') {
+                    ensureFn(rest.id);
+                  }
+                } catch {
+                  // ignore
+                }
+              }
+            }
+          } catch (e) {
+            console.error('[Store] watchRestaurants: snapshot processing error', e);
+          }
+        },
+        (err) => {
+          console.error('[Store] watchRestaurants: listener error', err);
+        }
+      );
+
+      console.log('[Store] watchRestaurants: real-time listener attached successfully');
+    } catch (e) {
+      console.error('[Store] watchRestaurants: failed to set up listener', e);
     }
   },
 

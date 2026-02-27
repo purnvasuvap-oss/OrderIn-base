@@ -49,22 +49,37 @@ function HistoryGuard() {
 function AppContent() {
   const loadPrimaryRestaurants = useAppStore((s) => s.loadPrimaryRestaurants);
   const loadCustomerTransactions = useAppStore((s) => s.loadCustomerTransactions);
+  const watchRestaurants = useAppStore((s) => s.watchRestaurants);
+  const reloadAllRestaurants = useAppStore((s) => s.reloadAllRestaurants);
 
   useEffect(() => {
-    console.log('[App] useEffect: calling loadPrimaryRestaurants and loadCustomerTransactions');
-    // fetch all restaurants from Firebase on app start
+    console.log('[App] useEffect: initializing data load');
+    
+    // Step 1: Initial load
     loadPrimaryRestaurants().then(() => {
       console.log('[App] loadPrimaryRestaurants completed');
+      
+      // Step 2: Set up real-time listener
+      watchRestaurants();
+      console.log('[App] watchRestaurants activated');
+      
+      // Step 3: Verify all restaurants are loaded (handle race conditions)
+      setTimeout(() => {
+        reloadAllRestaurants().catch(() => {
+          console.error('[App] reloadAllRestaurants failed');
+        });
+      }, 1000);
     }).catch((err) => {
       console.error('[App] loadPrimaryRestaurants failed:', err);
     });
-    // fetch all customer transactions from Firebase on app start
+    
+    // Fetch transactions
     loadCustomerTransactions().then(() => {
       console.log('[App] loadCustomerTransactions completed');
     }).catch((err) => {
       console.error('[App] loadCustomerTransactions failed:', err);
     });
-  }, [loadPrimaryRestaurants, loadCustomerTransactions]);
+  }, [loadPrimaryRestaurants, loadCustomerTransactions, watchRestaurants, reloadAllRestaurants]);
 
   return (
     <>

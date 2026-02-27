@@ -11,28 +11,45 @@ export const RestaurantsPage = () => {
   const { restaurants, searchQuery, getRestaurantTransactions, loadCustomerTransactions } = useAppStore();
   const [localSearch, setLocalSearch] = useState('');
 
+  // Debug: Log restaurants
+  useEffect(() => {
+    console.log('[RestaurantsPage] Restaurants in store:', restaurants.length);
+    restaurants.forEach((r, i) => {
+      console.log(`[RestaurantsPage] Restaurant ${i}:`, {
+        id: r.id,
+        name: r.Restaurant_name,
+        code: r.code,
+        city: r.city
+      });
+    });
+  }, [restaurants]);
+
   // Load transactions on mount
   useEffect(() => {
     loadCustomerTransactions().catch(() => {});
   }, [loadCustomerTransactions]);
 
-  // Filter restaurants to only show those with online transactions
-  const restaurantsWithOnlineTransactions = useMemo(() => {
-    return restaurants.filter(restaurant => {
-      const txns = getRestaurantTransactions(restaurant.id);
-      return txns.some(txn => ['online', 'Online'].includes(txn.paymentMethod));
-    });
-  }, [restaurants, getRestaurantTransactions]);
-
+  // Show all restaurants (not filtered by transactions)
   const filteredRestaurants = useMemo(() => {
     const query = (localSearch || searchQuery).toLowerCase();
-    return restaurantsWithOnlineTransactions.filter(
-      (r) =>
-        r.Restaurant_name.toLowerCase().includes(query) ||
-        r.code.toLowerCase().includes(query) ||
-        r.city.toLowerCase().includes(query)
-    );
-  }, [restaurantsWithOnlineTransactions, searchQuery, localSearch]);
+    return restaurants.filter((r) => {
+      try {
+        const name = (r.Restaurant_name || r.code || r.id || '').toLowerCase();
+        const code = (r.code || r.id || '').toLowerCase();
+        const city = (r.city || '').toLowerCase();
+        
+        return (
+          name.includes(query) ||
+          code.includes(query) ||
+          city.includes(query) ||
+          query === '' // Show all if search is empty
+        );
+      } catch (e) {
+        console.error('[RestaurantsPage] Filter error for restaurant:', r, e);
+        return true; // Show restaurant even if there's an error
+      }
+    });
+  }, [restaurants, searchQuery, localSearch]);
 
   // Format value to max 4 decimals, removing trailing zeros
   const formatValue = (value: number): string => {
@@ -40,9 +57,23 @@ export const RestaurantsPage = () => {
   };
 
   const columns = [
-    { header: 'Code', accessor: 'code', render: (value: unknown, row: Record<string, unknown>) => (value as string) || (row.id as string) },
-    { header: 'Restaurant Name', accessor: 'Restaurant_name' },
-    { header: 'City', accessor: 'city' },
+    { 
+      header: 'Code', 
+      accessor: 'code', 
+      render: (value: unknown, row: Record<string, unknown>) => {
+        return (value as string) || (row.id as string) || '—';
+      }
+    },
+    { 
+      header: 'Restaurant Name', 
+      accessor: 'Restaurant_name',
+      render: (value: unknown) => (value as string) || '—'
+    },
+    { 
+      header: 'City', 
+      accessor: 'city',
+      render: (value: unknown) => (value as string) || '—'
+    },
     {
       header: 'Status',
       accessor: 'status',
@@ -50,7 +81,7 @@ export const RestaurantsPage = () => {
         <Badge variant={
           value === 'Active' ? 'success' : value === 'Suspended' ? 'error' : value === 'Off' ? 'info' : 'warning'
         }>
-          {value as React.ReactNode}
+          {(value as React.ReactNode) || 'Off'}
         </Badge>
       ),
     },
@@ -58,32 +89,47 @@ export const RestaurantsPage = () => {
       header: 'Orders',
       accessor: 'id',
       render: (value: unknown) => {
-        const restaurantId = value as string;
-        const transactions = getRestaurantTransactions(restaurantId);
-        const onlineTransactions = transactions.filter(t => ['online', 'Online'].includes(t.paymentMethod));
-        return onlineTransactions.length.toLocaleString();
+        try {
+          const restaurantId = value as string;
+          const transactions = getRestaurantTransactions(restaurantId);
+          const onlineTransactions = transactions.filter(t => ['online', 'Online'].includes(t.paymentMethod));
+          return onlineTransactions.length.toLocaleString();
+        } catch (e) {
+          console.error('[RestaurantsPage] Orders render error:', e);
+          return '0';
+        }
       },
     },
     {
       header: 'Volume',
       accessor: 'id',
       render: (value: unknown) => {
-        const restaurantId = value as string;
-        const transactions = getRestaurantTransactions(restaurantId);
-        const onlineTransactions = transactions.filter(t => ['online', 'Online'].includes(t.paymentMethod));
-        const totalRevenue = onlineTransactions.reduce((sum, t) => sum + t.grossAmount, 0);
-        return `₹${formatValue(totalRevenue)}`;
+        try {
+          const restaurantId = value as string;
+          const transactions = getRestaurantTransactions(restaurantId);
+          const onlineTransactions = transactions.filter(t => ['online', 'Online'].includes(t.paymentMethod));
+          const totalRevenue = onlineTransactions.reduce((sum, t) => sum + t.grossAmount, 0);
+          return `₹${formatValue(totalRevenue)}`;
+        } catch (e) {
+          console.error('[RestaurantsPage] Volume render error:', e);
+          return '₹0';
+        }
       },
     },
     {
       header: 'Your Earnings',
       accessor: 'id',
       render: (value: unknown) => {
-        const restaurantId = value as string;
-        const transactions = getRestaurantTransactions(restaurantId);
-        const onlineTransactions = transactions.filter(t => ['online', 'Online'].includes(t.paymentMethod));
-        const platformEarnings = onlineTransactions.reduce((sum, t) => sum + t.netPlatformEarnings, 0);
-        return `₹${formatValue(platformEarnings)}`;
+        try {
+          const restaurantId = value as string;
+          const transactions = getRestaurantTransactions(restaurantId);
+          const onlineTransactions = transactions.filter(t => ['online', 'Online'].includes(t.paymentMethod));
+          const platformEarnings = onlineTransactions.reduce((sum, t) => sum + t.netPlatformEarnings, 0);
+          return `₹${formatValue(platformEarnings)}`;
+        } catch (e) {
+          console.error('[RestaurantsPage] Earnings render error:', e);
+          return '₹0';
+        }
       },
     },
     {

@@ -21,7 +21,7 @@ export const SettlementsPage = () => {
       const totalPaid = payments.reduce((sum: number, p) => sum + (p.amount || 0), 0);
       const due = (currentMonthData && typeof currentMonthData.totalAmountDue === 'number') ? currentMonthData.totalAmountDue : (s.defaultSettlementAmount ?? 0);
       const pending = Math.max(0, due - totalPaid);
-      const defaultAmountForMonth = (currentMonthData && typeof currentMonthData.defaultAmountForMonth === 'number') ? currentMonthData.defaultAmountForMonth : (s.defaultSettlementAmount ?? 0);
+      const cycleStartDate = (currentMonthData && typeof currentMonthData.cycleStartDate === 'number') ? currentMonthData.cycleStartDate : (s.defaultSettlementStartDate ?? 0);
       
       // Look up restaurant status
       const restaurant = restaurants.find((r) => r.id === s.restaurantId);
@@ -40,7 +40,8 @@ export const SettlementsPage = () => {
         totalPaid,
         pending,
         displayStatus,
-        defaultAmountForMonth, // Add this to the returned object
+        totalAmountDue: due,
+        cycleStartDate,
       };
     });
   }, [settlements, restaurants]);
@@ -53,7 +54,7 @@ export const SettlementsPage = () => {
     },
     {
       header: 'Start Month',
-      accessor: 'defaultSettlementStartDate',
+      accessor: 'cycleStartDate',
       render: (value: unknown) => {
         if (typeof value === 'number' && value > 0) {
           return new Date(value).toLocaleString('default', { month: 'short', year: 'numeric' });
@@ -63,7 +64,7 @@ export const SettlementsPage = () => {
     },
     {
       header: 'Amount Due',
-      accessor: 'defaultAmountForMonth',
+      accessor: 'totalAmountDue',
       render: (value: unknown) => {
         if (typeof value === 'number') {
           return `₹${value} / month`;

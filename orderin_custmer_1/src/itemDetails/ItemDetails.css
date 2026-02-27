@@ -1,0 +1,319 @@
+.itemdetails-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: calc(100vh - 60px); /* Leaves space for footer */
+  background: #1E1E1E;
+  z-index: 2000;
+  overflow-y: auto;
+  border-radius: 20px 20px 0 0;
+  animation: slideUp 0.35s ease;
+  max-width: 100%;
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+/* HEADER */
+.itemdetails-header {
+  display: flex;
+  align-items: center;
+  padding: 12px;
+  position: sticky;
+  top: 0;
+  background: #2A2A2A;
+  z-index: 5;
+  border-bottom: 1px solid #333333;
+}
+
+.bac-button {
+  background: #444444;
+  border: 1px solid #555555;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  color: #FFFFFF;
+  pointer-events: auto;
+  padding: 0;
+}
+
+/* IMAGE */
+.itemdetails-image-container {
+  position: relative;
+}
+
+.itemdetails-image {
+  width: 100%;
+  height: 230px;
+  object-fit: cover;
+}
+
+
+
+/* INFO */
+.itemdetails-info {
+  padding: 18px 0 200px; /* Reduced side padding - let elements control their own margins */
+  max-width: 100%;
+}
+
+.itemdetails-title {
+  font-size: 20px;
+  font-weight: 700;
+  margin-left: 18px;
+  margin-right: 18px;
+  color: #FFFFFF;
+}
+
+.itemdetails-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-left: 18px;
+  margin-right: 18px;
+}
+
+.heart-icon {
+  color: #888888;
+  cursor: pointer;
+  transition: color 0.3s ease;
+}
+
+.heart-icon.favorited {
+  color: #FFB703;
+}
+
+.itemdetails-meta {
+  display: flex;
+  gap: 16px;
+  font-size: 14px;
+  color: #AAAAAA;
+  margin-top: 4px;
+}
+
+.itemdetails-description {
+  margin-top: 10px;
+  margin-left: 18px;
+  margin-right: 18px;
+  font-size: 14px;
+  color: #AAAAAA;
+  line-height: 1.4;
+}
+
+/* Quantity Controls */
+.quantity-section {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 16px 0;
+  gap: 16px;
+}
+
+.qty-btn {
+  background: #333333;
+  border: 1px solid #444444;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #FFFFFF;
+  pointer-events: auto;
+  padding: 0;
+  cursor: pointer;
+}
+
+.qty-value {
+  font-size: 18px;
+  font-weight: 600;
+  color: #FFFFFF;
+}
+
+/* BOTTOM BAR */
+.bottom-bar {
+  position: fixed;
+  left: 12px;
+  right: 32px;
+  bottom: 78px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #2A2A2A;
+  padding: 10px 12px;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  z-index: 60;
+  border: 1px solid #333333;
+  max-width: calc(100vw - 44px);
+}
+
+.price-label {
+  font-size: 13px;
+  color: #888888;
+}
+
+.price-value {
+  font-weight: 700;
+  font-size: 17px;
+  color: #FFB703;
+}
+
+.add-to-cart-btn {
+  background: #FFB703;
+  color: #1E1E1E;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 16px;
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: background-color 0.18s ease, transform 0.12s ease;
+  font-weight: 600;
+}
+
+.add-to-cart-btn:hover {
+  background: #FFC230;
+}
+
+.add-to-cart-btn.added {
+  background: #4CAF50;
+  color: #FFFFFF;
+  cursor: not-allowed;
+}
+
+/* ======== FOOD INSTRUCTIONS MODAL - COMPLETELY REBUILT ======== */
+
+.food-instructions-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 3000;
+}
+
+.food-instructions-modal-content {
+  background: #1E1E1E;
+  padding: 30px;
+  border-radius: 16px;
+  width: 85%;
+  max-width: 420px;
+  text-align: center;
+  border: 3px solid #FFB703;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7), 0 0 30px rgba(255, 183, 3, 0.3);
+}
+
+.food-instructions-modal-content h3 {
+  margin: 0 0 20px 0;
+  font-size: 22px;
+  font-weight: 800;
+  color: #FFFFFF;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.food-instructions-modal-content textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 16px;
+  margin-bottom: 24px;
+  border: 2px solid #444444;
+  border-radius: 10px;
+  background: #2A2A2A;
+  color: #FFFFFF;
+  font-size: 14px;
+  font-family: 'Segoe UI', sans-serif;
+  min-height: 120px;
+  resize: vertical;
+  transition: border-color 0.3s ease, background 0.3s ease;
+}
+
+.food-instructions-modal-content textarea::placeholder {
+  color: #777777;
+}
+
+.food-instructions-modal-content textarea:focus {
+  outline: none;
+  border-color: #FFB703;
+  background: #303030;
+  box-shadow: 0 0 12px rgba(255, 183, 3, 0.2);
+}
+
+.food-instructions-modal-buttons {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+}
+
+.food-instructions-cancel-btn {
+  background: #2A2A2A;
+  color: #FFFFFF;
+  border: 2px solid #555555;
+  padding: 13px 28px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  letter-spacing: 0.5px;
+}
+
+.food-instructions-cancel-btn:hover {
+  background: #333333;
+  border-color: #FFB703;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+}
+
+.food-instructions-cancel-btn:active {
+  transform: translateY(0);
+}
+
+.food-instructions-save-btn {
+  background: linear-gradient(135deg, #FFB703 0%, #FFC230 100%);
+  color: #1E1E1E;
+  border: none;
+  padding: 13px 32px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  letter-spacing: 0.5px;
+  box-shadow: 0 6px 20px rgba(255, 183, 3, 0.35);
+}
+
+.food-instructions-save-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 30px rgba(255, 183, 3, 0.45);
+}
+
+.food-instructions-save-btn:active {
+  transform: translateY(0);
+}
+
+@media (max-width: 600px) {
+  .itemdetails-image {
+    height: 200px;
+  }
+
+  .itemdetails-title {
+    font-size: 18px;
+  }
+}

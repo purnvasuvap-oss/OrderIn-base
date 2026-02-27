@@ -1,0 +1,455 @@
+/* File: C:\Users\HP\OneDrive\Desktop\Restuarent_Web_Appliaction\order_in\src\components\login\MenuPage.css */
+
+/* --- CRITICAL HEIGHT FIXES --- */
+
+html,
+body {
+  height: 100%; /* Ensure full height of the viewport */
+
+  margin: 0;
+
+  padding: 0;
+
+  font-family: "Inter", sans-serif;
+
+  background-color: var(--bg-light-neutral);
+
+  color: var(--text-primary);
+}
+
+:root {
+  --primary-red: #00897B;
+
+  --secondary-green: #43a047;
+
+  --bg-light-neutral: #f5f7fa;
+
+  --surface-white: #ffffff;
+
+  --accent-yellow: #fbc02d;
+
+  --text-primary: #212121;
+
+  --text-secondary: #616161;
+
+  --border-light-gray: #e0e0e0;
+}
+
+/* --- Layout and Structure --- */
+
+.menu-management-container {
+  display: flex;
+
+  flex-direction: column;
+
+  height: 100vh; /* **This sets the container height to the viewport height** */
+
+  padding: 32px;
+
+  margin-top: 60px;
+
+  box-sizing: border-box;
+
+  /* background image should reference the public/images folder */
+  background-image: url('/images/Vectors.png');
+
+  background-size: contain;
+
+  background-repeat: no-repeat;
+
+  background-position: bottom;
+}
+
+.menu-header-bar {
+  display: flex;
+
+  justify-content: space-between;
+
+  align-items: center;
+
+  margin-bottom: 24px;
+
+  flex-shrink: 0; /* Prevents header from shrinking */
+}
+.header-actions {
+ display: flex; 
+ gap: 16px;
+}
+
+.menu-content-area {
+  background-color: var(--surface-white);
+
+  border-radius: 12px;
+
+  padding: 32px;
+  padding-top: 0; /* Removed to start content after header */
+  margin-top: 20px; /* Added to position content below header */
+  box-sizing: border-box;
+  display: flex;
+
+  flex-direction: column;
+
+  /* Ensure padding/border is included in the flex-grow calculation */
+
+  min-height: 0;
+}
+
+.menu-controls {
+  display: flex;
+
+  gap: 8px;
+
+  margin-bottom: 16px;
+
+  flex-shrink: 0; /* Prevents controls from shrinking */
+}
+
+/* --- Table Scrolling Configuration --- */
+
+.menu-table-wrapper {
+  flex-grow: 1; /* Takes remaining space in menu-content-area */
+
+  display: flex;
+
+  flex-direction: column;
+
+  overflow: hidden; /* Ensures the wrapper itself doesn't scroll */
+
+  min-height: 0; /* Critical for flex containers with scrolling children */
+}
+
+.table-scroll-container {
+  overflow-y: auto; /* **This is the ONLY area that should scroll vertically** */
+
+  flex-grow: 1;
+}
+
+.menu-table {
+  width: 100%;
+
+  border-collapse: collapse;
+}
+
+/* **KEY: Sticky Header** */
+
+.menu-table thead {
+  position: sticky; /* **Fixes the header** */
+
+  top: 0; /* Sticks it to the top of the scroll container (.table-scroll-container) */
+
+  z-index: 10;
+
+  background-color: #f5f7fa; /* Opaque background */
+
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.menu-table th,
+.menu-table td {
+  padding: 12px 16px;
+
+  text-align: left;
+
+  border-bottom: 1px solid var(--border-light-gray);
+}
+
+
+/* --- Other Styles (Buttons, Toggle, etc.) --- */
+
+.btn-back {
+  background: #fff;
+  border: 2px solid #4DB8A8;
+  color: #00897B;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 6px 12px rgba(0, 137, 123, 0.12);
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.btn-back:hover {
+  background-color: rgba(0, 137, 123, 0.05);
+}
+
+.btn-primary {
+  background-color: var(--primary-red);
+
+  color: var(--surface-white);
+
+  padding: 8px 16px;
+
+  border: none;
+
+  border-radius: 8px;
+
+  cursor: pointer;
+
+  font-size: 14px;
+
+  font-weight: medium;
+
+  transition: background-color 0.2s;
+}
+
+.btn-primary:hover {
+  background-color: #00695C;
+}
+
+.btn-category-active {
+  background-color: var(--primary-red);
+
+  color: var(--surface-white);
+
+  padding: 8px 16px;
+
+  border: none;
+
+  border-radius: 8px;
+
+  cursor: pointer;
+
+  font-size: 14px;
+
+  font-weight: medium;
+
+  position: relative;
+
+  padding-right: 24px;
+}
+
+.menu-table tbody tr:nth-child(even) {
+  background-color: var(--bg-light-neutral);
+}
+
+.menu-table tbody tr:hover {
+  background-color: #f0f0f0;
+}
+
+.item-img {
+  width: 40px;
+
+  height: 40px;
+
+  object-fit: cover;
+
+  border-radius: 4px;
+
+  vertical-align: middle;
+}
+
+.filter-icon {
+  display: inline-block;
+
+  width: 0;
+
+  height: 0;
+
+  border-left: 4px solid transparent;
+
+  border-right: 4px solid transparent;
+
+  border-top: 5px solid var(--text-secondary);
+
+  margin-left: 4px;
+}
+
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 40px;
+  height: 24px;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+
+  background-color: #ccc;
+  transition: 0.4s;
+  border-radius: 34px;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 16px;
+  width: 16px;
+
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  transition: 0.4s;
+  border-radius: 50%;
+}
+
+input:checked + .slider {
+  background-color: var(--accent-yellow);
+}
+
+input:focus + .slider {
+  box-shadow: 0 0 1px var(--accent-yellow);
+}
+
+input:checked + .slider:before {
+  transform: translateX(16px);
+}
+
+/* --- Enhanced Edit/Add Mode Styling --- */
+
+.menu-table tbody tr[data-editing="true"] {
+  background-color: #f0f8f6 !important;
+  box-shadow: inset 0 0 0 2px rgba(0, 137, 123, 0.1);
+}
+
+.menu-table tbody tr textarea,
+.menu-table tbody tr input[type="file"] {
+  background: #ffffff;
+  border: 2px solid #00897B;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-family: "Inter", sans-serif;
+  font-size: 14px;
+  color: #212121;
+  transition: all 0.2s ease;
+  resize: vertical;
+}
+
+.menu-table tbody tr textarea:focus,
+.menu-table tbody tr input[type="file"]:focus {
+  outline: none;
+  border-color: #005a52;
+  box-shadow: 0 0 0 3px rgba(0, 137, 123, 0.15);
+  background-color: #fafffe;
+}
+
+.menu-table tbody tr textarea {
+  min-height: 32px;
+  line-height: 1.4;
+}
+
+.menu-table tbody tr textarea[rows="3"] {
+  min-height: 80px;
+}
+
+/* File input styling */
+.menu-table tbody tr input[type="file"] {
+  cursor: pointer;
+  padding: 6px 10px;
+  font-size: 13px;
+}
+
+.menu-table tbody tr input[type="file"]:hover:not(:disabled) {
+  background-color: #f5f8f7;
+  border-color: #00a894;
+}
+
+/* Better label and input wrapper */
+.menu-table tbody td > div {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.menu-table tbody input[type="file"] + img {
+  border: 2px solid #e0e0e0;
+  padding: 4px;
+  border-radius: 6px;
+}
+
+.menu-table tbody input[type="file"] + img:hover {
+  border-color: #00897B;
+  box-shadow: 0 2px 8px rgba(0, 137, 123, 0.12);
+}
+
+/* File selection message styling */
+.menu-table tbody td > div > div {
+  background: #e8f5f1;
+  border-left: 3px solid #00897B;
+  padding: 6px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  color: #004d47;
+  font-weight: 500;
+}
+
+/* Edit button styling improvements */
+.menu-table tbody tr td button {
+  transition: all 0.2s ease;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+.menu-table tbody tr td button.btn-primary {
+  min-width: 70px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.menu-table tbody tr td button:not(:disabled):active {
+  transform: scale(0.98);
+}
+
+.menu-table tbody tr td button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Switch styling enhancement */
+.menu-table tbody tr .switch {
+  transform: scale(1.1);
+  transform-origin: left center;
+}
+
+.menu-table tbody tr .switch input {
+  cursor: pointer;
+}
+
+/* Row hover effect for visibility */
+.menu-table tbody tr:hover {
+  background-color: #f8fdfb;
+}
+
+.menu-table tbody tr[data-editing="true"]:hover {
+  background-color: #f0f8f6 !important;
+}
+
+/* Save Status Message Styling */
+.menu-management-container > div[style*="margin: 8px"] {
+  border-radius: 8px;
+  font-weight: 500;
+  animation: slideDown 0.3s ease;
+  border-left: 4px solid;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Page Title Styling */
+.h1-page-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: #00897B;
+  margin: 0;
+  letter-spacing: -0.5px;
+}

@@ -1,0 +1,558 @@
+.inventory-container {
+  background-image: url('/images/Vectors.png');
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: bottom;
+  min-height: 100vh;
+}
+
+/* === Header === */
+.Inventory-app-header {
+  margin-top: 90px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 0;
+  position: relative;
+}
+
+.Inventory-btn-back {
+  position: absolute;
+  left: 50px;
+  height: 40px;
+  width: 80px;
+  background-color: white;
+  border: 2px solid #00897B;
+  color: #00897B;
+  border-radius: 10px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: 0.3s ease;
+}
+
+.Inventory-btn-back:hover {
+  background-color: #00897B;
+  color: #fff;
+}
+
+.Inventory-title-main {
+  font-size: 18px;
+  font-weight: 700;
+  color: #000;
+}
+
+/* === Dashboard === */
+.Inventory-dashboard-wrapper {
+  padding: 30px 50px 10px 50px;
+  font-family: "Poppins", sans-serif;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.Inventory-stats-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 60px;
+  margin-bottom: 10px;
+}
+
+.Inventory-card-stat {
+  width: 280px;
+  height: 120px;
+  border-radius: 10px;
+  padding: 10px 15px;
+  color: #000;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: 0.3s ease;
+}
+
+.Inventory-card-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.Inventory-color-box {
+  width: 16px;
+  height: 16px;
+  background-color: #fff;
+  border-radius: 2px;
+}
+
+.Inventory-card-stat h4 {
+  font-size: 14px;
+  margin: 0;
+  font-weight: 600;
+}
+
+.Inventory-card-stat p {
+  font-size: 12px;
+  margin: 3px 0;
+}
+
+.Inventory-card-stat h2 {
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0;
+  color: white;
+}
+
+/* --- Card Colors --- */
+.Inventory-card-total {
+  background-color: #4caf50;
+}
+
+.Inventory-card-total:hover {
+  background-color: #45a049;
+  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+}
+
+.Inventory-card-good {
+  background-color: #4caf50;
+}
+
+.Inventory-card-good:hover {
+  background-color: #45a049;
+  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+}
+
+.Inventory-card-low {
+  background-color: #f4b400;
+}
+
+.Inventory-card-low:hover {
+  background-color: #e6a800;
+  box-shadow: 0 4px 12px rgba(244, 180, 0, 0.3);
+}
+
+.Inventory-card-verylow {
+  background-color: #e74c3c;
+}
+
+.Inventory-card-verylow:hover {
+  background-color: #d84332;
+  box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3);
+}
+
+.Inventory-green-container {
+  background-color: #4caf50;
+  border-radius: 5px;
+  padding: 5px;
+  display: inline-block;
+  color: white;
+}
+
+/* --- Activity Card --- */
+.Inventory-card-activity {
+  width: 380px;
+  background-color: #fff;
+  border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  overflow: hidden;
+  transition: 0.3s ease;
+}
+
+.Inventory-card-activity:hover {
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+}
+
+.Inventory-activity-heading {
+  margin: 0 0 5px 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.Inventory-activity-entry {
+  border: 1px solid #f4b4b4;
+  background-color: #fff5f5;
+  border-radius: 6px;
+  padding: 4px 6px;
+  margin-bottom: 5px;
+}
+
+.Inventory-activity-entry p {
+  font-size: 11px;
+  margin: 0;
+}
+
+.Inventory-activity-entry span {
+  font-size: 10px;
+  color: #555;
+}
+
+/* === Toolbar === */
+.Inventory-toolbar-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0px 50px 10px 50px;
+  border-radius: 6px;
+  margin-top: 0;
+}
+
+.Inventory-toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 60px;
+}
+
+.Inventory-toolbar-title {
+  font-weight: 600;
+  font-size: 14px;
+  color: #333;
+  margin-left: 60px;
+  white-space: nowrap;
+}
+
+.Inventory-input-search {
+  width: 400px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 1px solid #d1d5db;
+  border-radius: 20px;
+  background: #fff;
+  overflow: hidden;
+  padding: 2px 8px;
+  box-sizing: border-box;
+}
+
+.Inventory-field-search {
+  flex: 1;
+  border: none;
+  outline: none;
+  padding: 6px 8px;
+  font-size: 13px;
+  background: transparent;
+}
+
+.Inventory-icon-filter {
+  background: none;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5px;
+  cursor: pointer;
+  color: #555;
+}
+
+.Inventory-dropdown-filter {
+  border: 1px solid #f6936c;
+  border-radius: 20px;
+  padding: 6px 10px;
+  background: #fff;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.Inventory-toolbar-right {
+  display: flex;
+  gap: 0;
+  position: relative;
+  left: -300px;
+}
+
+.Inventory-btn-action {
+  height: 40px;
+  margin-left: 80px;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  color: #fff;
+}
+
+.Inventory-btn-update {
+  background-color: #e53935;
+  transition: 0.2s ease;
+}
+
+.Inventory-btn-update:hover {
+  background-color: #c62828;
+}
+
+.Inventory-btn-alert {
+  background-color: #e53935;
+  transition: 0.2s ease;
+}
+
+.Inventory-btn-alert:hover {
+  background-color: #c62828;
+}
+
+/* === Inventory Table === */
+.Inventory-container {
+  padding: 0 50px 50px 50px;
+  font-family: "Inter", sans-serif;
+  height: calc(100vh - 300px); /* Adjust based on header and toolbar height */
+  overflow: hidden;
+}
+
+.Inventory-table-wrapper {
+  height: 100%;
+  overflow-y: auto;
+  border-radius: 8px;
+  position: relative;
+}
+
+.Inventory-inventory-table {
+  border: #000;
+  border-width: 2px;
+  border-style: solid;
+  width: 100%;
+  border-collapse: collapse;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  margin: 0;
+}
+
+.Inventory-inventory-table thead.Inventory-table-header {
+  background-color: #f3f6fa;
+  border-radius: 8px 8px 0 0;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.Inventory-inventory-table th {
+  padding: 12px 16px;
+  color: #333;
+  font-weight: 600;
+  border-bottom: 1px solid #e4e7eb;
+  text-align: left;
+}
+
+.Inventory-inventory-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid #e4e7eb;
+  color: #444;
+}
+
+
+
+
+
+.Inventory-inventory-table tr:nth-child(odd) {
+  background-color: white;
+}
+
+.Inventory-inventory-table tr:nth-child(even) {
+  background-color: #f9fafc;
+}
+
+.Inventory-status {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 500;
+}
+
+.Inventory-status.Inventory-good {
+  color: #2eb85c;
+}
+
+.Inventory-status.Inventory-low {
+  color: #f0ad4e;
+}
+
+.Inventory-status.Inventory-verylow {
+  color: #e55353;
+}
+
+.Inventory-row-verylow {
+  background-color: #ffe6e6;
+}
+
+.Inventory-action {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.Inventory-edit-icon, .Inventory-more-icon {
+  color: #555;
+  cursor: pointer;
+}
+
+/* === Overlay === */
+.Inventory-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 100%;
+  background: rgba(0, 0, 0, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  backdrop-filter: blur(2px);
+}
+
+/* === Modal Box === */
+.Inventory-modal-box {
+  background-color: #f9fafc;
+  width: 380px;
+  border-radius: 16px;
+  padding: 20px;
+  border: 2px solid #000;
+  box-shadow: 0 4px 25px rgba(0, 0, 0, 0.2);
+}
+
+/* === Header === */
+.Inventory-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.Inventory-modal-header h3 {
+  font-size: 20px;
+  font-weight: 600;
+  color: #000;
+  margin: 0;
+}
+
+.Inventory-modal-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+/* === Body === */
+.Inventory-modal-body {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.Inventory-modal-body input {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1.8px solid #ccc;
+  font-size: 14px;
+  outline: none;
+  background-color: #fff;
+  transition: 0.2s;
+}
+
+.Inventory-modal-body input:focus {
+  border-color: #007bff;
+  box-shadow: 0 0 0 2px #cce5ff;
+}
+
+/* === Quantity Field === */
+.Inventory-quantity-field {
+  position: relative;
+}
+
+.Inventory-quantity-field {
+  position: relative;
+}
+
+.Inventory-quantity-field .Inventory-unit {
+  position: absolute;
+  right: 10px;
+  top: 8px;
+  color: #e53935;
+  font-weight: 600;
+  border: 1px solid #ccc;
+  background-color: #fff;
+  border-radius: 8px;
+  padding: 4px 10px;
+  font-size: 13px;
+}
+
+.Inventory-custom-unit-input {
+  margin-top: 10px;
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1.8px solid #ccc;
+  font-size: 14px;
+  outline: none;
+  background-color: #fff;
+  transition: 0.2s;
+}
+
+.Inventory-custom-unit-input:focus {
+  border-color: #007bff;
+  box-shadow: 0 0 0 2px #cce5ff;
+}
+
+/* === Buttons === */
+.Inventory-btn {
+  background-color: #e53935;
+  color: #fff;
+  border: none;
+  padding: 12px 22px;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.Inventory-btn:hover {
+  background-color: #c62828;
+}
+
+.Inventory-btn.Inventory-green {
+  background-color: #4caf50;
+}
+
+.Inventory-btn.Inventory-green:hover {
+  background-color: #45a049;
+}
+
+.Inventory-btn.Inventory-gray {
+  background-color: #9e9e9e;
+}
+
+.Inventory-btn.Inventory-gray:hover {
+  background-color: #757575;
+}
+
+.Inventory-btn.Inventory-full {
+  width: 50%;
+  margin: 10px auto;
+}
+
+.Inventory-btn-group {
+  display: flex;
+  gap: 30px;
+  justify-content: center;
+  margin-top: 10px;
+}
+
+.Inventory-filter-options {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.Inventory-filter-options label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.Inventory-filter-options input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}

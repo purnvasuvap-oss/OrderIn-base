@@ -1,0 +1,5 @@
+- [ ] Modify src/login/login.jsx to implement fixed OTP "1234" and updated Firestore logic
+- [ ] Remove Firebase Auth dependencies and replace with custom OTP handling
+- [ ] Implement saveUserToFirestore function with getDoc and setDoc for Restaurant/orderin_restaurant_1/customers/<phoneNumber>
+- [ ] Ensure table number extraction and global accessibility
+- [ ] Test the login flow
