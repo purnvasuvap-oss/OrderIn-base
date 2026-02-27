@@ -71,7 +71,8 @@ export const DashboardPage = () => {
   const paymentMethodSplit = useMemo(() => {
     const data: Record<string, number> = {};
     onlineTransactions.forEach((t) => {
-      data[t.paymentMethod] = (data[t.paymentMethod] || 0) + t.grossAmount;
+      const method = t.OnlinePayMethod || t.paymentMethod || 'Unknown';
+      data[method] = (data[method] || 0) + t.grossAmount;
     });
     return Object.entries(data).map(([method, amount]) => ({
       name: method,
