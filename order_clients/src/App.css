@@ -1,0 +1,726 @@
+/* src/App.css */
+body {
+  margin: 0;
+  font-family: 'Segoe UI', sans-serif;
+  background-color: white;
+}
+
+.header {
+  background-color: white;
+  padding: 10px 20px;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  position: fixed;
+  width: 100%;
+  top: 0;
+  z-index: 100;
+}
+
+.icon-btn {
+  border: none;
+  background: none;
+  cursor: pointer;
+  margin-left: 15px;
+}
+
+.dashboard-container {
+  padding-top: 80px; /* leave space for header */
+  text-align: center;
+}
+
+.cards {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 30px;
+  margin-top: 40px;
+}
+
+
+
+.sub-login {
+  display: flex;
+  height: 100vh;
+  background-color: #f1f5f8;
+  overflow: hidden; /* prevent scrollbars while keeping decorative shapes clipped */
+  font-family: "Poppins", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+}
+
+/* Ensure the app root does not introduce scrollbars */
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
+@media (max-width: 900px) {
+  html, body, #root {
+    height: auto;
+    overflow: auto;
+  }
+}
+
+/* Left Section - narrow branding column */
+.sub-login-left {
+  /* responsive left panel width: min 260px, preferred 22vw, max 380px */
+  width: clamp(260px, 22vw, 380px);
+  min-width: 240px;
+  background-color: #e53935;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  padding: 40px 40px;
+  box-shadow: 0 0 40px rgba(0,0,0,0.03) inset;
+  /* responsive gap from window edge: min 20px, uses viewport fraction up to 72px */
+  margin-left: clamp(30px, 4.5vw, 82px);
+}
+
+.sub-brand-section {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.sub-orderin-logo {
+  width: 258px;
+  height: auto;
+  margin: 6px auto 12px;
+  display: block;
+  object-fit: contain;
+}
+
+.sub-by-row { display:flex; align-items:center; gap:8px; justify-content:center; margin-bottom: 8px; }
+.sub-by-text {
+  font-size: 14px;
+  opacity: 0.95;
+}
+
+.sub-company-name-text {
+  font-size: 14px;
+  font-weight: 500;
+  margin: 0;
+  white-space: nowrap;
+}
+
+.sub-company-name {
+  font-size: 16px;
+  font-weight: 400;
+  margin-top: 8px;
+}
+
+.sub-illustration {
+  text-align: center;
+  margin-bottom: 6px;
+}
+
+.sub-circle-outer {
+  width: clamp(200px, 42vw, 340px);
+  height: clamp(200px, 42vw, 340px);
+  background-color: #d9d9d9; /* outer circle color */
+  border-radius: 50%;
+  display: block;
+  position: relative; /* container for absolutely positioned inner circle and image */
+  margin: 22px auto 18px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.08) inset;
+  overflow: hidden; /* clip children so they remain inside outer circle */
+}
+
+.sub-circle-inner {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 84%;
+  height: 84%;
+  background-color: rgba(67,160,71,0.46); /* inner circle with 46% opacity */
+  border-radius: 50%;
+  z-index: 1;
+}
+
+.sub-food-img {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 110%; /* slightly bigger so it sits over the inner circle */
+  height: auto;
+  max-height: 110%;
+  object-fit: contain;
+  display: block;
+  z-index: 2; /* sit above the inner circle but clipped by outer */
+}
+
+.sub-tagline {
+  font-size: 13px;
+  line-height: 18px;
+  margin-top: 12px;
+}
+
+.sub-tagline-below-contact {
+  display: none;
+}
+
+/* Right Section - main content */
+.sub-login-right {
+  flex: 1 1 auto;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(24px, 3.2vw, 48px) clamp(20px, 6vw, 80px);
+  z-index: 1; /* ensure content sits above decorative vector */
+}
+
+.sub-login-header { text-align:center; margin-top: 30px; margin-bottom:18px; }
+.sub-restaurant-name {
+  font-family: "Black Ops One", "Poppins", sans-serif;
+  font-size: 44px;
+  margin: 0;
+}
+.sub-welcome-text { font-size: 20px; color: #444; margin-top:10px; }
+
+.sub-login-card {
+  background-color: #fff;
+  padding: 34px 36px;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(16,24,40,0.08);
+  text-align: center;
+  width: 360px;
+  position: relative;
+  z-index: 2; /* sits above the red vector */
+}
+
+.sub-login-card h3 { font-size: 26px; margin: 0 0 6px 0; }
+.sub-login-card .sub { color:#8f9aa6; margin-bottom:18px; }
+
+.sub-login-form input {
+  width: 100%;
+  padding: 14px 14px;
+  border-radius: 8px;
+  border: 1px solid #e6e9ee;
+  margin-bottom: 14px;
+  outline: none;
+  font-size: 15px;
+  color: #222;
+}
+
+.sub-login-form input:focus { box-shadow: 0 0 0 3px rgba(229,57,53,0.06); border-color:#e53935; }
+
+.sub-primary-cta {
+  width: 100%;
+  background-color: #e53935;
+  color: #fff;
+  border: none;
+  padding: 12px 0;
+  font-size: 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+}
+.sub-primary-cta:hover { background-color: #d32f2f; }
+
+/* small utility for screen-reader-only labels */
+.sub-sr-only { position:absolute !important; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+
+/* Contact text at bottom-right */
+.sub-contact-info {
+  position: absolute;
+  bottom: 18px;
+  right: 36px;
+  font-size: 13px;
+  
+  text-align: right;
+}
+
+/* Decorative blob SVG (replaces old .red-vector) */
+.sub-red-blob {
+  position: absolute;
+  right: 0; /* pin to the right edge */
+  bottom: 0; /* pin to the bottom edge */
+  /* smaller footprint than before so it doesn't dominate the layout */
+  width: clamp(420px, 46vw, 900px);
+  height: auto;
+  max-height: 65vh;
+  transform: none;
+  z-index: 0;
+  pointer-events: none;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  filter: drop-shadow(0 -4px 12px rgba(0,0,0,0.04));
+}
+
+.sub-red-blob img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 100vh;
+  object-fit: cover;
+  pointer-events: none;
+}
+
+/* Keep legacy helpers (no-op when using image) */
+.sub-red-blob .v1, .sub-red-blob .v3 { display: none; }
+.sub-red-blob .v2 { display: none; }
+
+/* Restore CSS-based rounded vector curve */
+.sub-red-vector {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: clamp(760px, 76vw, 1500px);
+  height: auto;
+  max-height: 100vh;
+  z-index: 0;
+  pointer-events: none;
+  display: block;
+}
+.sub-red-vector path { filter: drop-shadow(0 -6px 12px rgba(0,0,0,0.06)); }
+
+@media (max-width: 900px) {
+  .sub-login { 
+    flex-direction: column;
+    height: auto;
+    min-height: 100vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+  .sub-login { padding-left: 0; }
+  .sub-login-left { width: 100%; min-width: auto; padding: 0px 20px; margin-left: 0; border-radius: 0 0 24px 24px; }
+  .sub-orderin-logo { width: 192px; }
+  .sub-circle-outer { display: none; }
+  .sub-food-img { display: none; }
+  .sub-tagline-below-contact {
+    display: block;
+    margin-top: 8px;
+    font-size: 12px;
+    line-height: 16px;
+    color: #333;
+    text-align: center;
+  }
+  .sub-illustration .sub-tagline { display: none; }
+  .sub-tagline { margin-top: 4px; line-height: 13px; }
+  .sub-login-right {
+    padding: 14px 20px 30px;
+    justify-content: flex-start;
+  }
+  .sub-food-img { width: 160px; height:160px; }
+  .sub-login-card { width: 92%; }
+  .sub-contact-info { position: relative; right: auto; bottom: auto; margin-top: 18px; text-align: center; }
+  .sub-red-blob { display: none; }
+  .sub-red-vector { display: none; }
+}
+
+/* ===== TABLET RESPONSIVE (768px and below) ===== */
+@media (max-width: 768px) {
+  .header {
+    padding: 8px 12px;
+    flex-wrap: wrap;
+  }
+
+  .header-left, .header-right, .header-center {
+    position: static;
+    transform: none;
+    width: auto;
+  }
+
+  .icon-btn {
+    margin-left: 8px;
+    padding: 6px;
+  }
+
+  .dashboard-container {
+    padding-top: 100px;
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .cards {
+    gap: 16px;
+    margin-top: 24px;
+  }
+
+  body {
+    font-size: 15px;
+  }
+
+  .sub-login-card {
+    width: 85%;
+  }
+
+  .sub-login-header .sub-restaurant-name {
+    font-size: 32px;
+  }
+
+  .sub-welcome-text {
+    font-size: 16px;
+  }
+
+  .sub-login-card h3 {
+    font-size: 20px;
+  }
+
+  .sub-login-form input {
+    padding: 12px;
+    font-size: 14px;
+  }
+}
+
+/* ===== MOBILE RESPONSIVE (480px and below) ===== */
+@media (max-width: 480px) {
+  html, body, #root {
+    height: auto;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  .header {
+    position: fixed;
+    padding: 6px 8px;
+    height: auto;
+    width: calc(100% - 16px);
+  }
+
+  .icon-btn {
+    margin-left: 6px;
+    padding: 4px;
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  .dashboard-container {
+    padding-top: 120px;
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+
+  .cards {
+    gap: 12px;
+    margin-top: 16px;
+    flex-direction: column;
+  }
+
+  .card- {
+    width: 100%;
+  }
+
+  body {
+    font-size: 14px;
+  }
+
+  h2 {
+    font-size: 18px !important;
+  }
+
+  h3 {
+    font-size: 14px;
+  }
+
+  p {
+    font-size: 12px;
+  }
+
+  button {
+    padding: 10px 16px;
+    font-size: 13px;
+    min-height: 44px;
+  }
+
+  .sub-login {
+    height: auto;
+    min-height: 100vh;
+    overflow-x: hidden;
+    overflow-y: auto;
+    width: 100%;
+  }
+
+  .sub-login-left {
+    width: 100%;
+    padding: 10px 16px;
+    margin-left: 0;
+    border-radius: 0 0 24px 24px;
+  }
+
+  .sub-login-right {
+    padding: 20px 16px;
+    width: 100%;
+    overflow-x: hidden;
+  }
+
+  .sub-login-card {
+    width: 95%;
+    max-width: calc(100vw - 20px);
+    padding: 24px 16px;
+    box-sizing: border-box;
+  }
+
+  .sub-login-header .sub-restaurant-name {
+    font-size: 24px;
+  }
+
+  .sub-welcome-text {
+    font-size: 14px;
+  }
+
+  .sub-login-card h3 {
+    font-size: 18px;
+  }
+
+  .sub-login-form input {
+    padding: 10px;
+    font-size: 14px;
+    border-radius: 6px;
+    margin-bottom: 12px;
+  }
+
+  .sub-primary-cta {
+    padding: 11px 0;
+    font-size: 14px;
+    margin-top: 6px;
+  }
+
+  .sub-orderin-logo {
+    width: 162px;
+  }
+
+  .sub-by-row {
+    margin-bottom: 4px;
+  }
+
+  .sub-circle-outer {
+    width: clamp(130px, 30vw, 210px);
+    height: clamp(130px, 30vw, 210px);
+    margin: 10px auto 8px;
+  }
+
+  .sub-tagline {
+    font-size: 12px;
+    line-height: 14px;
+    margin-top: 6px;
+  }
+
+  .sub-contact-info {
+    margin-top: 12px;
+    text-align: center;
+  }
+
+  .sub-by-text {
+    font-size: 11px;
+  }
+
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="number"],
+  textarea,
+  select {
+    font-size: 16px;
+  }
+}
+
+/* ===== MID-WIDTH SHORT MOBILE (e.g. Surface Duo 540x720) ===== */
+@media (min-width: 481px) and (max-width: 600px) and (max-height: 760px) {
+  html, body, #root {
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  .sub-login {
+    height: 100dvh;
+    min-height: 100dvh;
+    overflow: hidden;
+    width: 100%;
+  }
+
+  .sub-login-left {
+    width: 100%;
+    min-width: 0;
+    height: 314px;
+    min-height: 314px;
+    margin-left: 0;
+    padding: 10px 16px;
+    border-radius: 0 0 24px 24px;
+    justify-content: flex-start;
+    gap: 6px;
+  }
+
+  .sub-orderin-logo {
+    width: 154px;
+    margin-bottom: 6px;
+  }
+
+  .sub-circle-outer {
+    width: 128px;
+    height: 128px;
+    margin: 8px auto 6px;
+  }
+
+  .sub-food-img {
+    width: 132px;
+    height: 132px;
+  }
+
+  .sub-login-right {
+    width: 100%;
+    padding: 12px 14px;
+    overflow: hidden;
+  }
+
+  .sub-login-header .sub-restaurant-name {
+    font-size: 25px;
+  }
+
+  .sub-welcome-text {
+    font-size: 14px;
+  }
+
+  .sub-login-card {
+    width: calc(100% - 8px);
+    max-width: calc(100vw - 28px);
+    padding: 14px 14px;
+    box-sizing: border-box;
+  }
+
+  .sub-red-blob {
+    max-width: 100%;
+    overflow: hidden;
+  }
+
+  .sub-contact-info {
+    display: none;
+  }
+}
+
+/* ===== SMALL-HEIGHT PHONES (e.g. iPhone SE 375x667) ===== */
+@media (max-width: 380px) and (max-height: 700px) {
+  html, body, #root {
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  .sub-login {
+    height: 100dvh;
+    min-height: 100dvh;
+    overflow: hidden;
+  }
+
+  .sub-login-left {
+    height: clamp(252px, 41dvh, 290px);
+    min-height: clamp(252px, 41dvh, 290px);
+    padding: 8px 12px;
+    justify-content: flex-start;
+    gap: 4px;
+  }
+
+  .sub-orderin-logo {
+    width: 134px;
+    margin-bottom: 6px;
+  }
+
+  .sub-circle-outer {
+    width: 96px;
+    height: 96px;
+    margin: 8px auto 6px;
+  }
+
+  .sub-food-img {
+    width: 96px;
+    height: 96px;
+  }
+
+  .sub-tagline {
+    font-size: 10px;
+    line-height: 13px;
+    margin-top: 4px;
+  }
+
+  .sub-by-text {
+    font-size: 10px;
+  }
+
+  .sub-company-name-text {
+    font-size: 12px;
+    white-space: normal;
+    text-align: center;
+    line-height: 1.2;
+  }
+
+  .sub-login-header .sub-restaurant-name {
+    font-size: 18px;
+  }
+
+  .sub-welcome-text {
+    font-size: 11px;
+  }
+
+  .sub-login-right {
+    padding: 12px 10px;
+    overflow: hidden;
+  }
+
+  .sub-login-card {
+    width: calc(100% - 20px);
+    max-width: calc(100vw - 20px);
+    padding: 14px 12px;
+    overflow: hidden;
+  }
+
+  .sub-login-card h3 {
+    font-size: 16px;
+  }
+
+  .sub-login-form input {
+    margin-bottom: 8px;
+    padding: 8px;
+    font-size: 13px;
+  }
+
+  .sub-primary-cta {
+    min-height: 36px;
+    padding: 8px 0;
+    font-size: 12px;
+  }
+}
+
+/* ===== VERY SMALL PHONES (320px and below) ===== */
+@media (max-width: 360px) {
+  .header {
+    padding: 4px 6px;
+  }
+
+  .dashboard-container {
+    padding-top: 110px;
+  }
+
+  .sub-login-header .sub-restaurant-name {
+    font-size: 20px;
+  }
+
+  .sub-login-right {
+    padding: 16px 12px;
+  }
+
+  .sub-login-card {
+    width: 98%;
+    padding: 16px 12px;
+  }
+
+  .card- h3 {
+    font-size: 13px;
+  }
+
+  h2 {
+    font-size: 16px !important;
+  }
+
+  button {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+}

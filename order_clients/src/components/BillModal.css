@@ -1,0 +1,81 @@
+.bill-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+.bill-modal {
+  background: #fff;
+  padding: 16px;
+  border-radius: 8px;
+  max-width: 380px;
+  width: 92%;
+  box-shadow: 0 6px 30px rgba(0,0,0,0.2);
+}
+.bill-modal .btn { margin-right: 8px; padding:8px 10px; border-radius:6px; border:1px solid #111; background:transparent; cursor:pointer }
+.bill-modal .btn-primary { background:#111; color:#fff }
+.bill-modal-actions { display:flex; justify-content:flex-end; gap:8px; margin-top:12px }
+
+/* ===== TABLET RESPONSIVE (768px and below) ===== */
+@media (max-width: 768px) {
+  .bill-modal {
+    max-width: 90%;
+    padding: 14px;
+  }
+
+  .bill-modal .btn {
+    padding: 6px 8px;
+    font-size: 12px;
+  }
+
+  .bill-modal-actions {
+    gap: 6px;
+    margin-top: 10px;
+  }
+}
+
+/* ===== MOBILE RESPONSIVE (480px and below) ===== */
+@media (max-width: 480px) {
+  .bill-modal-overlay {
+    align-items: flex-end;
+    padding: 12px;
+  }
+
+  .bill-modal {
+    width: 98%;
+    max-width: 100%;
+    padding: 12px;
+    border-radius: 12px 12px 0 0;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+
+  .bill-modal .btn {
+    padding: 6px 10px;
+    font-size: 11px;
+    min-height: 32px;
+    min-width: 40px;
+  }
+
+  .bill-modal-actions {
+    gap: 6px;
+    margin-top: 8px;
+    flex-wrap: wrap;
+  }
+}
+
+/* ===== VERY SMALL PHONES (360px and below) ===== */
+@media (max-width: 360px) {
+  .bill-modal {
+    padding: 10px;
+  }
+
+  .bill-modal .btn {
+    padding: 5px 8px;
+    font-size: 10px;
+    flex: 1;
+  }
+}
