@@ -30,7 +30,7 @@ const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || 'SK5TvpFE4jw76xSg
 
 // Trigger: when a promotion doc is deleted, attempt to delete the referenced storage object
 exports.onPromotionDelete = functions.firestore
-  .document('Restaurant/orderin_restaurant_2/promotions/{promotionId}')
+  .document('Restaurant/orderin_restaurant_1/promotions/{promotionId}')
   .onDelete(async (snap, context) => {
     const data = snap.data();
     if (!data) return null;

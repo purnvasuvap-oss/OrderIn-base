@@ -302,7 +302,22 @@ export const CartProvider = ({ children, tableNo = '1' }) => {
   };
 
   const removeFromCart = (name) => {
-    setCartItems(cartItems.filter(item => item.name !== name));
+    const updatedItems = cartItems.filter(item => item.name !== name);
+    setCartItems(updatedItems);
+    
+    // Also update the temporary order state if it exists
+    // This ensures removed items don't reappear on page refresh
+    const tempState = loadOrderTempState();
+    if (tempState) {
+      const updatedCart = tempState.orderin_cart.filter(item => item.name !== name);
+      saveOrderTempState(
+        tempState.orderin_orderId,
+        updatedCart,
+        tempState.orderin_billing,
+        tempState.orderin_paymentStatus
+      );
+      console.log('Updated temp order state after item removal:', updatedCart.length, 'items');
+    }
   };
 
   const getTotalPrice = () => {
