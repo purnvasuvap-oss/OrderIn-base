@@ -60,15 +60,18 @@ function OnlinePayment() {
       params.append('subtotal', foundPaymentData.subtotal || '0');
       params.append('taxes', foundPaymentData.taxes || '0');
       params.append('total', foundPaymentData.total || '0');
-      params.append('taxRate', foundPaymentData.taxRate || '0.04'); // 0.04 rupees per rupee
-      params.append('useProvidedTax', foundPaymentData.useProvidedTax ? 'true' : 'false'); // Don't recalculate tax
+      params.append('taxRate', foundPaymentData.taxRate || '0.04');
+      params.append('useProvidedTax', foundPaymentData.useProvidedTax ? 'true' : 'false');
       params.append('restaurantId', foundPaymentData.restaurantId || '');
       params.append('restaurantName', foundPaymentData.restaurantName || '');
       params.append('ifscCode', foundPaymentData.ifscCode || '');
       params.append('accountNumber', foundPaymentData.accountNumber || '');
       params.append('customerPhone', foundPaymentData.customerPhone || '');
       
-      const urlWithParams = `https://orderin-admin.web.app/pay?${params.toString()}`;
+      const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+      const baseUrl = isLocalhost ? 'http://localhost:5173/pay' : 'https://orderin-admin.web.app/pay';
+      
+      const urlWithParams = `${baseUrl}?${params.toString()}`;
       console.log('iframe URL with params:', urlWithParams);
       console.log('Sending to embedded page - Taxes:', foundPaymentData.taxes);
       setIframeUrl(urlWithParams);

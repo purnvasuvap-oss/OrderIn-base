@@ -25,8 +25,8 @@ app.options('*', cors({
 admin.initializeApp();
 
 // Razorpay configuration - Use environment variables in production
-const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID || 'rzp_live_SQcvIlOahj69Ma';
-const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || 'SK5TvpFE4jw76xSgxxHAsLkl';
+const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID || 'rzp_live_ScCaDSFLu8TcHp';
+const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || '3gGKC6pxo1y6q4ajJskCYcDm';
 
 // Trigger: when a promotion doc is deleted, attempt to delete the referenced storage object
 exports.onPromotionDelete = functions.firestore
