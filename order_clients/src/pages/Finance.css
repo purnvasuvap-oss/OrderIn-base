@@ -172,10 +172,31 @@ body{
   flex-direction: column;
 }
 
-.fin-earnings-container {
+.fin-orders-container.fin-earnings-container {
   overflow-y: auto;
   overflow-x: hidden;
-  padding-bottom: 16px;
+  padding: 20px;
+  padding-bottom: 24px;
+  max-height: 70vh;
+  min-height: 0;
+  box-sizing: border-box;
+}
+
+.fin-orders-container.fin-earnings-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.fin-orders-container.fin-earnings-container::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+.fin-orders-container.fin-earnings-container::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+.fin-orders-container.fin-earnings-container::-webkit-scrollbar-thumb:hover {
+  background: #555;
 }
 
 /* ===== NEST HUB (1024x600 class) ===== */

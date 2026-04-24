@@ -65,6 +65,16 @@ declare global {
   }
 }
 
+const FUNCTION_BASE_URL = 'https://us-central1-orderin-7f8bc.cloudfunctions.net';
+const CREATE_ORDER_ENDPOINTS = [
+  `${FUNCTION_BASE_URL}/createRazorpayOrder`,
+  `${FUNCTION_BASE_URL}/api/createRazorpayOrder`,
+];
+const VERIFY_PAYMENT_ENDPOINTS = [
+  `${FUNCTION_BASE_URL}/verifyRazorpayPayment`,
+  `${FUNCTION_BASE_URL}/api/verifyRazorpayPayment`,
+];
+
 export const PaymentHubPage = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -89,6 +99,34 @@ export const PaymentHubPage = () => {
   const addDebugLog = (message: string) => {
     const timestamp = new Date().toLocaleTimeString();
     console.log(`[${timestamp}] [PaymentHubPage] ${message}`);
+  };
+
+  const postToFunction = async (urls: string[], payload: unknown, label: string) => {
+    let lastError: Error | null = null;
+
+    for (const url of urls) {
+      try {
+        addDebugLog(`Trying ${label} endpoint: ${url}`);
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
+        });
+
+        if (response.ok) {
+          return { response, url };
+        }
+
+        const errorText = await response.text().catch(() => '');
+        lastError = new Error(`${label} failed at ${url}: HTTP ${response.status}${errorText ? ` - ${errorText}` : ''}`);
+      } catch (error) {
+        lastError = error instanceof Error ? error : new Error(String(error));
+      }
+    }
+
+    throw lastError || new Error(`${label} failed on all configured endpoints`);
   };
 
   // Order Information Parameters - Support both old and new naming
@@ -233,31 +271,21 @@ export const PaymentHubPage = () => {
       
       let razorpayOrderId = null;
       try {
-        const orderResponse = await fetch('https://us-central1-orderin-7f8bc.cloudfunctions.net/createRazorpayOrder', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            amount: parseFloat(finalAmount as string) * 100,
-            currency: 'INR',
-            receipt: `${finalRestaurantId}_${finalOrderId}_${Date.now()}`,
-            customerPhone: finalCustomerPhone,
-            restaurantId: finalRestaurantId,
-            orderId: finalOrderId,
-            paymentMethod: paymentMethodUpper,
-          }),
-        });
+        const orderPayload = {
+          amount: parseFloat(finalAmount as string) * 100,
+          currency: 'INR',
+          receipt: `${finalRestaurantId}_${finalOrderId}_${Date.now()}`,
+          customerPhone: finalCustomerPhone,
+          restaurantId: finalRestaurantId,
+          orderId: finalOrderId,
+          paymentMethod: paymentMethodUpper,
+        };
 
-        if (orderResponse.ok) {
-          const orderData = await orderResponse.json();
-          razorpayOrderId = orderData.order_id;
-          addDebugLog(`✓ Razorpay Order Created: ${razorpayOrderId}`);
-        } else {
-          const errorData = await orderResponse.json().catch(() => ({}));
-          addDebugLog(`❌ Backend order creation failed: ${JSON.stringify(errorData)}`);
-          addDebugLog('Falling back to direct frontend checkout (Test Mode)');
-        }
+        const { response, url } = await postToFunction(CREATE_ORDER_ENDPOINTS, orderPayload, 'Create order');
+        const orderData = await response.json();
+        razorpayOrderId = orderData.order_id;
+        addDebugLog(`✓ Razorpay Order Created: ${razorpayOrderId}`);
+        addDebugLog(`✓ Active backend endpoint: ${url}`);
       } catch (backendError) {
         addDebugLog(`❌ Backend connection error: ${(backendError as Error).message}`);
         addDebugLog('Falling back to direct frontend checkout (Test Mode)...');
@@ -294,21 +322,17 @@ export const PaymentHubPage = () => {
                addDebugLog('Verifying payment signature...');
                // Step 3: Verify Payment Signature on Backend if we used order_id
                try {
-                 const verifyResponse = await fetch('https://us-central1-orderin-7f8bc.cloudfunctions.net/verifyRazorpayPayment', {
-                   method: 'POST',
-                   headers: {
-                     'Content-Type': 'application/json',
-                   },
-                   body: JSON.stringify({
-                     razorpay_payment_id: response.razorpay_payment_id,
-                     razorpay_order_id: response.razorpay_order_id,
-                     razorpay_signature: response.razorpay_signature,
-                   }),
-                 });
+                 const verifyPayload = {
+                   razorpay_payment_id: response.razorpay_payment_id,
+                   razorpay_order_id: response.razorpay_order_id,
+                   razorpay_signature: response.razorpay_signature,
+                 };
+                 const { response: verifyResponse, url } = await postToFunction(VERIFY_PAYMENT_ENDPOINTS, verifyPayload, 'Verify payment');
 
                  if (verifyResponse.ok) {
                    await verifyResponse.json();
                    addDebugLog(`✓ Payment Signature Verified`);
+                   addDebugLog(`✓ Verification endpoint: ${url}`);
                  } else {
                    addDebugLog(`⚠️ Signature verification failed on backend. Assuming success for test mode.`);
                  }

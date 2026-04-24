@@ -24,7 +24,6 @@ function App() {
   const [loadingTransit, setLoadingTransit] = useState(false);
   const [allCustomerOrders, setAllCustomerOrders] = useState([]);
   const [loadingAccounts, setLoadingAccounts] = useState(false);
-  const [debugOpen, setDebugOpen] = useState({});
   const [billOrder, setBillOrder] = useState(null);
   const [showBillModal, setShowBillModal] = useState(false);
 
@@ -49,10 +48,6 @@ function App() {
     };
     return getTime(b) - getTime(a);
   });
-
-  const toggleDebug = (id) => {
-    setDebugOpen(prev => ({ ...prev, [id]: !prev[id] }));
-  };
 
   const formatCurrency = (value) => {
     const n = Number(value);
@@ -126,15 +121,20 @@ function App() {
 
   // Fetch all orders for earnings calculation
   useEffect(() => {
+    let unsubscribe = null;
     if (activeTab === "EARNINGS CALCULATION") {
       setLoadingEarnings(true);
       console.log("=== FINANCE PAGE: Fetching all orders for earnings calculation ===");
-      subscribeAllCustomerOrders((orders) => {
+      unsubscribe = subscribeAllCustomerOrders((orders) => {
         console.log(`Finance (earnings) - received ${orders.length} orders`);
         setEarningsOrders(orders);
         setLoadingEarnings(false);
       });
     }
+
+    return () => {
+      if (typeof unsubscribe === "function") unsubscribe();
+    };
   }, [activeTab]);
 
   // Calculate date range based on filter type
@@ -215,6 +215,30 @@ function App() {
   };
 
   const earningsData = calculateEarnings();
+
+  const dailyTransitMetrics = sortedDaily.reduce(
+    (summary, order) => {
+      const total = Number(order.totalCost) || 0;
+      const paidAmount = Number(order.paidAmount) || 0;
+      const paymentStatus = (order.paymentStatus || "").toLowerCase();
+      const remainingAmount = Math.max(total - paidAmount, 0);
+
+      summary.totalOrders += 1;
+      summary.totalValue += total;
+
+      if (paymentStatus === "paid") {
+        summary.collected += paidAmount > 0 ? paidAmount : total;
+      } else if (paidAmount > 0) {
+        summary.collected += paidAmount;
+        summary.pending += remainingAmount;
+      } else {
+        summary.pending += total;
+      }
+
+      return summary;
+    },
+    { totalOrders: 0, totalValue: 0, collected: 0, pending: 0 }
+  );
 
 
 
@@ -362,26 +386,9 @@ function App() {
                             />
                           </svg>
                           </button>
-                          <button
-                            className="debug-btn"
-                            title="Debug order"
-                            onClick={() => toggleDebug(order.id)}
-                            style={{ padding: '8px 10px', borderRadius: 6, border: '1px solid #ddd', background: '#fff', cursor: 'pointer' }}
-                          >
-                            {debugOpen[order.id] ? 'Hide' : 'Debug'}
-                          </button>
                         </div>
                       </td>
                     </tr>
-                    {debugOpen[order.id] && (
-                      <tr key={`${order.id}-debug`}>
-                        <td colSpan={8} style={{ background: '#fafafa', padding: 16 }}>
-                          <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontSize: 12, maxHeight: 300, overflow: 'auto' }}>
-{JSON.stringify(order, null, 2)}
-                          </pre>
-                        </td>
-                      </tr>
-                    )}
                     </React.Fragment>
                   ))}
                 </tbody>
@@ -449,7 +456,7 @@ function App() {
 
       {/* DAILY TRANSIT TAB */}
       {activeTab === "DAILY TRANSIT" && (
-        <div className="fin-orders-container">
+        <div className="fin-orders-container fin-transit-layout">
           {loadingTransit ? (
             <div style={{ padding: "40px", textAlign: "center", color: "#666" }}>
               Loading daily transit orders...
@@ -459,118 +466,127 @@ function App() {
               No orders found for today
             </div>
           ) : (
-            <div className="fin-orders-table">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Order ID</th>
-                    <th>Customer</th>
-                    <th>Items</th>
-                    <th>Specifications</th>
-                    <th>Cost</th>
-                    <th>Paid</th>
-                    <th>Time</th>
-                    <th>Print</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {sortedDaily.map((order) => (
-                    <React.Fragment key={order.id}>
-                      <tr>
-                        <td>{order.id}</td>
-                        <td>
-                          {order.username}
-                          <br />
-                          <span className="fin-table-no">{`Table ${order.tableNumber}`}</span>
-                        </td>
-                        <td>
-                          {order.itemDetails && order.itemDetails.map((item, idx) => (
-                            <div key={idx} style={{ marginBottom: "10px", paddingBottom: "10px", borderBottom: idx < order.itemDetails.length - 1 ? "1px solid #eee" : "none" }}>
-                              <div style={{ fontWeight: "700" }}>{item.quantity}x {item.name}</div>
-                              <div style={{ fontSize: "12px", color: "#666", marginTop: "3px" }}>₹{item.price} × {item.quantity} = ₹{item.total}</div>
+            <div className="fin-transit-board">
+              <div className="fin-transit-summary">
+                <div className="fin-transit-summary-card">
+                  <span>Orders Today</span>
+                  <strong>{dailyTransitMetrics.totalOrders}</strong>
+                </div>
+                <div className="fin-transit-summary-card">
+                  <span>Total Value</span>
+                  <strong>₹{formatCurrency(dailyTransitMetrics.totalValue)}</strong>
+                </div>
+                <div className="fin-transit-summary-card">
+                  <span>Collected</span>
+                  <strong>₹{formatCurrency(dailyTransitMetrics.collected)}</strong>
+                </div>
+                <div className="fin-transit-summary-card alert">
+                  <span>Pending</span>
+                  <strong>₹{formatCurrency(dailyTransitMetrics.pending)}</strong>
+                </div>
+              </div>
+
+              <div className="fin-orders-table fin-transit-table-wrap">
+                <table className="fin-transit-table">
+                  <thead>
+                    <tr>
+                      <th>Order ID</th>
+                      <th>Customer</th>
+                      <th>Items</th>
+                      <th>Specifications</th>
+                      <th>Cost</th>
+                      <th>Payment</th>
+                      <th>Time</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {sortedDaily.map((order) => (
+                      <React.Fragment key={order.id}>
+                        <tr className="fin-transit-row">
+                          <td>
+                            <div className="fin-transit-cell-stack">
+                              <strong className="fin-transit-id-text">{order.id}</strong>
+                              <span className="fin-transit-row-note">Live ticket</span>
                             </div>
-                          ))}
-                        </td>
-                        <td>
-                          {order.specs && order.specs.length > 0 ? (
-                            order.specs.map((spec, idx) => (
-                              <div key={idx} style={{ marginBottom: "8px", paddingBottom: "8px", borderBottom: idx < order.specs.length - 1 ? "1px solid #eee" : "none" }}>
-                                <div style={{ fontWeight: "600", fontSize: "13px" }}>{spec.name}</div>
-                                <div style={{ fontSize: "12px", color: "#666", marginTop: "2px" }}>
-                                  {spec.instructions && spec.instructions !== "-" ? spec.instructions : "No special instructions"}
+                          </td>
+                          <td>
+                            <div className="fin-transit-cell-stack">
+                              <strong>{order.username}</strong>
+                              <span className="fin-table-no">{`Table ${order.tableNumber}`}</span>
+                            </div>
+                          </td>
+                          <td>
+                            <div className="fin-transit-compact-list">
+                              {order.itemDetails && order.itemDetails.length > 0 ? order.itemDetails.map((item, idx) => (
+                                <div key={idx} className="fin-transit-compact-item">
+                                  <span className="fin-transit-compact-main">{item.quantity}x {item.name}</span>
+                                  <span className="fin-transit-compact-sub">₹{item.total}</span>
                                 </div>
-                              </div>
-                            ))
-                          ) : (
-                            "-"
-                          )}
-                        </td>
-                        <td>
-                          <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                            <div style={{ fontSize: "12px", color: "#666" }}>
-                              Subtotal: <span style={{ fontWeight: "700", color: "#000" }}>₹{formatCurrency(order.subtotal)}</span>
+                              )) : (
+                                <span className="fin-transit-row-note">No items</span>
+                              )}
                             </div>
-                            <div style={{ fontSize: "12px", color: "#666" }}>
-                              Tax: <span style={{ fontWeight: "700", color: "#000" }}>₹{formatCurrency(order.tax)}</span>
+                          </td>
+                          <td>
+                            <div className="fin-transit-compact-list">
+                              {order.specs && order.specs.length > 0 ? order.specs.map((spec, idx) => (
+                                <div key={idx} className="fin-transit-spec-line">
+                                  <strong>{spec.name}</strong>
+                                  <span>{spec.instructions && spec.instructions !== "-" ? spec.instructions : "No special instructions"}</span>
+                                </div>
+                              )) : (
+                                <span className="fin-transit-row-note">No special instructions</span>
+                              )}
                             </div>
-                            <div style={{ fontSize: "13px", fontWeight: "700", color: "#e74c3c", paddingTop: "4px", borderTop: "1px solid #eee" }}>
-                              Total: ₹{formatCurrency(order.totalCost)}
+                          </td>
+                          <td>
+                            <div className="fin-transit-cost-stack">
+                              <div><span>Subtotal</span><strong>₹{formatCurrency(order.subtotal)}</strong></div>
+                              <div><span>Tax</span><strong>₹{formatCurrency(order.tax)}</strong></div>
+                              <div className="total"><span>Total</span><strong>₹{formatCurrency(order.totalCost)}</strong></div>
                             </div>
-                          </div>
-                        </td>
-                        <td>
-                          <div className="fin-payment-wrapper">
-                            <div className={`fin-payment-badge ${(order.paymentType || "Unknown")?.toLowerCase()}`}>
+                          </td>
+                          <td>
+                            <div className="fin-payment-wrapper fin-transit-payment-stack">
+                              <div className={`fin-payment-badge ${String(order.paymentType || "Unknown").toLowerCase().replace(/\s+/g, "-")}`}>
                                 {order.paymentType || "Unknown"}
-                            </div>
-                            <div className="fin-payment-status-text">
+                              </div>
+                              <div className="fin-payment-status-text">
                                 {order.paid}
+                              </div>
                             </div>
-                          </div>
-                        </td>
-                        <td>
-                          <strong>{formatTime(order.timestamp)}</strong>
-                        </td>
-                        <td>
-                          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                            <button className="print-btn" title="Print bill" onClick={() => { setBillOrder(order); setShowBillModal(true); }}>
-                            <svg
-                              width="34"
-                              height="34"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              xmlns="http://www.w3.org/2000/svg"
-                            >
-                              <path
-                                d="M5 20h14v-2H5v2zm7-18v12l4-4h-3V4h-2v6H8l4 4z"
-                                fill="#050505"
-                              />
-                            </svg>
-                            </button>
-                            <button
-                              className="debug-btn"
-                              title="Debug order"
-                              onClick={() => toggleDebug(order.id)}
-                              style={{ padding: '8px 10px', borderRadius: 6, border: '1px solid #ddd', background: '#fff', cursor: 'pointer' }}
-                            >
-                              {debugOpen[order.id] ? 'Hide' : 'Debug'}
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                      {debugOpen[order.id] && (
-                        <tr key={`${order.id}-debug`}>
-                          <td colSpan={8} style={{ background: '#fafafa', padding: 16 }}>
-                            <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontSize: 12, maxHeight: 300, overflow: 'auto' }}>
-{JSON.stringify(order, null, 2)}
-                            </pre>
+                          </td>
+                          <td>
+                            <div className="fin-transit-cell-stack">
+                              <strong>{formatTime(order.timestamp)}</strong>
+                            </div>
+                          </td>
+                          <td>
+                            <div className="fin-transit-actions-col">
+                              <button className="print-btn fin-transit-inline-btn" title="Print bill" onClick={() => { setBillOrder(order); setShowBillModal(true); }}>
+                                <svg
+                                  width="20"
+                                  height="20"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  xmlns="http://www.w3.org/2000/svg"
+                                >
+                                  <path
+                                    d="M5 20h14v-2H5v2zm7-18v12l4-4h-3V4h-2v6H8l4 4z"
+                                    fill="#050505"
+                                  />
+                                </svg>
+                                <span>Print</span>
+                              </button>
+                            </div>
                           </td>
                         </tr>
-                      )}
-                    </React.Fragment>
-                  ))}
-                </tbody>
-              </table>
+                      </React.Fragment>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
         </div>

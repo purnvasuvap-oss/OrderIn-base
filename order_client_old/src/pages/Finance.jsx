@@ -578,7 +578,7 @@ function App() {
 
       {/* EARNINGS CALCULATION TAB */}
       {activeTab === "EARNINGS CALCULATION" && (
-        <div className="fin-orders-container">
+        <div className="fin-orders-container fin-earnings-container">
           <div style={{ padding: "20px", background: "#f9f9f9", borderRadius: "8px", marginBottom: "20px" }}>
             <h3 style={{ margin: "0 0 15px 0", fontSize: "16px", fontWeight: "600" }}>Filter by Date</h3>
             <div style={{ display: "flex", gap: "15px", flexWrap: "wrap", alignItems: "center" }}>

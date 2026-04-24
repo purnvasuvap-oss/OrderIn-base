@@ -31,6 +31,12 @@ const getOrderTimestamp = (order) => {
   return parseOrderTimestamp(order);
 };
 
+const parseMoneyValue = (value) => {
+  if (value === null || value === undefined || value === "") return null;
+  const parsed = Number(String(value).replace(/[^0-9.-]+/g, ""));
+  return Number.isFinite(parsed) ? parsed : null;
+};
+
 /**
  * Attempt to locate a tax value on the order object.
  * Searches common top-level keys and one-level nested objects for keys containing "tax".
@@ -70,6 +76,31 @@ const findProvidedTax = (order) => {
   }
 
   return null;
+};
+
+const findProvidedTotal = (order) => {
+  if (!order || typeof order !== "object") return null;
+
+  const directKeys = ["totalCost", "total", "amount", "grandTotal", "finalAmount", "netAmount"];
+  for (const key of directKeys) {
+    const parsed = parseMoneyValue(order[key]);
+    if (parsed !== null) return parsed;
+  }
+
+  return null;
+};
+
+const resolveOrderTax = (order, subtotal) => {
+  const providedTax = parseMoneyValue(findProvidedTax(order));
+  if (providedTax !== null) return providedTax;
+
+  const providedTotal = findProvidedTotal(order);
+  if (providedTotal !== null && Number.isFinite(subtotal)) {
+    const derivedTax = Number((providedTotal - subtotal).toFixed(2));
+    if (derivedTax >= 0) return derivedTax;
+  }
+
+  return subtotal > 0 ? Math.ceil(subtotal / 100) : 0;
 };
 
 /**
@@ -501,15 +532,8 @@ export const subscribeTodaysOrders = (onUpdate) => {
 
               // Prefer backend-provided tax when available (many keys possible),
               // otherwise apply fallback rule: ₹1 tax for every ₹100 of subtotal.
-              const providedTax = findProvidedTax(order);
-              let tax;
-              if (providedTax !== null && providedTax !== undefined) {
-                const parsedTax = Number(String(providedTax).replace(/[^0-9.-]+/g, ""));
-                tax = isNaN(parsedTax) ? 0 : parsedTax;
-              } else {
-                tax = subtotal > 0 ? Math.ceil(subtotal / 100) : 0;
-              }
-              const totalCost = order.totalCost || order.total || order.amount || subtotal + tax;
+              const tax = resolveOrderTax(order, subtotal);
+              const totalCost = findProvidedTotal(order) ?? (subtotal + tax);
 
               const orderObj = {
                 id: orderId,
@@ -599,41 +623,39 @@ export const subscribeAllCustomerOrders = (onUpdate) => {
             customerData.pastOrders.forEach((order, index) => {
               const timestamp = getOrderTimestamp(order);
               const orderId = order.id || `ORD-${phoneNumber}-${index}`;
+              const paymentInfo = derivePaymentInfo(order);
+
+              // Support multiple item field names written by different clients.
+              const rawItemsArray = order.items || order.orderItems || order.cart || order.itemsList || order.itemDetails || order.rawItems || [];
 
               // Extract item-level details
               let itemDetails = [];
               let subtotal = 0;
-              if (order.items && Array.isArray(order.items)) {
-                itemDetails = order.items.map((it) => {
+              if (Array.isArray(rawItemsArray)) {
+                itemDetails = rawItemsArray.map((it) => {
                   // parse price robustly (handle strings like "₹123" or "123")
                   let itemPrice = 0;
-                  if (it && it.price !== undefined && it.price !== null) {
-                    const parsed = Number(String(it.price).replace(/[^0-9.-]+/g, ""));
+                  if (it) {
+                    const priceCandidate = it.price !== undefined && it.price !== null ? it.price : (it.priceText || it.priceValue || it.amount || it.cost || 0);
+                    const parsed = Number(String(priceCandidate).replace(/[^0-9.-]+/g, ""));
                     itemPrice = isNaN(parsed) ? 0 : parsed;
                   }
-                  const itemQty = Number(it && it.quantity !== undefined ? it.quantity : 1) || 1;
+                  const itemQty = Number(it && (it.quantity !== undefined ? it.quantity : (it.qty !== undefined ? it.qty : (it.count !== undefined ? it.count : 1)))) || 1;
                   const itemTotal = itemPrice * itemQty;
                   subtotal += itemTotal;
                   return {
-                    name: it.name || "Unknown",
+                    name: (it && (it.name || it.title || it.itemName || (it.menu && it.menu.name))) || "Unknown",
                     quantity: itemQty,
                     price: itemPrice,
                     total: itemTotal,
-                    instructions: it.instructions || it.instruction || "",
+                    instructions: (it && (it.instructions || it.instruction || it.note || it.specialInstructions)) || "",
                   };
                 });
               }
 
               // Prefer backend-provided tax when available, otherwise apply ₹1 per ₹100 rule
-              const providedTax = findProvidedTax(order);
-              let tax;
-              if (providedTax !== null && providedTax !== undefined) {
-                const parsedTax = Number(String(providedTax).replace(/[^0-9.-]+/g, ""));
-                tax = isNaN(parsedTax) ? 0 : parsedTax;
-              } else {
-                tax = subtotal > 0 ? Math.ceil(subtotal / 100) : 0;
-              }
-              const totalCost = subtotal + tax;
+              const tax = resolveOrderTax(order, subtotal);
+              const totalCost = findProvidedTotal(order) ?? (subtotal + tax);
 
               let paidAmount = totalCost;
               if (order.paymentStatus === "unpaid" || order.paymentStatus === "Unpaid") {
@@ -648,14 +670,14 @@ export const subscribeAllCustomerOrders = (onUpdate) => {
                 username: displayName,
                 tableNumber: order.tableNo || "N/A",
                 itemDetails: itemDetails,
-                specs: order.items?.map((it, idx) => ({
-                  name: it.name || `Item ${idx + 1}`,
-                  instructions: it.instructions || it.instruction || "-",
+                specs: rawItemsArray?.map((it, idx) => ({
+                  name: (it && (it.name || it.title || it.itemName || (it.menu && it.menu.name))) || `Item ${idx + 1}`,
+                  instructions: (it && (it.instructions || it.instruction || it.note || it.specialInstructions)) || "-",
                 })) || [],
                 subtotal: subtotal,
                 tax: tax,
-                totalCost: totalCost || order.totalCost || order.amount || subtotal + tax,
-                paidAmount: paidAmount,
+                totalCost: totalCost,
+                paidAmount: paymentInfo.paidAmount || paidAmount,
                 paymentType: paymentInfo.paymentType,
                 paymentStatus: paymentInfo.paymentStatus,
                 paid: paymentInfo.paidDisplay,
@@ -670,8 +692,8 @@ export const subscribeAllCustomerOrders = (onUpdate) => {
 
           // Sort by timestamp (newest first)
           allOrders.sort((a, b) => {
-            const timeA = a.timestamp ? a.timestamp.getTime() : 0;
-            const timeB = b.timestamp ? b.timestamp.getTime() : 0;
+            const timeA = a.timestamp instanceof Date ? a.timestamp.getTime() : (a.timestamp?.toDate?.().getTime?.() || 0);
+            const timeB = b.timestamp instanceof Date ? b.timestamp.getTime() : (b.timestamp?.toDate?.().getTime?.() || 0);
             return timeB - timeA;
           });
 
@@ -878,15 +900,8 @@ export const fetchDailyTransitOrders = async () => {
         }
 
         // Calculate tax (assuming 10% tax if not provided)
-        const providedTax = findProvidedTax(order);
-        let tax;
-        if (providedTax !== null && providedTax !== undefined) {
-          const parsedTax = Number(String(providedTax).replace(/[^0-9.-]+/g, ""));
-          tax = isNaN(parsedTax) ? 0 : parsedTax;
-        } else {
-          tax = subtotal > 0 ? Math.ceil(subtotal / 100) : 0;
-        }
-        const totalCost = order.totalCost || order.total || order.amount || subtotal + tax;
+        const tax = resolveOrderTax(order, subtotal);
+        const totalCost = findProvidedTotal(order) ?? (subtotal + tax);
 
         // Derive normalized payment information
         const paymentInfo = derivePaymentInfo(order);
@@ -913,7 +928,7 @@ export const fetchDailyTransitOrders = async () => {
           })) || [],
           subtotal: subtotal,
           tax: tax,
-          totalCost: totalCost || order.totalCost || order.amount || subtotal + tax,
+          totalCost: totalCost,
           paid: paymentInfo.paidDisplay,
           paymentType: paymentInfo.paymentType,
           paymentStatus: paymentInfo.paymentStatus,

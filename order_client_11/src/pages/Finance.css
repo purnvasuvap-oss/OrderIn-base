@@ -276,6 +276,16 @@ td {
   color: white;
 }
 
+.fin-payment-badge.manual {
+  background: #7c3aed;
+  color: white;
+}
+
+.fin-payment-badge.unknown {
+  background: #64748b;
+  color: white;
+}
+
 .fin-payment-status-text {
   padding: 12px 24px;
   border-radius: 12px;
@@ -308,6 +318,16 @@ td {
   color: #4caf50;
 }
 
+.fin-payment-badge.manual ~ .fin-payment-status-text {
+  background: #f3e8ff;
+  color: #7c3aed;
+}
+
+.fin-payment-badge.unknown ~ .fin-payment-status-text {
+  background: #e2e8f0;
+  color: #475569;
+}
+
 .fin-payment-badgee{
   padding: 10px 9px;
   border-radius: 8px;
@@ -316,6 +336,393 @@ td {
   gap:1rem;
   text-align: center;
   min-width: 100px;
+}
+
+.fin-transit-layout {
+  background:
+    radial-gradient(circle at top right, rgba(255, 224, 178, 0.45), transparent 28%),
+    linear-gradient(180deg, #fdfaf4 0%, #fff 36%, #fbfbfb 100%);
+}
+
+.fin-transit-board {
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.fin-transit-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.fin-transit-summary-card {
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 18px;
+  padding: 16px 18px;
+  box-shadow: 0 16px 30px rgba(15, 23, 42, 0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.fin-transit-summary-card span {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #64748b;
+  font-weight: 700;
+}
+
+.fin-transit-summary-card strong {
+  font-size: 28px;
+  color: #0f172a;
+  line-height: 1;
+}
+
+.fin-transit-summary-card.alert {
+  background: linear-gradient(135deg, #fff1f2 0%, #fff7ed 100%);
+}
+
+.fin-transit-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.fin-transit-card {
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  border-radius: 24px;
+  padding: 18px;
+  box-shadow: 0 20px 32px rgba(15, 23, 42, 0.08);
+}
+
+.fin-transit-card-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+.fin-transit-order-id {
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-weight: 800;
+  color: #0f766e;
+  margin-bottom: 6px;
+}
+
+.fin-transit-customer {
+  font-size: 20px;
+  font-weight: 800;
+  color: #111827;
+}
+
+.fin-transit-subline {
+  font-size: 13px;
+  color: #64748b;
+  margin-top: 4px;
+}
+
+.fin-transit-time-block {
+  min-width: 130px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #111827 0%, #334155 100%);
+  color: white;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-start;
+}
+
+.fin-transit-time-block strong {
+  font-size: 18px;
+}
+
+.fin-transit-time-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.fin-transit-card-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) minmax(260px, 0.9fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.fin-transit-panel,
+.fin-transit-cost-card,
+.fin-transit-payment-card {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 18px;
+  padding: 16px;
+}
+
+.fin-transit-panel-title {
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #475569;
+  margin-bottom: 12px;
+}
+
+.fin-transit-panel-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.fin-transit-line-item {
+  padding-bottom: 10px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.fin-transit-line-item:last-child {
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.fin-transit-line-main {
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.fin-transit-line-sub {
+  margin-top: 4px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: #64748b;
+}
+
+.fin-transit-empty {
+  font-size: 14px;
+  color: #94a3b8;
+}
+
+.fin-transit-side {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.fin-transit-cost-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.fin-transit-cost-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  color: #475569;
+  font-size: 14px;
+}
+
+.fin-transit-cost-row strong {
+  color: #111827;
+}
+
+.fin-transit-cost-row.total {
+  padding-top: 10px;
+  border-top: 1px solid #dbe4ee;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.fin-transit-cost-row.total strong {
+  color: #dc2626;
+}
+
+.fin-transit-payment-card .fin-payment-wrapper {
+  align-items: stretch;
+}
+
+.fin-transit-payment-card .fin-payment-badge,
+.fin-transit-payment-card .fin-payment-status-text {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.fin-transit-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.fin-transit-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 46px;
+  border-radius: 14px;
+  font-weight: 700;
+  flex: 1;
+}
+
+.fin-transit-action-btn {
+  background: #ffffff;
+  border: 1px solid #dbe4ee;
+}
+
+.fin-transit-table-wrap {
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(226, 232, 240, 0.95);
+  border-radius: 22px;
+  box-shadow: 0 20px 32px rgba(15, 23, 42, 0.06);
+}
+
+.fin-transit-table {
+  min-width: 1180px;
+}
+
+.fin-transit-table thead {
+  background: linear-gradient(180deg, #fff8ee 0%, #f7f4ee 100%);
+}
+
+.fin-transit-table th {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #475569;
+  padding: 16px 14px;
+}
+
+.fin-transit-row td {
+  vertical-align: top;
+  padding: 16px 14px;
+  border-bottom: 1px solid #eef2f7;
+  background: transparent;
+}
+
+.fin-transit-row:hover td {
+  background: rgba(255, 248, 238, 0.55);
+}
+
+.fin-transit-cell-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.fin-transit-id-text {
+  color: #0f172a;
+}
+
+.fin-transit-row-note {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.fin-transit-compact-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 180px;
+}
+
+.fin-transit-compact-item,
+.fin-transit-spec-line {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.fin-transit-compact-item:last-child,
+.fin-transit-spec-line:last-child {
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.fin-transit-compact-main,
+.fin-transit-spec-line strong {
+  font-size: 13px;
+  color: #0f172a;
+}
+
+.fin-transit-compact-sub,
+.fin-transit-spec-line span {
+  font-size: 12px;
+  line-height: 1.4;
+  color: #64748b;
+}
+
+.fin-transit-cost-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 160px;
+}
+
+.fin-transit-cost-stack div {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  font-size: 12px;
+  color: #64748b;
+}
+
+.fin-transit-cost-stack strong {
+  color: #111827;
+}
+
+.fin-transit-cost-stack .total {
+  padding-top: 8px;
+  border-top: 1px solid #e2e8f0;
+  font-size: 13px;
+}
+
+.fin-transit-cost-stack .total strong {
+  color: #dc2626;
+}
+
+.fin-transit-payment-stack {
+  min-width: 150px;
+}
+
+.fin-transit-payment-stack .fin-payment-badge,
+.fin-transit-payment-stack .fin-payment-status-text {
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 14px;
+  font-size: 13px;
+}
+
+.fin-transit-actions-col {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 110px;
+}
+
+.fin-transit-inline-btn {
+  border-radius: 12px;
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  font-weight: 700;
+}
+
+.fin-transit-inline-btn.print-btn {
+  border: 1px solid #dbe4ee;
+  background: #fff;
 }
 
 .print-btn {
@@ -603,6 +1010,18 @@ td {
     box-shadow: 0 0 0 3px rgba(0, 137, 123, 0.1);
     outline: none;
   }
+
+  .fin-transit-board {
+    padding: 14px;
+  }
+
+  .fin-transit-summary-card strong {
+    font-size: 24px;
+  }
+
+  .fin-transit-table-wrap {
+    border-radius: 16px;
+  }
 }
 
 /* Tablet (481px - 768px) */
@@ -643,6 +1062,7 @@ td {
   .graph-placeholder3 {
     height: 300px;
   }
+
 }
 
 /* Tablet/Small Desktop (769px - 1023px) */
@@ -687,6 +1107,7 @@ td {
   .graph-placeholder3 {
     height: 350px;
   }
+
 }
 
 /* Desktop (1024px and up) */
