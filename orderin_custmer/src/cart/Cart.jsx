@@ -9,6 +9,7 @@ import { db } from "../firebaseConfig";
 import "./Cart.css";
 import { getPlaceholder } from "../utils/placeholder";
 import resolveImageUrl from "../utils/storageResolver";
+import { parseOrderTimestamp } from "../utils/orderDateTime";
 
 function Cart({ onBackClick }) {
   const [activeTab, setActiveTab] = useState("Current Order");
@@ -39,13 +40,10 @@ function Cart({ onBackClick }) {
           else if (status === 'ready') displayStatus = 'Ready';
           else if (status === 'delivered') displayStatus = 'Delivered';
           else if (status === 'paid') displayStatus = 'Paid';
-          let ts = order.createdAt;
-          if (ts && ts.toDate) ts = ts.toDate();
-          else if (typeof ts === 'string') ts = new Date(ts);
-          else ts = new Date();
+          const ts = parseOrderTimestamp(order);
           // Hide delivered orders after 2-5 minutes
           if (displayStatus === 'Delivered') {
-            const deliveredAt = order.deliveredAt && order.deliveredAt.toDate ? order.deliveredAt.toDate() : (order.deliveredAt ? new Date(order.deliveredAt) : ts);
+            const deliveredAt = parseOrderTimestamp({ deliveredAt: order.deliveredAt, createdAt: order.createdAt, createdAtMs: order.createdAtMs, time: order.time });
             const msSinceDelivered = now - deliveredAt.getTime();
             if (msSinceDelivered < 5 * 60 * 1000) {
               if (!deliveredTimers.current[order.id || idx]) {

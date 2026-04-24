@@ -11,6 +11,7 @@ import {
 } from "../services/orderService";
 import { collection, getDocs, addDoc, serverTimestamp, doc, getDoc, updateDoc, setDoc } from "firebase/firestore";
 import { db } from "../firebase";
+import { createOrderTimestamp } from "../utils/orderDateTime";
 
 function ManualOrderModal({ isOpen, onClose, menuItems, onOrderCreated }) {
   const [customerName, setCustomerName] = useState("");
@@ -91,19 +92,27 @@ function ManualOrderModal({ isOpen, onClose, menuItems, onOrderCreated }) {
       const totalCost = subtotal + tax;
       
       // Add manual order to pastOrders array
+      const orderTimestamp = createOrderTimestamp();
       const newOrder = {
+        id: `MANUAL-${Date.now()}`,
         username: customerName,
         phoneNumber: phoneNumber,
         tableNo: parseInt(tableNumber),
         items: selectedItems,
         status: "Pending",
-        timestamp: new Date().toISOString(),
+        timestamp: orderTimestamp.timestamp,
+        time: orderTimestamp.time,
+        createdAt: orderTimestamp.createdAt,
+        createdAtMs: orderTimestamp.createdAtMs,
         isManualOrder: true,
         paymentStatus: "manual",
+        paymentMethod: "Manual",
         paymentType: "Manual",
         subtotal: subtotal,
         tax: tax,
+        taxes: tax,
         totalCost: totalCost,
+        total: totalCost,
         amount: totalCost
       };
       

@@ -3,6 +3,7 @@ import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 import { getPlaceholder } from '../utils/placeholder';
 import { resolveImageUrl } from '../utils/storageResolver';
+import { createOrderTimestamp } from '../utils/orderDateTime';
 
 const CartContext = createContext();
 
@@ -342,6 +343,8 @@ export const CartProvider = ({ children, tableNo = '1' }) => {
     const taxes = computedTax; // store as rupees
     const total = subtotal + taxes;
 
+    const orderTimestamp = createOrderTimestamp();
+
     // Create order object
     const order = {
       id: Date.now(),
@@ -352,8 +355,10 @@ export const CartProvider = ({ children, tableNo = '1' }) => {
       paymentMethod,
       status: 'Pending',
       tableNo: currentTableNo, // Use the current table number from URL
-      time: new Date().toLocaleString(),
-      timestamp: new Date()
+      time: orderTimestamp.time,
+      timestamp: orderTimestamp.timestamp,
+      createdAt: orderTimestamp.createdAt,
+      createdAtMs: orderTimestamp.createdAtMs
     };
 
     // Add to order history but DON'T clear cart yet

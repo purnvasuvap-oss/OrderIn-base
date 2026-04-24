@@ -11,6 +11,7 @@ import { generateDisplayOrderId } from "../utils/displayOrderIdGenerator";
 import { safeDeleteUnpaidOrders } from "../utils/orderCleanupUtils";
 import { getPlaceholder } from "../utils/placeholder";
 import resolveImageUrl from "../utils/storageResolver";
+import { createOrderTimestamp } from "../utils/orderDateTime";
 import "./Payments.css";
 
 function Payments({ onBackClick }) {
@@ -210,6 +211,8 @@ function Payments({ onBackClick }) {
         console.warn('Payments: could not persist pendingVerificationCode', err);
       }
 
+      const orderTimestamp = createOrderTimestamp();
+
       // Prepare order object for Firestore (no images/media)
       const orderForFirestore = {
         id: orderId,
@@ -225,8 +228,9 @@ function Payments({ onBackClick }) {
         paymentMethod: order.paymentMethod,
         status: order.status,
         tableNo: tableNumber,
-        time: order.time,
-        createdAt: new Date().toISOString(),
+        time: orderTimestamp.time,
+        createdAt: orderTimestamp.createdAt,
+        createdAtMs: orderTimestamp.createdAtMs,
         paymentStatus: 'unpaid',
         verificationCode: verificationCode,
         OnlinePayMethod: ""  // Empty string initially, will be updated to UPI/CARD/NET BANKING/WALLET from embedded payment page

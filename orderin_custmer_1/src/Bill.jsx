@@ -7,6 +7,7 @@ import { X, Star } from "lucide-react";
 import "./Bill.css";
 import { doc, getDoc, setDoc, updateDoc, arrayUnion, serverTimestamp } from "firebase/firestore";
 import { db } from "./firebaseConfig";
+import { parseOrderTimestamp } from "./utils/orderDateTime";
 
 function Bill() {
   const navigate = useNavigate();
@@ -70,7 +71,7 @@ function Bill() {
   const taxes = order.taxes ?? order.tax ?? order.taxesAmount ?? '0.00';
   const total = order.total ?? order.amount ?? order.totalAmount ?? '0.00';
   const paymentMethod = order.paymentMethod || order.payment || 'Cash';
-  const time = order.createdAt || order.time || new Date().toISOString();
+  const orderDate = parseOrderTimestamp(order);
 
   // Ensure numeric parsing and compute subtotal from items if missing
   const parsedTaxes = parseFloat(taxes);
@@ -293,7 +294,7 @@ function Bill() {
           <div className="paid-by"><span>Paid By:</span><span>{paymentMethod}</span></div>
 
           <div className="meta small">
-            <div>{(() => { try { const d = new Date(time); return `${d.toLocaleDateString()} ${d.toLocaleTimeString()}` } catch(e){ return time } })()}</div>
+            <div>{`${orderDate.toLocaleDateString()} ${orderDate.toLocaleTimeString()}`}</div>
             <div>Transaction ID: {transactionId}</div>
             <div>Order ID: {id}</div>
           </div>

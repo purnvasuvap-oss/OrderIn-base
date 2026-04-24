@@ -1,5 +1,6 @@
 import { db } from "../firebase";
 import { collection, getDocs, doc, updateDoc, getDoc, onSnapshot } from "firebase/firestore";
+import { parseOrderTimestamp } from "../utils/orderDateTime";
 
 /**
  * Get today's date at midnight (start of day) for comparison
@@ -27,15 +28,7 @@ const getTomorrowAtMidnight = () => {
  * Handles: time, timestamp, createdAt, orderDate, date, etc.
  */
 const getOrderTimestamp = (order) => {
-  // Check common timestamp field names (time is primary in this database)
-  if (order.time) return order.time;
-  if (order.timestamp) return order.timestamp;
-  if (order.createdAt) return order.createdAt;
-  if (order.orderDate) return order.orderDate;
-  if (order.date) return order.date;
-  
-  // If no timestamp field found, return null
-  return null;
+  return parseOrderTimestamp(order);
 };
 
 /**
@@ -89,7 +82,16 @@ const derivePaymentInfo = (order) => {
   const nestedPaymentMethod = (order.payment && (order.payment.method || order.payment.type || order.payment.paymentMethod)) ||
     (order.transaction && (order.transaction.method || order.transaction.type)) ||
     (order.card && (order.card.type || order.card.brand));
-  const rawMethod = (order.paymentMethod || order.paymentType || order.method || order.payment_mode || order.paymentMode || nestedPaymentMethod || "").toString();
+  const rawMethod = (
+    order.paymentMethod ||
+    order.paymentType ||
+    order.OnlinePayMethod ||
+    order.method ||
+    order.payment_mode ||
+    order.paymentMode ||
+    nestedPaymentMethod ||
+    ""
+  ).toString();
   const rawStatus = (order.paymentStatus || order.payment_status || "").toString();
   const rawPaidAmount = Number(
     (order.paidAmount !== undefined && order.paidAmount !== null) ? order.paidAmount :
@@ -110,7 +112,9 @@ const derivePaymentInfo = (order) => {
   } else if (!methodLower) {
     // If nothing present, try to infer from paymentStatus or flags
     if (rawStatus.toLowerCase().includes("card") || String(order.cardLast4) || (order.card && (order.card.last4 || order.card.brand))) paymentType = "Card";
-    if (!paymentType && order.payment && (order.payment.cardToken || order.payment.last4 || order.payment.cardLast4)) paymentType = "Card";
+    else if (order.payment && (order.payment.cardToken || order.payment.last4 || order.payment.cardLast4)) paymentType = "Card";
+    else if (String(order.OnlinePayMethod || "").toLowerCase().includes("upi")) paymentType = "UPI";
+    else if (rawStatus.toLowerCase().includes("manual")) paymentType = "Manual";
   } else if (methodLower.includes("card") || methodLower.includes("visa") || methodLower.includes("master") || methodLower.includes("rupay")) {
     paymentType = "Card";
   } else if (methodLower.includes("upi") || methodLower.includes("google") || methodLower.includes("paytm") || methodLower.includes("phonepe")) {
@@ -306,8 +310,8 @@ export const fetchTodaysOrders = async () => {
           console.log(`  Resolved instructions: "${instructions}"`);
           
           // Log timestamp details
-          if (timestamp) {
-            const orderDate = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+      if (timestamp) {
+            const orderDate = timestamp;
             console.log(`  Timestamp field: ${order.time ? 'time' : order.timestamp ? 'timestamp' : 'other'}`);
             console.log(`  Timestamp type: ${typeof timestamp}`);
             console.log(`  Timestamp value: ${timestamp}`);
@@ -383,8 +387,8 @@ export const fetchTodaysOrders = async () => {
     // Sort orders by timestamp (newest first) if they have timestamps
     if (ordersWithTimestamp.length > 0) {
       allOrders.sort((a, b) => {
-        const timeA = a.timestamp ? a.timestamp.toDate?.().getTime() : 0;
-        const timeB = b.timestamp ? b.timestamp.toDate?.().getTime() : 0;
+        const timeA = a.timestamp ? a.timestamp.getTime() : 0;
+        const timeB = b.timestamp ? b.timestamp.getTime() : 0;
         return timeB - timeA;
       });
     }
@@ -652,8 +656,9 @@ export const subscribeAllCustomerOrders = (onUpdate) => {
                 tax: tax,
                 totalCost: totalCost || order.totalCost || order.amount || subtotal + tax,
                 paidAmount: paidAmount,
-                paymentType: order.paymentMethod || order.paymentType || "Online",
-                paymentStatus: order.paymentStatus || "unpaid",
+                paymentType: paymentInfo.paymentType,
+                paymentStatus: paymentInfo.paymentStatus,
+                paid: paymentInfo.paidDisplay,
                 verificationCode: order.verificationCode || order.code || "-",
                 timestamp: timestamp,
                 status: order.status || "Pending",
@@ -665,8 +670,8 @@ export const subscribeAllCustomerOrders = (onUpdate) => {
 
           // Sort by timestamp (newest first)
           allOrders.sort((a, b) => {
-            const timeA = a.timestamp ? (a.timestamp.toDate?.().getTime?.() || new Date(a.timestamp).getTime()) : 0;
-            const timeB = b.timestamp ? (b.timestamp.toDate?.().getTime?.() || new Date(b.timestamp).getTime()) : 0;
+            const timeA = a.timestamp ? a.timestamp.getTime() : 0;
+            const timeB = b.timestamp ? b.timestamp.getTime() : 0;
             return timeB - timeA;
           });
 
@@ -755,7 +760,7 @@ export const formatOrderItems = (items) => {
 export const formatTime = (timestamp) => {
   if (!timestamp) return "";
   try {
-    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+    const date = timestamp instanceof Date ? timestamp : getOrderTimestamp({ timestamp });
     
     // Validate date
     if (isNaN(date.getTime())) {
@@ -780,7 +785,7 @@ export const formatTime = (timestamp) => {
 export const formatDateTime = (timestamp) => {
   if (!timestamp) return "";
   try {
-    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+    const date = timestamp instanceof Date ? timestamp : getOrderTimestamp({ timestamp });
     
     if (isNaN(date.getTime())) {
       return "";
@@ -873,9 +878,15 @@ export const fetchDailyTransitOrders = async () => {
         }
 
         // Calculate tax (assuming 10% tax if not provided)
-        const taxRate = order.taxRate || 0.1;
-        const tax = subtotal * taxRate;
-        const totalCost = subtotal + tax;
+        const providedTax = findProvidedTax(order);
+        let tax;
+        if (providedTax !== null && providedTax !== undefined) {
+          const parsedTax = Number(String(providedTax).replace(/[^0-9.-]+/g, ""));
+          tax = isNaN(parsedTax) ? 0 : parsedTax;
+        } else {
+          tax = subtotal > 0 ? Math.ceil(subtotal / 100) : 0;
+        }
+        const totalCost = order.totalCost || order.total || order.amount || subtotal + tax;
 
         // Derive normalized payment information
         const paymentInfo = derivePaymentInfo(order);

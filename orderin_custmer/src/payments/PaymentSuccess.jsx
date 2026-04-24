@@ -6,6 +6,7 @@ import { doc, getDoc, setDoc, updateDoc, arrayUnion, serverTimestamp } from "fir
 import { db } from "../firebaseConfig";
 import "./PaymentSuccess.css";
 import "../Bill.css";
+import { parseOrderTimestamp } from "../utils/orderDateTime";
 
 function PaymentSuccess() {
   const navigate = useNavigate();
@@ -42,7 +43,7 @@ function PaymentSuccess() {
           // Find the most recent paid order
           const paidOrder = pastOrders
             .filter(o => o.paymentStatus === 'paid')
-            .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0];
+            .sort((a, b) => parseOrderTimestamp(b) - parseOrderTimestamp(a))[0];
 
           if (paidOrder) {
             console.log('PaymentSuccess: fetched paid order from backend:', paidOrder.id);

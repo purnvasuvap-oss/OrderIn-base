@@ -12,6 +12,7 @@ import { db } from "../firebaseConfig";
 import "./Profile.css";
 import { getPlaceholder } from "../utils/placeholder";
 import { resolveImageUrl } from "../utils/storageResolver";
+import { parseOrderTimestamp } from "../utils/orderDateTime";
 
 function Profile({ onBackClick, onCartClick }) {
   const navigate = useNavigate();
@@ -74,22 +75,13 @@ function Profile({ onBackClick, onCartClick }) {
           if (!itemObj.paidPrice) itemObj.paidPrice = (first && (first.price || first.paidPrice)) || o.total || null;
 
           // timestamp can be stored as ISO string or createdAt field
-          let timestamp = new Date().toISOString();
-          if (o.createdAt) {
-            try {
-              timestamp = typeof o.createdAt === 'string' ? o.createdAt : (o.createdAt.toDate ? o.createdAt.toDate().toISOString() : new Date(o.createdAt).toISOString());
-            } catch (e) {
-              timestamp = new Date().toISOString();
-            }
-          }
-
           return {
             id: o.id || (`order-${idx}`),
             item: itemObj,
             quantity: o.items && o.items.length > 0 ? (o.items[0].quantity || 1) : (o.quantity || 1),
             instructions: (o.items && o.items.length > 0 && o.items[0].instructions) || o.instructions || '',
             rawItem: first,
-            timestamp: new Date(timestamp)
+            timestamp: parseOrderTimestamp(o)
           };
         }).reverse();
 
