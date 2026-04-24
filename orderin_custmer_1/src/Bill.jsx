@@ -82,8 +82,8 @@ function Bill() {
     return acc + unit * qty;
   }, 0);
   const safeSubtotal = subtotal != null ? (parseFloat(subtotal) || computedSubtotal) : computedSubtotal;
-  // Tax policy: ₹1 for every ₹100 (minimum ₹1 for amounts up to ₹100)
-  const computedTax = Math.max(1, Math.ceil(safeSubtotal / 100));
+  // Tax policy fallback: ₹0.05 for every ₹1 (5 paise per rupee)
+  const computedTax = safeSubtotal * 0.05;
   const safeTaxes = (parsedTaxes || parsedTaxes === 0) ? parsedTaxes : computedTax;
   const safeTotal = parsedTotal || (safeSubtotal + safeTaxes);
 

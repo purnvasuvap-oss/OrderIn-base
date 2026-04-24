@@ -60,7 +60,7 @@ function OnlinePayment() {
       params.append('subtotal', foundPaymentData.subtotal || '0');
       params.append('taxes', foundPaymentData.taxes || '0');
       params.append('total', foundPaymentData.total || '0');
-      params.append('taxRate', foundPaymentData.taxRate || '0.04'); // 0.04 rupees per rupee
+      params.append('taxRate', foundPaymentData.taxRate || '0.05'); // 0.05 rupees per rupee
       params.append('useProvidedTax', foundPaymentData.useProvidedTax ? 'true' : 'false'); // Don't recalculate tax
       params.append('restaurantId', foundPaymentData.restaurantId || '');
       params.append('restaurantName', foundPaymentData.restaurantName || '');

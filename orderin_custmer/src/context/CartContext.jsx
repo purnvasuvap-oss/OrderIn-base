@@ -338,8 +338,8 @@ export const CartProvider = ({ children, tableNo = '1' }) => {
       const num = parseFloat(String(item.price || '').replace(/[^0-9.\-]/g, '')) || 0;
       return sum + (num * item.quantity);
     }, 0);
-    // Tax policy: ₹0.04 for every ₹1 (4 paise per rupee)
-    const computedTax = subtotal * 0.04;
+    // Tax policy: ₹0.05 for every ₹1 (5 paise per rupee)
+    const computedTax = subtotal * 0.05;
     const taxes = computedTax; // store as rupees
     const total = subtotal + taxes;
 

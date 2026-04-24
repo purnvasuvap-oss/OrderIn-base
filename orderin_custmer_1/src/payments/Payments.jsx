@@ -107,8 +107,8 @@ function Payments({ onBackClick }) {
     return () => { cancelled = true; };
   }, [cartItems]);
   const subtotal = parseFloat(getTotalPrice());
-  // Charge ₹0.04 for every ₹1
-  const tax = subtotal * 0.04;
+  // Charge ₹0.05 for every ₹1
+  const tax = subtotal * 0.05;
   const total = subtotal + tax;
 
   const handlePaymentSelect = (method) => {
@@ -169,9 +169,9 @@ function Payments({ onBackClick }) {
       }
 
       // Calculate tax BEFORE creating order (so we can use the exact calculation)
-      // Charge ₹0.04 for every ₹1
+      // Charge ₹0.05 for every ₹1
       const calculatedSubtotal = parseFloat(getTotalPrice());
-      const calculatedTax = calculatedSubtotal * 0.04;
+      const calculatedTax = calculatedSubtotal * 0.05;
       const calculatedTotal = calculatedSubtotal + calculatedTax;
       
       console.log('Calculated - Subtotal:', calculatedSubtotal, 'Tax:', calculatedTax, 'Total:', calculatedTotal);
@@ -294,7 +294,7 @@ function Payments({ onBackClick }) {
               subtotal: order.subtotal,
               taxes: order.taxes,
               total: order.total,
-              taxRate: 0.04, // 0.04 rupees per rupee (4 paise per rupee)
+              taxRate: 0.05, // 0.05 rupees per rupee (5 paise per rupee)
               useProvidedTax: true, // Tell embedded page: don't recalculate, use this tax value
               restaurantId: 'orderin_restaurant_2',
               restaurantName: restaurantData.Restaurant_name || 'Restaurant',

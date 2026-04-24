@@ -60,7 +60,7 @@ function OnlinePayment() {
       params.append('subtotal', foundPaymentData.subtotal || '0');
       params.append('taxes', foundPaymentData.taxes || '0');
       params.append('total', foundPaymentData.total || '0');
-      params.append('taxRate', foundPaymentData.taxRate || '0.04');
+      params.append('taxRate', foundPaymentData.taxRate || '0.05');
       params.append('useProvidedTax', foundPaymentData.useProvidedTax ? 'true' : 'false');
       params.append('restaurantId', foundPaymentData.restaurantId || '');
       params.append('restaurantName', foundPaymentData.restaurantName || '');
