@@ -12,6 +12,7 @@ import { safeDeleteUnpaidOrders } from "../utils/orderCleanupUtils";
 import { getPlaceholder } from "../utils/placeholder";
 import resolveImageUrl from "../utils/storageResolver";
 import { createOrderTimestamp } from "../utils/orderDateTime";
+import { calculateBilling, TAX_RATE } from "../utils/billing";
 import "./Payments.css";
 
 function Payments({ onBackClick }) {
@@ -107,9 +108,7 @@ function Payments({ onBackClick }) {
     return () => { cancelled = true; };
   }, [cartItems]);
   const subtotal = parseFloat(getTotalPrice());
-  // Charge ₹0.05 for every ₹1
-  const tax = subtotal * 0.05;
-  const total = subtotal + tax;
+  const displayedBilling = calculateBilling(subtotal, selectedPayment);
 
   const handlePaymentSelect = (method) => {
     setSelectedPayment(method);
@@ -168,13 +167,10 @@ function Payments({ onBackClick }) {
         throw new Error('Failed to generate order ID: orderId is undefined');
       }
 
-      // Calculate tax BEFORE creating order (so we can use the exact calculation)
-      // Charge ₹0.05 for every ₹1
       const calculatedSubtotal = parseFloat(getTotalPrice());
-      const calculatedTax = calculatedSubtotal * 0.05;
-      const calculatedTotal = calculatedSubtotal + calculatedTax;
+      const calculatedBilling = calculateBilling(calculatedSubtotal, selectedPayment);
       
-      console.log('Calculated - Subtotal:', calculatedSubtotal, 'Tax:', calculatedTax, 'Total:', calculatedTotal);
+      console.log('Calculated - Subtotal:', calculatedBilling.subtotal, 'Tax:', calculatedBilling.taxes, 'Total:', calculatedBilling.total);
 
       // Place the order with the human-readable ID
       order = placeOrder(selectedPayment);
@@ -186,9 +182,9 @@ function Payments({ onBackClick }) {
       order.id = orderId;
       
       // Override with exact calculated values to ensure consistency
-      order.subtotal = calculatedSubtotal;
-      order.taxes = calculatedTax;
-      order.total = calculatedTotal;
+      order.subtotal = calculatedBilling.subtotal;
+      order.taxes = calculatedBilling.taxes;
+      order.total = calculatedBilling.total;
       console.log('Order updated with calculated values - Subtotal:', order.subtotal, 'Taxes:', order.taxes, 'Total:', order.total);
 
       // Generate verification code for cash/card orders (4 random digits)
@@ -248,9 +244,9 @@ function Payments({ onBackClick }) {
       
       // Save temporary order state to localStorage for refresh recovery
       const billing = {
-        subtotal: calculatedSubtotal,
-        taxes: calculatedTax,
-        total: calculatedTotal
+        subtotal: calculatedBilling.subtotal,
+        taxes: calculatedBilling.taxes,
+        total: calculatedBilling.total
       };
       saveOrderTempState(orderId, cartItems, billing, 'unpaid');
       
@@ -294,7 +290,7 @@ function Payments({ onBackClick }) {
               subtotal: order.subtotal,
               taxes: order.taxes,
               total: order.total,
-              taxRate: 0.05, // 0.05 rupees per rupee (5 paise per rupee)
+              taxRate: TAX_RATE, // 0.05 rupees per rupee (5 paise per rupee)
               useProvidedTax: true, // Tell embedded page: don't recalculate, use this tax value
               restaurantId: 'orderin_restaurant_1',
               restaurantName: restaurantData.Restaurant_name || 'Restaurant',
@@ -399,15 +395,15 @@ function Payments({ onBackClick }) {
           <h4 className="billing-header">Billing Breakdown</h4>
           <div className="billing-row">
             <span>Subtotal :</span>
-            <span>₹{subtotal.toFixed(2)}</span>
+            <span>₹{displayedBilling.subtotal.toFixed(2)}</span>
           </div>
           <div className="billing-row">
             <span>Taxes :</span>
-            <span>₹{tax.toFixed(2)}</span>
+            <span>₹{displayedBilling.taxes.toFixed(2)}</span>
           </div>
           <div className="billing-total">
             <span>Total :</span>
-            <span>₹{total.toFixed(2)}</span>
+            <span>₹{displayedBilling.total.toFixed(2)}</span>
           </div>
         </div>
 

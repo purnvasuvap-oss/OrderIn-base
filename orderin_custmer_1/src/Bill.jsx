@@ -8,6 +8,7 @@ import "./Bill.css";
 import { doc, getDoc, setDoc, updateDoc, arrayUnion, serverTimestamp } from "firebase/firestore";
 import { db } from "./firebaseConfig";
 import { parseOrderTimestamp } from "./utils/orderDateTime";
+import { calculateBilling } from "./utils/billing";
 
 function Bill() {
   const navigate = useNavigate();
@@ -82,10 +83,9 @@ function Bill() {
     return acc + unit * qty;
   }, 0);
   const safeSubtotal = subtotal != null ? (parseFloat(subtotal) || computedSubtotal) : computedSubtotal;
-  // Tax policy fallback: ₹0.05 for every ₹1 (5 paise per rupee)
-  const computedTax = safeSubtotal * 0.05;
-  const safeTaxes = (parsedTaxes || parsedTaxes === 0) ? parsedTaxes : computedTax;
-  const safeTotal = parsedTotal || (safeSubtotal + safeTaxes);
+  const computedBilling = calculateBilling(safeSubtotal, paymentMethod);
+  const safeTaxes = (parsedTaxes || parsedTaxes === 0) ? parsedTaxes : computedBilling.taxes;
+  const safeTotal = parsedTotal || computedBilling.total;
 
   // Transaction ID: persist a unique transaction id per order in localStorage map so it's stable forever
   const getOrCreateTransactionId = (orderId, method) => {

@@ -4,6 +4,7 @@ import { db } from '../firebaseConfig';
 import { getPlaceholder } from '../utils/placeholder';
 import { resolveImageUrl } from '../utils/storageResolver';
 import { createOrderTimestamp } from '../utils/orderDateTime';
+import { calculateBilling } from '../utils/billing';
 
 const CartContext = createContext();
 
@@ -338,10 +339,7 @@ export const CartProvider = ({ children, tableNo = '1' }) => {
       const num = parseFloat(String(item.price || '').replace(/[^0-9.\-]/g, '')) || 0;
       return sum + (num * item.quantity);
     }, 0);
-    // Tax policy: ₹0.05 for every ₹1 (5 paise per rupee)
-    const computedTax = subtotal * 0.05;
-    const taxes = computedTax; // store as rupees
-    const total = subtotal + taxes;
+    const billing = calculateBilling(subtotal, paymentMethod);
 
     const orderTimestamp = createOrderTimestamp();
 
@@ -349,9 +347,9 @@ export const CartProvider = ({ children, tableNo = '1' }) => {
     const order = {
       id: Date.now(),
       items: cartItems,
-      subtotal: subtotal.toFixed(2),
-      taxes: Number(taxes).toFixed(2),
-      total: Number(total).toFixed(2),
+      subtotal: billing.subtotal.toFixed(2),
+      taxes: billing.taxes.toFixed(2),
+      total: billing.total.toFixed(2),
       paymentMethod,
       status: 'Pending',
       tableNo: currentTableNo, // Use the current table number from URL
