@@ -18,7 +18,7 @@
   gap: 12px;
   flex-shrink: 0;
 }
-.orderin-logo{width:160px;height:auto;display:block;object-fit:contain}
+.orderin-logo{width:clamp(92px, 10vw, 160px);max-width:100%;height:auto;display:block;object-fit:contain}
 .company{font-weight:500}
 
 /* center block - flexbox positioned */
@@ -37,7 +37,7 @@
 .icon-btn{background:transparent;border:none;cursor:pointer;padding:10px;border-radius:8px;transition:all 0.2s ease;display:flex;align-items:center;justify-content:center}
 .icon-btn:hover{background:rgba(0,0,0,0.05)}
 
-.icon-img{width:90px;height:90px;display:block;object-fit:contain}
+.icon-img{width:clamp(34px, 5vw, 90px);height:clamp(34px, 5vw, 90px);display:block;object-fit:contain}
 
 /* nudge the logout/export icon left so it's not too close to the right edge */
 .header-right .icon-btn:last-child{margin-left:10px}

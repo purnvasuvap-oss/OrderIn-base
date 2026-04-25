@@ -41,10 +41,11 @@ body {
 
 .sub-login {
   display: flex;
-  height: 100vh;
+  min-height: 100vh;
   background-color: #f1f5f8;
   overflow: hidden; /* prevent scrollbars while keeping decorative shapes clipped */
   font-family: "Poppins", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  width: 100%;
 }
 
 /* Ensure the app root does not introduce scrollbars */
@@ -63,19 +64,20 @@ html, body, #root {
 
 /* Left Section - narrow branding column */
 .sub-login-left {
-  /* responsive left panel width: min 260px, preferred 22vw, max 380px */
-  width: clamp(260px, 22vw, 380px);
-  min-width: 240px;
+  width: clamp(250px, 24vw, 380px);
+  min-width: 0;
   background-color: #e53935;
   color: white;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   align-items: center;
-  padding: 40px 40px;
+  padding: clamp(24px, 3.4vw, 40px);
   box-shadow: 0 0 40px rgba(0,0,0,0.03) inset;
-  /* responsive gap from window edge: min 20px, uses viewport fraction up to 72px */
-  margin-left: clamp(30px, 4.5vw, 82px);
+  margin-left: clamp(18px, 3vw, 72px);
+  overflow: hidden;
+  position: relative;
+  isolation: isolate;
 }
 
 .sub-brand-section {
@@ -84,17 +86,27 @@ html, body, #root {
   flex-direction: column;
   align-items: center;
   text-align: center;
+  gap: 8px;
+  min-width: 0;
 }
 
 .sub-orderin-logo {
-  width: 258px;
+  width: min(100%, clamp(136px, 78%, 258px));
   height: auto;
   margin: 6px auto 12px;
   display: block;
   object-fit: contain;
 }
 
-.sub-by-row { display:flex; align-items:center; gap:8px; justify-content:center; margin-bottom: 8px; }
+.sub-by-row {
+  display:flex;
+  align-items:center;
+  gap:8px;
+  justify-content:center;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+  width: 100%;
+}
 .sub-by-text {
   font-size: 14px;
   opacity: 0.95;
@@ -104,7 +116,10 @@ html, body, #root {
   font-size: 14px;
   font-weight: 500;
   margin: 0;
-  white-space: nowrap;
+  white-space: normal;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  text-align: center;
 }
 
 .sub-company-name {
@@ -116,11 +131,15 @@ html, body, #root {
 .sub-illustration {
   text-align: center;
   margin-bottom: 6px;
+  width: min(100%, 320px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .sub-circle-outer {
-  width: clamp(200px, 42vw, 340px);
-  height: clamp(200px, 42vw, 340px);
+  width: min(100%, clamp(164px, 22vw, 300px));
+  aspect-ratio: 1;
   background-color: #d9d9d9; /* outer circle color */
   border-radius: 50%;
   display: block;
@@ -147,9 +166,9 @@ html, body, #root {
   left: 50%;
   top: 50%;
   transform: translate(-50%, -50%);
-  width: 110%; /* slightly bigger so it sits over the inner circle */
+  width: 84%;
   height: auto;
-  max-height: 110%;
+  max-height: 84%;
   object-fit: contain;
   display: block;
   z-index: 2; /* sit above the inner circle but clipped by outer */
@@ -175,6 +194,8 @@ html, body, #root {
   justify-content: center;
   padding: clamp(24px, 3.2vw, 48px) clamp(20px, 6vw, 80px);
   z-index: 1; /* ensure content sits above decorative vector */
+  min-width: 0;
+  overflow: hidden;
 }
 
 .sub-login-header { text-align:center; margin-top: 30px; margin-bottom:18px; }
@@ -191,9 +212,11 @@ html, body, #root {
   border-radius: 12px;
   box-shadow: 0 10px 30px rgba(16,24,40,0.08);
   text-align: center;
-  width: 360px;
+  width: min(100%, 360px);
+  max-width: 100%;
   position: relative;
   z-index: 2; /* sits above the red vector */
+  box-sizing: border-box;
 }
 
 .sub-login-card h3 { font-size: 26px; margin: 0 0 6px 0; }
@@ -234,7 +257,7 @@ html, body, #root {
   bottom: 18px;
   right: 36px;
   font-size: 13px;
-  
+  max-width: min(42vw, 360px);
   text-align: right;
 }
 
@@ -254,6 +277,8 @@ html, body, #root {
   align-items: flex-end;
   justify-content: flex-end;
   filter: drop-shadow(0 -4px 12px rgba(0,0,0,0.04));
+  max-width: min(100%, 900px);
+  overflow: hidden;
 }
 
 .sub-red-blob img {
@@ -261,7 +286,7 @@ html, body, #root {
   width: 100%;
   height: auto;
   max-height: 100vh;
-  object-fit: cover;
+  object-fit: contain;
   pointer-events: none;
 }
 
@@ -292,10 +317,24 @@ html, body, #root {
     overflow-x: hidden;
   }
   .sub-login { padding-left: 0; }
-  .sub-login-left { width: 100%; min-width: auto; padding: 0px 20px; margin-left: 0; border-radius: 0 0 24px 24px; }
-  .sub-orderin-logo { width: 192px; }
-  .sub-circle-outer { display: none; }
-  .sub-food-img { display: none; }
+  .sub-login-left {
+    width: 100%;
+    min-width: auto;
+    padding: 18px 20px 14px;
+    margin-left: 0;
+    border-radius: 0 0 24px 24px;
+    gap: 14px;
+  }
+  .sub-orderin-logo { width: min(100%, 192px); }
+  .sub-illustration {
+    width: 100%;
+    margin-bottom: 0;
+  }
+  .sub-circle-outer {
+    display: block;
+    width: clamp(124px, 24vw, 176px);
+    margin: 10px auto 8px;
+  }
   .sub-tagline-below-contact {
     display: block;
     margin-top: 8px;
@@ -310,9 +349,15 @@ html, body, #root {
     padding: 14px 20px 30px;
     justify-content: flex-start;
   }
-  .sub-food-img { width: 160px; height:160px; }
-  .sub-login-card { width: 92%; }
-  .sub-contact-info { position: relative; right: auto; bottom: auto; margin-top: 18px; text-align: center; }
+  .sub-login-card { width: min(92%, 420px); }
+  .sub-contact-info {
+    position: relative;
+    right: auto;
+    bottom: auto;
+    margin-top: 18px;
+    text-align: center;
+    max-width: min(100%, 420px);
+  }
   .sub-red-blob { display: none; }
   .sub-red-vector { display: none; }
 }
@@ -486,7 +531,7 @@ html, body, #root {
   }
 
   .sub-orderin-logo {
-    width: 162px;
+    width: min(100%, 162px);
   }
 
   .sub-by-row {
@@ -494,8 +539,7 @@ html, body, #root {
   }
 
   .sub-circle-outer {
-    width: clamp(130px, 30vw, 210px);
-    height: clamp(130px, 30vw, 210px);
+    width: clamp(104px, 32vw, 148px);
     margin: 10px auto 8px;
   }
 
@@ -541,8 +585,8 @@ html, body, #root {
   .sub-login-left {
     width: 100%;
     min-width: 0;
-    height: 314px;
-    min-height: 314px;
+    height: 300px;
+    min-height: 300px;
     margin-left: 0;
     padding: 10px 16px;
     border-radius: 0 0 24px 24px;
@@ -551,19 +595,18 @@ html, body, #root {
   }
 
   .sub-orderin-logo {
-    width: 154px;
+    width: min(100%, 154px);
     margin-bottom: 6px;
   }
 
   .sub-circle-outer {
-    width: 128px;
-    height: 128px;
+    width: 118px;
     margin: 8px auto 6px;
   }
 
   .sub-food-img {
-    width: 132px;
-    height: 132px;
+    width: 82%;
+    max-height: 82%;
   }
 
   .sub-login-right {
@@ -619,19 +662,18 @@ html, body, #root {
   }
 
   .sub-orderin-logo {
-    width: 134px;
+    width: min(100%, 134px);
     margin-bottom: 6px;
   }
 
   .sub-circle-outer {
     width: 96px;
-    height: 96px;
     margin: 8px auto 6px;
   }
 
   .sub-food-img {
-    width: 96px;
-    height: 96px;
+    width: 80%;
+    max-height: 80%;
   }
 
   .sub-tagline {
@@ -707,7 +749,7 @@ html, body, #root {
   }
 
   .sub-login-card {
-    width: 98%;
+    width: min(98%, 100%);
     padding: 16px 12px;
   }
 
