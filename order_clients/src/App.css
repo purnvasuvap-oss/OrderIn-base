@@ -2,7 +2,7 @@
 body {
   margin: 0;
   font-family: 'Segoe UI', sans-serif;
-  background-color: white;
+  background-color: #fceee6;
 }
 
 .header {
@@ -50,9 +50,14 @@ body {
 
 /* Ensure the app root does not introduce scrollbars */
 html, body, #root {
-  height: 100%;
+  min-height: 100%;
   margin: 0;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+#root {
+  background: linear-gradient(180deg, #fffefb 0%, #fff6ef 68%, #fceee6 100%);
 }
 
 @media (max-width: 900px) {

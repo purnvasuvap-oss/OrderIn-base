@@ -1,7 +1,7 @@
 .header{
   height:140px;
   background-color: white;
-  margin-top: 10px;
+  margin-top: 0;
   position: relative;
   display: flex;
   align-items: center;
@@ -41,6 +41,26 @@
 
 /* nudge the logout/export icon left so it's not too close to the right edge */
 .header-right .icon-btn:last-child{margin-left:10px}
+
+@media (max-width: 1200px) {
+  .header {
+    height: 108px;
+    padding: 0 20px;
+  }
+
+  .header-center {
+    padding: 0 12px;
+  }
+
+  .restaurant-name {
+    font-size: clamp(28px, 4.5vw, 44px);
+    letter-spacing: 1px;
+  }
+
+  .header-right {
+    gap: 12px;
+  }
+}
 
 /* Hide center logo on mobile */
 @media (max-width: 768px) {
@@ -458,7 +478,7 @@
   .header {
     height: auto;
     padding: 8px 12px;
-    margin-top: 8px;
+    margin-top: 0;
     display: flex;
     flex-wrap: wrap;
     align-items: center;
