@@ -687,6 +687,16 @@ export const subscribeAllCustomerOrders = (onUpdate) => {
   }
 };
 
+export const subscribeOnlineCustomerOrders = (onUpdate) => {
+  return subscribeAllCustomerOrders((orders) => {
+    const onlineOrders = (orders || []).filter((order) => {
+      const paymentType = String(order.paymentType || "").toLowerCase();
+      return paymentType === "online";
+    });
+    if (typeof onUpdate === "function") onUpdate(onlineOrders);
+  });
+};
+
 /**
  * Update order status in Firebase
  * Updates the status field in pastOrders array for a specific customer

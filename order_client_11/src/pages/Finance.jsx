@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Filter } from "lucide-react";
 import routes from "../routes";
 import "./Finance.css";
-import { formatTime, subscribeTodaysOrders, subscribeAllCustomerOrders } from "../services/orderService";
+import { formatTime, subscribeTodaysOrders, subscribeAllCustomerOrders, subscribeOnlineCustomerOrders } from "../services/orderService";
 import BillModal from "../components/BillModal";
 
 function App() {
@@ -119,6 +119,23 @@ function App() {
     };
   }, [activeTab]);
 
+  useEffect(() => {
+    let unsubscribe = null;
+    if (activeTab === "LEDGER") {
+      setLoadingAccounts(true);
+      console.log("=== FINANCE PAGE: Subscribing to online customer orders for ledger (real-time) ===");
+      unsubscribe = subscribeOnlineCustomerOrders((orders) => {
+        console.log(`Finance (ledger) - received ${orders.length} online orders`);
+        setAllCustomerOrders(orders);
+        setLoadingAccounts(false);
+      });
+    }
+
+    return () => {
+      if (typeof unsubscribe === "function") unsubscribe();
+    };
+  }, [activeTab]);
+
   // Fetch all orders for earnings calculation
   useEffect(() => {
     let unsubscribe = null;
@@ -215,6 +232,71 @@ function App() {
   };
 
   const earningsData = calculateEarnings();
+  const financeTabs = ["DAILY TRANSIT", "ACCOUNTS", "EARNINGS CALCULATION", "LEDGER"];
+
+  const getOrderTimeValue = (order) => {
+    try {
+      if (!order?.timestamp) return 0;
+      if (order.timestamp.toDate && typeof order.timestamp.toDate === "function") {
+        return order.timestamp.toDate().getTime();
+      }
+      const parsed = new Date(order.timestamp);
+      return Number.isNaN(parsed.getTime()) ? 0 : parsed.getTime();
+    } catch (error) {
+      return 0;
+    }
+  };
+
+  const isOnlineLedgerPayment = (paymentType) => {
+    const normalized = String(paymentType || "").toLowerCase();
+    return normalized === "online";
+  };
+
+  const getSettlementStatus = (order, pendingSettlement) => {
+    const settlementState = String(order.settlementStatus || "").toLowerCase();
+    const paymentState = String(order.paymentStatus || order.paid || "").toLowerCase();
+
+    if (settlementState.includes("settled")) return "Settled";
+    if (pendingSettlement <= 0) return "Settled";
+    if (paymentState.includes("paid") || paymentState.includes("success")) return "Ready to settle";
+    if ((Number(order.paidAmount) || 0) > 0) return "Partially collected";
+    return "Awaiting payment";
+  };
+
+  const ledgerTransactions = (allCustomerOrders || [])
+    .filter((order) => isOnlineLedgerPayment(order.paymentType))
+    .slice()
+    .sort((a, b) => getOrderTimeValue(b) - getOrderTimeValue(a))
+    .map((order) => {
+      const collectedAmount = Number(order.paidAmount) || Number(order.totalCost) || 0;
+      const platformCharge = Number(order.tax) || 0;
+      const restaurantPayout = Math.max(collectedAmount - platformCharge, 0);
+      const alreadySettled = String(order.settlementStatus || "").toLowerCase().includes("settled");
+      const settledAmount = alreadySettled ? restaurantPayout : 0;
+      const pendingSettlement = Math.max(restaurantPayout - settledAmount, 0);
+
+      return {
+        ...order,
+        collectedAmount,
+        platformCharge,
+        restaurantPayout,
+        settledAmount,
+        pendingSettlement,
+        ledgerStatus: getSettlementStatus(order, pendingSettlement),
+      };
+    });
+
+  const ledgerTotals = ledgerTransactions.reduce(
+    (summary, order) => {
+      summary.collected += order.collectedAmount;
+      summary.platformCharges += order.platformCharge;
+      summary.restaurantPayout += order.restaurantPayout;
+      summary.settled += order.settledAmount;
+      summary.pending += order.pendingSettlement;
+      return summary;
+    },
+    { collected: 0, platformCharges: 0, restaurantPayout: 0, settled: 0, pending: 0 }
+  );
 
   const dailyTransitMetrics = sortedDaily.reduce(
     (summary, order) => {
@@ -253,7 +335,7 @@ function App() {
 
         <div className="fin-nav-center">
           <div className="fin-nav-buttons">
-            {["DAILY TRANSIT", "ACCOUNTS", "EARNINGS CALCULATION"].map((tab) => (
+            {financeTabs.map((tab) => (
               <button
                 key={tab}
                 className={`fin-nav-btn ${activeTab === tab ? "active" : ""}`}
@@ -710,6 +792,117 @@ function App() {
               </div>
             </>
           )}
+          </div>
+        </div>
+      )}
+
+      {activeTab === "LEDGER" && (
+        <div className="fin-orders-container fin-ledger-screen">
+          <div className="fin-ledger-scroll">
+            <div className="fin-ledger-intro">
+              <span className="fin-ledger-eyebrow">Online payments only</span>
+              <h3>Ledger</h3>
+              <p>
+                Transaction-wise settlement view for online payments. This UI currently uses order, tax,
+                and paid values as placeholders until webhook settlement data is wired in.
+              </p>
+            </div>
+
+            {loadingAccounts ? (
+              <div className="fin-ledger-empty">Loading online ledger transactions...</div>
+            ) : ledgerTransactions.length === 0 ? (
+              <div className="fin-ledger-empty">No online payment transactions available yet.</div>
+            ) : (
+              <>
+                <div className="fin-ledger-summary">
+                  <div className="fin-ledger-card">
+                    <span>Collected from customer</span>
+                    <strong>₹{formatCurrency(ledgerTotals.collected)}</strong>
+                  </div>
+                  <div className="fin-ledger-card">
+                    <span>Platform charges</span>
+                    <strong>₹{formatCurrency(ledgerTotals.platformCharges)}</strong>
+                  </div>
+                  <div className="fin-ledger-card">
+                    <span>Restaurant payout</span>
+                    <strong>₹{formatCurrency(ledgerTotals.restaurantPayout)}</strong>
+                  </div>
+                  <div className="fin-ledger-card">
+                    <span>Settled</span>
+                    <strong>₹{formatCurrency(ledgerTotals.settled)}</strong>
+                  </div>
+                  <div className="fin-ledger-card alert">
+                    <span>Pending settlement</span>
+                    <strong>₹{formatCurrency(ledgerTotals.pending)}</strong>
+                  </div>
+                </div>
+
+                <div className="fin-ledger-table-wrap">
+                  <table className="fin-ledger-table">
+                    <thead>
+                      <tr>
+                        <th>Transaction</th>
+                        <th>Customer</th>
+                        <th>Collected</th>
+                        <th>Platform Charge</th>
+                        <th>Restaurant Gets</th>
+                        <th>Settled</th>
+                        <th>Pending</th>
+                        <th>Status</th>
+                        <th>Date & Time</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {ledgerTransactions.map((order) => (
+                        <tr key={`ledger-${order.id}`}>
+                          <td>
+                            <div className="fin-ledger-transaction">
+                              <strong>{order.id}</strong>
+                              <span>{String(order.paymentType || "online").toUpperCase()}</span>
+                            </div>
+                          </td>
+                          <td>
+                            <div className="fin-ledger-customer">
+                              <strong>{order.username || "Walk-in customer"}</strong>
+                              <span>{`Table ${order.tableNumber || "-"}`}</span>
+                              <span>{order.phoneNumber || "No phone number"}</span>
+                            </div>
+                          </td>
+                          <td>₹{formatCurrency(order.collectedAmount)}</td>
+                          <td>₹{formatCurrency(order.platformCharge)}</td>
+                          <td>₹{formatCurrency(order.restaurantPayout)}</td>
+                          <td>₹{formatCurrency(order.settledAmount)}</td>
+                          <td>₹{formatCurrency(order.pendingSettlement)}</td>
+                          <td>
+                            <span
+                              className={`fin-ledger-status ${order.ledgerStatus.toLowerCase().replace(/\s+/g, "-")}`}
+                            >
+                              {order.ledgerStatus}
+                            </span>
+                          </td>
+                          <td>
+                            {order.timestamp ? (
+                              <div className="fin-ledger-datetime">
+                                <span>
+                                  {new Date(order.timestamp.toDate?.() || order.timestamp).toLocaleDateString("en-US", {
+                                    month: "short",
+                                    day: "numeric",
+                                    year: "numeric",
+                                  })}
+                                </span>
+                                <strong>{formatTime(order.timestamp)}</strong>
+                              </div>
+                            ) : (
+                              "N/A"
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}

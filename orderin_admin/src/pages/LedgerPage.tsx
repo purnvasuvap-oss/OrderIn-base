@@ -47,6 +47,24 @@ export const LedgerPage = () => {
     return filteredTransactions.length > 0 ? filteredTransactions : [];
   }, [filteredTransactions]);
 
+  const ledgerTotals = useMemo(() => {
+    return onlineTransactions.reduce(
+      (acc, txn) => {
+        acc.collected += txn.grossAmount;
+        acc.receivedByClient += txn.restaurantReceivable;
+        acc.receivedByAdmin += txn.netPlatformEarnings;
+        acc.platformCharges += txn.platformFee;
+        return acc;
+      },
+      {
+        collected: 0,
+        receivedByClient: 0,
+        receivedByAdmin: 0,
+        platformCharges: 0,
+      }
+    );
+  }, [onlineTransactions]);
+
   // Debug: Log filtering details
   useEffect(() => {
     console.log('[LedgerPage] Online Transactions:', {
@@ -123,13 +141,23 @@ export const LedgerPage = () => {
       },
     },
     {
-      header: 'Gross',
+      header: 'Collected',
       accessor: 'grossAmount',
       render: (value: unknown): React.ReactNode => `₹${value}`,
     },
     {
-      header: 'Platform Fee',
+      header: 'Platform Charge',
       accessor: 'platformFee',
+      render: (value: unknown): React.ReactNode => `₹${value}`,
+    },
+    {
+      header: 'Received by Client',
+      accessor: 'restaurantReceivable',
+      render: (value: unknown): React.ReactNode => `₹${value}`,
+    },
+    {
+      header: 'Received by Admin',
+      accessor: 'netPlatformEarnings',
       render: (value: unknown): React.ReactNode => `₹${value}`,
     },
     {
@@ -167,7 +195,7 @@ export const LedgerPage = () => {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div>
               <h1 style={{ fontSize: '2.25rem', fontWeight: '900' }}>Finance Ledger</h1>
-              <p style={{ color: 'rgba(255, 255, 255, 0.9)', marginTop: '0.5rem', fontSize: '1.125rem' }}>Complete transaction history and breakdowns</p>
+              <p style={{ color: 'rgba(255, 255, 255, 0.9)', marginTop: '0.5rem', fontSize: '1.125rem' }}>Collected and received amount view for online transactions</p>
             </div>
             <button style={{
               display: 'flex',
@@ -196,6 +224,32 @@ export const LedgerPage = () => {
               Export
             </button>
           </div>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: '1rem' }}>
+          {[
+            { label: 'Collected From Customer', value: ledgerTotals.collected, tone: 'rgba(34, 197, 94, 0.18)' },
+            { label: 'Platform Charges', value: ledgerTotals.platformCharges, tone: 'rgba(249, 115, 22, 0.16)' },
+            { label: 'Received by Client', value: ledgerTotals.receivedByClient, tone: 'rgba(59, 130, 246, 0.16)' },
+            { label: 'Received by Admin', value: ledgerTotals.receivedByAdmin, tone: 'rgba(168, 85, 247, 0.16)' },
+          ].map((card) => (
+            <div
+              key={card.label}
+              className="card"
+              style={{
+                padding: '1.25rem',
+                background: `linear-gradient(135deg, ${card.tone} 0%, rgba(15, 23, 42, 0.92) 100%)`,
+                border: '1px solid rgba(148, 163, 184, 0.16)',
+              }}
+            >
+              <p style={{ fontSize: '0.75rem', fontWeight: '700', letterSpacing: '0.08em', textTransform: 'uppercase', color: '#94a3b8', marginBottom: '0.5rem' }}>
+                {card.label}
+              </p>
+              <p style={{ fontSize: '2rem', fontWeight: '900', color: '#f8fafc' }}>
+                ₹{card.value.toFixed(2)}
+              </p>
+            </div>
+          ))}
         </div>
 
         <div className="card">
@@ -288,7 +342,7 @@ export const LedgerPage = () => {
                   }}>
                     <h3 style={{ fontWeight: '700', color: '#f1f5f9', fontSize: '1.125rem' }}>{groupName}</h3>
                     <div style={{ textAlign: 'right' }}>
-                      <p style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: '500' }}>Earnings</p>
+                      <p style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: '500' }}>Received by Admin</p>
                       <p style={{ fontSize: '1.75rem', fontWeight: '900', background: 'linear-gradient(135deg, #06b6d4 0%, #a855f7 100%)', backgroundClip: 'text', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>₹{groupTotal}</p>
                     </div>
                   </div>
@@ -320,20 +374,20 @@ export const LedgerPage = () => {
                 </div>
               </div>
               <div style={{ borderTop: '1px solid rgba(6, 182, 212, 0.2)', paddingTop: '1rem' }}>
-                <h3 style={{ fontWeight: '700', marginBottom: '1rem', color: '#f1f5f9' }}>Payment Split</h3>
+                <h3 style={{ fontWeight: '700', marginBottom: '1rem', color: '#f1f5f9' }}>Collection and Received Split</h3>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', fontSize: '0.875rem' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ color: '#cbd5e1' }}>Gross Amount</span>
+                    <span style={{ color: '#cbd5e1' }}>Collected From Customer</span>
                     <span style={{ fontWeight: '600', color: '#f1f5f9' }}>₹{selectedTxn.grossAmount}</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', paddingLeft: '1rem', borderLeft: '2px solid rgba(6, 182, 212, 0.3)' }}>
-                    <span style={{ color: '#94a3b8' }}>Restaurant Receivable</span>
+                    <span style={{ color: '#94a3b8' }}>Received by Client</span>
                     <span style={{ color: '#cbd5e1' }}>₹{selectedTxn.restaurantReceivable}</span>
                   </div>
                   
                   <div style={{ marginTop: '0.5rem', borderTop: '1px solid rgba(6, 182, 212, 0.15)', paddingTop: '0.5rem' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', paddingLeft: '1rem', fontWeight: '600', color: '#10b981' }}>
-                      <span>Platform Fee (Before Fees)</span>
+                      <span>Platform Charge (Before Fees)</span>
                       <span>₹{selectedTxn.platformFee}</span>
                     </div>
                   </div>
@@ -350,7 +404,7 @@ export const LedgerPage = () => {
                   </div>
 
                   <div style={{ display: 'flex', justifyContent: 'space-between', paddingLeft: '2rem', paddingTop: '0.5rem', borderTop: '1px solid rgba(6, 182, 212, 0.15)', fontSize: '0.875rem', fontWeight: '700', color: '#06b6d4', marginTop: '0.5rem' }}>
-                    <span>Net Platform Earnings</span>
+                    <span>Received by Admin</span>
                     <span>₹{selectedTxn.netPlatformEarnings}</span>
                   </div>
                 </div>
