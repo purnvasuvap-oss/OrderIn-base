@@ -123,7 +123,7 @@ const derivePaymentInfo = (order) => {
   const nestedPaymentMethod = (order.payment && (order.payment.method || order.payment.type || order.payment.paymentMethod)) ||
     (order.transaction && (order.transaction.method || order.transaction.type)) ||
     (order.card && (order.card.type || order.card.brand));
-  const rawMethod = (order.paymentMethod || order.paymentType || order.method || order.payment_mode || order.paymentMode || nestedPaymentMethod || "").toString();
+  const rawMethod = (order.paymentMethod || order.paymentType || order.OnlinePayMethod || order.method || order.payment_mode || order.paymentMode || nestedPaymentMethod || "").toString();
   const rawStatus = (order.paymentStatus || order.payment_status || "").toString();
   const rawPaidAmount = Number(
     (order.paidAmount !== undefined && order.paidAmount !== null) ? order.paidAmount :
@@ -204,6 +204,12 @@ const derivePaymentInfo = (order) => {
     paidAmount: rawPaidAmount,
     verificationCode,
   };
+};
+
+const toNumberOrNull = (value) => {
+  if (value === null || value === undefined || value === "") return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
 };
 
 /**
@@ -673,12 +679,7 @@ export const subscribeAllCustomerOrders = (onUpdate) => {
               }
               const totalCost = subtotal + tax;
 
-              let paidAmount = totalCost;
-              if (order.paymentStatus === "unpaid" || order.paymentStatus === "Unpaid") {
-                paidAmount = 0;
-              } else if (order.paymentStatus === "paid" || order.paymentStatus === "Paid") {
-                paidAmount = totalCost;
-              }
+              const paymentInfo = derivePaymentInfo(order);
 
               allOrders.push({
                 id: orderId,
@@ -693,10 +694,27 @@ export const subscribeAllCustomerOrders = (onUpdate) => {
                 subtotal: subtotal,
                 tax: tax,
                 totalCost: totalCost || order.totalCost || order.amount || subtotal + tax,
-                paidAmount: paidAmount,
-                paymentType: order.paymentMethod || order.paymentType || "Online",
-                paymentStatus: order.paymentStatus || "unpaid",
+                paidAmount: paymentInfo.paidAmount,
+                paymentType: paymentInfo.paymentType,
+                paymentStatus: paymentInfo.paymentStatus,
+                paid: paymentInfo.paidDisplay,
                 verificationCode: order.verificationCode || order.code || "-",
+                paymentTimestamp: order.paymentTimestamp || null,
+                razorpayPaymentId: order.razorpayPaymentId || null,
+                razorpayOrderId: order.razorpayOrderId || null,
+                razorpayMethod: order.razorpayMethod || null,
+                razorpayStatus: order.razorpayStatus || null,
+                razorpayAmount: toNumberOrNull(order.razorpayAmount),
+                razorpayCurrency: order.razorpayCurrency || null,
+                razorpayCapturedAt: order.razorpayCapturedAt || null,
+                razorpayFeeAmount: toNumberOrNull(order.razorpayFeeAmount),
+                razorpayTaxAmount: toNumberOrNull(order.razorpayTaxAmount),
+                razorpaySettlementId: order.razorpaySettlementId || null,
+                razorpaySettlementStatus: order.razorpaySettlementStatus || null,
+                razorpaySettlementAmount: toNumberOrNull(order.razorpaySettlementAmount),
+                razorpaySettlementUtr: order.razorpaySettlementUtr || null,
+                razorpaySettlementCreatedAt: order.razorpaySettlementCreatedAt || null,
+                razorpaySyncedAt: order.razorpaySyncedAt || null,
                 timestamp: timestamp,
                 status: order.status || "Pending",
                 orderIndex: index,

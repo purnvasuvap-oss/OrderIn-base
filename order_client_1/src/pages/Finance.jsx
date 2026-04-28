@@ -253,10 +253,10 @@ function App() {
   };
 
   const getSettlementStatus = (order, pendingSettlement) => {
-    const settlementState = String(order.settlementStatus || "").toLowerCase();
+    const settlementState = String(order.razorpaySettlementStatus || order.settlementStatus || "").toLowerCase();
     const paymentState = String(order.paymentStatus || order.paid || "").toLowerCase();
 
-    if (settlementState.includes("settled")) return "Settled";
+    if (settlementState.includes("processed") || settlementState.includes("settled")) return "Settled";
     if (pendingSettlement <= 0) return "Settled";
     if (paymentState.includes("paid") || paymentState.includes("success")) return "Ready to settle";
     if ((Number(order.paidAmount) || 0) > 0) return "Partially collected";
@@ -268,17 +268,16 @@ function App() {
     .slice()
     .sort((a, b) => getOrderTimeValue(b) - getOrderTimeValue(a))
     .map((order) => {
-      const collectedAmount = Number(order.paidAmount) || Number(order.totalCost) || 0;
-      const platformCharge = Number(order.tax) || 0;
-      const restaurantPayout = Math.max(collectedAmount - platformCharge, 0);
-      const alreadySettled = String(order.settlementStatus || "").toLowerCase().includes("settled");
+      const collectedAmount = Number(order.razorpayAmount) || Number(order.paidAmount) || Number(order.totalCost) || 0;
+      const restaurantPayout = Number(order.subtotal) || 0;
+      const settlementState = String(order.razorpaySettlementStatus || order.settlementStatus || "").toLowerCase();
+      const alreadySettled = settlementState.includes("processed") || settlementState.includes("settled");
       const settledAmount = alreadySettled ? restaurantPayout : 0;
       const pendingSettlement = Math.max(restaurantPayout - settledAmount, 0);
 
       return {
         ...order,
         collectedAmount,
-        platformCharge,
         restaurantPayout,
         settledAmount,
         pendingSettlement,
@@ -289,13 +288,12 @@ function App() {
   const ledgerTotals = ledgerTransactions.reduce(
     (summary, order) => {
       summary.collected += order.collectedAmount;
-      summary.platformCharges += order.platformCharge;
       summary.restaurantPayout += order.restaurantPayout;
       summary.settled += order.settledAmount;
       summary.pending += order.pendingSettlement;
       return summary;
     },
-    { collected: 0, platformCharges: 0, restaurantPayout: 0, settled: 0, pending: 0 }
+    { collected: 0, restaurantPayout: 0, settled: 0, pending: 0 }
   );
 
 
@@ -776,8 +774,7 @@ function App() {
               <span className="fin-ledger-eyebrow">Online payments only</span>
               <h3>Ledger</h3>
               <p>
-                Transaction-wise settlement view for online payments. This UI currently uses order, tax,
-                and paid values as placeholders until webhook settlement data is wired in.
+                Transaction-wise settlement view for online payments for this restaurant only.
               </p>
             </div>
 
@@ -791,10 +788,6 @@ function App() {
                   <div className="fin-ledger-card">
                     <span>Collected from customer</span>
                     <strong>₹{formatCurrency(ledgerTotals.collected)}</strong>
-                  </div>
-                  <div className="fin-ledger-card">
-                    <span>Platform charges</span>
-                    <strong>₹{formatCurrency(ledgerTotals.platformCharges)}</strong>
                   </div>
                   <div className="fin-ledger-card">
                     <span>Restaurant payout</span>
@@ -817,7 +810,6 @@ function App() {
                         <th>Transaction</th>
                         <th>Customer</th>
                         <th>Collected</th>
-                        <th>Platform Charge</th>
                         <th>Restaurant Gets</th>
                         <th>Settled</th>
                         <th>Pending</th>
@@ -842,7 +834,6 @@ function App() {
                             </div>
                           </td>
                           <td>₹{formatCurrency(order.collectedAmount)}</td>
-                          <td>₹{formatCurrency(order.platformCharge)}</td>
                           <td>₹{formatCurrency(order.restaurantPayout)}</td>
                           <td>₹{formatCurrency(order.settledAmount)}</td>
                           <td>₹{formatCurrency(order.pendingSettlement)}</td>

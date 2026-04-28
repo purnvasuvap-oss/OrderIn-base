@@ -24,6 +24,7 @@ function App() {
   const [loadingTransit, setLoadingTransit] = useState(false);
   const [allCustomerOrders, setAllCustomerOrders] = useState([]);
   const [loadingAccounts, setLoadingAccounts] = useState(false);
+  const [debugOpen, setDebugOpen] = useState({});
   const [billOrder, setBillOrder] = useState(null);
   const [showBillModal, setShowBillModal] = useState(false);
 
@@ -48,6 +49,10 @@ function App() {
     };
     return getTime(b) - getTime(a);
   });
+
+  const toggleDebug = (id) => {
+    setDebugOpen(prev => ({ ...prev, [id]: !prev[id] }));
+  };
 
   const formatCurrency = (value) => {
     const n = Number(value);
@@ -138,20 +143,15 @@ function App() {
 
   // Fetch all orders for earnings calculation
   useEffect(() => {
-    let unsubscribe = null;
     if (activeTab === "EARNINGS CALCULATION") {
       setLoadingEarnings(true);
       console.log("=== FINANCE PAGE: Fetching all orders for earnings calculation ===");
-      unsubscribe = subscribeAllCustomerOrders((orders) => {
+      subscribeAllCustomerOrders((orders) => {
         console.log(`Finance (earnings) - received ${orders.length} orders`);
         setEarningsOrders(orders);
         setLoadingEarnings(false);
       });
     }
-
-    return () => {
-      if (typeof unsubscribe === "function") unsubscribe();
-    };
   }, [activeTab]);
 
   // Calculate date range based on filter type
@@ -253,10 +253,10 @@ function App() {
   };
 
   const getSettlementStatus = (order, pendingSettlement) => {
-    const settlementState = String(order.settlementStatus || "").toLowerCase();
+    const settlementState = String(order.razorpaySettlementStatus || order.settlementStatus || "").toLowerCase();
     const paymentState = String(order.paymentStatus || order.paid || "").toLowerCase();
 
-    if (settlementState.includes("settled")) return "Settled";
+    if (settlementState.includes("processed") || settlementState.includes("settled")) return "Settled";
     if (pendingSettlement <= 0) return "Settled";
     if (paymentState.includes("paid") || paymentState.includes("success")) return "Ready to settle";
     if ((Number(order.paidAmount) || 0) > 0) return "Partially collected";
@@ -268,17 +268,16 @@ function App() {
     .slice()
     .sort((a, b) => getOrderTimeValue(b) - getOrderTimeValue(a))
     .map((order) => {
-      const collectedAmount = Number(order.paidAmount) || Number(order.totalCost) || 0;
-      const platformCharge = Number(order.tax) || 0;
-      const restaurantPayout = Math.max(collectedAmount - platformCharge, 0);
-      const alreadySettled = String(order.settlementStatus || "").toLowerCase().includes("settled");
+      const collectedAmount = Number(order.razorpayAmount) || Number(order.paidAmount) || Number(order.totalCost) || 0;
+      const restaurantPayout = Number(order.subtotal) || 0;
+      const settlementState = String(order.razorpaySettlementStatus || order.settlementStatus || "").toLowerCase();
+      const alreadySettled = settlementState.includes("processed") || settlementState.includes("settled");
       const settledAmount = alreadySettled ? restaurantPayout : 0;
       const pendingSettlement = Math.max(restaurantPayout - settledAmount, 0);
 
       return {
         ...order,
         collectedAmount,
-        platformCharge,
         restaurantPayout,
         settledAmount,
         pendingSettlement,
@@ -289,37 +288,12 @@ function App() {
   const ledgerTotals = ledgerTransactions.reduce(
     (summary, order) => {
       summary.collected += order.collectedAmount;
-      summary.platformCharges += order.platformCharge;
       summary.restaurantPayout += order.restaurantPayout;
       summary.settled += order.settledAmount;
       summary.pending += order.pendingSettlement;
       return summary;
     },
-    { collected: 0, platformCharges: 0, restaurantPayout: 0, settled: 0, pending: 0 }
-  );
-
-  const dailyTransitMetrics = sortedDaily.reduce(
-    (summary, order) => {
-      const total = Number(order.totalCost) || 0;
-      const paidAmount = Number(order.paidAmount) || 0;
-      const paymentStatus = (order.paymentStatus || "").toLowerCase();
-      const remainingAmount = Math.max(total - paidAmount, 0);
-
-      summary.totalOrders += 1;
-      summary.totalValue += total;
-
-      if (paymentStatus === "paid") {
-        summary.collected += paidAmount > 0 ? paidAmount : total;
-      } else if (paidAmount > 0) {
-        summary.collected += paidAmount;
-        summary.pending += remainingAmount;
-      } else {
-        summary.pending += total;
-      }
-
-      return summary;
-    },
-    { totalOrders: 0, totalValue: 0, collected: 0, pending: 0 }
+    { collected: 0, restaurantPayout: 0, settled: 0, pending: 0 }
   );
 
 
@@ -468,9 +442,26 @@ function App() {
                             />
                           </svg>
                           </button>
+                          <button
+                            className="debug-btn"
+                            title="Debug order"
+                            onClick={() => toggleDebug(order.id)}
+                            style={{ padding: '8px 10px', borderRadius: 6, border: '1px solid #ddd', background: '#fff', cursor: 'pointer' }}
+                          >
+                            {debugOpen[order.id] ? 'Hide' : 'Debug'}
+                          </button>
                         </div>
                       </td>
                     </tr>
+                    {debugOpen[order.id] && (
+                      <tr key={`${order.id}-debug`}>
+                        <td colSpan={8} style={{ background: '#fafafa', padding: 16 }}>
+                          <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontSize: 12, maxHeight: 300, overflow: 'auto' }}>
+{JSON.stringify(order, null, 2)}
+                          </pre>
+                        </td>
+                      </tr>
+                    )}
                     </React.Fragment>
                   ))}
                 </tbody>
@@ -538,7 +529,7 @@ function App() {
 
       {/* DAILY TRANSIT TAB */}
       {activeTab === "DAILY TRANSIT" && (
-        <div className="fin-orders-container fin-transit-layout">
+        <div className="fin-orders-container">
           {loadingTransit ? (
             <div style={{ padding: "40px", textAlign: "center", color: "#666" }}>
               Loading daily transit orders...
@@ -548,127 +539,118 @@ function App() {
               No orders found for today
             </div>
           ) : (
-            <div className="fin-transit-board">
-              <div className="fin-transit-summary">
-                <div className="fin-transit-summary-card">
-                  <span>Orders Today</span>
-                  <strong>{dailyTransitMetrics.totalOrders}</strong>
-                </div>
-                <div className="fin-transit-summary-card">
-                  <span>Total Value</span>
-                  <strong>₹{formatCurrency(dailyTransitMetrics.totalValue)}</strong>
-                </div>
-                <div className="fin-transit-summary-card">
-                  <span>Collected</span>
-                  <strong>₹{formatCurrency(dailyTransitMetrics.collected)}</strong>
-                </div>
-                <div className="fin-transit-summary-card alert">
-                  <span>Pending</span>
-                  <strong>₹{formatCurrency(dailyTransitMetrics.pending)}</strong>
-                </div>
-              </div>
-
-              <div className="fin-orders-table fin-transit-table-wrap">
-                <table className="fin-transit-table">
-                  <thead>
-                    <tr>
-                      <th>Order ID</th>
-                      <th>Customer</th>
-                      <th>Items</th>
-                      <th>Specifications</th>
-                      <th>Cost</th>
-                      <th>Payment</th>
-                      <th>Time</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {sortedDaily.map((order) => (
-                      <React.Fragment key={order.id}>
-                        <tr className="fin-transit-row">
-                          <td>
-                            <div className="fin-transit-cell-stack">
-                              <strong className="fin-transit-id-text">{order.id}</strong>
-                              <span className="fin-transit-row-note">Live ticket</span>
+            <div className="fin-orders-table">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Order ID</th>
+                    <th>Customer</th>
+                    <th>Items</th>
+                    <th>Specifications</th>
+                    <th>Cost</th>
+                    <th>Paid</th>
+                    <th>Time</th>
+                    <th>Print</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sortedDaily.map((order) => (
+                    <React.Fragment key={order.id}>
+                      <tr>
+                        <td>{order.id}</td>
+                        <td>
+                          {order.username}
+                          <br />
+                          <span className="fin-table-no">{`Table ${order.tableNumber}`}</span>
+                        </td>
+                        <td>
+                          {order.itemDetails && order.itemDetails.map((item, idx) => (
+                            <div key={idx} style={{ marginBottom: "10px", paddingBottom: "10px", borderBottom: idx < order.itemDetails.length - 1 ? "1px solid #eee" : "none" }}>
+                              <div style={{ fontWeight: "700" }}>{item.quantity}x {item.name}</div>
+                              <div style={{ fontSize: "12px", color: "#666", marginTop: "3px" }}>₹{item.price} × {item.quantity} = ₹{item.total}</div>
                             </div>
-                          </td>
-                          <td>
-                            <div className="fin-transit-cell-stack">
-                              <strong>{order.username}</strong>
-                              <span className="fin-table-no">{`Table ${order.tableNumber}`}</span>
-                            </div>
-                          </td>
-                          <td>
-                            <div className="fin-transit-compact-list">
-                              {order.itemDetails && order.itemDetails.length > 0 ? order.itemDetails.map((item, idx) => (
-                                <div key={idx} className="fin-transit-compact-item">
-                                  <span className="fin-transit-compact-main">{item.quantity}x {item.name}</span>
-                                  <span className="fin-transit-compact-sub">₹{item.total}</span>
+                          ))}
+                        </td>
+                        <td>
+                          {order.specs && order.specs.length > 0 ? (
+                            order.specs.map((spec, idx) => (
+                              <div key={idx} style={{ marginBottom: "8px", paddingBottom: "8px", borderBottom: idx < order.specs.length - 1 ? "1px solid #eee" : "none" }}>
+                                <div style={{ fontWeight: "600", fontSize: "13px" }}>{spec.name}</div>
+                                <div style={{ fontSize: "12px", color: "#666", marginTop: "2px" }}>
+                                  {spec.instructions && spec.instructions !== "-" ? spec.instructions : "No special instructions"}
                                 </div>
-                              )) : (
-                                <span className="fin-transit-row-note">No items</span>
-                              )}
+                              </div>
+                            ))
+                          ) : (
+                            "-"
+                          )}
+                        </td>
+                        <td>
+                          <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                            <div style={{ fontSize: "12px", color: "#666" }}>
+                              Subtotal: <span style={{ fontWeight: "700", color: "#000" }}>₹{formatCurrency(order.subtotal)}</span>
                             </div>
-                          </td>
-                          <td>
-                            <div className="fin-transit-compact-list">
-                              {order.specs && order.specs.length > 0 ? order.specs.map((spec, idx) => (
-                                <div key={idx} className="fin-transit-spec-line">
-                                  <strong>{spec.name}</strong>
-                                  <span>{spec.instructions && spec.instructions !== "-" ? spec.instructions : "No special instructions"}</span>
-                                </div>
-                              )) : (
-                                <span className="fin-transit-row-note">No special instructions</span>
-                              )}
+                            <div style={{ fontSize: "12px", color: "#666" }}>
+                              Tax: <span style={{ fontWeight: "700", color: "#000" }}>₹{formatCurrency(order.tax)}</span>
                             </div>
-                          </td>
-                          <td>
-                            <div className="fin-transit-cost-stack">
-                              <div><span>Subtotal</span><strong>₹{formatCurrency(order.subtotal)}</strong></div>
-                              <div><span>Tax</span><strong>₹{formatCurrency(order.tax)}</strong></div>
-                              <div className="total"><span>Total</span><strong>₹{formatCurrency(order.totalCost)}</strong></div>
+                            <div style={{ fontSize: "13px", fontWeight: "700", color: "#e74c3c", paddingTop: "4px", borderTop: "1px solid #eee" }}>
+                              Total: ₹{formatCurrency(order.totalCost)}
                             </div>
-                          </td>
-                          <td>
-                            <div className="fin-payment-wrapper fin-transit-payment-stack">
-                              <div className={`fin-payment-badge ${String(order.paymentType || "Unknown").toLowerCase().replace(/\s+/g, "-")}`}>
+                          </div>
+                        </td>
+                        <td>
+                          <div className="fin-payment-wrapper">
+                            <div className={`fin-payment-badge ${(order.paymentType || "Unknown")?.toLowerCase()}`}>
                                 {order.paymentType || "Unknown"}
-                              </div>
-                              <div className="fin-payment-status-text">
+                            </div>
+                            <div className="fin-payment-status-text">
                                 {order.paid}
-                              </div>
                             </div>
-                          </td>
-                          <td>
-                            <div className="fin-transit-cell-stack">
-                              <strong>{formatTime(order.timestamp)}</strong>
-                            </div>
-                          </td>
-                          <td>
-                            <div className="fin-transit-actions-col">
-                              <button className="print-btn fin-transit-inline-btn" title="Print bill" onClick={() => { setBillOrder(order); setShowBillModal(true); }}>
-                                <svg
-                                  width="20"
-                                  height="20"
-                                  viewBox="0 0 24 24"
-                                  fill="none"
-                                  xmlns="http://www.w3.org/2000/svg"
-                                >
-                                  <path
-                                    d="M5 20h14v-2H5v2zm7-18v12l4-4h-3V4h-2v6H8l4 4z"
-                                    fill="#050505"
-                                  />
-                                </svg>
-                                <span>Print</span>
-                              </button>
-                            </div>
+                          </div>
+                        </td>
+                        <td>
+                          <strong>{formatTime(order.timestamp)}</strong>
+                        </td>
+                        <td>
+                          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                            <button className="print-btn" title="Print bill" onClick={() => { setBillOrder(order); setShowBillModal(true); }}>
+                            <svg
+                              width="34"
+                              height="34"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              xmlns="http://www.w3.org/2000/svg"
+                            >
+                              <path
+                                d="M5 20h14v-2H5v2zm7-18v12l4-4h-3V4h-2v6H8l4 4z"
+                                fill="#050505"
+                              />
+                            </svg>
+                            </button>
+                            <button
+                              className="debug-btn"
+                              title="Debug order"
+                              onClick={() => toggleDebug(order.id)}
+                              style={{ padding: '8px 10px', borderRadius: 6, border: '1px solid #ddd', background: '#fff', cursor: 'pointer' }}
+                            >
+                              {debugOpen[order.id] ? 'Hide' : 'Debug'}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                      {debugOpen[order.id] && (
+                        <tr key={`${order.id}-debug`}>
+                          <td colSpan={8} style={{ background: '#fafafa', padding: 16 }}>
+                            <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontSize: 12, maxHeight: 300, overflow: 'auto' }}>
+{JSON.stringify(order, null, 2)}
+                            </pre>
                           </td>
                         </tr>
-                      </React.Fragment>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                      )}
+                    </React.Fragment>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
         </div>
@@ -676,18 +658,14 @@ function App() {
 
       {/* EARNINGS CALCULATION TAB */}
       {activeTab === "EARNINGS CALCULATION" && (
-        <div className="fin-orders-container fin-earnings-screen">
-          <div className="fin-earnings-scroll">
-          <div className="fin-earnings-filter-panel">
-            <div className="fin-earnings-filter-heading">
-              <span>Revenue window</span>
-              <h3>Filter by Date</h3>
-            </div>
-            <div className="fin-earnings-filter-controls">
+        <div className="fin-orders-container">
+          <div style={{ padding: "20px", background: "#f9f9f9", borderRadius: "8px", marginBottom: "20px" }}>
+            <h3 style={{ margin: "0 0 15px 0", fontSize: "16px", fontWeight: "600" }}>Filter by Date</h3>
+            <div style={{ display: "flex", gap: "15px", flexWrap: "wrap", alignItems: "center" }}>
               <select 
                 value={earningsFilterType} 
                 onChange={(e) => setEarningsFilterType(e.target.value)}
-                className="fin-earnings-control"
+                style={{ padding: "8px 12px", borderRadius: "6px", border: "1px solid #ddd", fontSize: "14px" }}
               >
                 <option value="today">Today</option>
                 <option value="week">This Week</option>
@@ -702,14 +680,14 @@ function App() {
                     type="date" 
                     value={earningsStartDate}
                     onChange={(e) => setEarningsStartDate(e.target.value)}
-                    className="fin-earnings-control"
+                    style={{ padding: "8px 12px", borderRadius: "6px", border: "1px solid #ddd" }}
                   />
-                  <span className="fin-earnings-to">to</span>
+                  <span style={{ fontSize: "14px", color: "#666" }}>to</span>
                   <input 
                     type="date" 
                     value={earningsEndDate}
                     onChange={(e) => setEarningsEndDate(e.target.value)}
-                    className="fin-earnings-control"
+                    style={{ padding: "8px 12px", borderRadius: "6px", border: "1px solid #ddd" }}
                   />
                 </>
               )}
@@ -717,48 +695,45 @@ function App() {
           </div>
 
           {loadingEarnings ? (
-            <div className="fin-earnings-loading">
+            <div style={{ padding: "40px", textAlign: "center", color: "#666" }}>
               Loading earnings data...
             </div>
           ) : (
             <>
               {/* Summary Cards */}
-              <div className="fin-earnings-summary-grid">
-                <div className="fin-earnings-summary-card earnings">
-                  <div className="fin-earnings-card-label">Total Earnings</div>
-                  <div className="fin-earnings-card-value">₹{formatCurrency(earningsData.totalEarnings)}</div>
-                  <div className="fin-earnings-card-note">Orders: {filteredEarnings.length}</div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", marginBottom: "30px" }}>
+                <div style={{ background: "#f0f7ff", padding: "20px", borderRadius: "12px", border: "2px solid #2196f3" }}>
+                  <div style={{ fontSize: "12px", color: "#666", marginBottom: "5px", fontWeight: "600" }}>TOTAL EARNINGS</div>
+                  <div style={{ fontSize: "28px", fontWeight: "700", color: "#2196f3" }}>₹{formatCurrency(earningsData.totalEarnings)}</div>
+                  <div style={{ fontSize: "12px", color: "#666", marginTop: "5px" }}>Orders: {filteredEarnings.length}</div>
                 </div>
-                <div className="fin-earnings-summary-card tax">
-                  <div className="fin-earnings-card-label">Total Tax</div>
-                  <div className="fin-earnings-card-value">₹{formatCurrency(earningsData.totalTax)}</div>
-                  <div className="fin-earnings-card-note">From all payments</div>
+                <div style={{ background: "#fff3e0", padding: "20px", borderRadius: "12px", border: "2px solid #ff9800" }}>
+                  <div style={{ fontSize: "12px", color: "#666", marginBottom: "5px", fontWeight: "600" }}>TOTAL TAX</div>
+                  <div style={{ fontSize: "28px", fontWeight: "700", color: "#ff9800" }}>₹{formatCurrency(earningsData.totalTax)}</div>
+                  <div style={{ fontSize: "12px", color: "#666", marginTop: "5px" }}>From all payments</div>
                 </div>
               </div>
 
               {/* Earnings by Payment Type */}
-              <div className="fin-earnings-section">
-                <div className="fin-earnings-section-header">
-                  <span>Payment mix</span>
-                  <h3>Earnings by Payment Type</h3>
-                </div>
-                <div className="fin-earnings-type-grid">
+              <div style={{ background: "#f9f9f9", padding: "20px", borderRadius: "12px", marginBottom: "20px" }}>
+                <h3 style={{ margin: "0 0 20px 0", fontSize: "16px", fontWeight: "600" }}>EARNINGS BY PAYMENT TYPE</h3>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "15px" }}>
                   {Object.entries(earningsData.byPaymentType).map(([type, data]) => (
-                    <div key={type} className="fin-earnings-type-card">
-                      <div className="fin-earnings-type-name">
+                    <div key={type} style={{ background: "white", padding: "15px", borderRadius: "8px", border: "1px solid #eee" }}>
+                      <div style={{ fontSize: "12px", color: "#666", fontWeight: "600", marginBottom: "10px", textTransform: "uppercase" }}>
                         {type}
                       </div>
-                      <div className="fin-earnings-type-value">
+                      <div style={{ fontSize: "18px", fontWeight: "700", color: "#2196f3", marginBottom: "8px" }}>
                         ₹{formatCurrency(data.earnings)}
                       </div>
-                      <div className="fin-earnings-type-count">
+                      <div style={{ fontSize: "11px", color: "#999", marginBottom: "5px" }}>
                         Orders: {data.count}
                       </div>
-                      <div className="fin-earnings-chip">
+                      <div style={{ fontSize: "11px", color: "#666", background: "#f5f5f5", padding: "6px", borderRadius: "4px", marginBottom: "10px" }}>
                         Avg: ₹{data.count > 0 ? formatCurrency(data.earnings / data.count) : "0.00"}
                       </div>
-                      <div className="fin-earnings-tax-line">
-                        Tax: <span>₹{formatCurrency(data.tax)}</span>
+                      <div style={{ fontSize: "11px", color: "#999", paddingTop: "8px", borderTop: "1px solid #eee" }}>
+                        Tax: <span style={{ fontWeight: "600", color: "#333" }}>₹{formatCurrency(data.tax)}</span>
                       </div>
                     </div>
                   ))}
@@ -766,24 +741,21 @@ function App() {
               </div>
 
               {/* Tax by Payment Type */}
-              <div className="fin-earnings-section">
-                <div className="fin-earnings-section-header">
-                  <span>Tax split</span>
-                  <h3>Tax by Payment Type</h3>
-                </div>
-                <div className="fin-earnings-type-grid tax-grid">
+              <div style={{ background: "#f9f9f9", padding: "20px", borderRadius: "12px" }}>
+                <h3 style={{ margin: "0 0 20px 0", fontSize: "16px", fontWeight: "600" }}>TAX BY PAYMENT TYPE</h3>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "15px" }}>
                   {Object.entries(earningsData.byPaymentType).map(([type, data]) => (
-                    <div key={`tax-${type}`} className="fin-earnings-type-card tax-card">
-                      <div className="fin-earnings-type-name">
+                    <div key={`tax-${type}`} style={{ background: "white", padding: "15px", borderRadius: "8px", border: "1px solid #eee" }}>
+                      <div style={{ fontSize: "12px", color: "#666", fontWeight: "600", marginBottom: "10px", textTransform: "uppercase" }}>
                         {type} TAX
                       </div>
-                      <div className="fin-earnings-type-value tax-value">
+                      <div style={{ fontSize: "18px", fontWeight: "700", color: "#ff9800", marginBottom: "8px" }}>
                         ₹{formatCurrency(data.tax)}
                       </div>
-                      <div className="fin-earnings-type-count">
+                      <div style={{ fontSize: "11px", color: "#999", marginBottom: "5px" }}>
                         From {data.count} orders
                       </div>
-                      <div className="fin-earnings-chip">
+                      <div style={{ fontSize: "11px", color: "#666", background: "#f5f5f5", padding: "6px", borderRadius: "4px" }}>
                         Avg Tax: ₹{data.count > 0 ? formatCurrency(data.tax / data.count) : "0.00"}
                       </div>
                     </div>
@@ -792,7 +764,6 @@ function App() {
               </div>
             </>
           )}
-          </div>
         </div>
       )}
 
@@ -803,8 +774,7 @@ function App() {
               <span className="fin-ledger-eyebrow">Online payments only</span>
               <h3>Ledger</h3>
               <p>
-                Transaction-wise settlement view for online payments. This UI currently uses order, tax,
-                and paid values as placeholders until webhook settlement data is wired in.
+                Transaction-wise settlement view for online payments for this restaurant only.
               </p>
             </div>
 
@@ -818,10 +788,6 @@ function App() {
                   <div className="fin-ledger-card">
                     <span>Collected from customer</span>
                     <strong>₹{formatCurrency(ledgerTotals.collected)}</strong>
-                  </div>
-                  <div className="fin-ledger-card">
-                    <span>Platform charges</span>
-                    <strong>₹{formatCurrency(ledgerTotals.platformCharges)}</strong>
                   </div>
                   <div className="fin-ledger-card">
                     <span>Restaurant payout</span>
@@ -844,7 +810,6 @@ function App() {
                         <th>Transaction</th>
                         <th>Customer</th>
                         <th>Collected</th>
-                        <th>Platform Charge</th>
                         <th>Restaurant Gets</th>
                         <th>Settled</th>
                         <th>Pending</th>
@@ -869,7 +834,6 @@ function App() {
                             </div>
                           </td>
                           <td>₹{formatCurrency(order.collectedAmount)}</td>
-                          <td>₹{formatCurrency(order.platformCharge)}</td>
                           <td>₹{formatCurrency(order.restaurantPayout)}</td>
                           <td>₹{formatCurrency(order.settledAmount)}</td>
                           <td>₹{formatCurrency(order.pendingSettlement)}</td>

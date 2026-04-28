@@ -48,12 +48,31 @@ interface FirebaseCustomerData {
 interface FirebaseOrderData {
   id?: string;
   paymentMethod?: string;
+  PaymentMethod?: string;
   OnlinePayMethod?: string;
   subtotal?: string | number;
   taxes?: string | number;
   paymentStatus?: string;
   createdAt?: string | number;
   paidAt?: string | number;
+  paymentTimestamp?: string | number;
+  razorpayOrderId?: string;
+  razorpayPaymentId?: string;
+  razorpaySignature?: string;
+  razorpayMethod?: string;
+  razorpayStatus?: string;
+  razorpayAmount?: string | number;
+  razorpayCurrency?: string;
+  razorpayCapturedAt?: string | number;
+  razorpayFeeAmount?: string | number;
+  razorpayTaxAmount?: string | number;
+  razorpaySettlementId?: string;
+  razorpaySettlementStatus?: string;
+  razorpaySettlementAmount?: string | number;
+  razorpaySettlementUtr?: string;
+  razorpaySettlementCreatedAt?: string | number;
+  razorpaySyncSource?: 'api' | 'webhook';
+  razorpaySyncedAt?: string | number;
   [key: string]: unknown;
 }
 
@@ -1056,6 +1075,8 @@ export const useAppStore = create<AppState>((set, get) => {
                     // Parse values
                     const subtotal = parseFloat(orderData.subtotal as string) || 0; // Restaurant's cut
                     const taxes = parseFloat(orderData.taxes as string) || 0; // Total platform fee collected
+                    const paymentMethod = (orderData.paymentMethod || orderData.PaymentMethod || 'UPI') as PaymentMethod;
+                    const createdAtSource = orderData.paymentTimestamp || orderData.createdAt || orderData.paidAt || Date.now();
                     
                     // Calculate fees and earnings
                     // razorpayFee = 2% of subtotal + 18% of (2% of subtotal)
@@ -1073,7 +1094,7 @@ export const useAppStore = create<AppState>((set, get) => {
                       orderId: orderData.id || `order_${index}`,
                       restaurantId: restaurant.id,
                       customerId: customerPhone,
-                      paymentMethod: (orderData.paymentMethod || 'UPI') as PaymentMethod,
+                      paymentMethod,
                       OnlinePayMethod: (orderData.OnlinePayMethod as string) || undefined,
                       grossAmount: subtotal + taxes, // Total paid by customer (subtotal + taxes)
                       restaurantReceivable: subtotal, // Restaurant's cut
@@ -1082,8 +1103,26 @@ export const useAppStore = create<AppState>((set, get) => {
                       gst: gst, // GST we owe (18% of our earnings)
                       netPlatformEarnings: earnings, // Our earnings after GST
                       status: (orderData.paymentStatus || 'Paid') as TransactionStatus,
-                      createdAt: orderData.createdAt ? new Date(orderData.createdAt) : new Date(orderData.paidAt || Date.now()),
+                      createdAt: new Date(createdAtSource),
                       referenceId: orderData.id || `order_${index}`,
+                      paymentTimestamp: typeof orderData.paymentTimestamp === 'string' ? orderData.paymentTimestamp : undefined,
+                      razorpayOrderId: orderData.razorpayOrderId,
+                      razorpayPaymentId: orderData.razorpayPaymentId,
+                      razorpaySignature: orderData.razorpaySignature,
+                      razorpayMethod: orderData.razorpayMethod,
+                      razorpayStatus: orderData.razorpayStatus,
+                      razorpayAmount: orderData.razorpayAmount !== undefined ? Number(orderData.razorpayAmount) : undefined,
+                      razorpayCurrency: orderData.razorpayCurrency,
+                      razorpayCapturedAt: typeof orderData.razorpayCapturedAt === 'string' ? orderData.razorpayCapturedAt : undefined,
+                      razorpayFeeAmount: orderData.razorpayFeeAmount !== undefined ? Number(orderData.razorpayFeeAmount) : undefined,
+                      razorpayTaxAmount: orderData.razorpayTaxAmount !== undefined ? Number(orderData.razorpayTaxAmount) : undefined,
+                      razorpaySettlementId: orderData.razorpaySettlementId,
+                      razorpaySettlementStatus: orderData.razorpaySettlementStatus,
+                      razorpaySettlementAmount: orderData.razorpaySettlementAmount !== undefined ? Number(orderData.razorpaySettlementAmount) : undefined,
+                      razorpaySettlementUtr: orderData.razorpaySettlementUtr,
+                      razorpaySettlementCreatedAt: typeof orderData.razorpaySettlementCreatedAt === 'string' ? orderData.razorpaySettlementCreatedAt : undefined,
+                      razorpaySyncSource: orderData.razorpaySyncSource,
+                      razorpaySyncedAt: typeof orderData.razorpaySyncedAt === 'string' ? orderData.razorpaySyncedAt : undefined,
                     };
                     fetchedTransactions.push(txn);
                     console.log('[Store] loadCustomerTransactions: mapped transaction', { 

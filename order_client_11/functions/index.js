@@ -2,38 +2,457 @@ const functions = require('firebase-functions');
 const admin = require('firebase-admin');
 const crypto = require('crypto');
 const axios = require('axios');
-const express = require('express');
-const cors = require('cors');
 
-const app = express();
-app.use(express.json());
-app.use(cors({ 
-  origin: true,
-  credentials: true,
-  methods: ['GET', 'POST', 'OPTIONS', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
+if (!admin.apps.length) {
+  admin.initializeApp();
+}
 
-// Explicit OPTIONS handler for preflight requests
-app.options('*', cors({ 
-  origin: true,
-  credentials: true,
-  methods: ['GET', 'POST', 'OPTIONS', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
+const RAZORPAY_KEY_ID =
+  functions.config().razorpay?.key_id ||
+  process.env.RAZORPAY_KEY_ID ||
+  'rzp_live_SQcvIlOahj69Ma';
+const RAZORPAY_KEY_SECRET =
+  functions.config().razorpay?.key_secret ||
+  process.env.RAZORPAY_KEY_SECRET ||
+  'SK5TvpFE4jw76xSgxxHAsLkl';
 
-admin.initializeApp();
+const setCorsHeaders = (res) => {
+  res.set('Access-Control-Allow-Origin', '*');
+  res.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+};
 
-// Razorpay configuration - Use environment variables in production
-const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID || 'rzp_live_ScCaDSFLu8TcHp';
-const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || '3gGKC6pxo1y6q4ajJskCYcDm';
+const parseAmount = (value) => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? Math.round(parsed) : NaN;
+};
 
-// Trigger: when a promotion doc is deleted, attempt to delete the referenced storage object
+const toRupees = (value) => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed / 100 : undefined;
+};
+
+const toIsoFromUnixSeconds = (value) => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? new Date(parsed * 1000).toISOString() : undefined;
+};
+
+const getOrderContext = (payload = {}) => {
+  const notes = payload.notes || {};
+
+  return {
+    restaurantId: payload.restaurantId || notes.restaurantId || notes.restaurant_id,
+    customerPhone: payload.customerPhone || notes.customerPhone || notes.customer_phone || payload.contact || notes.contact,
+    orderId: payload.orderId || notes.orderId || notes.order_id || payload.receipt || notes.receipt,
+  };
+};
+
+const buildRazorpayReconciliation = (paymentData, settlementData, source) => ({
+  paymentTimestamp: new Date().toISOString(),
+  razorpayOrderId: paymentData.order_id,
+  razorpayPaymentId: paymentData.id,
+  razorpaySignature: undefined,
+  razorpayMethod: paymentData.method,
+  razorpayStatus: paymentData.status,
+  razorpayAmount: toRupees(paymentData.amount),
+  razorpayCurrency: paymentData.currency,
+  razorpayCapturedAt: toIsoFromUnixSeconds(paymentData.created_at),
+  razorpayFeeAmount: toRupees(paymentData.fee),
+  razorpayTaxAmount: toRupees(paymentData.tax),
+  razorpaySettlementId: settlementData?.id || paymentData.settlement_id,
+  razorpaySettlementStatus: settlementData?.status,
+  razorpaySettlementAmount: toRupees(settlementData?.amount),
+  razorpaySettlementUtr: settlementData?.utr,
+  razorpaySettlementCreatedAt: toIsoFromUnixSeconds(settlementData?.created_at),
+  razorpaySyncSource: source,
+  razorpaySyncedAt: new Date().toISOString(),
+});
+
+const writeReconciliationToFirestore = async ({ restaurantId, customerPhone, orderId, reconciliation }) => {
+  if (!restaurantId || !customerPhone || !orderId) {
+    return { updated: false, reason: 'missing_order_context' };
+  }
+
+  const customerRef = admin.firestore().doc(`Restaurant/${restaurantId}/customers/${customerPhone}`);
+  const customerSnap = await customerRef.get();
+
+  if (!customerSnap.exists) {
+    return { updated: false, reason: 'customer_not_found' };
+  }
+
+  const customerData = customerSnap.data() || {};
+  const pastOrders = Array.isArray(customerData.pastOrders) ? customerData.pastOrders : [];
+  let didUpdate = false;
+
+  const updatedPastOrders = pastOrders.map((order) => {
+    if (!order || typeof order !== 'object') {
+      return order;
+    }
+
+    const matchesOrderId = order.id === orderId;
+    const matchesRazorpayIds =
+      order.razorpayPaymentId === reconciliation.razorpayPaymentId ||
+      order.razorpayOrderId === reconciliation.razorpayOrderId;
+
+    if (!matchesOrderId && !matchesRazorpayIds) {
+      return order;
+    }
+
+    didUpdate = true;
+
+    return {
+      ...order,
+      paymentStatus: reconciliation.razorpayStatus === 'captured' ? 'paid' : order.paymentStatus || 'pending',
+      razorpayOrderId: reconciliation.razorpayOrderId,
+      razorpayPaymentId: reconciliation.razorpayPaymentId,
+      razorpayMethod: reconciliation.razorpayMethod,
+      razorpayStatus: reconciliation.razorpayStatus,
+      razorpayAmount: reconciliation.razorpayAmount,
+      razorpayCurrency: reconciliation.razorpayCurrency,
+      razorpayCapturedAt: reconciliation.razorpayCapturedAt,
+      razorpayFeeAmount: reconciliation.razorpayFeeAmount,
+      razorpayTaxAmount: reconciliation.razorpayTaxAmount,
+      razorpaySettlementId: reconciliation.razorpaySettlementId,
+      razorpaySettlementStatus: reconciliation.razorpaySettlementStatus,
+      razorpaySettlementAmount: reconciliation.razorpaySettlementAmount,
+      razorpaySettlementUtr: reconciliation.razorpaySettlementUtr,
+      razorpaySettlementCreatedAt: reconciliation.razorpaySettlementCreatedAt,
+      razorpaySyncSource: reconciliation.razorpaySyncSource,
+      razorpaySyncedAt: reconciliation.razorpaySyncedAt,
+      paymentTimestamp: order.paymentTimestamp || reconciliation.paymentTimestamp,
+    };
+  });
+
+  if (!didUpdate) {
+    return { updated: false, reason: 'order_not_found' };
+  }
+
+  await customerRef.update({
+    pastOrders: updatedPastOrders,
+  });
+
+  return { updated: true };
+};
+
+const fetchSettlementById = async (settlementId) => {
+  if (!settlementId) {
+    return null;
+  }
+
+  try {
+    const response = await axios.get(`https://api.razorpay.com/v1/settlements/${settlementId}`, {
+      auth: {
+        username: RAZORPAY_KEY_ID,
+        password: RAZORPAY_KEY_SECRET,
+      },
+      timeout: 10000,
+    });
+
+    return response.data;
+  } catch (error) {
+    console.warn('[Razorpay] Failed to fetch settlement:', settlementId, error.message);
+    return null;
+  }
+};
+
+const handleCreateRazorpayOrder = async (req, res) => {
+  try {
+    const {
+      amount,
+      currency = 'INR',
+      receipt,
+      customerPhone,
+      restaurantId,
+      orderId,
+      paymentMethod,
+    } = req.body || {};
+
+    const finalAmount = parseAmount(amount);
+
+    if (!finalAmount || finalAmount <= 0) {
+      return res.status(400).json({ error: 'Invalid amount' });
+    }
+    if (!receipt) {
+      return res.status(400).json({ error: 'Receipt is required' });
+    }
+
+    console.log('[createRazorpayOrder] Request body:', {
+      ...req.body,
+      amount: finalAmount,
+    });
+
+    const razorpayResponse = await axios.post(
+      'https://api.razorpay.com/v1/orders',
+      {
+        amount: finalAmount,
+        currency,
+        receipt,
+        notes: {
+          customerPhone,
+          restaurantId,
+          orderId,
+          paymentMethod,
+        },
+      },
+      {
+        auth: {
+          username: RAZORPAY_KEY_ID,
+          password: RAZORPAY_KEY_SECRET,
+        },
+        timeout: 10000,
+      }
+    );
+
+    const orderData = razorpayResponse.data;
+
+    console.log('[createRazorpayOrder] SUCCESS - Order created:', {
+      order_id: orderData.id,
+      amount: orderData.amount,
+      currency: orderData.currency,
+      status: orderData.status,
+    });
+
+    return res.status(201).json({
+      order_id: orderData.id,
+      amount: orderData.amount,
+      currency: orderData.currency,
+      status: orderData.status,
+    });
+  } catch (error) {
+    console.error('[createRazorpayOrder] FULL ERROR:', {
+      message: error.message,
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      data: error.response?.data,
+      code: error.code,
+    });
+
+    let errorMessage = 'Failed to create Razorpay order';
+    if (error.response?.status === 401) {
+      errorMessage = 'Razorpay authentication failed - check API keys';
+    } else if (error.response?.status === 400) {
+      errorMessage = `Razorpay validation error: ${error.response?.data?.description || error.message}`;
+    } else if (error.code === 'ECONNABORTED') {
+      errorMessage = 'Request timeout - Razorpay API slow';
+    }
+
+    return res.status(500).json({
+      error: 'Failed to create order',
+      message: errorMessage,
+    });
+  }
+};
+
+const handleVerifyRazorpayPayment = async (req, res) => {
+  try {
+    const {
+      razorpay_payment_id,
+      razorpay_order_id,
+      razorpay_signature,
+    } = req.body || {};
+
+    if (!razorpay_payment_id || !razorpay_order_id || !razorpay_signature) {
+      return res.status(400).json({
+        error: 'Missing required payment details',
+        message: 'razorpay_payment_id, razorpay_order_id, and razorpay_signature are required',
+      });
+    }
+
+    const signatureString = `${razorpay_order_id}|${razorpay_payment_id}`;
+    const expectedSignature = crypto
+      .createHmac('sha256', RAZORPAY_KEY_SECRET)
+      .update(signatureString)
+      .digest('hex');
+
+    if (expectedSignature !== razorpay_signature) {
+      return res.status(400).json({
+        error: 'Signature verification failed',
+        message: 'Payment signature mismatch',
+      });
+    }
+
+    try {
+      const paymentResponse = await axios.get(`https://api.razorpay.com/v1/payments/${razorpay_payment_id}`, {
+        auth: {
+          username: RAZORPAY_KEY_ID,
+          password: RAZORPAY_KEY_SECRET,
+        },
+        timeout: 10000,
+      });
+
+      const paymentData = paymentResponse.data;
+      const settlementData = await fetchSettlementById(paymentData.settlement_id);
+
+      return res.status(200).json({
+        success: true,
+        status: 'verified',
+        payment_id: paymentData.id,
+        order_id: paymentData.order_id || razorpay_order_id,
+        amount: paymentData.amount,
+        currency: paymentData.currency,
+        method: paymentData.method,
+        payment_status: paymentData.status,
+        settlement_id: settlementData?.id || paymentData.settlement_id || null,
+        settlement_status: settlementData?.status || null,
+      });
+    } catch (apiError) {
+      console.warn('[verifyRazorpayPayment] Could not fetch payment details from API:', apiError.message);
+      return res.status(200).json({
+        success: true,
+        status: 'verified',
+        payment_id: razorpay_payment_id,
+        order_id: razorpay_order_id,
+      });
+    }
+  } catch (error) {
+    console.error('[verifyRazorpayPayment] Error:', error.message || error);
+    return res.status(500).json({
+      error: 'Verification failed',
+      message: error.message || 'Internal error',
+    });
+  }
+};
+
+const handleSyncRazorpayPayment = async (req, res) => {
+  try {
+    const razorpayPaymentId = req.body?.razorpayPaymentId || req.body?.paymentId;
+
+    if (!razorpayPaymentId) {
+      return res.status(400).json({
+        error: 'Missing razorpayPaymentId',
+      });
+    }
+
+    const paymentResponse = await axios.get(`https://api.razorpay.com/v1/payments/${razorpayPaymentId}`, {
+      auth: {
+        username: RAZORPAY_KEY_ID,
+        password: RAZORPAY_KEY_SECRET,
+      },
+      timeout: 10000,
+    });
+
+    const paymentData = paymentResponse.data;
+    const settlementData = await fetchSettlementById(paymentData.settlement_id);
+    const reconciliation = buildRazorpayReconciliation(paymentData, settlementData, 'api');
+    const context = {
+      ...getOrderContext(paymentData),
+      restaurantId: req.body?.restaurantId || getOrderContext(paymentData).restaurantId,
+      customerPhone: req.body?.customerPhone || getOrderContext(paymentData).customerPhone,
+      orderId: req.body?.orderId || getOrderContext(paymentData).orderId,
+    };
+    const firestoreResult = await writeReconciliationToFirestore({
+      ...context,
+      reconciliation,
+    });
+
+    return res.status(200).json({
+      success: true,
+      context,
+      payment: reconciliation,
+      firestore: firestoreResult,
+    });
+  } catch (error) {
+    console.error('[syncRazorpayPayment] Error:', error.message || error);
+    return res.status(500).json({
+      error: 'Failed to sync Razorpay payment',
+      message: error.response?.data?.description || error.message || 'Internal error',
+    });
+  }
+};
+
+const handleRazorpayWebhook = async (req, res) => {
+  try {
+    const webhookSecret =
+      functions.config().razorpay?.webhook_secret ||
+      process.env.RAZORPAY_WEBHOOK_SECRET;
+
+    if (!webhookSecret) {
+      return res.status(500).json({
+        error: 'Webhook secret not configured',
+      });
+    }
+
+    const signature = req.header('x-razorpay-signature');
+
+    if (!signature) {
+      return res.status(400).json({
+        error: 'Missing webhook signature',
+      });
+    }
+
+    const expectedSignature = crypto
+      .createHmac('sha256', webhookSecret)
+      .update(req.rawBody)
+      .digest('hex');
+
+    if (expectedSignature !== signature) {
+      return res.status(400).json({
+        error: 'Invalid webhook signature',
+      });
+    }
+
+    const event = req.body?.event;
+
+    if (!['payment.captured', 'order.paid'].includes(event)) {
+      return res.status(200).json({
+        success: true,
+        ignored: true,
+        event,
+      });
+    }
+
+    const paymentData = req.body?.payload?.payment?.entity;
+
+    if (!paymentData?.id) {
+      return res.status(400).json({
+        error: 'Payment entity missing in webhook payload',
+      });
+    }
+
+    const settlementData = await fetchSettlementById(paymentData.settlement_id);
+    const reconciliation = buildRazorpayReconciliation(paymentData, settlementData, 'webhook');
+    const firestoreResult = await writeReconciliationToFirestore({
+      ...getOrderContext(paymentData),
+      reconciliation,
+    });
+
+    return res.status(200).json({
+      success: true,
+      event,
+      paymentId: paymentData.id,
+      firestore: firestoreResult,
+    });
+  } catch (error) {
+    console.error('[razorpayWebhook] Error:', error.message || error);
+    return res.status(500).json({
+      error: 'Webhook handling failed',
+      message: error.message || 'Internal error',
+    });
+  }
+};
+
+const onRequest = (handler) => async (req, res) => {
+  setCorsHeaders(res);
+
+  if (req.method === 'OPTIONS') {
+    res.status(204).send('');
+    return;
+  }
+
+  if (req.method !== 'POST') {
+    res.status(405).json({ error: 'Method not allowed' });
+    return;
+  }
+
+  await handler(req, res);
+};
+
 exports.onPromotionDelete = functions.firestore
-  .document('Restaurant/orderin_restaurant_2/promotions/{promotionId}')
+  .document('Restaurant/orderin_restaurant_1/promotions/{promotionId}')
   .onDelete(async (snap, context) => {
     const data = snap.data();
     if (!data) return null;
+
     const imagePath = data.image_path || null;
     if (!imagePath) {
       console.log('onPromotionDelete: no image_path to delete for', context.params.promotionId);
@@ -56,12 +475,11 @@ exports.onPromotionDelete = functions.firestore
     return null;
   });
 
-// Callable helper: return signed upload URL for clients to use (requires authenticated admin user)
 exports.getSignedPromotionUploadUrl = functions.https.onCall(async (data, context) => {
   if (!context.auth) {
     throw new functions.https.HttpsError('unauthenticated', 'Authentication required');
   }
-  // Check for admin claim (recommended). If you don't use custom claims, modify as needed.
+
   const isAdmin = context.auth.token && context.auth.token.admin;
   if (!isAdmin) {
     throw new functions.https.HttpsError('permission-denied', 'Admin privileges required');
@@ -77,12 +495,11 @@ exports.getSignedPromotionUploadUrl = functions.https.onCall(async (data, contex
   const file = bucket.file(filePath);
 
   try {
-    // Write signed URL for PUT
     const [url] = await file.getSignedUrl({
       version: 'v4',
       action: 'write',
-      expires: Date.now() + 15 * 60 * 1000, // 15 minutes
-      contentType: 'image/*'
+      expires: Date.now() + 15 * 60 * 1000,
+      contentType: 'image/*',
     });
     return { uploadUrl: url, path: filePath };
   } catch (err) {
@@ -91,194 +508,57 @@ exports.getSignedPromotionUploadUrl = functions.https.onCall(async (data, contex
   }
 });
 
-// HTTP Function: Create Razorpay Order
-// Called by Payment Hub to initiate a Razorpay payment
-app.post('/createRazorpayOrder', async (req, res) => {
-  try {
-    const {
-        amount,
-        currency = 'INR',
-        receipt,
-        customerPhone,
-        restaurantId,
-        orderId,
-        paymentMethod,
-      } = req.body;
+exports.createRazorpayOrder = functions.https.onRequest(onRequest(handleCreateRazorpayOrder));
+exports.verifyRazorpayPayment = functions.https.onRequest(onRequest(handleVerifyRazorpayPayment));
+exports.syncRazorpayPayment = functions.https.onRequest(onRequest(handleSyncRazorpayPayment));
+exports.razorpayWebhook = functions.https.onRequest(async (req, res) => {
+  setCorsHeaders(res);
 
-      // Validate required fields
-      if (!amount || amount <= 0) {
-        res.status(400).json({ error: 'Invalid amount' });
-        return;
-      }
-      if (!receipt) {
-        res.status(400).json({ error: 'Receipt is required' });
-        return;
-      }
+  if (req.method === 'OPTIONS') {
+    res.status(204).send('');
+    return;
+  }
 
-      console.log('[createRazorpayOrder] Creating order:', {
-        amount,
-        currency,
-        receipt,
-        customerPhone,
-        restaurantId,
-        orderId,
-      });
+  if (req.method !== 'POST') {
+    res.status(405).json({ error: 'Method not allowed' });
+    return;
+  }
 
-      // Create Razorpay order using API
-      const razorpayResponse = await axios.post(
-        'https://api.razorpay.com/v1/orders',
-        {
-          amount: Math.round(amount), // Amount in paise
-          currency,
-          receipt,
-          notes: {
-            customerPhone,
-            restaurantId,
-            orderId,
-            paymentMethod,
-          },
-        },
-        {
-          auth: {
-            username: RAZORPAY_KEY_ID,
-            password: RAZORPAY_KEY_SECRET,
-          },
-        }
-      );
-
-      const orderData = razorpayResponse.data;
-
-      console.log('[createRazorpayOrder] Order created successfully:', {
-        order_id: orderData.id,
-        amount: orderData.amount,
-        currency: orderData.currency,
-      });
-
-      res.status(201).json({
-        order_id: orderData.id,
-        amount: orderData.amount,
-        currency: orderData.currency,
-        status: orderData.status,
-      });
-    } catch (error) {
-      console.error('[createRazorpayOrder] Error:', error.message || error);
-      const errorMessage = error.response?.data?.description || error.message || 'Failed to create Razorpay order';
-      res.status(500).json({
-        error: 'Failed to create order',
-        message: errorMessage,
-      });
-    }
+  await handleRazorpayWebhook(req, res);
 });
 
-// HTTP Function: Verify Razorpay Payment
-// Called by Payment Hub after successful Razorpay modal completion
-app.post('/verifyRazorpayPayment', async (req, res) => {
-  try {
-    const {
-        razorpay_payment_id,
-        razorpay_order_id,
-        razorpay_signature,
-      } = req.body;
+exports.api = functions.https.onRequest(async (req, res) => {
+  setCorsHeaders(res);
 
-      // Validate required fields
-      if (!razorpay_payment_id || !razorpay_order_id || !razorpay_signature) {
-        res.status(400).json({
-          error: 'Missing required payment details',
-          message: 'razorpay_payment_id, razorpay_order_id, and razorpay_signature are required',
-        });
-        return;
-      }
+  if (req.method === 'OPTIONS') {
+    res.status(204).send('');
+    return;
+  }
 
-      console.log('[verifyRazorpayPayment] Verifying payment:', {
-        payment_id: razorpay_payment_id,
-        order_id: razorpay_order_id,
-      });
+  if (req.method !== 'POST') {
+    res.status(405).json({ error: 'Method not allowed' });
+    return;
+  }
 
-      // Verify signature
-      const body = `${razorpay_order_id}|${razorpay_payment_id}`;
-      const expectedSignature = crypto
-        .createHmac('sha256', RAZORPAY_KEY_SECRET)
-        .update(body)
-        .digest('hex');
+  if (req.path === '/createRazorpayOrder') {
+    await handleCreateRazorpayOrder(req, res);
+    return;
+  }
 
-      const isSignatureValid = expectedSignature === razorpay_signature;
+  if (req.path === '/verifyRazorpayPayment') {
+    await handleVerifyRazorpayPayment(req, res);
+    return;
+  }
 
-      if (!isSignatureValid) {
-        console.warn('[verifyRazorpayPayment] Signature verification failed:', {
-          expected: expectedSignature,
-          received: razorpay_signature,
-        });
-        res.status(400).json({
-          error: 'Signature verification failed',
-          message: 'Payment signature does not match',
-        });
-        return;
-      }
+  if (req.path === '/syncRazorpayPayment') {
+    await handleSyncRazorpayPayment(req, res);
+    return;
+  }
 
-      console.log('[verifyRazorpayPayment] Signature verified successfully');
+  if (req.path === '/razorpayWebhook') {
+    await handleRazorpayWebhook(req, res);
+    return;
+  }
 
-      // Optional: Fetch payment details from Razorpay API for additional verification
-      try {
-        const paymentResponse = await axios.get(
-          `https://api.razorpay.com/v1/payments/${razorpay_payment_id}`,
-          {
-            auth: {
-              username: RAZORPAY_KEY_ID,
-              password: RAZORPAY_KEY_SECRET,
-            },
-          }
-        );
-
-        const paymentData = paymentResponse.data;
-
-        console.log('[verifyRazorpayPayment] Payment details from Razorpay:', {
-          payment_id: paymentData.id,
-          status: paymentData.status,
-          amount: paymentData.amount,
-          method: paymentData.method,
-        });
-
-        // Verify payment status
-        if (paymentData.status !== 'captured' && paymentData.status !== 'authorized') {
-          res.status(400).json({
-            error: 'Payment not captured',
-            message: `Payment status is ${paymentData.status}. Expected 'captured' or 'authorized'.`,
-          });
-          return;
-        }
-
-        res.status(200).json({
-          success: true,
-          message: 'Payment verified successfully',
-          payment_id: paymentData.id,
-          order_id: razorpay_order_id,
-          amount: paymentData.amount,
-          currency: paymentData.currency,
-          method: paymentData.method,
-          status: paymentData.status,
-        });
-      } catch (apiError) {
-        console.warn('[verifyRazorpayPayment] Could not fetch payment details from API:', apiError.message);
-        // If API fetch fails, still consider signature valid as a fallback
-        res.status(200).json({
-          success: true,
-          message: 'Payment signature verified successfully',
-          payment_id: razorpay_payment_id,
-          order_id: razorpay_order_id,
-        });
-      }
-    } catch (error) {
-      console.error('[verifyRazorpayPayment] Error:', error.message || error);
-      res.status(500).json({
-        error: 'Payment verification failed',
-        message: error.message || 'An error occurred while verifying payment',
-      });
-    }
+  res.status(404).json({ error: 'Route not found' });
 });
-
-// Export Express app as Firebase Function
-exports.api = functions.https.onRequest(app);
-
-// Also export individual functions for backward compatibility
-exports.createRazorpayOrder = functions.https.onRequest((req, res) => app(req, res));
-exports.verifyRazorpayPayment = functions.https.onRequest((req, res) => app(req, res));

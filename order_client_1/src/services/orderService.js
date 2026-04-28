@@ -176,6 +176,12 @@ const derivePaymentInfo = (order) => {
   };
 };
 
+const toNumberOrNull = (value) => {
+  if (value === null || value === undefined || value === "") return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+};
+
 /**
  * Check if a timestamp falls within today's date range
  * Accounts for timezone differences
@@ -635,12 +641,7 @@ export const subscribeAllCustomerOrders = (onUpdate) => {
               }
               const totalCost = subtotal + tax;
 
-              let paidAmount = totalCost;
-              if (order.paymentStatus === "unpaid" || order.paymentStatus === "Unpaid") {
-                paidAmount = 0;
-              } else if (order.paymentStatus === "paid" || order.paymentStatus === "Paid") {
-                paidAmount = totalCost;
-              }
+              const paymentInfo = derivePaymentInfo(order);
 
               allOrders.push({
                 id: orderId,
@@ -655,11 +656,27 @@ export const subscribeAllCustomerOrders = (onUpdate) => {
                 subtotal: subtotal,
                 tax: tax,
                 totalCost: totalCost || order.totalCost || order.amount || subtotal + tax,
-                paidAmount: paidAmount,
+                paidAmount: paymentInfo.paidAmount,
                 paymentType: paymentInfo.paymentType,
                 paymentStatus: paymentInfo.paymentStatus,
                 paid: paymentInfo.paidDisplay,
                 verificationCode: order.verificationCode || order.code || "-",
+                paymentTimestamp: order.paymentTimestamp || null,
+                razorpayPaymentId: order.razorpayPaymentId || null,
+                razorpayOrderId: order.razorpayOrderId || null,
+                razorpayMethod: order.razorpayMethod || null,
+                razorpayStatus: order.razorpayStatus || null,
+                razorpayAmount: toNumberOrNull(order.razorpayAmount),
+                razorpayCurrency: order.razorpayCurrency || null,
+                razorpayCapturedAt: order.razorpayCapturedAt || null,
+                razorpayFeeAmount: toNumberOrNull(order.razorpayFeeAmount),
+                razorpayTaxAmount: toNumberOrNull(order.razorpayTaxAmount),
+                razorpaySettlementId: order.razorpaySettlementId || null,
+                razorpaySettlementStatus: order.razorpaySettlementStatus || null,
+                razorpaySettlementAmount: toNumberOrNull(order.razorpaySettlementAmount),
+                razorpaySettlementUtr: order.razorpaySettlementUtr || null,
+                razorpaySettlementCreatedAt: order.razorpaySettlementCreatedAt || null,
+                razorpaySyncedAt: order.razorpaySyncedAt || null,
                 timestamp: timestamp,
                 status: order.status || "Pending",
                 orderIndex: index,

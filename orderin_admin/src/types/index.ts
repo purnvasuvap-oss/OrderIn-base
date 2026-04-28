@@ -38,6 +38,24 @@ export interface Transaction {
   status: TransactionStatus;
   createdAt: Date;
   referenceId: string;
+  paymentTimestamp?: string;
+  razorpayOrderId?: string;
+  razorpayPaymentId?: string;
+  razorpaySignature?: string;
+  razorpayMethod?: string;
+  razorpayStatus?: string;
+  razorpayAmount?: number;
+  razorpayCurrency?: string;
+  razorpayCapturedAt?: string;
+  razorpayFeeAmount?: number;
+  razorpayTaxAmount?: number;
+  razorpaySettlementId?: string;
+  razorpaySettlementStatus?: string;
+  razorpaySettlementAmount?: number;
+  razorpaySettlementUtr?: string;
+  razorpaySettlementCreatedAt?: string;
+  razorpaySyncSource?: 'api' | 'webhook';
+  razorpaySyncedAt?: string;
 }
 
 export interface PaymentEntry {

@@ -8,10 +8,67 @@ import { format } from 'date-fns';
 import { Eye, Download } from 'lucide-react';
 import type { Transaction } from '../types';
 
+type LedgerRow = Transaction & {
+  transactionDate: Date;
+  receivedDate: Date | null;
+  collectedAmount: number;
+  receivedByClient: number;
+  receivedByAdmin: number;
+  receivedStatus: 'Processing' | 'Received';
+};
+
+type RazorpaySyncPayload = Partial<Transaction>;
+
+const FUNCTION_BASE_URL = 'https://us-central1-orderin-7f8bc.cloudfunctions.net';
+const SYNC_PAYMENT_ENDPOINTS = [
+  `${FUNCTION_BASE_URL}/syncRazorpayPayment`,
+  `${FUNCTION_BASE_URL}/api/syncRazorpayPayment`,
+];
+
+const syncRazorpayTransaction = async (txn: Transaction): Promise<RazorpaySyncPayload | null> => {
+  if (!txn.razorpayPaymentId) {
+    return null;
+  }
+
+  let lastError: Error | null = null;
+
+  for (const url of SYNC_PAYMENT_ENDPOINTS) {
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          razorpayPaymentId: txn.razorpayPaymentId,
+          restaurantId: txn.restaurantId,
+          customerPhone: txn.customerId,
+          orderId: txn.orderId,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text().catch(() => '');
+        lastError = new Error(`HTTP ${response.status}${errorText ? ` - ${errorText}` : ''}`);
+        continue;
+      }
+
+      const data = await response.json();
+      return (data?.payment || null) as RazorpaySyncPayload | null;
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error));
+    }
+  }
+
+  console.error('[LedgerPage] Razorpay sync failed for transaction:', txn.id, lastError);
+  return null;
+};
+
 export const LedgerPage = () => {
   const { restaurants, getFilteredTransactions, loadCustomerTransactions, isLoadingTransactions } = useAppStore();
   const [groupBy, setGroupBy] = useState<'restaurant' | 'date' | 'paymentMethod'>('date');
-  const [selectedTxn, setSelectedTxn] = useState<Transaction | null>(null);
+  const [selectedTxn, setSelectedTxn] = useState<LedgerRow | null>(null);
+  const [razorpaySyncByTxnId, setRazorpaySyncByTxnId] = useState<Record<string, RazorpaySyncPayload>>({});
 
   // Load customer transactions on mount AND when restaurants are loaded
   useEffect(() => {
@@ -47,12 +104,91 @@ export const LedgerPage = () => {
     return filteredTransactions.length > 0 ? filteredTransactions : [];
   }, [filteredTransactions]);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    const transactionsToSync = onlineTransactions.filter((txn) => {
+      if (!txn.razorpayPaymentId) {
+        return false;
+      }
+
+      if (txn.razorpaySettlementStatus === 'processed') {
+        return false;
+      }
+
+      return !razorpaySyncByTxnId[txn.id];
+    });
+
+    if (transactionsToSync.length === 0) {
+      return;
+    }
+
+    Promise.all(
+      transactionsToSync.map(async (txn) => {
+        const synced = await syncRazorpayTransaction(txn);
+        return synced ? [txn.id, synced] as const : null;
+      })
+    ).then((results) => {
+      if (cancelled) {
+        return;
+      }
+
+      const updates = results.filter((entry): entry is readonly [string, RazorpaySyncPayload] => entry !== null);
+
+      if (updates.length === 0) {
+        return;
+      }
+
+      setRazorpaySyncByTxnId((current) => {
+        const next = { ...current };
+        updates.forEach(([txnId, payload]) => {
+          next[txnId] = payload;
+        });
+        return next;
+      });
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [onlineTransactions, razorpaySyncByTxnId]);
+
+  const ledgerRows = useMemo<LedgerRow[]>(() => {
+    return onlineTransactions.map((txn) => {
+      const syncedTxn = razorpaySyncByTxnId[txn.id] || {};
+      const mergedTxn = { ...txn, ...syncedTxn };
+      const settlementProcessed = mergedTxn.razorpaySettlementStatus === 'processed';
+      const collectedAmount = mergedTxn.razorpayAmount ?? txn.grossAmount;
+      const settledAmount = mergedTxn.razorpaySettlementAmount;
+      const actualAdminAmount = settlementProcessed && typeof settledAmount === 'number'
+        ? Math.max(0, settledAmount - txn.restaurantReceivable)
+        : 0;
+
+      return {
+        ...mergedTxn,
+        transactionDate: new Date(mergedTxn.paymentTimestamp || mergedTxn.createdAt),
+        receivedDate: settlementProcessed
+          ? new Date(
+              mergedTxn.razorpaySettlementCreatedAt ||
+                mergedTxn.paymentTimestamp ||
+                mergedTxn.razorpayCapturedAt ||
+                mergedTxn.createdAt
+            )
+          : null,
+        collectedAmount,
+        receivedByClient: settlementProcessed ? txn.restaurantReceivable : 0,
+        receivedByAdmin: actualAdminAmount,
+        receivedStatus: settlementProcessed ? 'Received' : 'Processing',
+      };
+    });
+  }, [onlineTransactions, razorpaySyncByTxnId]);
+
   const ledgerTotals = useMemo(() => {
-    return onlineTransactions.reduce(
+    return ledgerRows.reduce(
       (acc, txn) => {
-        acc.collected += txn.grossAmount;
-        acc.receivedByClient += txn.restaurantReceivable;
-        acc.receivedByAdmin += txn.netPlatformEarnings;
+        acc.collected += txn.collectedAmount;
+        acc.receivedByClient += txn.receivedByClient;
+        acc.receivedByAdmin += txn.receivedByAdmin;
         acc.platformCharges += txn.platformFee;
         return acc;
       },
@@ -63,26 +199,26 @@ export const LedgerPage = () => {
         platformCharges: 0,
       }
     );
-  }, [onlineTransactions]);
+  }, [ledgerRows]);
 
   // Debug: Log filtering details
   useEffect(() => {
     console.log('[LedgerPage] Online Transactions:', {
       count: onlineTransactions.length,
-      transactions: onlineTransactions
+      transactions: ledgerRows
     });
-  }, [onlineTransactions]);
+  }, [ledgerRows, onlineTransactions.length]);
 
-  const groupedData = useMemo(() => {
-    const groups: Record<string, Transaction[]> = {};
+  const groupedData = useMemo<Record<string, LedgerRow[]>>(() => {
+    const groups: Record<string, LedgerRow[]> = {};
 
-    onlineTransactions.forEach((txn) => {
+    ledgerRows.forEach((txn) => {
       let key = '';
       if (groupBy === 'restaurant') {
         const rest = restaurants.find((r) => r.id === txn.restaurantId);
         key = rest?.Restaurant_name || 'Unknown';
       } else if (groupBy === 'date') {
-        key = format(new Date(txn.createdAt), 'dd MMM yyyy');
+        key = format(new Date(txn.transactionDate), 'dd MMM yyyy');
       } else {
         // Group by OnlinePayMethod instead of paymentMethod
         key = txn.OnlinePayMethod || 'Unknown';
@@ -98,7 +234,7 @@ export const LedgerPage = () => {
     });
 
     // Sort the groups themselves
-    const sortedGroups: Record<string, Transaction[]> = {};
+    const sortedGroups: Record<string, LedgerRow[]> = {};
     const sortedKeys = Object.keys(groups).sort((a, b) => {
       if (groupBy === 'date') {
         // For date grouping, sort dates in descending order (newest first)
@@ -113,13 +249,18 @@ export const LedgerPage = () => {
     });
 
     return sortedGroups;
-  }, [onlineTransactions, groupBy, restaurants]);
+  }, [ledgerRows, groupBy, restaurants]);
 
   const columns = useMemo(() => [
     {
-      header: 'DateTime',
-      accessor: 'createdAt',
+      header: 'Transaction Date',
+      accessor: 'transactionDate',
       render: (value: unknown): React.ReactNode => format(new Date(value as Date), 'dd MMM HH:mm'),
+    },
+    {
+      header: 'Received Date',
+      accessor: 'receivedDate',
+      render: (value: unknown): React.ReactNode => value ? format(new Date(value as Date), 'dd MMM HH:mm') : 'Not received',
     },
     { header: 'Order ID', accessor: 'orderId' },
     {
@@ -142,7 +283,7 @@ export const LedgerPage = () => {
     },
     {
       header: 'Collected',
-      accessor: 'grossAmount',
+      accessor: 'collectedAmount',
       render: (value: unknown): React.ReactNode => `₹${value}`,
     },
     {
@@ -152,12 +293,12 @@ export const LedgerPage = () => {
     },
     {
       header: 'Received by Client',
-      accessor: 'restaurantReceivable',
+      accessor: 'receivedByClient',
       render: (value: unknown): React.ReactNode => `₹${value}`,
     },
     {
       header: 'Received by Admin',
-      accessor: 'netPlatformEarnings',
+      accessor: 'receivedByAdmin',
       render: (value: unknown): React.ReactNode => `₹${value}`,
     },
     {
@@ -166,10 +307,10 @@ export const LedgerPage = () => {
       render: (value: unknown): React.ReactNode => `₹${value}`,
     },
     {
-      header: 'Status',
-      accessor: 'status',
+      header: 'Received Status',
+      accessor: 'receivedStatus',
       render: (value: unknown): React.ReactNode => (
-        <Badge variant={value === 'Paid' ? 'success' : value === 'Failed' ? 'error' : 'warning'}>
+        <Badge variant={value === 'Received' ? 'success' : 'warning'}>
           {value as React.ReactNode}
         </Badge>
       ),
@@ -329,7 +470,7 @@ export const LedgerPage = () => {
           ) : Object.entries(groupedData).length > 0 ? (
             // Actual data
             Object.entries(groupedData).map(([groupName, txns]) => {
-              const groupTotal = txns.reduce((sum, t) => sum + t.netPlatformEarnings, 0);
+              const groupTotal = txns.reduce((sum, t) => sum + t.receivedByAdmin, 0);
               return (
                 <div key={groupName} className="card" style={{ overflow: 'hidden', animation: 'slideInUp 0.6s ease' }}>
                   <div style={{
@@ -347,7 +488,7 @@ export const LedgerPage = () => {
                     </div>
                   </div>
                   <div style={{ padding: '1.5rem' }}>
-                    <DataTable columns={columns} data={txns as unknown as Record<string, unknown>[]} onRowClick={(row) => setSelectedTxn(row as unknown as Transaction)} />
+                    <DataTable columns={columns} data={txns as unknown as Record<string, unknown>[]} onRowClick={(row) => setSelectedTxn(row as unknown as LedgerRow)} />
                   </div>
                 </div>
               );
@@ -372,17 +513,33 @@ export const LedgerPage = () => {
                   <p style={{ fontSize: '0.875rem', color: '#94a3b8' }}>Reference ID</p>
                   <p style={{ fontSize: '0.75rem', fontFamily: 'monospace', color: '#cbd5e1' }}>{selectedTxn.referenceId}</p>
                 </div>
+                <div>
+                  <p style={{ fontSize: '0.875rem', color: '#94a3b8' }}>Transaction Date</p>
+                  <p style={{ fontSize: '1.125rem', fontWeight: '600', color: '#f1f5f9' }}>{format(new Date(selectedTxn.transactionDate), 'dd MMM yyyy, hh:mm a')}</p>
+                </div>
+                <div>
+                  <p style={{ fontSize: '0.875rem', color: '#94a3b8' }}>Received Date</p>
+                  <p style={{ fontSize: '1.125rem', fontWeight: '600', color: '#f1f5f9' }}>{selectedTxn.receivedDate ? format(new Date(selectedTxn.receivedDate), 'dd MMM yyyy, hh:mm a') : 'Not received'}</p>
+                </div>
+                <div>
+                  <p style={{ fontSize: '0.875rem', color: '#94a3b8' }}>Razorpay Payment ID</p>
+                  <p style={{ fontSize: '0.75rem', fontFamily: 'monospace', color: '#cbd5e1' }}>{selectedTxn.razorpayPaymentId || '—'}</p>
+                </div>
+                <div>
+                  <p style={{ fontSize: '0.875rem', color: '#94a3b8' }}>Settlement Status</p>
+                  <p style={{ fontSize: '1.125rem', fontWeight: '600', color: '#f1f5f9' }}>{selectedTxn.razorpaySettlementStatus || 'Pending'}</p>
+                </div>
               </div>
               <div style={{ borderTop: '1px solid rgba(6, 182, 212, 0.2)', paddingTop: '1rem' }}>
                 <h3 style={{ fontWeight: '700', marginBottom: '1rem', color: '#f1f5f9' }}>Collection and Received Split</h3>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', fontSize: '0.875rem' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                     <span style={{ color: '#cbd5e1' }}>Collected From Customer</span>
-                    <span style={{ fontWeight: '600', color: '#f1f5f9' }}>₹{selectedTxn.grossAmount}</span>
+                    <span style={{ fontWeight: '600', color: '#f1f5f9' }}>₹{selectedTxn.collectedAmount}</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', paddingLeft: '1rem', borderLeft: '2px solid rgba(6, 182, 212, 0.3)' }}>
                     <span style={{ color: '#94a3b8' }}>Received by Client</span>
-                    <span style={{ color: '#cbd5e1' }}>₹{selectedTxn.restaurantReceivable}</span>
+                    <span style={{ color: '#cbd5e1' }}>₹{selectedTxn.receivedByClient}</span>
                   </div>
                   
                   <div style={{ marginTop: '0.5rem', borderTop: '1px solid rgba(6, 182, 212, 0.15)', paddingTop: '0.5rem' }}>
@@ -405,7 +562,7 @@ export const LedgerPage = () => {
 
                   <div style={{ display: 'flex', justifyContent: 'space-between', paddingLeft: '2rem', paddingTop: '0.5rem', borderTop: '1px solid rgba(6, 182, 212, 0.15)', fontSize: '0.875rem', fontWeight: '700', color: '#06b6d4', marginTop: '0.5rem' }}>
                     <span>Received by Admin</span>
-                    <span>₹{selectedTxn.netPlatformEarnings}</span>
+                    <span>₹{selectedTxn.receivedByAdmin}</span>
                   </div>
                 </div>
               </div>
