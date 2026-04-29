@@ -40,7 +40,7 @@ const findProvidedTax = (order) => {
   if (!order || typeof order !== 'object') return null;
 
   // Direct common keys
-  const directKeys = ['tax', 'taxAmount', 'tax_amount', 'tax_value', 'tax_value_amount', 'taxAmt', 'tax_amt'];
+  const directKeys = ['tax', 'taxes', 'taxAmount', 'tax_amount', 'tax_value', 'tax_value_amount', 'taxAmt', 'tax_amt'];
   for (const k of directKeys) {
     if (k in order && order[k] !== null && order[k] !== undefined) return order[k];
   }
@@ -77,6 +77,14 @@ const findProvidedTax = (order) => {
  * Returns: { paymentType, paymentStatus, paidDisplay, paidAmount }
  */
 const derivePaymentInfo = (order) => {
+  const normalizedRazorpayStatus = String(order.razorpayStatus || "").toLowerCase().trim();
+  const hasRazorpaySync =
+    Boolean(order.razorpayPaymentId) ||
+    Boolean(order.razorpayOrderId) ||
+    Boolean(order.razorpayMethod) ||
+    Boolean(order.razorpayAmount) ||
+    Boolean(normalizedRazorpayStatus);
+
   // Possible fields in different writes: paymentMethod, paymentType, paymentMethodType, method, paymentMode
   // Also check nested payment objects (order.payment, order.transaction, order.card)
   const nestedPaymentMethod = (order.payment && (order.payment.method || order.payment.type || order.payment.paymentMethod)) ||
@@ -86,18 +94,21 @@ const derivePaymentInfo = (order) => {
     order.paymentMethod ||
     order.paymentType ||
     order.OnlinePayMethod ||
+    order.razorpayMethod ||
+    (hasRazorpaySync ? "Online" : "") ||
     order.method ||
     order.payment_mode ||
     order.paymentMode ||
     nestedPaymentMethod ||
     ""
   ).toString();
-  const rawStatus = (order.paymentStatus || order.payment_status || "").toString();
+  const rawStatus = (order.paymentStatus || order.payment_status || order.razorpayStatus || "").toString();
   const rawPaidAmount = Number(
     (order.paidAmount !== undefined && order.paidAmount !== null) ? order.paidAmount :
     (order.paidAmountValue !== undefined && order.paidAmountValue !== null) ? order.paidAmountValue :
     (order.paid !== undefined && order.paid !== null) ? order.paid :
     (order.amountPaid !== undefined && order.amountPaid !== null) ? order.amountPaid :
+    (order.razorpayAmount !== undefined && order.razorpayAmount !== null) ? order.razorpayAmount :
     0
   ) || 0;
   const verificationCode = order.verificationCode || order.code || order.txnRef || order.transactionId || "";
@@ -139,14 +150,14 @@ const derivePaymentInfo = (order) => {
       paymentStatus = "unpaid";
     } else if (s.includes("failed") || s.includes("error") ) {
       paymentStatus = "failed";
-    } else if (s === "paid" || /\bpaid\b/.test(s) || s === "success" || s === "completed") {
+    } else if (s === "paid" || /\bpaid\b/.test(s) || s === "success" || s === "completed" || s === "captured") {
       paymentStatus = "paid";
     } else {
       paymentStatus = s;
     }
   } else {
     // infer from paid amount
-    if (rawPaidAmount > 0) paymentStatus = "paid";
+    if (rawPaidAmount > 0 || normalizedRazorpayStatus === "captured") paymentStatus = "paid";
     else if (verificationCode) paymentStatus = "unpaid";
     else paymentStatus = "unknown";
   }
@@ -639,7 +650,7 @@ export const subscribeAllCustomerOrders = (onUpdate) => {
               } else {
                 tax = subtotal > 0 ? Math.ceil(subtotal / 100) : 0;
               }
-              const totalCost = subtotal + tax;
+              const totalCost = order.totalCost || order.total || order.amount || subtotal + tax;
 
               const paymentInfo = derivePaymentInfo(order);
 
@@ -655,7 +666,7 @@ export const subscribeAllCustomerOrders = (onUpdate) => {
                 })) || [],
                 subtotal: subtotal,
                 tax: tax,
-                totalCost: totalCost || order.totalCost || order.amount || subtotal + tax,
+                totalCost: totalCost,
                 paidAmount: paymentInfo.paidAmount,
                 paymentType: paymentInfo.paymentType,
                 paymentStatus: paymentInfo.paymentStatus,
@@ -713,7 +724,15 @@ export const subscribeOnlineCustomerOrders = (onUpdate) => {
   return subscribeAllCustomerOrders((orders) => {
     const onlineOrders = (orders || []).filter((order) => {
       const paymentType = String(order.paymentType || "").toLowerCase();
-      return paymentType === "online";
+      const rawMethod = String(order.paymentMethod || order.OnlinePayMethod || order.razorpayMethod || "").toLowerCase();
+      return (
+        paymentType === "online" ||
+        rawMethod === "online" ||
+        Boolean(order.razorpayPaymentId) ||
+        Boolean(order.razorpayOrderId) ||
+        Boolean(order.razorpayAmount) ||
+        Boolean(order.razorpayStatus)
+      );
     });
     if (typeof onUpdate === "function") onUpdate(onlineOrders);
   });

@@ -10,11 +10,11 @@ if (!admin.apps.length) {
 const RAZORPAY_KEY_ID =
   functions.config().razorpay?.key_id ||
   process.env.RAZORPAY_KEY_ID ||
-  'rzp_live_SQcvIlOahj69Ma';
+  'rzp_live_Sj1ZPsCyB5iu3t';
 const RAZORPAY_KEY_SECRET =
   functions.config().razorpay?.key_secret ||
   process.env.RAZORPAY_KEY_SECRET ||
-  'SK5TvpFE4jw76xSgxxHAsLkl';
+  'dN2uwxFr0hIZkcV57RXdRXmt';
 
 const setCorsHeaders = (res) => {
   res.set('Access-Control-Allow-Origin', '*');

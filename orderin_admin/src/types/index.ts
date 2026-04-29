@@ -1,4 +1,4 @@
-export type PaymentMethod = 'UPI' | 'Card' | 'Cash' | 'Net Banking' | 'Wallet';
+export type PaymentMethod = 'UPI' | 'Card' | 'Cash' | 'Net Banking' | 'Wallet' | 'Online';
 export type TransactionStatus = 'Paid' | 'Failed' | 'Refunded' | 'Pending';
 export type RestaurantStatus = 'Active' | 'Inactive' | 'Suspended' | 'Off';
 export type SettlementStatus = 'Pending' | 'Paid' | 'Processing';

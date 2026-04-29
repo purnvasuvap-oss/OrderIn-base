@@ -299,7 +299,7 @@ export const PaymentHubPage = () => {
 
       // Pass order_id ONLY if it was successfully generated
       const optionsConfig: any = {
-        key: 'rzp_live_ScCaDSFLu8TcHp', // Updated to new live key provided
+        key: 'rzp_live_Sj1ZPsCyB5iu3t',
         amount: parseFloat(finalAmount as string) * 100, // Amount in paise
         currency: 'INR',
         name: restaurantName,
