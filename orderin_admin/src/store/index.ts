@@ -170,9 +170,98 @@ const normalizeOnlinePayMethod = (order: FirebaseOrderData): string | undefined 
   return order.OnlinePayMethod || order.razorpayMethod;
 };
 
+const toDateFromUnknown = (value: unknown): Date => {
+  if (value && typeof value === 'object' && 'toDate' in value && typeof (value as { toDate: () => Date }).toDate === 'function') {
+    return (value as { toDate: () => Date }).toDate();
+  }
+
+  const date = new Date(value as string | number | Date);
+  return Number.isNaN(date.getTime()) ? new Date() : date;
+};
+
+const buildTransactionsFromCustomers = (
+  restaurant: Restaurant,
+  customerDocs: Array<{ id: string; data: () => FirebaseCustomerData }>
+): Transaction[] => {
+  const transactions: Transaction[] = [];
+
+  for (const customerDoc of customerDocs) {
+    const customerPhone = customerDoc.id;
+    const customerData = customerDoc.data();
+    const pastOrders = customerData.pastOrders;
+
+    if (!Array.isArray(pastOrders)) {
+      continue;
+    }
+
+    pastOrders.forEach((orderData: FirebaseOrderData, index: number) => {
+      try {
+        const subtotal = toFiniteNumber(orderData.subtotal) || 0;
+        const taxes = toFiniteNumber(orderData.taxes) || 0;
+        const razorpayAmount = toFiniteNumber(orderData.razorpayAmount);
+        const paymentMethod = normalizePaymentMethod(orderData);
+        const onlinePayMethod = normalizeOnlinePayMethod(orderData);
+        const normalizedStatus = normalizeTransactionStatus(orderData);
+        const createdAtSource = orderData.paymentTimestamp || orderData.createdAt || orderData.paidAt || Date.now();
+        const grossAmount = razorpayAmount ?? subtotal + taxes;
+        const razorpayFee = subtotal * (0.02 + 0.18 * 0.02);
+        const gst = 0.18 * (taxes - razorpayFee);
+        const earnings = taxes - gst;
+        const sourceOrderId = orderData.id || `order_${index}`;
+
+        transactions.push({
+          id: `${restaurant.id}_${customerPhone}_${sourceOrderId}`,
+          orderId: sourceOrderId,
+          restaurantId: restaurant.id,
+          customerId: customerPhone,
+          paymentMethod,
+          OnlinePayMethod: onlinePayMethod,
+          grossAmount,
+          restaurantReceivable: subtotal,
+          platformFee: taxes,
+          razorpayFee,
+          gst,
+          netPlatformEarnings: earnings,
+          status: normalizedStatus,
+          createdAt: toDateFromUnknown(createdAtSource),
+          referenceId: sourceOrderId,
+          paymentTimestamp: typeof orderData.paymentTimestamp === 'string' ? orderData.paymentTimestamp : undefined,
+          razorpayOrderId: orderData.razorpayOrderId,
+          razorpayPaymentId: orderData.razorpayPaymentId,
+          razorpaySignature: orderData.razorpaySignature,
+          razorpayMethod: orderData.razorpayMethod,
+          razorpayStatus: orderData.razorpayStatus,
+          razorpayAmount,
+          razorpayCurrency: orderData.razorpayCurrency,
+          razorpayCapturedAt: typeof orderData.razorpayCapturedAt === 'string' ? orderData.razorpayCapturedAt : undefined,
+          razorpayFeeAmount: toFiniteNumber(orderData.razorpayFeeAmount),
+          razorpayTaxAmount: toFiniteNumber(orderData.razorpayTaxAmount),
+          razorpaySettlementId: orderData.razorpaySettlementId,
+          razorpaySettlementStatus: orderData.razorpaySettlementStatus,
+          razorpaySettlementAmount: toFiniteNumber(orderData.razorpaySettlementAmount),
+          razorpaySettlementUtr: orderData.razorpaySettlementUtr,
+          razorpaySettlementCreatedAt: typeof orderData.razorpaySettlementCreatedAt === 'string' ? orderData.razorpaySettlementCreatedAt : undefined,
+          razorpaySyncSource: orderData.razorpaySyncSource,
+          razorpaySyncedAt: typeof orderData.razorpaySyncedAt === 'string' ? orderData.razorpaySyncedAt : undefined,
+        });
+      } catch (e) {
+        console.error('[Store] failed to map order for realtime transaction update', {
+          restaurantId: restaurant.id,
+          customerPhone,
+          index,
+          error: e,
+        });
+      }
+    });
+  }
+
+  return transactions;
+};
+
 export const useAppStore = create<AppState>((set, get) => {
   // Keep snapshot listeners per restaurant to provide realtime updates and avoid duplicate listeners
   const snapshotListeners: Record<string, Unsubscribe> = {};
+  const customerOrderListeners: Record<string, Unsubscribe> = {};
   let restaurantCollectionListener: Unsubscribe | null = null;
 
   const ensureSnapshotFor = (restaurantId: string) => {
@@ -1077,6 +1166,10 @@ export const useAppStore = create<AppState>((set, get) => {
                   // ignore
                 }
               }
+
+              get().loadCustomerTransactions().catch((e) => {
+                console.error('[Store] watchRestaurants: failed to attach transaction listeners for new restaurants', e);
+              });
             }
           } catch (e) {
             console.error('[Store] watchRestaurants: snapshot processing error', e);
@@ -1096,148 +1189,85 @@ export const useAppStore = create<AppState>((set, get) => {
   loadCustomerTransactions: async () => {
     try {
       set({ isLoadingTransactions: true });
-      console.log('[Store] loadCustomerTransactions: starting fetch');
+      console.log('[Store] loadCustomerTransactions: attaching realtime listeners');
       const state = get();
-      const fetchedTransactions: Transaction[] = [];
 
       console.log('[Store] loadCustomerTransactions: processing', state.restaurants.length, 'restaurants');
       
-      // Fetch customer transactions for each restaurant
+      let activeRestaurantCount = 0;
+
       for (const restaurant of state.restaurants) {
+        if (customerOrderListeners[restaurant.id]) {
+          activeRestaurantCount += 1;
+          continue;
+        }
+
         try {
-          console.log('[Store] loadCustomerTransactions: fetching customers for restaurant', {
+          console.log('[Store] loadCustomerTransactions: listening to customers for restaurant', {
             restaurantId: restaurant.id,
             restaurantName: restaurant.Restaurant_name,
             path: `Restaurant/${restaurant.id}/customers`
           });
           const customersCol = collection(db, 'Restaurant', restaurant.id, 'customers');
-          const customersSnap = await getDocs(customersCol);
-          console.log('[Store] loadCustomerTransactions: found', customersSnap.docs.length, 'customers in', restaurant.id);
+          customerOrderListeners[restaurant.id] = onSnapshot(
+            customersCol,
+            (customersSnap) => {
+              const restaurantTransactions = buildTransactionsFromCustomers(
+                restaurant,
+                customersSnap.docs.map((customerDoc) => ({
+                  id: customerDoc.id,
+                  data: () => customerDoc.data() as FirebaseCustomerData,
+                }))
+              );
 
-          // For each customer, fetch their pastOrders (which is an array field in the customer document)
-          for (const customerDoc of customersSnap.docs) {
-            const customerPhone = customerDoc.id;
-            const customerData = customerDoc.data() as FirebaseCustomerData;
-            
-            try {
-              console.log('[Store] loadCustomerTransactions: processing customer', {
+              set((s) => ({
+                transactions: [
+                  ...s.transactions.filter((transaction) => transaction.restaurantId !== restaurant.id),
+                  ...restaurantTransactions,
+                ],
+                isLoadingTransactions: false,
+              }));
+
+              console.log('[Store] loadCustomerTransactions: realtime transaction update', {
                 restaurantId: restaurant.id,
-                customerPhone: customerPhone,
-                path: `Restaurant/${restaurant.id}/customers/${customerPhone}`,
-                pastOrdersCount: Array.isArray(customerData.pastOrders) ? customerData.pastOrders.length : 0
+                customers: customersSnap.docs.length,
+                transactions: restaurantTransactions.length,
               });
-              
-              // pastOrders is an array field within the customer document
-              const pastOrders = customerData.pastOrders;
-              if (Array.isArray(pastOrders)) {
-                console.log('[Store] loadCustomerTransactions: found', pastOrders.length, 'past orders for customer', customerPhone);
-
-                pastOrders.forEach((orderData: FirebaseOrderData, index: number) => {
-                  try {
-                    // Parse values
-                    const subtotal = toFiniteNumber(orderData.subtotal) || 0; // Restaurant's cut
-                    const taxes = toFiniteNumber(orderData.taxes) || 0; // Total platform fee collected
-                    const razorpayAmount = toFiniteNumber(orderData.razorpayAmount);
-                    const paymentMethod = normalizePaymentMethod(orderData);
-                    const onlinePayMethod = normalizeOnlinePayMethod(orderData);
-                    const normalizedStatus = normalizeTransactionStatus(orderData);
-                    const createdAtSource = orderData.paymentTimestamp || orderData.createdAt || orderData.paidAt || Date.now();
-                    const grossAmount = razorpayAmount ?? subtotal + taxes;
-                    
-                    // Calculate fees and earnings
-                    // razorpayFee = 2% of subtotal + 18% of (2% of subtotal)
-                    const razorpayFee = subtotal * (0.02 + 0.18 * 0.02);
-                    
-                    // gst = 18% of (taxes - razorpayFee)
-                    const gst = 0.18 * (taxes - razorpayFee);
-                    
-                    // earnings = taxes - gst
-                    const earnings = taxes - gst;
-                    
-                    // Map customer order data to Transaction format
-                    const txn: Transaction = {
-                      id: orderData.id || `${customerPhone}_${index}`, // Use order ID for uniqueness
-                      orderId: orderData.id || `order_${index}`,
-                      restaurantId: restaurant.id,
-                      customerId: customerPhone,
-                      paymentMethod,
-                      OnlinePayMethod: onlinePayMethod,
-                      grossAmount, // Total paid by customer (prefer reconciled Razorpay amount)
-                      restaurantReceivable: subtotal, // Restaurant's cut
-                      platformFee: taxes, // Total platform fee collected
-                      razorpayFee: razorpayFee, // Razorpay's cut
-                      gst: gst, // GST we owe (18% of our earnings)
-                      netPlatformEarnings: earnings, // Our earnings after GST
-                      status: normalizedStatus,
-                      createdAt: new Date(createdAtSource),
-                      referenceId: orderData.id || `order_${index}`,
-                      paymentTimestamp: typeof orderData.paymentTimestamp === 'string' ? orderData.paymentTimestamp : undefined,
-                      razorpayOrderId: orderData.razorpayOrderId,
-                      razorpayPaymentId: orderData.razorpayPaymentId,
-                      razorpaySignature: orderData.razorpaySignature,
-                      razorpayMethod: orderData.razorpayMethod,
-                      razorpayStatus: orderData.razorpayStatus,
-                      razorpayAmount,
-                      razorpayCurrency: orderData.razorpayCurrency,
-                      razorpayCapturedAt: typeof orderData.razorpayCapturedAt === 'string' ? orderData.razorpayCapturedAt : undefined,
-                      razorpayFeeAmount: toFiniteNumber(orderData.razorpayFeeAmount),
-                      razorpayTaxAmount: toFiniteNumber(orderData.razorpayTaxAmount),
-                      razorpaySettlementId: orderData.razorpaySettlementId,
-                      razorpaySettlementStatus: orderData.razorpaySettlementStatus,
-                      razorpaySettlementAmount: toFiniteNumber(orderData.razorpaySettlementAmount),
-                      razorpaySettlementUtr: orderData.razorpaySettlementUtr,
-                      razorpaySettlementCreatedAt: typeof orderData.razorpaySettlementCreatedAt === 'string' ? orderData.razorpaySettlementCreatedAt : undefined,
-                      razorpaySyncSource: orderData.razorpaySyncSource,
-                      razorpaySyncedAt: typeof orderData.razorpaySyncedAt === 'string' ? orderData.razorpaySyncedAt : undefined,
-                    };
-                    fetchedTransactions.push(txn);
-                    console.log('[Store] loadCustomerTransactions: mapped transaction', { 
-                      id: txn.id, 
-                      orderId: txn.orderId, 
-                      paymentMethod: txn.paymentMethod,
-                      OnlinePayMethod: txn.OnlinePayMethod,
-                      subtotal: txn.restaurantReceivable,
-                      platformFee: txn.platformFee,
-                      razorpayFee: txn.razorpayFee.toFixed(2),
-                      gst: txn.gst.toFixed(2),
-                      earnings: txn.netPlatformEarnings.toFixed(2),
-                      status: txn.status
-                    });
-                  } catch (e) {
-                    console.error('[Store] loadCustomerTransactions: ❌ failed to map order', index, 'for customer', customerPhone, e);
-                  }
-                });
-              } else {
-                console.log('[Store] loadCustomerTransactions: ⚠️ pastOrders is not an array or does not exist for customer', customerPhone);
-              }
-            } catch (e) {
-              console.error('[Store] loadCustomerTransactions: ❌ failed to process customer', customerPhone, 'in', restaurant.id, e);
+            },
+            (err) => {
+              console.error('[Store] loadCustomerTransactions: listener error', restaurant.id, err);
+              set({ isLoadingTransactions: false });
             }
-          }
+          );
+          activeRestaurantCount += 1;
         } catch (e) {
-          console.error('[Store] loadCustomerTransactions: failed to fetch customers for restaurant', restaurant.id, e);
+          console.error('[Store] loadCustomerTransactions: failed to listen to customers for restaurant', restaurant.id, e);
         }
       }
 
-      // Merge fetched transactions with existing transactions
-      console.log('[Store] loadCustomerTransactions: fetched total', fetchedTransactions.length, 'transactions from all restaurants and customers');
-      if (fetchedTransactions.length > 0) {
-        set((s) => ({
-          transactions: [
-            ...s.transactions.filter((x) => !fetchedTransactions.some((ft) => ft.id === x.id)),
-            ...fetchedTransactions,
-          ],
-        }));
-        console.log('[Store] loadCustomerTransactions: merged transactions, total transactions in store:', fetchedTransactions.length);
+      if (activeRestaurantCount === 0) {
+        set({ isLoadingTransactions: false });
       }
     } catch (err) {
       console.error('Failed to load customer transactions from Firebase', err);
-    } finally {
       set({ isLoadingTransactions: false });
     }
   },
 
   logout: () => {
+    Object.values(snapshotListeners).forEach((unsubscribe) => unsubscribe());
+    Object.keys(snapshotListeners).forEach((restaurantId) => {
+      delete snapshotListeners[restaurantId];
+    });
+    Object.values(customerOrderListeners).forEach((unsubscribe) => unsubscribe());
+    Object.keys(customerOrderListeners).forEach((restaurantId) => {
+      delete customerOrderListeners[restaurantId];
+    });
+    if (restaurantCollectionListener) {
+      restaurantCollectionListener();
+      restaurantCollectionListener = null;
+    }
+
     // Clear all app state
     set({
       restaurants: [],

@@ -7,14 +7,27 @@ if (!admin.apps.length) {
   admin.initializeApp();
 }
 
-const RAZORPAY_KEY_ID =
-  functions.config().razorpay?.key_id ||
-  process.env.RAZORPAY_KEY_ID ||
-  'rzp_live_Sj1ZPsCyB5iu3t';
-const RAZORPAY_KEY_SECRET =
-  functions.config().razorpay?.key_secret ||
-  process.env.RAZORPAY_KEY_SECRET ||
-  'dN2uwxFr0hIZkcV57RXdRXmt';
+const FALLBACK_RAZORPAY_KEY_ID = 'rzp_live_Sj1ZPsCyB5iu3t';
+const FALLBACK_RAZORPAY_KEY_SECRET = 'dN2uwxFr0hIZkcV57RXdRXmt';
+const REMOVED_RAZORPAY_VALUE_HASHES = new Set([
+  '0931028ec556aa2d2e65c4c604da9200517b5718df04eedc1cb5b735422b7b44',
+  '44f9000b54b1b661e4c2f7fa84aba1cd840827fe6731a99c17fb9a06ce00487b',
+]);
+const isRemovedRazorpayValue = (value) =>
+  REMOVED_RAZORPAY_VALUE_HASHES.has(crypto.createHash('sha256').update(value).digest('hex'));
+const resolveRazorpayCredential = (...values) =>
+  values.find((value) => value && !isRemovedRazorpayValue(value));
+
+const RAZORPAY_KEY_ID = resolveRazorpayCredential(
+  functions.config().razorpay?.key_id,
+  process.env.RAZORPAY_KEY_ID,
+  FALLBACK_RAZORPAY_KEY_ID
+);
+const RAZORPAY_KEY_SECRET = resolveRazorpayCredential(
+  functions.config().razorpay?.key_secret,
+  process.env.RAZORPAY_KEY_SECRET,
+  FALLBACK_RAZORPAY_KEY_SECRET
+);
 
 const setCorsHeaders = (res) => {
   res.set('Access-Control-Allow-Origin', '*');
@@ -37,6 +50,16 @@ const toIsoFromUnixSeconds = (value) => {
   return Number.isFinite(parsed) ? new Date(parsed * 1000).toISOString() : undefined;
 };
 
+const removeUndefined = (value) => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return value;
+  }
+
+  return Object.fromEntries(
+    Object.entries(value).filter(([, entryValue]) => entryValue !== undefined)
+  );
+};
+
 const getOrderContext = (payload = {}) => {
   const notes = payload.notes || {};
 
@@ -47,7 +70,31 @@ const getOrderContext = (payload = {}) => {
   };
 };
 
-const buildRazorpayReconciliation = (paymentData, settlementData, source) => ({
+const getCustomerPhoneCandidates = (customerPhone) => {
+  const raw = String(customerPhone || '').trim();
+  if (!raw) {
+    return [];
+  }
+
+  const digits = raw.replace(/\D/g, '');
+  const candidates = [raw];
+
+  if (raw.startsWith('+')) {
+    candidates.push(raw.slice(1));
+  } else {
+    candidates.push(`+${raw}`);
+  }
+
+  if (digits.length === 10) {
+    candidates.push(`+91${digits}`, `91${digits}`, digits);
+  } else if (digits.length === 12 && digits.startsWith('91')) {
+    candidates.push(`+${digits}`, digits, digits.slice(2));
+  }
+
+  return [...new Set(candidates.filter(Boolean))];
+};
+
+const buildRazorpayReconciliation = (paymentData, settlementData, source) => removeUndefined({
   paymentTimestamp: new Date().toISOString(),
   razorpayOrderId: paymentData.order_id,
   razorpayPaymentId: paymentData.id,
@@ -73,10 +120,20 @@ const writeReconciliationToFirestore = async ({ restaurantId, customerPhone, ord
     return { updated: false, reason: 'missing_order_context' };
   }
 
-  const customerRef = admin.firestore().doc(`Restaurant/${restaurantId}/customers/${customerPhone}`);
-  const customerSnap = await customerRef.get();
+  let customerRef = null;
+  let customerSnap = null;
 
-  if (!customerSnap.exists) {
+  for (const phoneCandidate of getCustomerPhoneCandidates(customerPhone)) {
+    const candidateRef = admin.firestore().doc(`Restaurant/${restaurantId}/customers/${phoneCandidate}`);
+    const candidateSnap = await candidateRef.get();
+    if (candidateSnap.exists) {
+      customerRef = candidateRef;
+      customerSnap = candidateSnap;
+      break;
+    }
+  }
+
+  if (!customerSnap?.exists || !customerRef) {
     return { updated: false, reason: 'customer_not_found' };
   }
 
@@ -100,7 +157,7 @@ const writeReconciliationToFirestore = async ({ restaurantId, customerPhone, ord
 
     didUpdate = true;
 
-    return {
+    return removeUndefined({
       ...order,
       paymentStatus: reconciliation.razorpayStatus === 'captured' ? 'paid' : order.paymentStatus || 'pending',
       razorpayOrderId: reconciliation.razorpayOrderId,
@@ -120,7 +177,7 @@ const writeReconciliationToFirestore = async ({ restaurantId, customerPhone, ord
       razorpaySyncSource: reconciliation.razorpaySyncSource,
       razorpaySyncedAt: reconciliation.razorpaySyncedAt,
       paymentTimestamp: order.paymentTimestamp || reconciliation.paymentTimestamp,
-    };
+    });
   });
 
   if (!didUpdate) {

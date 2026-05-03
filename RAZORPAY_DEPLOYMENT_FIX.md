@@ -247,7 +247,7 @@ See these files for more information:
 
 ### Payment Modal Not Opening?
 1. Check browser console for Razorpay script loading errors
-2. Verify Razorpay Key ID is correct: `rzp_live_SQcvIlOahj69Ma`
+2. Verify Razorpay Key ID is correct: `rzp_live_Sj1ZPsCyB5iu3t`
 3. Check Cloud Function logs for order creation errors
 4. Ensure internet connectivity
 

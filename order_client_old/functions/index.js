@@ -24,9 +24,20 @@ app.options('*', cors({
 
 admin.initializeApp();
 
-// Razorpay configuration - Use environment variables in production
-const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID || 'rzp_live_SQcvIlOahj69Ma';
-const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || 'SK5TvpFE4jw76xSgxxHAsLkl';
+// Razorpay configuration - ignore the removed key if it remains in deployed env.
+const FALLBACK_RAZORPAY_KEY_ID = 'rzp_live_Sj1ZPsCyB5iu3t';
+const FALLBACK_RAZORPAY_KEY_SECRET = 'dN2uwxFr0hIZkcV57RXdRXmt';
+const REMOVED_RAZORPAY_VALUE_HASHES = new Set([
+  '0931028ec556aa2d2e65c4c604da9200517b5718df04eedc1cb5b735422b7b44',
+  '44f9000b54b1b661e4c2f7fa84aba1cd840827fe6731a99c17fb9a06ce00487b',
+]);
+const isRemovedRazorpayValue = (value) =>
+  REMOVED_RAZORPAY_VALUE_HASHES.has(crypto.createHash('sha256').update(value).digest('hex'));
+const resolveRazorpayCredential = (...values) =>
+  values.find((value) => value && !isRemovedRazorpayValue(value));
+
+const RAZORPAY_KEY_ID = resolveRazorpayCredential(process.env.RAZORPAY_KEY_ID, FALLBACK_RAZORPAY_KEY_ID);
+const RAZORPAY_KEY_SECRET = resolveRazorpayCredential(process.env.RAZORPAY_KEY_SECRET, FALLBACK_RAZORPAY_KEY_SECRET);
 
 // Trigger: when a promotion doc is deleted, attempt to delete the referenced storage object
 exports.onPromotionDelete = functions.firestore

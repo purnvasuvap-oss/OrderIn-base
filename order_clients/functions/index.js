@@ -7,14 +7,27 @@ if (!admin.apps.length) {
   admin.initializeApp();
 }
 
-const RAZORPAY_KEY_ID =
-  functions.config().razorpay?.key_id ||
-  process.env.RAZORPAY_KEY_ID ||
-  'rzp_live_SQcvIlOahj69Ma';
-const RAZORPAY_KEY_SECRET =
-  functions.config().razorpay?.key_secret ||
-  process.env.RAZORPAY_KEY_SECRET ||
-  'SK5TvpFE4jw76xSgxxHAsLkl';
+const FALLBACK_RAZORPAY_KEY_ID = 'rzp_live_Sj1ZPsCyB5iu3t';
+const FALLBACK_RAZORPAY_KEY_SECRET = 'dN2uwxFr0hIZkcV57RXdRXmt';
+const REMOVED_RAZORPAY_VALUE_HASHES = new Set([
+  '0931028ec556aa2d2e65c4c604da9200517b5718df04eedc1cb5b735422b7b44',
+  '44f9000b54b1b661e4c2f7fa84aba1cd840827fe6731a99c17fb9a06ce00487b',
+]);
+const isRemovedRazorpayValue = (value) =>
+  REMOVED_RAZORPAY_VALUE_HASHES.has(crypto.createHash('sha256').update(value).digest('hex'));
+const resolveRazorpayCredential = (...values) =>
+  values.find((value) => value && !isRemovedRazorpayValue(value));
+
+const RAZORPAY_KEY_ID = resolveRazorpayCredential(
+  functions.config().razorpay?.key_id,
+  process.env.RAZORPAY_KEY_ID,
+  FALLBACK_RAZORPAY_KEY_ID
+);
+const RAZORPAY_KEY_SECRET = resolveRazorpayCredential(
+  functions.config().razorpay?.key_secret,
+  process.env.RAZORPAY_KEY_SECRET,
+  FALLBACK_RAZORPAY_KEY_SECRET
+);
 
 const setCorsHeaders = (res) => {
   res.set('Access-Control-Allow-Origin', '*');

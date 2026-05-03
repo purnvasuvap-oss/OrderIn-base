@@ -24,10 +24,36 @@ interface RestaurantData {
 }
 
 interface RazorpayPaymentData {
-  method: string;
+  method?: string;
   razorpay_payment_id: string;
   razorpay_order_id: string;
   razorpay_signature: string;
+}
+
+interface VerifyPaymentData {
+  method?: string;
+  payment_status?: string;
+  settlement_id?: string | null;
+  settlement_status?: string | null;
+  amount?: number;
+  currency?: string;
+}
+
+interface SyncPaymentData {
+  razorpayMethod?: string;
+  razorpayStatus?: string;
+  razorpayAmount?: number;
+  razorpayCurrency?: string;
+  razorpayCapturedAt?: string;
+  razorpayFeeAmount?: number;
+  razorpayTaxAmount?: number;
+  razorpaySettlementId?: string;
+  razorpaySettlementStatus?: string;
+  razorpaySettlementAmount?: number;
+  razorpaySettlementUtr?: string;
+  razorpaySettlementCreatedAt?: string;
+  razorpaySyncSource?: 'api' | 'webhook';
+  razorpaySyncedAt?: string;
 }
 
 interface RazorpayOptions {
@@ -73,6 +99,10 @@ const CREATE_ORDER_ENDPOINTS = [
 const VERIFY_PAYMENT_ENDPOINTS = [
   `${FUNCTION_BASE_URL}/verifyRazorpayPayment`,
   `${FUNCTION_BASE_URL}/api/verifyRazorpayPayment`,
+];
+const SYNC_PAYMENT_ENDPOINTS = [
+  `${FUNCTION_BASE_URL}/syncRazorpayPayment`,
+  `${FUNCTION_BASE_URL}/api/syncRazorpayPayment`,
 ];
 
 export const PaymentHubPage = () => {
@@ -317,6 +347,9 @@ export const PaymentHubPage = () => {
             addDebugLog('✓ Razorpay payment modal closed - payment completed');
             addDebugLog(`Payment ID: ${response.razorpay_payment_id}`);
             if (response.razorpay_order_id) addDebugLog(`Order ID: ${response.razorpay_order_id}`);
+
+            let verifyData: VerifyPaymentData | null = null;
+            let syncedPaymentData: SyncPaymentData | null = null;
             
             if (response.razorpay_signature && response.razorpay_order_id) {
                addDebugLog('Verifying payment signature...');
@@ -330,7 +363,7 @@ export const PaymentHubPage = () => {
                  const { response: verifyResponse, url } = await postToFunction(VERIFY_PAYMENT_ENDPOINTS, verifyPayload, 'Verify payment');
 
                  if (verifyResponse.ok) {
-                   await verifyResponse.json();
+                   verifyData = await verifyResponse.json();
                    addDebugLog(`✓ Payment Signature Verified`);
                    addDebugLog(`✓ Verification endpoint: ${url}`);
                  } else {
@@ -343,11 +376,26 @@ export const PaymentHubPage = () => {
                addDebugLog('No signature/order_id returned (Frontend mock mode). Assuming successful payment capture.');
             }
 
+            try {
+              const { response: syncResponse, url } = await postToFunction(SYNC_PAYMENT_ENDPOINTS, {
+                razorpayPaymentId: response.razorpay_payment_id,
+                restaurantId: finalRestaurantId,
+                customerPhone: finalCustomerPhone,
+                orderId: finalOrderId,
+              }, 'Sync payment');
+              const syncData = await syncResponse.json();
+              syncedPaymentData = syncData?.payment || null;
+              addDebugLog(`✓ Razorpay payment synced from API`);
+              addDebugLog(`✓ Sync endpoint: ${url}`);
+            } catch (syncError) {
+              addDebugLog(`⚠️ Razorpay sync skipped: ${(syncError as Error).message}`);
+            }
+
             // Step 4: Update Firebase with Payment Details (if we have valid data)
-            if (restaurantId && customerPhone && orderId) {
+            if (finalRestaurantId && finalCustomerPhone && finalOrderId) {
               addDebugLog('Updating Firebase with payment details...');
 
-              const customerDocPath = `Restaurant/${restaurantId}/customers/${customerPhone}`;
+              const customerDocPath = `Restaurant/${finalRestaurantId}/customers/${finalCustomerPhone}`;
               const customerRef = doc(db, customerDocPath);
 
               try {
@@ -361,7 +409,7 @@ export const PaymentHubPage = () => {
                   addDebugLog(`Found ${pastOrders.length} orders in pastOrders array`);
 
                   // Find the order to update
-                  const orderToUpdate = pastOrders.find((order: Record<string, unknown>) => order.id === orderId);
+                  const orderToUpdate = pastOrders.find((order: Record<string, unknown>) => order.id === finalOrderId);
 
                   if (orderToUpdate) {
                     addDebugLog(`✓ Order found, updating with payment details`);
@@ -375,16 +423,18 @@ export const PaymentHubPage = () => {
                       'emandate': 'E-Mandate'
                     };
 
-                    const actualPaymentMethod = paymentMethodMap[response.method as string] || response.method || 'Online';
+                    const razorpayMethod = syncedPaymentData?.razorpayMethod || verifyData?.method || response.method;
+                    const actualPaymentMethod = paymentMethodMap[String(razorpayMethod || '').toLowerCase()] || razorpayMethod || 'Online';
 
-                    addDebugLog(`✓ Payment Method: ${actualPaymentMethod} (Razorpay: ${response.method})`);
+                    addDebugLog(`✓ Payment Method: ${actualPaymentMethod} (Razorpay: ${razorpayMethod || 'unknown'})`);
 
                     // Create updated orders array with payment information
                     const updatedPastOrders = pastOrders.map((order: Record<string, unknown>) => {
-                      if (order.id === orderId) {
-                        return {
+                      if (order.id === finalOrderId) {
+                        const updatedOrder = {
                           ...order,
                           // Existing fields - unchanged
+                          paymentMethod: 'Online',
                           PaymentMethod: 'Online',
                           paymentStatus: 'paid',
                           paymentTimestamp: new Date().toISOString(),
@@ -396,9 +446,24 @@ export const PaymentHubPage = () => {
                           razorpayOrderId: response.razorpay_order_id,
                           razorpayPaymentId: response.razorpay_payment_id,
                           razorpaySignature: response.razorpay_signature,
-                          razorpayMethod: response.method,
-                          razorpayStatus: 'captured'
+                          razorpayMethod,
+                          razorpayStatus: syncedPaymentData?.razorpayStatus || verifyData?.payment_status || 'captured',
+                          razorpayAmount: syncedPaymentData?.razorpayAmount ?? (typeof verifyData?.amount === 'number' ? verifyData.amount / 100 : undefined),
+                          razorpayCurrency: syncedPaymentData?.razorpayCurrency || verifyData?.currency,
+                          razorpayCapturedAt: syncedPaymentData?.razorpayCapturedAt,
+                          razorpayFeeAmount: syncedPaymentData?.razorpayFeeAmount,
+                          razorpayTaxAmount: syncedPaymentData?.razorpayTaxAmount,
+                          razorpaySettlementId: syncedPaymentData?.razorpaySettlementId || verifyData?.settlement_id || undefined,
+                          razorpaySettlementStatus: syncedPaymentData?.razorpaySettlementStatus || verifyData?.settlement_status || undefined,
+                          razorpaySettlementAmount: syncedPaymentData?.razorpaySettlementAmount,
+                          razorpaySettlementUtr: syncedPaymentData?.razorpaySettlementUtr,
+                          razorpaySettlementCreatedAt: syncedPaymentData?.razorpaySettlementCreatedAt,
+                          razorpaySyncSource: syncedPaymentData?.razorpaySyncSource,
+                          razorpaySyncedAt: syncedPaymentData?.razorpaySyncedAt,
                         };
+                        return Object.fromEntries(
+                          Object.entries(updatedOrder).filter(([, value]) => value !== undefined)
+                        );
                       }
                       return order;
                     });
@@ -428,7 +493,7 @@ export const PaymentHubPage = () => {
                       }
                     }
                   } else {
-                    addDebugLog(`⚠️ Order with id "${orderId}" not found in pastOrders`);
+                    addDebugLog(`⚠️ Order with id "${finalOrderId}" not found in pastOrders`);
                   }
                 } else {
                   addDebugLog(`⚠️ Customer document not found at: ${customerDocPath}`);

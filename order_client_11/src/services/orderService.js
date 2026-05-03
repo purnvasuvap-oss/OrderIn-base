@@ -92,6 +92,7 @@ const derivePaymentInfo = (order) => {
     (order.card && (order.card.type || order.card.brand));
   const rawMethod = (
     order.paymentMethod ||
+    order.PaymentMethod ||
     order.paymentType ||
     order.OnlinePayMethod ||
     order.razorpayMethod ||
@@ -724,7 +725,7 @@ export const subscribeOnlineCustomerOrders = (onUpdate) => {
   return subscribeAllCustomerOrders((orders) => {
     const onlineOrders = (orders || []).filter((order) => {
       const paymentType = String(order.paymentType || "").toLowerCase();
-      const rawMethod = String(order.paymentMethod || order.OnlinePayMethod || order.razorpayMethod || "").toLowerCase();
+      const rawMethod = String(order.paymentMethod || order.PaymentMethod || order.OnlinePayMethod || order.razorpayMethod || "").toLowerCase();
       return (
         paymentType === "online" ||
         rawMethod === "online" ||
