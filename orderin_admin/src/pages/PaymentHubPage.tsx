@@ -52,6 +52,15 @@ interface SyncPaymentData {
   razorpaySettlementAmount?: number;
   razorpaySettlementUtr?: string;
   razorpaySettlementCreatedAt?: string;
+  razorpayTransferId?: string;
+  razorpayTransferStatus?: string;
+  razorpayTransferSettlementStatus?: string;
+  razorpayTransferRecipient?: string;
+  razorpayTransferAmount?: number;
+  razorpayTransferCurrency?: string;
+  routePlatformGrossAmount?: number;
+  routePlatformNetAmount?: number;
+  razorpayRouteTransfers?: unknown[];
   razorpaySyncSource?: 'api' | 'webhook';
   razorpaySyncedAt?: string;
 }
@@ -289,12 +298,15 @@ export const PaymentHubPage = () => {
       const finalCustomerPhone = storedPaymentData?.customerPhone || customerPhone || '9999999999';
       const finalOrderId = storedPaymentData?.orderId || orderId || 'TEST_ORDER_' + Date.now();
       const finalAmount = storedPaymentData?.amount || (amount && parseFloat(amount) > 0 ? amount : '100');
+      const finalSubtotal = storedPaymentData?.subtotal || subtotal || '0';
+      const finalTaxes = storedPaymentData?.taxes || taxAmount || '0';
 
       addDebugLog(`Payment Method: ${paymentMethodUpper}`);
       addDebugLog(`Restaurant ID: ${finalRestaurantId} ${storedPaymentData?.restaurantId ? '(from localStorage)' : restaurantId ? '' : '(DEFAULT)'}`);
       addDebugLog(`Customer Phone: ${finalCustomerPhone} ${storedPaymentData?.customerPhone ? '(from localStorage)' : customerPhone ? '' : '(DEFAULT)'}`);
       addDebugLog(`Order ID: ${finalOrderId} ${storedPaymentData?.orderId ? '(from localStorage)' : orderId ? '' : '(DEFAULT)'}`);
       addDebugLog(`Amount: ₹${finalAmount}`);
+      addDebugLog(`Split subtotal to restaurant: ₹${finalSubtotal}; base/platform gross: ₹${finalTaxes}`);
 
       addDebugLog('⚠️ Opening Razorpay modal with parameters...');
       addDebugLog('Creating Razorpay order on backend...');
@@ -309,16 +321,24 @@ export const PaymentHubPage = () => {
           restaurantId: finalRestaurantId,
           orderId: finalOrderId,
           paymentMethod: paymentMethodUpper,
+          subtotal: finalSubtotal,
+          subtotalAmount: finalSubtotal,
+          platformAmount: finalTaxes,
         };
 
         const { response, url } = await postToFunction(CREATE_ORDER_ENDPOINTS, orderPayload, 'Create order');
         const orderData = await response.json();
         razorpayOrderId = orderData.order_id;
         addDebugLog(`✓ Razorpay Order Created: ${razorpayOrderId}`);
+        if (orderData.routeSplit) {
+          addDebugLog(`✓ Route split enabled: ₹${orderData.routeSplit.restaurantAmount} to ${orderData.routeSplit.accountName}`);
+        }
         addDebugLog(`✓ Active backend endpoint: ${url}`);
       } catch (backendError) {
-        addDebugLog(`❌ Backend connection error: ${(backendError as Error).message}`);
-        addDebugLog('Falling back to direct frontend checkout (Test Mode)...');
+        const message = (backendError as Error).message;
+        addDebugLog(`❌ Backend connection error: ${message}`);
+        addDebugLog('❌ Split payment requires a backend Razorpay Route order. Payment stopped.');
+        throw new Error(`Could not create split payment order: ${message}`);
       }
 
       // Step 2: Open Razorpay Modal
@@ -458,6 +478,15 @@ export const PaymentHubPage = () => {
                           razorpaySettlementAmount: syncedPaymentData?.razorpaySettlementAmount,
                           razorpaySettlementUtr: syncedPaymentData?.razorpaySettlementUtr,
                           razorpaySettlementCreatedAt: syncedPaymentData?.razorpaySettlementCreatedAt,
+                          razorpayTransferId: syncedPaymentData?.razorpayTransferId,
+                          razorpayTransferStatus: syncedPaymentData?.razorpayTransferStatus,
+                          razorpayTransferSettlementStatus: syncedPaymentData?.razorpayTransferSettlementStatus,
+                          razorpayTransferRecipient: syncedPaymentData?.razorpayTransferRecipient,
+                          razorpayTransferAmount: syncedPaymentData?.razorpayTransferAmount,
+                          razorpayTransferCurrency: syncedPaymentData?.razorpayTransferCurrency,
+                          routePlatformGrossAmount: syncedPaymentData?.routePlatformGrossAmount,
+                          routePlatformNetAmount: syncedPaymentData?.routePlatformNetAmount,
+                          razorpayRouteTransfers: syncedPaymentData?.razorpayRouteTransfers,
                           razorpaySyncSource: syncedPaymentData?.razorpaySyncSource,
                           razorpaySyncedAt: syncedPaymentData?.razorpaySyncedAt,
                         };
