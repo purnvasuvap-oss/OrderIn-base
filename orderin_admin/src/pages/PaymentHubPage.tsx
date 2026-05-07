@@ -102,8 +102,8 @@ declare global {
 
 const FUNCTION_BASE_URL = 'https://us-central1-orderin-7f8bc.cloudfunctions.net';
 const CREATE_ORDER_ENDPOINTS = [
-  `${FUNCTION_BASE_URL}/createRazorpayOrder`,
   `${FUNCTION_BASE_URL}/api/createRazorpayOrder`,
+  `${FUNCTION_BASE_URL}/createRazorpayOrder`,
 ];
 const VERIFY_PAYMENT_ENDPOINTS = [
   `${FUNCTION_BASE_URL}/verifyRazorpayPayment`,
@@ -113,6 +113,20 @@ const SYNC_PAYMENT_ENDPOINTS = [
   `${FUNCTION_BASE_URL}/syncRazorpayPayment`,
   `${FUNCTION_BASE_URL}/api/syncRazorpayPayment`,
 ];
+
+const buildRazorpayReceipt = (restaurantId: string, orderId: string) => {
+  const restaurantCode = restaurantId === 'orderin_restaurant_1'
+    ? 'r1'
+    : restaurantId === 'orderin_restaurant_2'
+      ? 'r2'
+      : String(restaurantId || 'rx').replace(/[^a-zA-Z0-9_-]/g, '').slice(-8);
+  const orderCode = String(orderId || 'order').replace(/[^a-zA-Z0-9_-]/g, '').slice(-16);
+  const timestamp = Date.now().toString(36).slice(-8);
+
+  return `oi_${restaurantCode}_${orderCode}_${timestamp}`.slice(0, 40);
+};
+
+const idsMatch = (left: unknown, right: unknown) => String(left) === String(right);
 
 export const PaymentHubPage = () => {
   const [searchParams] = useSearchParams();
@@ -316,7 +330,7 @@ export const PaymentHubPage = () => {
         const orderPayload = {
           amount: parseFloat(finalAmount as string) * 100,
           currency: 'INR',
-          receipt: `${finalRestaurantId}_${finalOrderId}_${Date.now()}`,
+          receipt: buildRazorpayReceipt(finalRestaurantId, finalOrderId),
           customerPhone: finalCustomerPhone,
           restaurantId: finalRestaurantId,
           orderId: finalOrderId,
@@ -429,7 +443,7 @@ export const PaymentHubPage = () => {
                   addDebugLog(`Found ${pastOrders.length} orders in pastOrders array`);
 
                   // Find the order to update
-                  const orderToUpdate = pastOrders.find((order: Record<string, unknown>) => order.id === finalOrderId);
+                  const orderToUpdate = pastOrders.find((order: Record<string, unknown>) => idsMatch(order.id, finalOrderId));
 
                   if (orderToUpdate) {
                     addDebugLog(`✓ Order found, updating with payment details`);
@@ -450,7 +464,7 @@ export const PaymentHubPage = () => {
 
                     // Create updated orders array with payment information
                     const updatedPastOrders = pastOrders.map((order: Record<string, unknown>) => {
-                      if (order.id === finalOrderId) {
+                      if (idsMatch(order.id, finalOrderId)) {
                         const updatedOrder = {
                           ...order,
                           // Existing fields - unchanged
@@ -509,7 +523,7 @@ export const PaymentHubPage = () => {
                     if (verifySnapshot.exists()) {
                       const verifyData = verifySnapshot.data();
                       const verifyOrders = verifyData.pastOrders || [];
-                      const verifyOrder = verifyOrders.find((o: Record<string, unknown>) => o.id === orderId);
+                      const verifyOrder = verifyOrders.find((o: Record<string, unknown>) => idsMatch(o.id, finalOrderId));
                       
                       if (verifyOrder && verifyOrder.paymentStatus === 'paid') {
                         addDebugLog(`✓ VERIFICATION SUCCESS: Payment Status = "paid"`);

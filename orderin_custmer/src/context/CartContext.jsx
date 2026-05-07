@@ -369,9 +369,11 @@ export const CartProvider = ({ children, tableNo = '1' }) => {
   };
 
   const markPaymentSuccessful = (orderId) => {
+    const idsMatch = (left, right) => String(left) === String(right);
+
     // Find the order and mark it as paid
     setOrderHistory(prev => prev.map(order =>
-      order.id === orderId ? { ...order, status: 'Paid' } : order
+      idsMatch(order.id, orderId) ? { ...order, status: 'Paid' } : order
     ));
     // Now clear the cart after successful payment (both in-memory and localStorage)
     clearCart();
@@ -393,7 +395,7 @@ export const CartProvider = ({ children, tableNo = '1' }) => {
 
         // Find and update the order with matching ID
         const updatedOrders = pastOrders.map(order =>
-          order.id === orderId ? { ...order, paymentStatus: 'paid' } : order
+          idsMatch(order.id, orderId) ? { ...order, paymentStatus: 'paid' } : order
         );
 
         await setDoc(customerRef, { pastOrders: updatedOrders }, { merge: true });

@@ -7,6 +7,8 @@ import { db } from "../firebaseConfig";
 import { safeDeleteUnpaidOrders } from "../utils/orderCleanupUtils";
 import "./CounterCode.css";
 
+const idsMatch = (left, right) => String(left) === String(right);
+
 function CounterCode({ onBackClick }) {
   const [counterCode, setCounterCode] = useState(["", "", "", ""]);
   const [restoredOrderId, setRestoredOrderId] = useState(null); // For displaying restored order ID
@@ -130,7 +132,7 @@ function CounterCode({ onBackClick }) {
       const pastOrders = Array.isArray(data.pastOrders) ? data.pastOrders : [];
 
       // Find the current order in Firestore by the resolved id
-      const firestoreOrder = pastOrders.find(o => o.id === orderIdToCheck);
+      const firestoreOrder = pastOrders.find(o => idsMatch(o.id, orderIdToCheck));
       console.log('CounterCode: resolved firestoreOrder for id', orderIdToCheck, firestoreOrder);
       if (!firestoreOrder) {
         alert("Order not found in records");
@@ -196,7 +198,7 @@ function CounterCode({ onBackClick }) {
               let pastOrders = Array.isArray(data.pastOrders) ? data.pastOrders : [];
               
               // Find and update the order status from 'unpaid' to 'paid'
-              const orderIndex = pastOrders.findIndex(o => o.id === orderIdToCheck);
+              const orderIndex = pastOrders.findIndex(o => idsMatch(o.id, orderIdToCheck));
               if (orderIndex !== -1) {
                 pastOrders[orderIndex].paymentStatus = 'paid';
                 pastOrders[orderIndex].paidAt = new Date().toISOString();

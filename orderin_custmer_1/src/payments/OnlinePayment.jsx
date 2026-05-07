@@ -7,6 +7,8 @@ import { db } from "../firebaseConfig";
 import { X } from "lucide-react";
 import "./OnlinePayment.css";
 
+const idsMatch = (left, right) => String(left) === String(right);
+
 function OnlinePayment() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -102,7 +104,7 @@ function OnlinePayment() {
               
               // Find and update the order with matching ID
               const updatedOrders = pastOrders.map(ord => 
-                ord.id === orderId 
+                idsMatch(ord.id, orderId)
                   ? { ...ord, OnlinePayMethod: paymentMethod }
                   : ord
               );

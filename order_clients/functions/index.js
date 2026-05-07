@@ -170,6 +170,23 @@ const buildRouteSplit = ({
   };
 };
 
+const buildRazorpayReceipt = ({ receipt, restaurantId, orderId }) => {
+  const rawReceipt = String(receipt || '').trim();
+  if (rawReceipt && rawReceipt.length <= 40) {
+    return rawReceipt;
+  }
+
+  const restaurantCode = restaurantId === 'orderin_restaurant_1'
+    ? 'r1'
+    : restaurantId === 'orderin_restaurant_2'
+      ? 'r2'
+      : String(restaurantId || 'rx').replace(/[^a-zA-Z0-9_-]/g, '').slice(-8);
+  const orderCode = String(orderId || 'order').replace(/[^a-zA-Z0-9_-]/g, '').slice(-16);
+  const timestamp = Date.now().toString(36).slice(-8);
+
+  return `oi_${restaurantCode}_${orderCode}_${timestamp}`.slice(0, 40);
+};
+
 const getPrimaryTransfer = (transferCollection) => {
   const items = Array.isArray(transferCollection?.items)
     ? transferCollection.items
@@ -256,7 +273,7 @@ const writeReconciliationToFirestore = async ({ restaurantId, customerPhone, ord
       return order;
     }
 
-    const matchesOrderId = order.id === orderId;
+    const matchesOrderId = String(order.id) === String(orderId);
     const matchesRazorpayIds =
       order.razorpayPaymentId === reconciliation.razorpayPaymentId ||
       order.razorpayOrderId === reconciliation.razorpayOrderId;
@@ -390,9 +407,12 @@ const handleCreateRazorpayOrder = async (req, res) => {
       return res.status(400).json({ error: 'Receipt is required' });
     }
 
+    const finalReceipt = buildRazorpayReceipt({ receipt, restaurantId, orderId });
+
     console.log('[createRazorpayOrder] Request body:', {
       ...req.body,
       amount: finalAmount,
+      receipt: finalReceipt,
     });
 
     const razorpayResponse = await axios.post(
@@ -400,7 +420,7 @@ const handleCreateRazorpayOrder = async (req, res) => {
       removeUndefined({
         amount: finalAmount,
         currency,
-        receipt,
+        receipt: finalReceipt,
         partial_payment: false,
         notes: {
           customerPhone,
