@@ -705,7 +705,7 @@ const onRequest = (handler) => async (req, res) => {
 };
 
 exports.onPromotionDelete = functions.firestore
-  .document('Restaurant/orderin_restaurant_1/promotions/{promotionId}')
+  .document('Restaurant/orderin_restaurant_2/promotions/{promotionId}')
   .onDelete(async (snap, context) => {
     const data = snap.data();
     if (!data) return null;

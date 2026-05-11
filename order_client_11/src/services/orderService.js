@@ -2,6 +2,8 @@ import { db } from "../firebase";
 import { collection, getDocs, doc, updateDoc, getDoc, onSnapshot } from "firebase/firestore";
 import { parseOrderTimestamp } from "../utils/orderDateTime";
 
+const RESTAURANT_ID = "orderin_restaurant_2";
+
 /**
  * Get today's date at midnight (start of day) for comparison
  * Returns a Date object with time set to 00:00:00
@@ -276,7 +278,7 @@ export const fetchTodaysOrders = async () => {
     const customersRef = collection(
       db,
       "Restaurant",
-      "orderin_restaurant_2",
+      RESTAURANT_ID,
       "customers"
     );
 
@@ -430,7 +432,7 @@ export const subscribeTodaysOrders = (onUpdate) => {
     const customersRef = collection(
       db,
       "Restaurant",
-      "orderin_restaurant_2",
+      RESTAURANT_ID,
       "customers"
     );
 
@@ -531,6 +533,7 @@ export const subscribeTodaysOrders = (onUpdate) => {
 
               const orderObj = {
                 id: orderId,
+                restaurantId: RESTAURANT_ID,
                 phoneNumber,
                 username: displayName,
                 customerNames,
@@ -560,24 +563,27 @@ export const subscribeTodaysOrders = (onUpdate) => {
 
           // Sort by timestamp (newest first)
           allProcessedOrders.sort((a, b) => {
-            const timeA = a.timestamp ? a.timestamp.toDate?.().getTime() : 0;
-            const timeB = b.timestamp ? b.timestamp.toDate?.().getTime() : 0;
+            const timeA = a.timestamp ? a.timestamp.getTime?.() || a.timestamp.toDate?.().getTime() || 0 : 0;
+            const timeB = b.timestamp ? b.timestamp.getTime?.() || b.timestamp.toDate?.().getTime() || 0 : 0;
             return timeB - timeA;
           });
 
           if (typeof onUpdate === "function") onUpdate(allProcessedOrders);
         } catch (err) {
           console.error("Error processing customers snapshot:", err);
+          if (typeof onUpdate === "function") onUpdate([]);
         }
       },
       (err) => {
         console.error("onSnapshot error (customers):", err);
+        if (typeof onUpdate === "function") onUpdate([]);
       }
     );
 
     return unsubscribe;
   } catch (error) {
     console.error("Failed to subscribe to orders:", error);
+    if (typeof onUpdate === "function") onUpdate([]);
     return () => {};
   }
 };
@@ -593,7 +599,7 @@ export const subscribeAllCustomerOrders = (onUpdate) => {
     const customersRef = collection(
       db,
       "Restaurant",
-      "orderin_restaurant_2",
+      RESTAURANT_ID,
       "customers"
     );
 
@@ -743,12 +749,12 @@ export const subscribeOnlineCustomerOrders = (onUpdate) => {
  * Update order status in Firebase
  * Updates the status field in pastOrders array for a specific customer
  */
-export const updateOrderStatus = async (phoneNumber, orderIndex, newStatus) => {
+export const updateOrderStatus = async (phoneNumber, orderIndex, newStatus, restaurantId = RESTAURANT_ID) => {
   try {
     const customerRef = doc(
       db,
       "Restaurant",
-      "orderin_restaurant_2",
+      restaurantId,
       "customers",
       phoneNumber
     );
@@ -863,7 +869,7 @@ export const fetchDailyTransitOrders = async () => {
     const customersRef = collection(
       db,
       "Restaurant",
-      "orderin_restaurant_2",
+      RESTAURANT_ID,
       "customers"
     );
 

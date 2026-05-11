@@ -2,7 +2,7 @@ This folder contains Firebase Cloud Functions for OrderIn.
 
 Functions included:
 
-- `onPromotionDelete` (Firestore trigger): runs when a `promotions` document under `Restaurant/orderin_restaurant_1/promotions/{id}` is deleted; if the document has an `image_path` field this function deletes the corresponding Storage object.
+- `onPromotionDelete` (Firestore trigger): runs when a `promotions` document under `Restaurant/orderin_restaurant_2/promotions/{id}` is deleted; if the document has an `image_path` field this function deletes the corresponding Storage object.
 
 - `getSignedPromotionUploadUrl` (Callable): returns a signed v4 write URL for uploading a promotion image. Caller must be authenticated and have an `admin` custom claim.
 

@@ -13,6 +13,8 @@ import { collection, getDocs, addDoc, serverTimestamp, doc, getDoc, updateDoc, s
 import { db } from "../firebase";
 import { createOrderTimestamp } from "../utils/orderDateTime";
 
+const RESTAURANT_ID = "orderin_restaurant_2";
+
 function ManualOrderModal({ isOpen, onClose, menuItems, onOrderCreated }) {
   const [customerName, setCustomerName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
@@ -83,7 +85,7 @@ function ManualOrderModal({ isOpen, onClose, menuItems, onOrderCreated }) {
       setIsSubmitting(true);
 
       // Store manual order in customers collection (same as regular orders)
-      const customerRef = doc(db, "Restaurant", "orderin_restaurant_2", "customers", phoneNumber);
+      const customerRef = doc(db, "Restaurant", RESTAURANT_ID, "customers", phoneNumber);
       
       // Get existing customer data or create new
       const customerSnap = await getDoc(customerRef);
@@ -349,7 +351,7 @@ function Orders() {
   useEffect(() => {
     const fetchMenuItems = async () => {
       try {
-        const menuRef = collection(db, "Restaurant", "orderin_restaurant_2", "menu");
+        const menuRef = collection(db, "Restaurant", RESTAURANT_ID, "menu");
         const menuSnapshot = await getDocs(menuRef);
         const items = menuSnapshot.docs.map(doc => ({
           id: doc.id,
@@ -371,13 +373,7 @@ function Orders() {
     const unsubscribe = subscribeTodaysOrders((fetchedOrders) => {
       console.log(`=== ORDERS COMPONENT (realtime): Received ${fetchedOrders.length} orders ===`);
       console.log(`Orders data (realtime):`, fetchedOrders);
-      // Display orders that have paymentStatus === 'paid' OR manual orders
-      const displayOrders = fetchedOrders.filter(o => {
-        const status = String(o.paymentStatus || '').toLowerCase();
-        return status === 'paid' || status === 'manual';
-      });
-      console.log(`Filtered to paid and manual orders: ${displayOrders.length}`);
-      setOrders(displayOrders);
+      setOrders(fetchedOrders);
       setError(null);
       setLoading(false);
     });
@@ -399,7 +395,7 @@ function Orders() {
       }
 
       // Update in Firebase
-      await updateOrderStatus(order.phoneNumber, order.orderIndex, newStatus);
+      await updateOrderStatus(order.phoneNumber, order.orderIndex, newStatus, order.restaurantId);
 
       // Update local state
       setOrders((prevOrders) =>

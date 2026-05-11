@@ -21,24 +21,6 @@ function Payments({ onBackClick }) {
   const navigate = useNavigate();
   const { getPathWithTable } = useTableNumber();
 
-  // Clean up all unpaid orders when user ENTERS the Payments page
-  // This ensures no stale unpaid orders exist before starting a new payment
-  useEffect(() => {
-    const cleanupOnPageEnter = async () => {
-      try {
-        const user = JSON.parse(localStorage.getItem("user"));
-        if (user && user.phone) {
-          console.log('Payments page loaded: Deleting unpaid orders for', user.phone);
-          await safeDeleteUnpaidOrders(user.phone);
-        }
-      } catch (err) {
-        console.error('Error cleaning up unpaid orders on page enter:', err);
-      }
-    };
-
-    cleanupOnPageEnter();
-  }, []); // Run only once when component mounts
-
   // Fallback onBackClick: navigate back and clean up unpaid orders from Firestore
   const handleBackClick = async () => {
     // Step 1: Delete unpaid orders from Firestore BEFORE navigating back
