@@ -28,6 +28,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "test": "react-scripts test",
+    "deploy:hosting": "firebase deploy --only hosting",
+    "deploy:rules": "firebase deploy --only firestore:rules,storage",
     "emu:auth": "npx firebase emulators:start --only auth",
     "emu:auth:debug": "npx firebase emulators:start --only auth --debug"
   },

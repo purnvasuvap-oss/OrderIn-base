@@ -39,32 +39,6 @@ interface VerifyPaymentData {
   currency?: string;
 }
 
-interface SyncPaymentData {
-  razorpayMethod?: string;
-  razorpayStatus?: string;
-  razorpayAmount?: number;
-  razorpayCurrency?: string;
-  razorpayCapturedAt?: string;
-  razorpayFeeAmount?: number;
-  razorpayTaxAmount?: number;
-  razorpaySettlementId?: string;
-  razorpaySettlementStatus?: string;
-  razorpaySettlementAmount?: number;
-  razorpaySettlementUtr?: string;
-  razorpaySettlementCreatedAt?: string;
-  razorpayTransferId?: string;
-  razorpayTransferStatus?: string;
-  razorpayTransferSettlementStatus?: string;
-  razorpayTransferRecipient?: string;
-  razorpayTransferAmount?: number;
-  razorpayTransferCurrency?: string;
-  routePlatformGrossAmount?: number;
-  routePlatformNetAmount?: number;
-  razorpayRouteTransfers?: unknown[];
-  razorpaySyncSource?: 'api' | 'webhook';
-  razorpaySyncedAt?: string;
-}
-
 interface RazorpayOptions {
   key: string;
   amount: number;
@@ -102,16 +76,10 @@ declare global {
 
 const FUNCTION_BASE_URL = 'https://us-central1-orderin-7f8bc.cloudfunctions.net';
 const CREATE_ORDER_ENDPOINTS = [
-  `${FUNCTION_BASE_URL}/api/createRazorpayOrder`,
   `${FUNCTION_BASE_URL}/createRazorpayOrder`,
 ];
 const VERIFY_PAYMENT_ENDPOINTS = [
   `${FUNCTION_BASE_URL}/verifyRazorpayPayment`,
-  `${FUNCTION_BASE_URL}/api/verifyRazorpayPayment`,
-];
-const SYNC_PAYMENT_ENDPOINTS = [
-  `${FUNCTION_BASE_URL}/syncRazorpayPayment`,
-  `${FUNCTION_BASE_URL}/api/syncRazorpayPayment`,
 ];
 
 const buildRazorpayReceipt = (restaurantId: string, orderId: string) => {
@@ -383,7 +351,6 @@ export const PaymentHubPage = () => {
             if (response.razorpay_order_id) addDebugLog(`Order ID: ${response.razorpay_order_id}`);
 
             let verifyData: VerifyPaymentData | null = null;
-            let syncedPaymentData: SyncPaymentData | null = null;
             
             if (response.razorpay_signature && response.razorpay_order_id) {
                addDebugLog('Verifying payment signature...');
@@ -410,20 +377,17 @@ export const PaymentHubPage = () => {
                addDebugLog('No signature/order_id returned (Frontend mock mode). Assuming successful payment capture.');
             }
 
-            try {
-              const { response: syncResponse, url } = await postToFunction(SYNC_PAYMENT_ENDPOINTS, {
-                razorpayPaymentId: response.razorpay_payment_id,
-                restaurantId: finalRestaurantId,
-                customerPhone: finalCustomerPhone,
-                orderId: finalOrderId,
-              }, 'Sync payment');
-              const syncData = await syncResponse.json();
-              syncedPaymentData = syncData?.payment || null;
-              addDebugLog(`✓ Razorpay payment synced from API`);
-              addDebugLog(`✓ Sync endpoint: ${url}`);
-            } catch (syncError) {
-              addDebugLog(`⚠️ Razorpay sync skipped: ${(syncError as Error).message}`);
-            }
+            // Map Razorpay payment method to user-friendly names once, then use
+            // the same values for both the admin write and the parent fallback.
+            const paymentMethodMap: Record<string, string> = {
+              'upi': 'UPI',
+              'card': 'Card',
+              'netbanking': 'Net Banking',
+              'wallet': 'Wallet',
+              'emandate': 'E-Mandate'
+            };
+            const razorpayMethod = verifyData?.method || response.method;
+            const actualPaymentMethod = paymentMethodMap[String(razorpayMethod || '').toLowerCase()] || razorpayMethod || 'Online';
 
             // Step 4: Update Firebase with Payment Details (if we have valid data)
             if (finalRestaurantId && finalCustomerPhone && finalOrderId) {
@@ -447,19 +411,6 @@ export const PaymentHubPage = () => {
 
                   if (orderToUpdate) {
                     addDebugLog(`✓ Order found, updating with payment details`);
-
-                    // Map Razorpay payment method to user-friendly names
-                    const paymentMethodMap: Record<string, string> = {
-                      'upi': 'UPI',
-                      'card': 'Card',
-                      'netbanking': 'Net Banking',
-                      'wallet': 'Wallet',
-                      'emandate': 'E-Mandate'
-                    };
-
-                    const razorpayMethod = syncedPaymentData?.razorpayMethod || verifyData?.method || response.method;
-                    const actualPaymentMethod = paymentMethodMap[String(razorpayMethod || '').toLowerCase()] || razorpayMethod || 'Online';
-
                     addDebugLog(`✓ Payment Method: ${actualPaymentMethod} (Razorpay: ${razorpayMethod || 'unknown'})`);
 
                     // Create updated orders array with payment information
@@ -481,28 +432,11 @@ export const PaymentHubPage = () => {
                           razorpayPaymentId: response.razorpay_payment_id,
                           razorpaySignature: response.razorpay_signature,
                           razorpayMethod,
-                          razorpayStatus: syncedPaymentData?.razorpayStatus || verifyData?.payment_status || 'captured',
-                          razorpayAmount: syncedPaymentData?.razorpayAmount ?? (typeof verifyData?.amount === 'number' ? verifyData.amount / 100 : undefined),
-                          razorpayCurrency: syncedPaymentData?.razorpayCurrency || verifyData?.currency,
-                          razorpayCapturedAt: syncedPaymentData?.razorpayCapturedAt,
-                          razorpayFeeAmount: syncedPaymentData?.razorpayFeeAmount,
-                          razorpayTaxAmount: syncedPaymentData?.razorpayTaxAmount,
-                          razorpaySettlementId: syncedPaymentData?.razorpaySettlementId || verifyData?.settlement_id || undefined,
-                          razorpaySettlementStatus: syncedPaymentData?.razorpaySettlementStatus || verifyData?.settlement_status || undefined,
-                          razorpaySettlementAmount: syncedPaymentData?.razorpaySettlementAmount,
-                          razorpaySettlementUtr: syncedPaymentData?.razorpaySettlementUtr,
-                          razorpaySettlementCreatedAt: syncedPaymentData?.razorpaySettlementCreatedAt,
-                          razorpayTransferId: syncedPaymentData?.razorpayTransferId,
-                          razorpayTransferStatus: syncedPaymentData?.razorpayTransferStatus,
-                          razorpayTransferSettlementStatus: syncedPaymentData?.razorpayTransferSettlementStatus,
-                          razorpayTransferRecipient: syncedPaymentData?.razorpayTransferRecipient,
-                          razorpayTransferAmount: syncedPaymentData?.razorpayTransferAmount,
-                          razorpayTransferCurrency: syncedPaymentData?.razorpayTransferCurrency,
-                          routePlatformGrossAmount: syncedPaymentData?.routePlatformGrossAmount,
-                          routePlatformNetAmount: syncedPaymentData?.routePlatformNetAmount,
-                          razorpayRouteTransfers: syncedPaymentData?.razorpayRouteTransfers,
-                          razorpaySyncSource: syncedPaymentData?.razorpaySyncSource,
-                          razorpaySyncedAt: syncedPaymentData?.razorpaySyncedAt,
+                          razorpayStatus: verifyData?.payment_status || 'captured',
+                          razorpayAmount: typeof verifyData?.amount === 'number' ? verifyData.amount / 100 : undefined,
+                          razorpayCurrency: verifyData?.currency,
+                          razorpaySettlementId: verifyData?.settlement_id || undefined,
+                          razorpaySettlementStatus: verifyData?.settlement_status || undefined,
                         };
                         return Object.fromEntries(
                           Object.entries(updatedOrder).filter(([, value]) => value !== undefined)
@@ -557,8 +491,16 @@ export const PaymentHubPage = () => {
                 orderId: finalOrderId,
                 amount: finalAmount,
                 restaurantId: finalRestaurantId,
-                paymentMethod: paymentMethodUpper,
+                paymentMethod: actualPaymentMethod,
                 razorpayPaymentId: response.razorpay_payment_id,
+                razorpayOrderId: response.razorpay_order_id,
+                razorpaySignature: response.razorpay_signature,
+                razorpayMethod,
+                razorpayStatus: verifyData?.payment_status || 'captured',
+                razorpayAmount: typeof verifyData?.amount === 'number' ? verifyData.amount / 100 : undefined,
+                razorpayCurrency: verifyData?.currency,
+                razorpaySettlementId: verifyData?.settlement_id || undefined,
+                razorpaySettlementStatus: verifyData?.settlement_status || undefined,
                 transactionId: response.razorpay_order_id,
               };
               addDebugLog(`✓ Sending PAYMENT_SUCCESS to parent window`);

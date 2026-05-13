@@ -121,7 +121,20 @@ function OnlinePayment() {
       // Handle payment success
       if (event.data && event.data.type === "PAYMENT_SUCCESS") {
         console.log("[OnlinePayment] Payment success received");
-        markPaymentSuccessful(orderId);
+        markPaymentSuccessful(orderId, {
+          paymentMethod: 'Online',
+          PaymentMethod: 'Online',
+          OnlinePayMethod: event.data.paymentMethod || event.data.razorpayMethod || 'Online',
+          razorpayPaymentId: event.data.razorpayPaymentId,
+          razorpayOrderId: event.data.razorpayOrderId || event.data.transactionId,
+          razorpaySignature: event.data.razorpaySignature,
+          razorpayMethod: event.data.razorpayMethod,
+          razorpayStatus: event.data.razorpayStatus || 'captured',
+          razorpayAmount: event.data.razorpayAmount,
+          razorpayCurrency: event.data.razorpayCurrency,
+          razorpaySettlementId: event.data.razorpaySettlementId,
+          razorpaySettlementStatus: event.data.razorpaySettlementStatus,
+        });
         sessionStorage.removeItem('pendingOrderId');
         localStorage.removeItem('orderin_onlinepayment_orderId');
         sessionStorage.removeItem('paymentData');

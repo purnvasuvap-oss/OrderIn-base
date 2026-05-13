@@ -368,8 +368,11 @@ export const CartProvider = ({ children, tableNo = '1' }) => {
     return order;
   };
 
-  const markPaymentSuccessful = (orderId) => {
+  const markPaymentSuccessful = (orderId, paymentDetails = {}) => {
     const idsMatch = (left, right) => String(left) === String(right);
+    const pendingOrderBackupRaw =
+      sessionStorage.getItem('pendingOrderForFirestore') ||
+      localStorage.getItem('pendingOrderForFirestore');
 
     // Find the order and mark it as paid
     setOrderHistory(prev => prev.map(order =>
@@ -388,17 +391,58 @@ export const CartProvider = ({ children, tableNo = '1' }) => {
 
         const customerRef = doc(db, "Restaurant", "orderin_restaurant_2", "customers", phoneNumber);
         const customerSnap = await getDoc(customerRef);
-        if (!customerSnap.exists()) return;
 
-        const data = customerSnap.data();
+        const data = customerSnap.exists() ? customerSnap.data() : {};
         const pastOrders = Array.isArray(data.pastOrders) ? data.pastOrders : [];
+        const pendingOrderBackup = (() => {
+          try {
+            return pendingOrderBackupRaw ? JSON.parse(pendingOrderBackupRaw) : null;
+          } catch (err) {
+            console.warn("Could not parse pending order backup:", err);
+            return null;
+          }
+        })();
+        const backupOrder = pendingOrderBackup?.order && idsMatch(pendingOrderBackup.order.id, orderId)
+          ? pendingOrderBackup.order
+          : null;
 
         // Find and update the order with matching ID
-        const updatedOrders = pastOrders.map(order =>
-          idsMatch(order.id, orderId) ? { ...order, paymentStatus: 'paid' } : order
-        );
+        let foundOrder = false;
+        const updatedOrders = pastOrders.map(order => {
+          if (!idsMatch(order.id, orderId)) return order;
+          foundOrder = true;
+          return Object.fromEntries(
+            Object.entries({
+              ...order,
+              ...paymentDetails,
+              paymentStatus: 'paid',
+              paidAt: order.paidAt || new Date().toISOString(),
+              paymentTimestamp: order.paymentTimestamp || paymentDetails.paymentTimestamp || new Date().toISOString(),
+            }).filter(([, value]) => value !== undefined)
+          );
+        });
 
-        await setDoc(customerRef, { pastOrders: updatedOrders }, { merge: true });
+        if (!foundOrder && backupOrder) {
+          updatedOrders.push(Object.fromEntries(
+            Object.entries({
+              ...backupOrder,
+              ...paymentDetails,
+              paymentStatus: 'paid',
+              paidAt: new Date().toISOString(),
+              paymentTimestamp: paymentDetails.paymentTimestamp || new Date().toISOString(),
+            }).filter(([, value]) => value !== undefined)
+          ));
+          console.warn("Recovered missing Firestore order from pending backup:", orderId);
+        }
+
+        if (!foundOrder && !backupOrder) {
+          console.warn("Order not found in Firestore and no pending backup exists:", orderId);
+          return;
+        }
+
+        await setDoc(customerRef, { pastOrders: updatedOrders, lastOrderAt: new Date() }, { merge: true });
+        sessionStorage.removeItem('pendingOrderForFirestore');
+        localStorage.removeItem('pendingOrderForFirestore');
         console.log("Order marked as paid in Firestore:", orderId);
       } catch (err) {
         console.error("Error updating payment status in Firestore:", err);

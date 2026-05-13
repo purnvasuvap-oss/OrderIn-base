@@ -20,9 +20,9 @@ type LedgerRow = Transaction & {
 type RazorpaySyncPayload = Partial<Transaction>;
 
 const FUNCTION_BASE_URL = 'https://us-central1-orderin-7f8bc.cloudfunctions.net';
+const ENABLE_RAZORPAY_LEDGER_SYNC = import.meta.env.VITE_ENABLE_RAZORPAY_LEDGER_SYNC === 'true';
 const SYNC_PAYMENT_ENDPOINTS = [
   `${FUNCTION_BASE_URL}/syncRazorpayPayment`,
-  `${FUNCTION_BASE_URL}/api/syncRazorpayPayment`,
 ];
 
 const syncRazorpayTransaction = async (txn: Transaction): Promise<RazorpaySyncPayload | null> => {
@@ -108,6 +108,10 @@ export const LedgerPage = () => {
     let cancelled = false;
 
     const transactionsToSync = onlineTransactions.filter((txn) => {
+      if (!ENABLE_RAZORPAY_LEDGER_SYNC) {
+        return false;
+      }
+
       if (!txn.razorpayPaymentId) {
         return false;
       }

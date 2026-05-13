@@ -27,7 +27,10 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "vitest"
+    "test": "vitest",
+    "deploy:hosting": "firebase deploy --only hosting",
+    "deploy:razorpay-functions": "firebase deploy --only functions:createRazorpayOrder,functions:verifyRazorpayPayment,functions:syncRazorpayPayment,functions:razorpayWebhook",
+    "deploy:rules": "firebase deploy --only firestore:rules,storage"
   },
   "eslintConfig": {
     "extends": [
