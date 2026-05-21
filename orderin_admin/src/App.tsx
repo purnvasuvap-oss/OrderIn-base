@@ -58,6 +58,11 @@ function AppContent() {
     // Step 1: Initial load
     loadPrimaryRestaurants().then(() => {
       console.log('[App] loadPrimaryRestaurants completed');
+      loadCustomerTransactions().then(() => {
+        console.log('[App] loadCustomerTransactions completed after restaurants loaded');
+      }).catch((err) => {
+        console.error('[App] loadCustomerTransactions after restaurants failed:', err);
+      });
       
       // Step 2: Set up real-time listener
       watchRestaurants();

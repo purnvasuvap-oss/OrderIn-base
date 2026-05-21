@@ -1,39 +1,8 @@
 import { db } from "../firebase";
 import { collection, getDocs, doc, updateDoc, getDoc, onSnapshot } from "firebase/firestore";
+import { parseOrderTimestamp } from "../utils/orderDateTime";
 
-/**
- * Parse timestamp string in "MM DD YYYY HH:MM" format
- * DATABASE FORMAT: month date year time (NOT date month year time)
- * Example: "03 11 2026 14:30" = March 11, 2026 at 2:30 PM
- * This is crucial to prevent month/date swapping on dates like 3/11 -> 11/3
- */
-const parseTimestampString = (str) => {
-  if (!str || typeof str !== 'string') return null;
-  
-  try {
-    // Match pattern: MM DD YYYY HH:MM or MM DD YYYY HH:MM:SS
-    const match = str.match(/^(\d{1,2})\s+(\d{1,2})\s+(\d{4})\s+(\d{1,2}):(\d{2})(?::(\d{2}))?/);
-    
-    if (!match) return null;
-    
-    const month = parseInt(match[1], 10) - 1; // JavaScript months are 0-indexed
-    const day = parseInt(match[2], 10);
-    const year = parseInt(match[3], 10);
-    const hours = parseInt(match[4], 10);
-    const minutes = parseInt(match[5], 10);
-    const seconds = parseInt(match[6] || '0', 10);
-    
-    // Validate ranges
-    if (month < 0 || month > 11 || day < 1 || day > 31 || year < 2000 || year > 2100) {
-      return null;
-    }
-    
-    return new Date(year, month, day, hours, minutes, seconds);
-  } catch (error) {
-    console.error("Error parsing timestamp string:", error);
-    return null;
-  }
-};
+const RESTAURANT_ID = "orderin_restaurant_1";
 
 /**
  * Get today's date at midnight (start of day) for comparison
@@ -61,15 +30,7 @@ const getTomorrowAtMidnight = () => {
  * Handles: time, timestamp, createdAt, orderDate, date, etc.
  */
 const getOrderTimestamp = (order) => {
-  // Check common timestamp field names (time is primary in this database)
-  if (order.time) return order.time;
-  if (order.timestamp) return order.timestamp;
-  if (order.createdAt) return order.createdAt;
-  if (order.orderDate) return order.orderDate;
-  if (order.date) return order.date;
-  
-  // If no timestamp field found, return null
-  return null;
+  return parseOrderTimestamp(order);
 };
 
 /**
@@ -81,7 +42,7 @@ const findProvidedTax = (order) => {
   if (!order || typeof order !== 'object') return null;
 
   // Direct common keys
-  const directKeys = ['tax', 'taxAmount', 'tax_amount', 'tax_value', 'tax_value_amount', 'taxAmt', 'tax_amt'];
+  const directKeys = ['tax', 'taxes', 'taxAmount', 'tax_amount', 'tax_value', 'tax_value_amount', 'taxAmt', 'tax_amt'];
   for (const k of directKeys) {
     if (k in order && order[k] !== null && order[k] !== undefined) return order[k];
   }
@@ -118,18 +79,39 @@ const findProvidedTax = (order) => {
  * Returns: { paymentType, paymentStatus, paidDisplay, paidAmount }
  */
 const derivePaymentInfo = (order) => {
+  const normalizedRazorpayStatus = String(order.razorpayStatus || "").toLowerCase().trim();
+  const hasRazorpaySync =
+    Boolean(order.razorpayPaymentId) ||
+    Boolean(order.razorpayOrderId) ||
+    Boolean(order.razorpayMethod) ||
+    Boolean(order.razorpayAmount) ||
+    Boolean(normalizedRazorpayStatus);
+
   // Possible fields in different writes: paymentMethod, paymentType, paymentMethodType, method, paymentMode
   // Also check nested payment objects (order.payment, order.transaction, order.card)
   const nestedPaymentMethod = (order.payment && (order.payment.method || order.payment.type || order.payment.paymentMethod)) ||
     (order.transaction && (order.transaction.method || order.transaction.type)) ||
     (order.card && (order.card.type || order.card.brand));
-  const rawMethod = (order.paymentMethod || order.paymentType || order.OnlinePayMethod || order.method || order.payment_mode || order.paymentMode || nestedPaymentMethod || "").toString();
-  const rawStatus = (order.paymentStatus || order.payment_status || "").toString();
+  const rawMethod = (
+    order.paymentMethod ||
+    order.PaymentMethod ||
+    order.paymentType ||
+    order.OnlinePayMethod ||
+    order.razorpayMethod ||
+    (hasRazorpaySync ? "Online" : "") ||
+    order.method ||
+    order.payment_mode ||
+    order.paymentMode ||
+    nestedPaymentMethod ||
+    ""
+  ).toString();
+  const rawStatus = (order.paymentStatus || order.payment_status || order.razorpayStatus || "").toString();
   const rawPaidAmount = Number(
     (order.paidAmount !== undefined && order.paidAmount !== null) ? order.paidAmount :
     (order.paidAmountValue !== undefined && order.paidAmountValue !== null) ? order.paidAmountValue :
     (order.paid !== undefined && order.paid !== null) ? order.paid :
     (order.amountPaid !== undefined && order.amountPaid !== null) ? order.amountPaid :
+    (order.razorpayAmount !== undefined && order.razorpayAmount !== null) ? order.razorpayAmount :
     0
   ) || 0;
   const verificationCode = order.verificationCode || order.code || order.txnRef || order.transactionId || "";
@@ -144,7 +126,9 @@ const derivePaymentInfo = (order) => {
   } else if (!methodLower) {
     // If nothing present, try to infer from paymentStatus or flags
     if (rawStatus.toLowerCase().includes("card") || String(order.cardLast4) || (order.card && (order.card.last4 || order.card.brand))) paymentType = "Card";
-    if (!paymentType && order.payment && (order.payment.cardToken || order.payment.last4 || order.payment.cardLast4)) paymentType = "Card";
+    else if (order.payment && (order.payment.cardToken || order.payment.last4 || order.payment.cardLast4)) paymentType = "Card";
+    else if (String(order.OnlinePayMethod || "").toLowerCase().includes("upi")) paymentType = "UPI";
+    else if (rawStatus.toLowerCase().includes("manual")) paymentType = "Manual";
   } else if (methodLower.includes("card") || methodLower.includes("visa") || methodLower.includes("master") || methodLower.includes("rupay")) {
     paymentType = "Card";
   } else if (methodLower.includes("upi") || methodLower.includes("google") || methodLower.includes("paytm") || methodLower.includes("phonepe")) {
@@ -169,14 +153,14 @@ const derivePaymentInfo = (order) => {
       paymentStatus = "unpaid";
     } else if (s.includes("failed") || s.includes("error") ) {
       paymentStatus = "failed";
-    } else if (s === "paid" || /\bpaid\b/.test(s) || s === "success" || s === "completed") {
+    } else if (s === "paid" || /\bpaid\b/.test(s) || s === "success" || s === "completed" || s === "captured") {
       paymentStatus = "paid";
     } else {
       paymentStatus = s;
     }
   } else {
     // infer from paid amount
-    if (rawPaidAmount > 0) paymentStatus = "paid";
+    if (rawPaidAmount > 0 || normalizedRazorpayStatus === "captured") paymentStatus = "paid";
     else if (verificationCode) paymentStatus = "unpaid";
     else paymentStatus = "unknown";
   }
@@ -241,18 +225,10 @@ const isOrderFromToday = (timestamp) => {
       orderDate = new Date(timestamp);
       console.log("    [isOrderFromToday] Converted number to Date");
     } 
-    // Handle string timestamps (e.g., "03 11 2026 14:30" or "11/30/2025, 6:24:00 PM")
+    // Handle string timestamps (e.g., "11/30/2025, 6:24:00 PM")
     else if (typeof timestamp === "string") {
       console.log("    [isOrderFromToday] Parsing string timestamp");
-      
-      // First try parsing with MM DD YYYY HH:MM format (database format)
-      orderDate = parseTimestampString(timestamp);
-      
-      // Fall back to generic Date parsing if custom format doesn't match
-      if (!orderDate) {
-        orderDate = new Date(timestamp);
-      }
-      
+      orderDate = new Date(timestamp);
       console.log(`    [isOrderFromToday] Parsed string to Date: ${orderDate.toLocaleString()}`);
     } 
     else {
@@ -302,7 +278,7 @@ export const fetchTodaysOrders = async () => {
     const customersRef = collection(
       db,
       "Restaurant",
-      "orderin_restaurant_1",
+      RESTAURANT_ID,
       "customers"
     );
 
@@ -354,8 +330,8 @@ export const fetchTodaysOrders = async () => {
           console.log(`  Resolved instructions: "${instructions}"`);
           
           // Log timestamp details
-          if (timestamp) {
-            const orderDate = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+      if (timestamp) {
+            const orderDate = timestamp;
             console.log(`  Timestamp field: ${order.time ? 'time' : order.timestamp ? 'timestamp' : 'other'}`);
             console.log(`  Timestamp type: ${typeof timestamp}`);
             console.log(`  Timestamp value: ${timestamp}`);
@@ -369,6 +345,7 @@ export const fetchTodaysOrders = async () => {
               console.log('subscribeTodaysOrders - paymentInfo for', orderId, paymentInfo);
               ordersWithTimestamp.push({
                 id: orderId,
+                restaurantId: RESTAURANT_ID,
                 phoneNumber: phoneNumber,
                 username: displayName,
                 customerNames: customerNames,
@@ -394,6 +371,7 @@ export const fetchTodaysOrders = async () => {
             // This ensures orders still display even if timestamp is missing
             ordersWithoutTimestamp.push({
               id: orderId,
+              restaurantId: RESTAURANT_ID,
               phoneNumber: phoneNumber,
               username: displayName,
               customerNames: customerNames,
@@ -431,8 +409,8 @@ export const fetchTodaysOrders = async () => {
     // Sort orders by timestamp (newest first) if they have timestamps
     if (ordersWithTimestamp.length > 0) {
       allOrders.sort((a, b) => {
-        const timeA = a.timestamp ? a.timestamp.toDate?.().getTime() : 0;
-        const timeB = b.timestamp ? b.timestamp.toDate?.().getTime() : 0;
+        const timeA = a.timestamp ? a.timestamp.getTime() : 0;
+        const timeB = b.timestamp ? b.timestamp.getTime() : 0;
         return timeB - timeA;
       });
     }
@@ -456,7 +434,7 @@ export const subscribeTodaysOrders = (onUpdate) => {
     const customersRef = collection(
       db,
       "Restaurant",
-      "orderin_restaurant_1",
+      RESTAURANT_ID,
       "customers"
     );
 
@@ -557,6 +535,7 @@ export const subscribeTodaysOrders = (onUpdate) => {
 
               const orderObj = {
                 id: orderId,
+                restaurantId: RESTAURANT_ID,
                 phoneNumber,
                 username: displayName,
                 customerNames,
@@ -586,24 +565,27 @@ export const subscribeTodaysOrders = (onUpdate) => {
 
           // Sort by timestamp (newest first)
           allProcessedOrders.sort((a, b) => {
-            const timeA = a.timestamp ? a.timestamp.toDate?.().getTime() : 0;
-            const timeB = b.timestamp ? b.timestamp.toDate?.().getTime() : 0;
+            const timeA = a.timestamp ? a.timestamp.getTime?.() || a.timestamp.toDate?.().getTime() || 0 : 0;
+            const timeB = b.timestamp ? b.timestamp.getTime?.() || b.timestamp.toDate?.().getTime() || 0 : 0;
             return timeB - timeA;
           });
 
           if (typeof onUpdate === "function") onUpdate(allProcessedOrders);
         } catch (err) {
           console.error("Error processing customers snapshot:", err);
+          if (typeof onUpdate === "function") onUpdate([]);
         }
       },
       (err) => {
         console.error("onSnapshot error (customers):", err);
+        if (typeof onUpdate === "function") onUpdate([]);
       }
     );
 
     return unsubscribe;
   } catch (error) {
     console.error("Failed to subscribe to orders:", error);
+    if (typeof onUpdate === "function") onUpdate([]);
     return () => {};
   }
 };
@@ -619,7 +601,7 @@ export const subscribeAllCustomerOrders = (onUpdate) => {
     const customersRef = collection(
       db,
       "Restaurant",
-      "orderin_restaurant_1",
+      RESTAURANT_ID,
       "customers"
     );
 
@@ -677,12 +659,13 @@ export const subscribeAllCustomerOrders = (onUpdate) => {
               } else {
                 tax = subtotal > 0 ? Math.ceil(subtotal / 100) : 0;
               }
-              const totalCost = subtotal + tax;
+              const totalCost = order.totalCost || order.total || order.amount || subtotal + tax;
 
               const paymentInfo = derivePaymentInfo(order);
 
               allOrders.push({
                 id: orderId,
+                restaurantId: RESTAURANT_ID,
                 phoneNumber: phoneNumber,
                 username: displayName,
                 tableNumber: order.tableNo || "N/A",
@@ -693,7 +676,7 @@ export const subscribeAllCustomerOrders = (onUpdate) => {
                 })) || [],
                 subtotal: subtotal,
                 tax: tax,
-                totalCost: totalCost || order.totalCost || order.amount || subtotal + tax,
+                totalCost: totalCost,
                 paidAmount: paymentInfo.paidAmount,
                 paymentType: paymentInfo.paymentType,
                 paymentStatus: paymentInfo.paymentStatus,
@@ -725,8 +708,8 @@ export const subscribeAllCustomerOrders = (onUpdate) => {
 
           // Sort by timestamp (newest first)
           allOrders.sort((a, b) => {
-            const timeA = a.timestamp ? (a.timestamp.toDate?.().getTime?.() || new Date(a.timestamp).getTime()) : 0;
-            const timeB = b.timestamp ? (b.timestamp.toDate?.().getTime?.() || new Date(b.timestamp).getTime()) : 0;
+            const timeA = a.timestamp ? a.timestamp.getTime() : 0;
+            const timeB = b.timestamp ? b.timestamp.getTime() : 0;
             return timeB - timeA;
           });
 
@@ -751,7 +734,15 @@ export const subscribeOnlineCustomerOrders = (onUpdate) => {
   return subscribeAllCustomerOrders((orders) => {
     const onlineOrders = (orders || []).filter((order) => {
       const paymentType = String(order.paymentType || "").toLowerCase();
-      return paymentType === "online";
+      const rawMethod = String(order.paymentMethod || order.PaymentMethod || order.OnlinePayMethod || order.razorpayMethod || "").toLowerCase();
+      return (
+        paymentType === "online" ||
+        rawMethod === "online" ||
+        Boolean(order.razorpayPaymentId) ||
+        Boolean(order.razorpayOrderId) ||
+        Boolean(order.razorpayAmount) ||
+        Boolean(order.razorpayStatus)
+      );
     });
     if (typeof onUpdate === "function") onUpdate(onlineOrders);
   });
@@ -761,12 +752,12 @@ export const subscribeOnlineCustomerOrders = (onUpdate) => {
  * Update order status in Firebase
  * Updates the status field in pastOrders array for a specific customer
  */
-export const updateOrderStatus = async (phoneNumber, orderIndex, newStatus) => {
+export const updateOrderStatus = async (phoneNumber, orderIndex, newStatus, restaurantId = RESTAURANT_ID) => {
   try {
     const customerRef = doc(
       db,
       "Restaurant",
-      "orderin_restaurant_1",
+      restaurantId,
       "customers",
       phoneNumber
     );
@@ -825,17 +816,7 @@ export const formatOrderItems = (items) => {
 export const formatTime = (timestamp) => {
   if (!timestamp) return "";
   try {
-    let date;
-    
-    // If it's a string, try parsing with MM DD YYYY HH:MM format first (database format)
-    if (typeof timestamp === "string") {
-      date = parseTimestampString(timestamp);
-      if (!date) {
-        date = new Date(timestamp);
-      }
-    } else {
-      date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-    }
+    const date = timestamp instanceof Date ? timestamp : getOrderTimestamp({ timestamp });
     
     // Validate date
     if (isNaN(date.getTime())) {
@@ -860,17 +841,7 @@ export const formatTime = (timestamp) => {
 export const formatDateTime = (timestamp) => {
   if (!timestamp) return "";
   try {
-    let date;
-    
-    // If it's a string, try parsing with MM DD YYYY HH:MM format first (database format)
-    if (typeof timestamp === "string") {
-      date = parseTimestampString(timestamp);
-      if (!date) {
-        date = new Date(timestamp);
-      }
-    } else {
-      date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-    }
+    const date = timestamp instanceof Date ? timestamp : getOrderTimestamp({ timestamp });
     
     if (isNaN(date.getTime())) {
       return "";
@@ -901,7 +872,7 @@ export const fetchDailyTransitOrders = async () => {
     const customersRef = collection(
       db,
       "Restaurant",
-      "orderin_restaurant_1",
+      RESTAURANT_ID,
       "customers"
     );
 
@@ -963,9 +934,15 @@ export const fetchDailyTransitOrders = async () => {
         }
 
         // Calculate tax (assuming 10% tax if not provided)
-        const taxRate = order.taxRate || 0.1;
-        const tax = subtotal * taxRate;
-        const totalCost = subtotal + tax;
+        const providedTax = findProvidedTax(order);
+        let tax;
+        if (providedTax !== null && providedTax !== undefined) {
+          const parsedTax = Number(String(providedTax).replace(/[^0-9.-]+/g, ""));
+          tax = isNaN(parsedTax) ? 0 : parsedTax;
+        } else {
+          tax = subtotal > 0 ? Math.ceil(subtotal / 100) : 0;
+        }
+        const totalCost = order.totalCost || order.total || order.amount || subtotal + tax;
 
         // Derive normalized payment information
         const paymentInfo = derivePaymentInfo(order);
@@ -981,6 +958,7 @@ export const fetchDailyTransitOrders = async () => {
 
         dailyTransitOrders.push({
           id: orderId,
+          restaurantId: RESTAURANT_ID,
           phoneNumber: phoneNumber,
           username: displayName,
           tableNumber: order.tableNo || "N/A",

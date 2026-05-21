@@ -345,6 +345,7 @@ export const fetchTodaysOrders = async () => {
               console.log('subscribeTodaysOrders - paymentInfo for', orderId, paymentInfo);
               ordersWithTimestamp.push({
                 id: orderId,
+                restaurantId: RESTAURANT_ID,
                 phoneNumber: phoneNumber,
                 username: displayName,
                 customerNames: customerNames,
@@ -370,6 +371,7 @@ export const fetchTodaysOrders = async () => {
             // This ensures orders still display even if timestamp is missing
             ordersWithoutTimestamp.push({
               id: orderId,
+              restaurantId: RESTAURANT_ID,
               phoneNumber: phoneNumber,
               username: displayName,
               customerNames: customerNames,
@@ -663,6 +665,7 @@ export const subscribeAllCustomerOrders = (onUpdate) => {
 
               allOrders.push({
                 id: orderId,
+                restaurantId: RESTAURANT_ID,
                 phoneNumber: phoneNumber,
                 username: displayName,
                 tableNumber: order.tableNo || "N/A",
@@ -955,6 +958,7 @@ export const fetchDailyTransitOrders = async () => {
 
         dailyTransitOrders.push({
           id: orderId,
+          restaurantId: RESTAURANT_ID,
           phoneNumber: phoneNumber,
           username: displayName,
           tableNumber: order.tableNo || "N/A",

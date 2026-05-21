@@ -217,6 +217,14 @@ function Payments({ onBackClick }) {
       console.log('Order object before saving to Firestore:', orderForFirestore);
       console.log('OnlinePayMethod value:', orderForFirestore.OnlinePayMethod);
 
+      const pendingOrderBackup = {
+        phoneNumber,
+        restaurantId: 'orderin_restaurant_1',
+        order: orderForFirestore,
+      };
+      sessionStorage.setItem('pendingOrderForFirestore', JSON.stringify(pendingOrderBackup));
+      localStorage.setItem('pendingOrderForFirestore', JSON.stringify(pendingOrderBackup));
+
       // Save to Firestore immediately with 'unpaid' status
       // It will be deleted if user goes back, or updated to 'paid' after verification
       pastOrders.push(orderForFirestore);
