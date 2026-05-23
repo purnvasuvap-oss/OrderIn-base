@@ -103,26 +103,27 @@ const MenuPage = () => {
       for (const [idx, item] of itemsToProcess.entries()) {
         const isNew = !item.id;
         const hasNewFile = Boolean(item.imageFile);
-        let hasExistingHttpImage = Boolean(item.image_url) || (item.image && typeof item.image === 'string' && item.image.startsWith('http'));
+        const hasDataUrl = item.image && typeof item.image === 'string' && item.image.startsWith('data:');
+        let hasExistingImage = Boolean(item.image_url) || (item.image && typeof item.image === 'string' && item.image.startsWith('http')) || hasDataUrl;
 
         // If this is a single-row edit, fallback to the original menuItems entry for the image if needed
-        if (!hasExistingHttpImage && editingIndex !== null) {
+        if (!hasExistingImage && editingIndex !== null) {
           const original = menuItems[editingIndex];
-          if (original && (original.image_url || (original.image && typeof original.image === 'string' && original.image.startsWith('http')))) {
-            hasExistingHttpImage = true;
+          if (original && (original.image_url || (original.image && typeof original.image === 'string' && (original.image.startsWith('http') || original.image.startsWith('data:'))))) {
+            hasExistingImage = true;
           }
         }
 
         // Secondary fallback: find original by id
-        if (!hasExistingHttpImage && item.id) {
+        if (!hasExistingImage && item.id) {
           const originalById = menuItems.find(m => m.id === item.id);
-          if (originalById && (originalById.image_url || (originalById.image && typeof originalById.image === 'string' && originalById.image.startsWith('http')))) {
-            hasExistingHttpImage = true;
+          if (originalById && (originalById.image_url || (originalById.image && typeof originalById.image === 'string' && (originalById.image.startsWith('http') || originalById.image.startsWith('data:'))))) {
+            hasExistingImage = true;
           }
         }
 
         // Enforce image only for new items
-        if (isNew && !hasExistingHttpImage && !hasNewFile) {
+        if (isNew && !hasExistingImage && !hasNewFile) {
           setSaveStatus({ type: 'error', message: 'Image is required for new items.' });
           setIsSaving(false);
           setTimeout(() => setSaveStatus(null), 6000);
@@ -331,16 +332,14 @@ const MenuPage = () => {
   const handleInputChange = (rowIndex, field, value) => {
     if (editingIndex !== null) {
       if (rowIndex !== editingIndex) return;
-      const updated = [{ ...(editedItems[0] || {}), [field]: value }];
-      setEditedItems(updated);
+      setEditedItems((current) => [{ ...(current[0] || {}), [field]: value }]);
     }
   };
 
   const handleFileChange = (rowIndex, field, file) => {
     if (editingIndex !== null) {
       if (rowIndex !== editingIndex) return;
-      const updated = [{ ...(editedItems[0] || {}), [`${field}File`]: file }];
-      setEditedItems(updated);
+      setEditedItems((current) => [{ ...(current[0] || {}), [`${field}File`]: file }]);
     }
   };  
 

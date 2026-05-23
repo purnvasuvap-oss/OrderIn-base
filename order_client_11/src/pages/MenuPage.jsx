@@ -318,16 +318,14 @@ const MenuPage = () => {
   const handleInputChange = (rowIndex, field, value) => {
     if (editingIndex !== null) {
       if (rowIndex !== editingIndex) return;
-      const updated = [{ ...(editedItems[0] || {}), [field]: value }];
-      setEditedItems(updated);
+      setEditedItems((current) => [{ ...(current[0] || {}), [field]: value }]);
     }
   };
 
   const handleFileChange = (rowIndex, field, file) => {
     if (editingIndex !== null) {
       if (rowIndex !== editingIndex) return;
-      const updated = [{ ...(editedItems[0] || {}), [`${field}File`]: file }];
-      setEditedItems(updated);
+      setEditedItems((current) => [{ ...(current[0] || {}), [`${field}File`]: file }]);
     }
   };  
 

@@ -22,6 +22,63 @@ async function urlToBlob(url) {
   return await res.blob();
 }
 
+async function compressImageIfUseful(blob, originalName) {
+  const mime = blob && blob.type ? blob.type : '';
+  if (!mime.startsWith('image/') || mime === 'image/gif' || mime === 'image/svg+xml') {
+    return { blob, fileName: originalName };
+  }
+
+  if (typeof createImageBitmap === 'undefined' || typeof document === 'undefined') {
+    return { blob, fileName: originalName };
+  }
+
+  try {
+    const bitmap = await createImageBitmap(blob);
+    const maxDimension = 1200;
+    const scale = Math.min(1, maxDimension / Math.max(bitmap.width, bitmap.height));
+    const width = Math.max(1, Math.round(bitmap.width * scale));
+    const height = Math.max(1, Math.round(bitmap.height * scale));
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const context = canvas.getContext('2d');
+    if (!context) return { blob, fileName: originalName };
+    context.drawImage(bitmap, 0, 0, width, height);
+
+    const compressedBlob = await new Promise((resolve) => {
+      canvas.toBlob(resolve, 'image/webp', 0.82);
+    });
+
+    if (!compressedBlob || compressedBlob.size >= blob.size) {
+      return { blob, fileName: originalName };
+    }
+
+    const base = String(originalName || 'image').replace(/\.[^.]+$/, '');
+    return { blob: compressedBlob, fileName: `${base}.webp` };
+  } catch (error) {
+    console.warn('Image compression skipped:', error);
+    return { blob, fileName: originalName };
+  }
+}
+
+function isQuotaExceededError(error) {
+  const code = error && error.code ? String(error.code) : '';
+  const message = error && error.message ? String(error.message) : '';
+  return code === 'storage/quota-exceeded' || message.toLowerCase().includes('quota');
+}
+
+function toUploadError(error) {
+  if (isQuotaExceededError(error)) {
+    const friendly = new Error(
+      'Firebase Storage quota has been exceeded for this project. Free storage space in Firebase Storage or upgrade/enable billing, then try uploading again.'
+    );
+    friendly.code = 'storage/quota-exceeded';
+    friendly.cause = error;
+    return friendly;
+  }
+  return error;
+}
+
 export async function uploadFile(fileOrData, folder = 'images', opts = {}) {
   // Backwards-compat: if opts is a string it's the restaurantNumber from older calls
   if (typeof opts === 'string') opts = { restaurantNumber: opts };
@@ -82,6 +139,10 @@ export async function uploadFile(fileOrData, folder = 'images', opts = {}) {
     throw new Error('Invalid file provided for upload');
   }
 
+  const compressed = await compressImageIfUseful(fileBlob, fileName);
+  fileBlob = compressed.blob;
+  fileName = compressed.fileName || fileName;
+
   // sanitize filename: remove spaces and unsafe characters
   const sanitize = (name) => name.replace(/[^a-zA-Z0-9._-]/g, '_');
   let baseName = sanitize(String(fileName || 'image'));
@@ -112,9 +173,14 @@ export async function uploadFile(fileOrData, folder = 'images', opts = {}) {
     // object does not exist — proceed with candidate
   }
 
-  // Upload the blob/file
-  const snapshot = await uploadBytes(storageRef, fileBlob);
-  const url = await getDownloadURL(storageRef);
+  let snapshot;
+  let url;
+  try {
+    snapshot = await uploadBytes(storageRef, fileBlob);
+    url = await getDownloadURL(storageRef);
+  } catch (error) {
+    throw toUploadError(error);
+  }
 
   return {
     image_url: url,
