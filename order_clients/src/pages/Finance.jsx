@@ -59,6 +59,52 @@ function App() {
     return Number.isFinite(n) ? n.toFixed(2) : "0.00";
   };
 
+  const getDateOrNull = (value) => {
+    if (!value) return null;
+    if (value.toDate && typeof value.toDate === "function") {
+      const timestampDate = value.toDate();
+      return Number.isNaN(timestampDate.getTime()) ? null : timestampDate;
+    }
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? null : date;
+  };
+
+  const formatLedgerReceivingDate = (order) => {
+    const actualSettlementDate = getDateOrNull(
+      order.razorpayTransferSettlementCreatedAt ||
+        order.razorpaySettlementCreatedAt ||
+        null
+    );
+
+    if (order.alreadySettled && actualSettlementDate) {
+      return `Settled on ${actualSettlementDate.toLocaleString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
+      })}`;
+    }
+
+    const value = order.expectedReceivingDate;
+    const date = getDateOrNull(value);
+    if (!date) return "Not available";
+
+    const bufferedDate = new Date(date);
+    bufferedDate.setDate(bufferedDate.getDate() + 7);
+    bufferedDate.setHours(21, 0, 0, 0);
+
+    return `On or before ${bufferedDate.toLocaleString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    })}`;
+  };
+
   // ACCOUNTS DATA - Fetched from backend
   // const orders = [...];
 
@@ -274,6 +320,18 @@ function App() {
       const alreadySettled = settlementState.includes("processed") || settlementState.includes("settled");
       const settledAmount = alreadySettled ? restaurantPayout : 0;
       const pendingSettlement = Math.max(restaurantPayout - settledAmount, 0);
+      const actualSettlementDate =
+        order.razorpayTransferSettlementCreatedAt ||
+        order.razorpaySettlementCreatedAt ||
+        null;
+      const expectedReceivingDate =
+        actualSettlementDate ||
+        order.razorpayTransferSettlementExpectedAt ||
+        order.razorpaySettlementExpectedAt ||
+        order.razorpayCapturedAt ||
+        order.paymentTimestamp ||
+        order.timestamp ||
+        null;
 
       return {
         ...order,
@@ -281,6 +339,8 @@ function App() {
         restaurantPayout,
         settledAmount,
         pendingSettlement,
+        alreadySettled,
+        expectedReceivingDate,
         ledgerStatus: getSettlementStatus(order, pendingSettlement),
       };
     });
@@ -813,6 +873,7 @@ function App() {
                         <th>Restaurant Gets</th>
                         <th>Settled</th>
                         <th>Pending</th>
+                        <th>Settlement Date</th>
                         <th>Status</th>
                         <th>Date & Time</th>
                       </tr>
@@ -837,6 +898,11 @@ function App() {
                           <td>₹{formatCurrency(order.restaurantPayout)}</td>
                           <td>₹{formatCurrency(order.settledAmount)}</td>
                           <td>₹{formatCurrency(order.pendingSettlement)}</td>
+                          <td>
+                            <div className="fin-ledger-datetime">
+                              <strong>{formatLedgerReceivingDate(order)}</strong>
+                            </div>
+                          </td>
                           <td>
                             <span
                               className={`fin-ledger-status ${order.ledgerStatus.toLowerCase().replace(/\s+/g, "-")}`}

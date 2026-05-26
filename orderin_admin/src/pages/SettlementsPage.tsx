@@ -12,6 +12,7 @@ export const SettlementsPage = () => {
   const navigate = useNavigate();
 
   const settlementsWithTotals = useMemo(() => {
+    const overdueMs = 30 * 24 * 60 * 60 * 1000;
     return settlements.map((s) => {
       // Get current month key in "Feb 2026" format
       const currentMonthKey = new Date().toLocaleString('default', { month: 'short', year: 'numeric' });
@@ -22,6 +23,7 @@ export const SettlementsPage = () => {
       const due = (currentMonthData && typeof currentMonthData.totalAmountDue === 'number') ? currentMonthData.totalAmountDue : (s.defaultSettlementAmount ?? 0);
       const pending = Math.max(0, due - totalPaid);
       const cycleStartDate = (currentMonthData && typeof currentMonthData.cycleStartDate === 'number') ? currentMonthData.cycleStartDate : (s.defaultSettlementStartDate ?? 0);
+      const overdueUnpaid = pending > 0 && cycleStartDate > 0 && Date.now() - cycleStartDate > overdueMs;
       
       // Look up restaurant status
       const restaurant = restaurants.find((r) => r.id === s.restaurantId);
@@ -30,9 +32,13 @@ export const SettlementsPage = () => {
       // Determine display status
       let displayStatus = 'Unpaid';
       if (restaurantStatus === 'Off') {
-        displayStatus = 'Off';
+        displayStatus = overdueUnpaid ? 'Blocked' : 'Off';
+      } else if (restaurantStatus === 'Inactive') {
+        displayStatus = overdueUnpaid ? 'Inactive' : 'Inactive';
       } else if (pending === 0) {
         displayStatus = 'Paid';
+      } else if (overdueUnpaid) {
+        displayStatus = 'Overdue';
       }
       
       return {
@@ -90,7 +96,7 @@ export const SettlementsPage = () => {
         return (
           <Badge
             variant={
-              status === 'Paid' ? 'success' : status === 'Off' ? 'default' : 'warning'
+              status === 'Paid' ? 'success' : status === 'Off' ? 'default' : status === 'Blocked' || status === 'Overdue' ? 'error' : 'warning'
             }
           >
             {status}

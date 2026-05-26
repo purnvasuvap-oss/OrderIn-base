@@ -6,14 +6,13 @@ This project should stay on the low-cost Firebase stack:
 - Cloud Firestore for app data.
 - Firebase Storage for menu/promotion images.
 - Firebase Auth where login/phone auth is required.
-- Firebase/Cloud Functions only for Razorpay payment work.
+- Firebase/Cloud Functions only for Razorpay checkout work.
 
 Allowed deployed functions:
 
 - `createRazorpayOrder`
 - `verifyRazorpayPayment`
-- `syncRazorpayPayment`
-- `razorpayWebhook`
+- `syncRazorpayPayment` and `razorpayWebhook` are optional reconciliation helpers. Keep them deleted unless exact Razorpay settlement reconciliation is explicitly needed and the billing impact is accepted.
 
 Do not add or deploy these without an explicit billing review:
 
@@ -44,7 +43,7 @@ Avoid plain `firebase deploy` because it deploys every configured product in `fi
 
 To stop existing billing sources in Google Cloud Console:
 
-1. Cloud Run Functions: keep only the four Razorpay functions listed above. Delete `api`, `getSignedPromotionUploadUrl`, and `onPromotionDelete` if they exist.
+1. Cloud Run Functions: keep only `createRazorpayOrder` and `verifyRazorpayPayment`. Delete `syncRazorpayPayment`, `razorpayWebhook`, `api`, `getSignedPromotionUploadUrl`, and `onPromotionDelete` if they exist and automatic reconciliation is not explicitly needed.
 2. App Engine: open App Engine > Versions. Stop or delete any running versions after confirming they are not serving a live URL.
 3. Cloud SQL: open SQL. If any instance exists and Data Connect is not used, export/backup it, then stop or delete it.
 4. Billing: set budget alerts at low thresholds before deploying new backend services.

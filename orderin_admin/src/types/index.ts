@@ -20,6 +20,8 @@ export interface Restaurant {
   IFSC: string;
   joinDate: Date;
   inactiveTimestamp?: number; // Timestamp when restaurant was made inactive
+  statusManagedBy?: 'manual' | 'system';
+  statusReason?: string | null;
 }
 
 export interface Transaction {
@@ -52,9 +54,13 @@ export interface Transaction {
   razorpaySettlementId?: string;
   razorpaySettlementStatus?: string;
   razorpaySettlementAmount?: number;
+  razorpayAdminSettlementAmount?: number;
   razorpaySettlementUtr?: string;
   razorpaySettlementCreatedAt?: string;
-  razorpaySyncSource?: 'api' | 'webhook';
+  razorpaySettlementExpectedAt?: string;
+  razorpayTransferSettlementExpectedAt?: string;
+  razorpayTransferSettlementCreatedAt?: string;
+  razorpaySyncSource?: 'api' | 'webhook' | 'manual';
   razorpaySyncedAt?: string;
 }
 

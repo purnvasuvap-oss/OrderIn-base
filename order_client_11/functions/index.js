@@ -78,6 +78,34 @@ const toIsoFromUnixSeconds = (value) => {
   return Number.isFinite(parsed) ? new Date(parsed * 1000).toISOString() : undefined;
 };
 
+const addBusinessDays = (date, days) => {
+  const result = new Date(date);
+  let remaining = days;
+
+  while (remaining > 0) {
+    result.setDate(result.getDate() + 1);
+    const day = result.getDay();
+    if (day !== 0 && day !== 6) remaining -= 1;
+  }
+
+  return result;
+};
+
+const getEstimatedSettlementIso = (paymentData = {}) => {
+  const sourceTimestamp = Number(paymentData.captured_at || paymentData.created_at);
+  if (!Number.isFinite(sourceTimestamp)) return undefined;
+  return addBusinessDays(new Date(sourceTimestamp * 1000), 2).toISOString();
+};
+
+const getEstimatedReceivingIso = (paymentData = {}) => {
+  const sourceTimestamp = Number(paymentData.captured_at || paymentData.created_at);
+  const sourceDate = Number.isFinite(sourceTimestamp) ? new Date(sourceTimestamp * 1000) : new Date();
+  const expected = new Date(sourceDate);
+  expected.setDate(expected.getDate() + 7);
+  expected.setHours(21, 0, 0, 0);
+  return expected.toISOString();
+};
+
 const removeUndefined = (value) => {
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
     return value;
@@ -204,6 +232,7 @@ const getPrimaryTransfer = (transferCollection) => {
 
 const buildRazorpayReconciliation = (paymentData, settlementData, source, transferCollection = null) => {
   const primaryTransfer = getPrimaryTransfer(transferCollection);
+  const recipientSettlement = primaryTransfer?.recipient_settlement;
   const razorpayAmount = toRupees(paymentData.amount);
   const routeTransferAmount = toRupees(primaryTransfer?.amount);
   const routePlatformGrossAmount =
@@ -215,6 +244,7 @@ const buildRazorpayReconciliation = (paymentData, settlementData, source, transf
     routePlatformGrossAmount !== undefined && razorpayFeeAmount !== undefined
       ? Math.max(routePlatformGrossAmount - razorpayFeeAmount, 0)
       : undefined;
+  const razorpaySettlementAmount = toRupees(settlementData?.amount);
 
   return removeUndefined({
     paymentTimestamp: new Date().toISOString(),
@@ -230,21 +260,113 @@ const buildRazorpayReconciliation = (paymentData, settlementData, source, transf
     razorpayTaxAmount: toRupees(paymentData.tax),
     razorpaySettlementId: settlementData?.id || paymentData.settlement_id,
     razorpaySettlementStatus: settlementData?.status,
-    razorpaySettlementAmount: toRupees(settlementData?.amount),
+    razorpaySettlementAmount,
     razorpaySettlementUtr: settlementData?.utr,
     razorpaySettlementCreatedAt: toIsoFromUnixSeconds(settlementData?.created_at),
+    razorpaySettlementExpectedAt: toIsoFromUnixSeconds(settlementData?.created_at) || getEstimatedSettlementIso(paymentData),
     razorpayTransferId: primaryTransfer?.id,
     razorpayTransferStatus: primaryTransfer?.status || primaryTransfer?.transfer_status,
     razorpayTransferSettlementStatus: primaryTransfer?.settlement_status,
+    razorpayTransferSettlementId: primaryTransfer?.recipient_settlement_id || recipientSettlement?.id,
+    razorpayTransferSettlementCreatedAt: toIsoFromUnixSeconds(recipientSettlement?.created_at),
+    razorpayTransferSettlementExpectedAt: toIsoFromUnixSeconds(recipientSettlement?.created_at) || getEstimatedSettlementIso(paymentData),
+    razorpayTransferSettlementUtr: recipientSettlement?.utr,
     razorpayTransferRecipient: primaryTransfer?.recipient,
     razorpayTransferAmount: routeTransferAmount,
     razorpayTransferCurrency: primaryTransfer?.currency,
     routePlatformGrossAmount,
     routePlatformNetAmount,
+    razorpayAdminSettlementAmount: routePlatformNetAmount ?? razorpaySettlementAmount,
     razorpayRouteTransfers: Array.isArray(transferCollection?.items) ? transferCollection.items : undefined,
     razorpaySyncSource: source,
     razorpaySyncedAt: new Date().toISOString(),
   });
+};
+
+const getSettlementQueueRef = (paymentId) =>
+  admin.firestore().collection('razorpaySettlementQueue').doc(paymentId);
+
+const getNextSettlementRunDate = (date = new Date()) => {
+  const istOffsetMs = 5.5 * 60 * 60 * 1000;
+  const istDate = new Date(date.getTime() + istOffsetMs);
+  let nextRunUtcMs = Date.UTC(
+    istDate.getUTCFullYear(),
+    istDate.getUTCMonth(),
+    istDate.getUTCDate(),
+    23,
+    30,
+    0,
+    0
+  ) - istOffsetMs;
+
+  if (nextRunUtcMs <= date.getTime()) {
+    nextRunUtcMs += 24 * 60 * 60 * 1000;
+  }
+
+  return new Date(nextRunUtcMs);
+};
+
+const queueSettlementCheck = async ({ paymentData, context, reconciliation = {}, nextAttemptAt }) => {
+  if (!paymentData?.id || !context?.restaurantId || !context?.customerPhone || !context?.orderId) {
+    return { queued: false, reason: 'missing_context' };
+  }
+
+  const now = new Date();
+  const firstAttempt = nextAttemptAt || getNextSettlementRunDate(now);
+
+  await getSettlementQueueRef(paymentData.id).set(removeUndefined({
+    razorpayPaymentId: paymentData.id,
+    razorpayOrderId: paymentData.order_id,
+    restaurantId: context.restaurantId,
+    customerPhone: context.customerPhone,
+    orderId: context.orderId,
+    status: 'pending',
+    paymentStatus: paymentData.status,
+    paymentAmount: toRupees(paymentData.amount),
+    paymentCurrency: paymentData.currency,
+    paymentCreatedAt: toIsoFromUnixSeconds(paymentData.created_at) || now.toISOString(),
+    expectedReceivingAt: reconciliation.razorpayTransferSettlementExpectedAt ||
+      reconciliation.razorpaySettlementExpectedAt ||
+      getEstimatedReceivingIso(paymentData),
+    attempts: 0,
+    nextAttemptAt: admin.firestore.Timestamp.fromDate(firstAttempt),
+    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+  }), { merge: true });
+
+  return { queued: true };
+};
+
+const markQueueSettled = async (paymentId, reconciliation) => {
+  await getSettlementQueueRef(paymentId).set(removeUndefined({
+    status: 'settled',
+    settledAt: reconciliation.razorpayTransferSettlementCreatedAt ||
+      reconciliation.razorpaySettlementCreatedAt ||
+      reconciliation.razorpaySyncedAt,
+    adminReceivedAmount: reconciliation.razorpayAdminSettlementAmount,
+    settlementUtr: reconciliation.razorpayTransferSettlementUtr || reconciliation.razorpaySettlementUtr,
+    nextAttemptAt: admin.firestore.Timestamp.fromDate(new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)),
+    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+  }), { merge: true });
+};
+
+const markQueueForRetry = async (queueDoc, reason) => {
+  const data = queueDoc.data() || {};
+  const attempts = Number(data.attempts || 0) + 1;
+  const paymentCreatedAt = data.paymentCreatedAt ? new Date(data.paymentCreatedAt) : new Date();
+  const ageMs = Date.now() - paymentCreatedAt.getTime();
+  const isTooOld = Number.isFinite(ageMs) && ageMs > 10 * 24 * 60 * 60 * 1000;
+
+  await queueDoc.ref.set(removeUndefined({
+    status: isTooOld ? 'manual_review' : 'pending',
+    attempts,
+    lastReason: reason,
+    lastCheckedAt: admin.firestore.FieldValue.serverTimestamp(),
+    nextAttemptAt: isTooOld
+      ? admin.firestore.Timestamp.fromDate(new Date(Date.now() + 365 * 24 * 60 * 60 * 1000))
+      : admin.firestore.Timestamp.fromDate(new Date(Date.now() + 12 * 60 * 60 * 1000)),
+    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+  }), { merge: true });
 };
 
 const writeReconciliationToFirestore = async ({ restaurantId, customerPhone, orderId, reconciliation }) => {
@@ -304,11 +426,17 @@ const writeReconciliationToFirestore = async ({ restaurantId, customerPhone, ord
       razorpaySettlementId: reconciliation.razorpaySettlementId,
       razorpaySettlementStatus: reconciliation.razorpaySettlementStatus,
       razorpaySettlementAmount: reconciliation.razorpaySettlementAmount,
+      razorpayAdminSettlementAmount: reconciliation.razorpayAdminSettlementAmount,
       razorpaySettlementUtr: reconciliation.razorpaySettlementUtr,
       razorpaySettlementCreatedAt: reconciliation.razorpaySettlementCreatedAt,
+      razorpaySettlementExpectedAt: reconciliation.razorpaySettlementExpectedAt,
       razorpayTransferId: reconciliation.razorpayTransferId,
       razorpayTransferStatus: reconciliation.razorpayTransferStatus,
       razorpayTransferSettlementStatus: reconciliation.razorpayTransferSettlementStatus,
+      razorpayTransferSettlementId: reconciliation.razorpayTransferSettlementId,
+      razorpayTransferSettlementCreatedAt: reconciliation.razorpayTransferSettlementCreatedAt,
+      razorpayTransferSettlementExpectedAt: reconciliation.razorpayTransferSettlementExpectedAt,
+      razorpayTransferSettlementUtr: reconciliation.razorpayTransferSettlementUtr,
       razorpayTransferRecipient: reconciliation.razorpayTransferRecipient,
       razorpayTransferAmount: reconciliation.razorpayTransferAmount,
       razorpayTransferCurrency: reconciliation.razorpayTransferCurrency,
@@ -363,6 +491,9 @@ const fetchTransfersForPayment = async (paymentId) => {
       auth: {
         username: RAZORPAY_KEY_ID,
         password: RAZORPAY_KEY_SECRET,
+      },
+      params: {
+        'expand[]': 'recipient_settlement',
       },
       timeout: 10000,
     });
@@ -538,6 +669,14 @@ const handleVerifyRazorpayPayment = async (req, res) => {
       const settlementData = await fetchSettlementById(paymentData.settlement_id);
       const transferCollection = await fetchTransfersForPayment(paymentData.id);
       const primaryTransfer = getPrimaryTransfer(transferCollection);
+      const reconciliation = buildRazorpayReconciliation(paymentData, settlementData, 'verify', transferCollection);
+      const context = {
+        ...getOrderContext(paymentData),
+        restaurantId: req.body?.restaurantId || getOrderContext(paymentData).restaurantId,
+        customerPhone: req.body?.customerPhone || getOrderContext(paymentData).customerPhone,
+        orderId: req.body?.orderId || getOrderContext(paymentData).orderId,
+      };
+      const queueResult = await queueSettlementCheck({ paymentData, context, reconciliation });
 
       return res.status(200).json({
         success: true,
@@ -550,10 +689,13 @@ const handleVerifyRazorpayPayment = async (req, res) => {
         payment_status: paymentData.status,
         settlement_id: settlementData?.id || paymentData.settlement_id || null,
         settlement_status: settlementData?.status || null,
+        settlement_expected_at: toIsoFromUnixSeconds(settlementData?.created_at) || getEstimatedSettlementIso(paymentData) || null,
         transfer_id: primaryTransfer?.id || null,
         transfer_status: primaryTransfer?.status || primaryTransfer?.transfer_status || null,
+        transfer_settlement_expected_at: toIsoFromUnixSeconds(primaryTransfer?.recipient_settlement?.created_at) || getEstimatedSettlementIso(paymentData) || null,
         transfer_recipient: primaryTransfer?.recipient || null,
         transfer_amount: primaryTransfer?.amount ?? null,
+        settlement_queue: queueResult,
       });
     } catch (apiError) {
       console.warn('[verifyRazorpayPayment] Could not fetch payment details from API:', apiError.message);
@@ -693,6 +835,126 @@ const handleRazorpayWebhook = async (req, res) => {
   }
 };
 
+const isSettlementComplete = (paymentData, settlementData, transferCollection) => {
+  const primaryTransfer = getPrimaryTransfer(transferCollection);
+  const recipientSettlement = primaryTransfer?.recipient_settlement;
+  const settlementStatus = String(settlementData?.status || paymentData?.settlement_status || '').toLowerCase();
+  const transferSettlementStatus = String(
+    primaryTransfer?.settlement_status ||
+      primaryTransfer?.transfer_status ||
+      recipientSettlement?.status ||
+      ''
+  ).toLowerCase();
+
+  return settlementStatus.includes('processed') ||
+    settlementStatus.includes('settled') ||
+    transferSettlementStatus.includes('processed') ||
+    transferSettlementStatus.includes('settled');
+};
+
+const reconcileQueuedSettlement = async (queueDoc) => {
+  const data = queueDoc.data() || {};
+  const paymentId = data.razorpayPaymentId;
+
+  if (!paymentId || !data.restaurantId || !data.customerPhone || !data.orderId) {
+    await markQueueForRetry(queueDoc, 'missing_context');
+    return { updated: false, reason: 'missing_context' };
+  }
+
+  const paymentResponse = await axios.get(`https://api.razorpay.com/v1/payments/${paymentId}`, {
+    auth: {
+      username: RAZORPAY_KEY_ID,
+      password: RAZORPAY_KEY_SECRET,
+    },
+    timeout: 10000,
+  });
+
+  const paymentData = paymentResponse.data;
+  const settlementData = await fetchSettlementById(paymentData.settlement_id);
+  const transferCollection = await fetchTransfersForPayment(paymentData.id);
+
+  if (!isSettlementComplete(paymentData, settlementData, transferCollection)) {
+    await markQueueForRetry(queueDoc, 'settlement_not_ready');
+    return { updated: false, reason: 'settlement_not_ready' };
+  }
+
+  const reconciliation = buildRazorpayReconciliation(paymentData, settlementData, 'scheduled', transferCollection);
+  const firestoreResult = await writeReconciliationToFirestore({
+    restaurantId: data.restaurantId,
+    customerPhone: data.customerPhone,
+    orderId: data.orderId,
+    reconciliation,
+  });
+
+  if (firestoreResult.updated) {
+    await markQueueSettled(paymentId, reconciliation);
+  } else {
+    await markQueueForRetry(queueDoc, firestoreResult.reason || 'firestore_update_failed');
+  }
+
+  return firestoreResult;
+};
+
+const processDueQueueDocs = async (queueDocs, concurrency) => {
+  let settled = 0;
+  let pending = 0;
+  let failed = 0;
+  let nextIndex = 0;
+
+  const workerCount = Math.min(Math.max(concurrency, 1), Math.max(queueDocs.length, 1));
+
+  const runWorker = async () => {
+    while (nextIndex < queueDocs.length) {
+      const queueDoc = queueDocs[nextIndex];
+      nextIndex += 1;
+
+      const data = queueDoc.data() || {};
+      if (data.status !== 'pending') {
+        continue;
+      }
+
+      try {
+        const result = await reconcileQueuedSettlement(queueDoc);
+        if (result.updated) {
+          settled += 1;
+        } else {
+          pending += 1;
+        }
+      } catch (error) {
+        failed += 1;
+        console.error('[scheduledRazorpaySettlementSync] item failed:', queueDoc.id, error.message || error);
+        await markQueueForRetry(queueDoc, error.response?.data?.description || error.message || 'sync_failed');
+      }
+    }
+  };
+
+  await Promise.all(Array.from({ length: workerCount }, runWorker));
+
+  return { settled, pending, failed };
+};
+
+const handleScheduledSettlementReconciliation = async () => {
+  const concurrency = Number(process.env.SETTLEMENT_SYNC_CONCURRENCY || 5);
+  const now = admin.firestore.Timestamp.now();
+  const dueSnap = await admin.firestore()
+    .collection('razorpaySettlementQueue')
+    .where('nextAttemptAt', '<=', now)
+    .orderBy('nextAttemptAt', 'asc')
+    .get();
+
+  const { settled, pending, failed } = await processDueQueueDocs(dueSnap.docs, concurrency);
+
+  console.log('[scheduledRazorpaySettlementSync] complete', {
+    checked: dueSnap.size,
+    concurrency,
+    settled,
+    pending,
+    failed,
+  });
+
+  return null;
+};
+
 const onRequest = (handler) => async (req, res) => {
   setCorsHeaders(res);
 
@@ -711,19 +973,9 @@ const onRequest = (handler) => async (req, res) => {
 
 exports.createRazorpayOrder = functions.https.onRequest(onRequest(handleCreateRazorpayOrder));
 exports.verifyRazorpayPayment = functions.https.onRequest(onRequest(handleVerifyRazorpayPayment));
-exports.syncRazorpayPayment = functions.https.onRequest(onRequest(handleSyncRazorpayPayment));
-exports.razorpayWebhook = functions.https.onRequest(async (req, res) => {
-  setCorsHeaders(res);
-
-  if (req.method === 'OPTIONS') {
-    res.status(204).send('');
-    return;
-  }
-
-  if (req.method !== 'POST') {
-    res.status(405).json({ error: 'Method not allowed' });
-    return;
-  }
-
-  await handleRazorpayWebhook(req, res);
-});
+exports.scheduledRazorpaySettlementSync = functions
+  .runWith({ timeoutSeconds: 540, memory: '256MB' })
+  .pubsub
+  .schedule('30 23 * * *')
+  .timeZone('Asia/Kolkata')
+  .onRun(handleScheduledSettlementReconciliation);

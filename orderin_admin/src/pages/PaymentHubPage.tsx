@@ -35,6 +35,8 @@ interface VerifyPaymentData {
   payment_status?: string;
   settlement_id?: string | null;
   settlement_status?: string | null;
+  settlement_expected_at?: string | null;
+  transfer_settlement_expected_at?: string | null;
   amount?: number;
   currency?: string;
 }
@@ -437,6 +439,8 @@ export const PaymentHubPage = () => {
                           razorpayCurrency: verifyData?.currency,
                           razorpaySettlementId: verifyData?.settlement_id || undefined,
                           razorpaySettlementStatus: verifyData?.settlement_status || undefined,
+                          razorpaySettlementExpectedAt: verifyData?.settlement_expected_at || undefined,
+                          razorpayTransferSettlementExpectedAt: verifyData?.transfer_settlement_expected_at || undefined,
                         };
                         return Object.fromEntries(
                           Object.entries(updatedOrder).filter(([, value]) => value !== undefined)
@@ -501,6 +505,8 @@ export const PaymentHubPage = () => {
                 razorpayCurrency: verifyData?.currency,
                 razorpaySettlementId: verifyData?.settlement_id || undefined,
                 razorpaySettlementStatus: verifyData?.settlement_status || undefined,
+                razorpaySettlementExpectedAt: verifyData?.settlement_expected_at || undefined,
+                razorpayTransferSettlementExpectedAt: verifyData?.transfer_settlement_expected_at || undefined,
                 transactionId: response.razorpay_order_id,
               };
               addDebugLog(`✓ Sending PAYMENT_SUCCESS to parent window`);

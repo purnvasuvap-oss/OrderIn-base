@@ -22,6 +22,10 @@ export const RestaurantDetailsPage = () => {
   const [paymentInputs, setPaymentInputs] = useState<Record<string, string>>({});
   const [daysRemaining, setDaysRemaining] = useState(30);
 
+  const getCurrentMonthKey = (): string => {
+    return new Date().toLocaleString('default', { month: 'short', year: 'numeric' });
+  };
+
   const restaurant = getRestaurantById(restaurantId!);
   const allTransactions = getRestaurantTransactions(restaurantId!);
   
@@ -35,6 +39,33 @@ export const RestaurantDetailsPage = () => {
   const settlements = getSettlementsByRestaurant(restaurantId!);
   const settlement = settlements.length > 0 ? settlements[0] : null; // Single settlement per restaurant
 
+  const settlementPeriods = useMemo(() => {
+    if (!settlement?.settlements) return [];
+
+    const monthTimestamp = (period: string, cycleStartDate?: number) => {
+      if (cycleStartDate) return cycleStartDate;
+      const parsed = new Date(`01 ${period}`).getTime();
+      return Number.isNaN(parsed) ? 0 : parsed;
+    };
+
+    return Object.values(settlement.settlements)
+      .sort((a, b) => monthTimestamp(b.period, b.cycleStartDate) - monthTimestamp(a.period, a.cycleStartDate));
+  }, [settlement?.settlements]);
+
+  const pastSettlementPeriods = useMemo(() => {
+    const currentMonthKey = getCurrentMonthKey();
+    return settlementPeriods.filter((period) => period.period !== currentMonthKey);
+  }, [settlementPeriods]);
+
+  const allSettlementPayments = useMemo(() => {
+    return settlementPeriods.flatMap((period) =>
+      (period.paymentHistory || []).map((payment) => ({
+        ...payment,
+        period: period.period,
+      }))
+    ).sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+  }, [settlementPeriods]);
+
   // One minute in milliseconds for testing (change to 30 * 24 * 60 * 60 * 1000 for 30 days in production)
   const SETTLEMENT_INTERVAL_MS = 60 * 1000; // 1 minute
 
@@ -44,10 +75,6 @@ export const RestaurantDetailsPage = () => {
       loadCustomerTransactions().catch(() => {});
     }
   }, [restaurantId, loadCustomerTransactions]);
-  const getCurrentMonthKey = (): string => {
-    return new Date().toLocaleString('default', { month: 'short', year: 'numeric' });
-  };
-
   // Helper: Get current month's settlement data
   const getCurrentMonthSettlement = () => {
     if (!settlement?.settlements) return null;
@@ -591,6 +618,73 @@ export const RestaurantDetailsPage = () => {
                     <p>Settlement data is being initialized...</p>
                   </div>
                 )}
+
+                {/* Past Settlements */}
+                <div style={{ padding: '1rem', borderRadius: '0.75rem', background: 'rgba(15,23,42,0.6)', border: '1px solid rgba(56,189,248,0.08)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                    <p style={{ fontSize: '0.875rem', color: '#94a3b8' }}>Past Settlements</p>
+                    <span style={{ fontSize: '0.75rem', color: '#cbd5e1' }}>{pastSettlementPeriods.length} periods</span>
+                  </div>
+                  {pastSettlementPeriods.length > 0 ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      {pastSettlementPeriods.map((period) => {
+                        const pending = Math.max(0, period.totalAmountDue - period.totalPaid);
+                        return (
+                          <div key={period.period} style={{ display: 'grid', gridTemplateColumns: '1.2fr repeat(4, 1fr)', gap: '0.75rem', alignItems: 'center', padding: '0.75rem', borderRadius: '0.5rem', background: 'rgba(15,23,42,0.4)' }}>
+                            <div>
+                              <p style={{ color: '#f1f5f9', fontWeight: 800 }}>{period.period}</p>
+                              <p style={{ color: '#94a3b8', fontSize: '0.75rem' }}>{period.installments} payment{period.installments === 1 ? '' : 's'}</p>
+                            </div>
+                            <div>
+                              <p style={{ color: '#94a3b8', fontSize: '0.7rem' }}>Due</p>
+                              <p style={{ color: '#f1f5f9', fontWeight: 700 }}>₹{period.totalAmountDue}</p>
+                            </div>
+                            <div>
+                              <p style={{ color: '#94a3b8', fontSize: '0.7rem' }}>Paid</p>
+                              <p style={{ color: '#10b981', fontWeight: 700 }}>₹{period.totalPaid}</p>
+                            </div>
+                            <div>
+                              <p style={{ color: '#94a3b8', fontSize: '0.7rem' }}>Pending</p>
+                              <p style={{ color: pending > 0 ? '#ef4444' : '#10b981', fontWeight: 700 }}>₹{pending}</p>
+                            </div>
+                            <Badge variant={period.status === 'Paid' ? 'success' : period.status === 'Processing' ? 'warning' : 'error'}>
+                              {period.status}
+                            </Badge>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <p style={{ color: '#64748b', fontSize: '0.875rem' }}>No previous settlement periods yet.</p>
+                  )}
+                </div>
+
+                {/* All Payments Ledger */}
+                <div style={{ padding: '1rem', borderRadius: '0.75rem', background: 'rgba(15,23,42,0.6)', border: '1px solid rgba(56,189,248,0.08)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                    <p style={{ fontSize: '0.875rem', color: '#94a3b8' }}>All Registered Payments</p>
+                    <span style={{ fontSize: '0.75rem', color: '#cbd5e1' }}>₹{allSettlementPayments.reduce((sum, payment) => sum + (payment.amount || 0), 0)}</span>
+                  </div>
+                  {allSettlementPayments.length > 0 ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      {allSettlementPayments.map((payment) => (
+                        <div key={`${payment.period}_${payment.id}`} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.6rem', borderRadius: '0.5rem', background: payment.isAutoPayment ? 'rgba(34,197,94,0.15)' : 'rgba(15,23,42,0.4)' }}>
+                          <div>
+                            <div style={{ color: '#cbd5e1', fontSize: '0.875rem' }}>
+                              {format(new Date(typeof payment.date === 'number' ? payment.date : (payment.date as Date).getTime()), 'dd MMM yyyy, HH:mm')}
+                            </div>
+                            <div style={{ fontSize: '0.7rem', color: payment.isAutoPayment ? '#22c55e' : '#94a3b8', marginTop: '0.25rem' }}>
+                              {payment.period}{payment.isAutoPayment ? ' • Auto-applied additional amount' : ' • Manual payment'}
+                            </div>
+                          </div>
+                          <div style={{ fontWeight: 800, color: payment.isAutoPayment ? '#22c55e' : '#10b981' }}>₹{payment.amount}</div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p style={{ color: '#64748b', fontSize: '0.875rem' }}>No payments registered yet.</p>
+                  )}
+                </div>
               </div>
             ) : activeTab === 'settlement' ? (
               <div className="text-center py-8 text-gray-600">

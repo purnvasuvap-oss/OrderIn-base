@@ -37,6 +37,8 @@ interface FirebaseRestaurantData {
   IFSC?: string;
   ifsc?: string;
   inactiveTimestamp?: number;
+  statusManagedBy?: 'manual' | 'system';
+  statusReason?: string | null;
   count?: number;
 }
 
@@ -69,9 +71,13 @@ interface FirebaseOrderData {
   razorpaySettlementId?: string;
   razorpaySettlementStatus?: string;
   razorpaySettlementAmount?: string | number;
+  razorpayAdminSettlementAmount?: string | number;
   razorpaySettlementUtr?: string;
   razorpaySettlementCreatedAt?: string | number;
-  razorpaySyncSource?: 'api' | 'webhook';
+  razorpaySettlementExpectedAt?: string | number;
+  razorpayTransferSettlementExpectedAt?: string | number;
+  razorpayTransferSettlementCreatedAt?: string | number;
+  razorpaySyncSource?: 'api' | 'webhook' | 'manual';
   razorpaySyncedAt?: string | number;
   [key: string]: unknown;
 }
@@ -99,12 +105,24 @@ interface AppState {
   setSettlementAmountDue: (restaurantId: string, amount: number) => void;
   addPaymentToSettlementById: (settlementId: string, amount: number) => void;
   ensureMonthlySettlement: (restaurantId: string) => void;
-  setRestaurantStatus: (restaurantId: string, status: 'Active' | 'Inactive' | 'Suspended' | 'Off') => void;
+  setRestaurantStatus: (restaurantId: string, status: 'Active' | 'Inactive' | 'Suspended' | 'Off', source?: 'manual' | 'system', reason?: string | null) => void;
   createNextSettlementIfNeeded: (restaurantId: string) => void;
   loadPrimaryRestaurants: (limitCount?: number) => Promise<void>;
   reloadAllRestaurants: () => Promise<void>;
   watchRestaurants: () => void;
   loadCustomerTransactions: () => Promise<void>;
+  updateTransactionSettlement: (payload: {
+    restaurantId: string;
+    customerId: string;
+    orderId: string;
+    razorpayPaymentId?: string;
+    adminReceivedAmount: number;
+    settlementDate: string;
+    settlementUtr?: string;
+    razorpayFeeAmount?: number;
+    razorpayTaxAmount?: number;
+    settlementStatus?: string;
+  }) => Promise<void>;
   logout: () => void;
 }
 
@@ -142,10 +160,13 @@ const normalizeTransactionStatus = (order: FirebaseOrderData): TransactionStatus
 };
 
 const normalizePaymentMethod = (order: FirebaseOrderData): PaymentMethod => {
+  const explicitMethod = String(order.paymentMethod || order.PaymentMethod || '').toLowerCase().trim();
+
+  if (explicitMethod.includes('online') || hasRazorpayFields(order)) return 'Online';
+
   const rawMethod = String(
     order.paymentMethod ||
     order.PaymentMethod ||
-    order.razorpayMethod ||
     order.OnlinePayMethod ||
     ''
   ).toLowerCase().trim();
@@ -161,13 +182,16 @@ const normalizePaymentMethod = (order: FirebaseOrderData): PaymentMethod => {
 };
 
 const normalizeOnlinePayMethod = (order: FirebaseOrderData): string | undefined => {
-  const rawMethod = String(order.OnlinePayMethod || order.razorpayMethod || '').toLowerCase().trim();
+  const sourceMethod = order.razorpayMethod || order.OnlinePayMethod;
+  const rawMethod = String(sourceMethod || '').toLowerCase().trim();
   if (!rawMethod) return undefined;
   if (rawMethod.includes('upi')) return 'UPI';
   if (rawMethod.includes('card') || rawMethod.includes('visa') || rawMethod.includes('master') || rawMethod.includes('rupay')) return 'Card';
   if (rawMethod.includes('net')) return 'Net Banking';
   if (rawMethod.includes('wallet')) return 'Wallet';
-  return order.OnlinePayMethod || order.razorpayMethod;
+  if (rawMethod.includes('emi')) return 'EMI';
+  if (rawMethod.includes('paylater') || rawMethod.includes('pay later')) return 'Pay Later';
+  return sourceMethod;
 };
 
 const toDateFromUnknown = (value: unknown): Date => {
@@ -177,6 +201,141 @@ const toDateFromUnknown = (value: unknown): Date => {
 
   const date = new Date(value as string | number | Date);
   return Number.isNaN(date.getTime()) ? new Date() : date;
+};
+
+const toOptionalIsoString = (value: unknown): string | undefined => {
+  if (value === null || value === undefined || value === '') return undefined;
+
+  if (value && typeof value === 'object' && 'toDate' in value && typeof (value as { toDate: () => Date }).toDate === 'function') {
+    const timestampDate = (value as { toDate: () => Date }).toDate();
+    return Number.isNaN(timestampDate.getTime()) ? undefined : timestampDate.toISOString();
+  }
+
+  const normalizedValue =
+    typeof value === 'number' && value > 0 && value < 100000000000
+      ? value * 1000
+      : value;
+  const date = new Date(normalizedValue as string | number | Date);
+
+  return Number.isNaN(date.getTime()) ? undefined : date.toISOString();
+};
+
+const getCurrentMonthKey = (): string => new Date().toLocaleString('default', { month: 'short', year: 'numeric' });
+
+const getTimestampFromUnknown = (date: unknown, timestamp: unknown): number => {
+  if (typeof timestamp === 'number') return timestamp;
+  if (typeof date === 'number') return date;
+  if (date && typeof date === 'object' && 'toMillis' in date && typeof (date as { toMillis: () => number }).toMillis === 'function') {
+    return (date as { toMillis: () => number }).toMillis();
+  }
+  if (date && typeof date === 'object' && 'getTime' in date && typeof (date as { getTime: () => number }).getTime === 'function') {
+    return (date as { getTime: () => number }).getTime();
+  }
+  return Date.now();
+};
+
+const normalizePayments = (arr: unknown[] = []): PaymentEntry[] => {
+  return arr.filter((p) => {
+    const payment = p as Record<string, unknown>;
+    return payment && typeof payment.amount === 'number' && payment.amount > 0;
+  }).map((p) => {
+    const payment = p as Record<string, unknown>;
+    const timestamp = getTimestampFromUnknown(payment.date, payment.timestamp);
+    return {
+      id: String(payment.id || `pay_${timestamp}`),
+      amount: payment.amount as number,
+      date: (payment.date ?? payment.timestamp ?? timestamp) as number,
+      timestamp,
+      isAutoPayment: !!payment.isAutoPayment,
+    };
+  });
+};
+
+const normalizeSettlementPeriods = (settlements: Record<string, unknown> = {}): Record<string, SettlementPeriod> => {
+  const result: Record<string, SettlementPeriod> = {};
+  for (const [monthKey, period] of Object.entries(settlements || {})) {
+    const monthData = period as Record<string, unknown>;
+    const paymentHistory = normalizePayments((monthData?.paymentHistory || []) as unknown[]);
+    const totalPaid = paymentHistory.reduce((s, p) => s + (p.amount || 0), 0);
+    const totalDue = toFiniteNumber(monthData?.totalAmountDue) ?? 0;
+    const status = (totalPaid >= totalDue ? 'Paid' : totalPaid > 0 ? 'Processing' : 'Pending') as SettlementStatus;
+
+    result[monthKey] = {
+      period: String(monthData?.period || monthKey),
+      totalAmountDue: totalDue,
+      defaultAmountForMonth: toFiniteNumber(monthData?.defaultAmountForMonth) ?? totalDue,
+      carryOverCredit: toFiniteNumber(monthData?.carryOverCredit) ?? 0,
+      overpaymentAmount: toFiniteNumber(monthData?.overpaymentAmount) ?? Math.max(0, totalPaid - totalDue),
+      totalPaid,
+      status,
+      installments: paymentHistory.length,
+      cycleStartDate: toFiniteNumber(monthData?.cycleStartDate) ?? Date.now(),
+      paymentHistory,
+      settledDate: toFiniteNumber(monthData?.settledDate),
+    };
+  }
+  return result;
+};
+
+const getCurrentSettlementPeriod = (settlement: Settlement): SettlementPeriod | undefined => {
+  return settlement.settlements?.[getCurrentMonthKey()];
+};
+
+const isCurrentMonthSettlementPaid = (settlement: Settlement): boolean => {
+  const period = getCurrentSettlementPeriod(settlement);
+  if (!period || period.totalAmountDue <= 0) return false;
+  return (period.totalPaid || 0) >= period.totalAmountDue;
+};
+
+const hasCurrentMonthUnpaidSettlement = (settlement: Settlement): boolean => {
+  const period = getCurrentSettlementPeriod(settlement);
+  if (!period || period.totalAmountDue <= 0) return false;
+  return (period.totalPaid || 0) < period.totalAmountDue;
+};
+
+const applyOverpaymentToPeriod = (
+  period: SettlementPeriod,
+  restaurantId: string,
+  monthKey: string,
+  availableCredit: number,
+  now = Date.now()
+): { period: SettlementPeriod; appliedCredit: number; remainingOverpayment: number } => {
+  const pendingBeforeCredit = Math.max(0, (period.totalAmountDue || 0) - (period.totalPaid || 0));
+  const appliedCredit = Math.min(Math.max(0, availableCredit), pendingBeforeCredit);
+  const remainingOverpayment = Math.max(0, availableCredit - appliedCredit);
+
+  if (appliedCredit <= 0) {
+    return { period, appliedCredit: 0, remainingOverpayment: availableCredit };
+  }
+
+  const autoPayment: PaymentEntry = {
+    id: `auto_${restaurantId}_${monthKey}_${now}`,
+    amount: appliedCredit,
+    date: now,
+    timestamp: now,
+    isAutoPayment: true,
+  };
+  const paymentHistory = [...(period.paymentHistory || []), autoPayment];
+  const totalPaid = (period.totalPaid || 0) + appliedCredit;
+  const status: SettlementStatus = totalPaid >= period.totalAmountDue ? 'Paid' : 'Processing';
+
+  return {
+    period: {
+      ...period,
+      carryOverCredit: (period.carryOverCredit || 0) + appliedCredit,
+      paymentHistory,
+      totalPaid,
+      status,
+      installments: paymentHistory.length,
+      ...(status === 'Paid' ? { settledDate: period.settledDate || now } : {}),
+    },
+    appliedCredit,
+    remainingOverpayment,
+  };
+};
+
+const canSystemManageSettlementStatus = (restaurant?: Pick<Restaurant, 'statusManagedBy'> | FirebaseRestaurantData | null): boolean => {
+  return restaurant?.statusManagedBy !== 'manual';
 };
 
 const buildTransactionsFromCustomers = (
@@ -225,7 +384,7 @@ const buildTransactionsFromCustomers = (
           status: normalizedStatus,
           createdAt: toDateFromUnknown(createdAtSource),
           referenceId: sourceOrderId,
-          paymentTimestamp: typeof orderData.paymentTimestamp === 'string' ? orderData.paymentTimestamp : undefined,
+          paymentTimestamp: toOptionalIsoString(orderData.paymentTimestamp),
           razorpayOrderId: orderData.razorpayOrderId,
           razorpayPaymentId: orderData.razorpayPaymentId,
           razorpaySignature: orderData.razorpaySignature,
@@ -233,16 +392,20 @@ const buildTransactionsFromCustomers = (
           razorpayStatus: orderData.razorpayStatus,
           razorpayAmount,
           razorpayCurrency: orderData.razorpayCurrency,
-          razorpayCapturedAt: typeof orderData.razorpayCapturedAt === 'string' ? orderData.razorpayCapturedAt : undefined,
+          razorpayCapturedAt: toOptionalIsoString(orderData.razorpayCapturedAt),
           razorpayFeeAmount: toFiniteNumber(orderData.razorpayFeeAmount),
           razorpayTaxAmount: toFiniteNumber(orderData.razorpayTaxAmount),
           razorpaySettlementId: orderData.razorpaySettlementId,
           razorpaySettlementStatus: orderData.razorpaySettlementStatus,
           razorpaySettlementAmount: toFiniteNumber(orderData.razorpaySettlementAmount),
+          razorpayAdminSettlementAmount: toFiniteNumber(orderData.razorpayAdminSettlementAmount),
           razorpaySettlementUtr: orderData.razorpaySettlementUtr,
-          razorpaySettlementCreatedAt: typeof orderData.razorpaySettlementCreatedAt === 'string' ? orderData.razorpaySettlementCreatedAt : undefined,
+          razorpaySettlementCreatedAt: toOptionalIsoString(orderData.razorpaySettlementCreatedAt),
+          razorpaySettlementExpectedAt: toOptionalIsoString(orderData.razorpaySettlementExpectedAt),
+          razorpayTransferSettlementExpectedAt: toOptionalIsoString(orderData.razorpayTransferSettlementExpectedAt),
+          razorpayTransferSettlementCreatedAt: toOptionalIsoString(orderData.razorpayTransferSettlementCreatedAt),
           razorpaySyncSource: orderData.razorpaySyncSource,
-          razorpaySyncedAt: typeof orderData.razorpaySyncedAt === 'string' ? orderData.razorpaySyncedAt : undefined,
+          razorpaySyncedAt: toOptionalIsoString(orderData.razorpaySyncedAt),
         });
       } catch (e) {
         console.error('[Store] failed to map order for realtime transaction update', {
@@ -264,6 +427,27 @@ export const useAppStore = create<AppState>((set, get) => {
   const customerOrderListeners: Record<string, Unsubscribe> = {};
   let restaurantCollectionListener: Unsubscribe | null = null;
 
+  const syncRestaurantStatusForCurrentSettlement = (
+    restaurantId: string,
+    settlement: Settlement,
+    restaurantData?: FirebaseRestaurantData | Restaurant | null
+  ) => {
+    const localRestaurant = get().restaurants.find((r) => r.id === restaurantId);
+    const status = restaurantData?.status || localRestaurant?.status;
+    const controlSource = restaurantData || localRestaurant;
+
+    if (!status || !canSystemManageSettlementStatus(controlSource)) return;
+
+    if ((status === 'Inactive' || status === 'Off') && isCurrentMonthSettlementPaid(settlement)) {
+      get().setRestaurantStatus(restaurantId, 'Active', 'system', 'settlement_paid');
+      return;
+    }
+
+    if (status === 'Active' && hasCurrentMonthUnpaidSettlement(settlement)) {
+      get().setRestaurantStatus(restaurantId, 'Inactive', 'system', 'settlement_overdue');
+    }
+  };
+
   const ensureSnapshotFor = (restaurantId: string) => {
     if (snapshotListeners[restaurantId]) return; // already listening
     try {
@@ -275,71 +459,17 @@ export const useAppStore = create<AppState>((set, get) => {
         try {
           // Fetch restaurant name from Restaurant document
           let restaurantName = data.restaurantName || '';
+          let restaurantStatusData: FirebaseRestaurantData | null = null;
           try {
             const restDoc = await getDoc(doc(db, 'Restaurant', restaurantId));
             if (restDoc.exists()) {
               const restData = restDoc.data() as FirebaseRestaurantData;
+              restaurantStatusData = restData;
               restaurantName = restData.Restaurant_name || restaurantName;
             }
           } catch (e) {
             console.error('[Store] failed to fetch restaurant name for', restaurantId, e);
           }
-
-          // Normalize fields and update store similar to ensureMonthlySettlement's success path
-          const normalizePayments = (arr: unknown[]) => {
-            const getTimestamp = (date: unknown, timestamp: unknown): number => {
-              if (typeof timestamp === 'number') return timestamp;
-              if (typeof date === 'number') return date;
-              if (date && typeof date === 'object' && 'getTime' in date && typeof (date as unknown as { getTime: () => number }).getTime === 'function') {
-                return (date as unknown as { getTime: () => number }).getTime();
-              }
-              return Date.now();
-            };
-            return (arr || []).filter((p) => {
-              const payment = p as Record<string, unknown>;
-              return payment && typeof payment.amount === 'number' && (payment.amount as number) > 0;
-            }).map((p) => {
-            const payment = p as Record<string, unknown>;
-            return {
-            id: payment.id || `pay_${Date.now()}`,
-            amount: payment.amount as number,
-            date: (payment.date ?? payment.timestamp ?? Date.now()) as number,
-            timestamp: getTimestamp(payment.date, payment.timestamp),
-            isAutoPayment: !!payment.isAutoPayment,
-          } as PaymentEntry;
-          });
-          };
-
-          // Normalize month-wise settlements
-          const normalizeSettlements = (settlements: Record<string, unknown> = {}) => {
-            const result: Record<string, SettlementPeriod> = {};
-            for (const [monthKey, period] of Object.entries(settlements || {})) {
-              const monthData = period as Record<string, unknown>;
-              const paymentHistory = (monthData?.paymentHistory || []) as unknown[];
-              const normalizedPayments = normalizePayments(paymentHistory);
-              const totalPaid = normalizedPayments.reduce((s, p) => s + (p.amount || 0), 0);
-              const totalDue = (monthData?.totalAmountDue as number) ?? 0;
-              const carryOverCredit = ((monthData?.carryOverCredit as number) || 0);
-              // Calculate overpayment: if field doesn't exist in Firebase, calculate from paid vs due
-              const overpaymentAmount = (monthData?.overpaymentAmount as number) ?? (totalPaid > totalDue ? totalPaid - totalDue : 0);
-              const status = (totalPaid >= totalDue ? 'Paid' : totalPaid > 0 ? 'Processing' : 'Pending') as SettlementStatus;
-              
-              result[monthKey] = {
-                period: monthKey,
-                totalAmountDue: totalDue,
-                defaultAmountForMonth: (monthData?.defaultAmountForMonth as number) ?? totalDue,
-                carryOverCredit: carryOverCredit,
-                overpaymentAmount: overpaymentAmount,
-                totalPaid: totalPaid,
-                status: status,
-                installments: normalizedPayments.length,
-                cycleStartDate: (monthData?.cycleStartDate as number) ?? Date.now(),
-                paymentHistory: normalizedPayments,
-                settledDate: monthData?.settledDate as number | undefined,
-              };
-            }
-            return result;
-          };
 
           console.log('[Store] onSnapshot received', { restaurantId, restaurantName, settlements: Object.keys(data.settlements || {}) });
 
@@ -350,12 +480,45 @@ export const useAppStore = create<AppState>((set, get) => {
             defaultSettlementAmount: data.defaultSettlementAmount ?? 0,
             defaultSettlementStartDate: data.defaultSettlementStartDate ?? 0,
             currentOverpayment: data.currentOverpayment ?? 0, // Preserve global overpayment
-            settlements: normalizeSettlements(data.settlements),
+            settlements: normalizeSettlementPeriods(data.settlements),
             createdAt: data.createdAt ?? Date.now(),
             lastUpdated: data.lastUpdated ?? Date.now(),
           };
 
-          set((s) => ({ settlements: [...s.settlements.filter((x) => x.restaurantId !== restaurantId), loaded] }));
+          let resolvedLoaded = loaded;
+          const currentMonthKey = getCurrentMonthKey();
+          const currentPeriod = loaded.settlements[currentMonthKey];
+          if (currentPeriod && loaded.currentOverpayment > 0) {
+            const now = Date.now();
+            const creditResult = applyOverpaymentToPeriod(
+              currentPeriod,
+              restaurantId,
+              currentMonthKey,
+              loaded.currentOverpayment,
+              now
+            );
+
+            if (creditResult.appliedCredit > 0) {
+              resolvedLoaded = {
+                ...loaded,
+                currentOverpayment: creditResult.remainingOverpayment,
+                settlements: {
+                  ...loaded.settlements,
+                  [currentMonthKey]: creditResult.period,
+                },
+                lastUpdated: now,
+              };
+
+              await updateDoc(settRef, {
+                currentOverpayment: creditResult.remainingOverpayment,
+                [`settlements.${currentMonthKey}`]: creditResult.period,
+                lastUpdated: now,
+              });
+            }
+          }
+
+          set((s) => ({ settlements: [...s.settlements.filter((x) => x.restaurantId !== restaurantId), resolvedLoaded] }));
+          syncRestaurantStatusForCurrentSettlement(restaurantId, resolvedLoaded, restaurantStatusData);
         } catch (e) {
           console.error('[Store] snapshot normalization error', e);
         }
@@ -405,6 +568,8 @@ export const useAppStore = create<AppState>((set, get) => {
       // Get current month key in "Feb 2026" format
       const currentMonthKey = new Date().toLocaleString('default', { month: 'short', year: 'numeric' });
       
+      const now = Date.now();
+
       // Create or update current month's settlement entry if it doesn't exist
       const settlements = { ...settlement.settlements };
       if (!settlements[currentMonthKey]) {
@@ -415,7 +580,7 @@ export const useAppStore = create<AppState>((set, get) => {
           totalPaid: 0,
           status: 'Pending' as const,
           installments: 0,
-          cycleStartDate: Date.now(),
+          cycleStartDate: now,
           paymentHistory: [],
         };
       } else {
@@ -429,13 +594,23 @@ export const useAppStore = create<AppState>((set, get) => {
         // If payments have been made, don't change the current month's amount due
         // The new default will apply to future months
       }
+
+      const creditResult = applyOverpaymentToPeriod(
+        settlements[currentMonthKey],
+        restaurantId,
+        currentMonthKey,
+        settlement.currentOverpayment || 0,
+        now
+      );
+      settlements[currentMonthKey] = creditResult.period;
       
       const updated: Settlement = {
         ...settlement,
         defaultSettlementAmount: amount,
         defaultSettlementStartDate: startDate,
+        currentOverpayment: creditResult.remainingOverpayment,
         settlements: settlements,
-        lastUpdated: Date.now(),
+        lastUpdated: now,
       };
 
       // Save to Firebase
@@ -445,11 +620,12 @@ export const useAppStore = create<AppState>((set, get) => {
           const updateData: Record<string, unknown> = {
             defaultSettlementAmount: amount,
             defaultSettlementStartDate: startDate,
-            lastUpdated: Date.now(),
+            currentOverpayment: creditResult.remainingOverpayment,
+            lastUpdated: now,
           };
           
-          // Only update the current month's amount due if no payments have been made
-          if (settlements[currentMonthKey] && settlements[currentMonthKey].totalPaid === 0) {
+          // Update the current month when amount changed or a carry-forward credit was consumed.
+          if (settlements[currentMonthKey] && (settlements[currentMonthKey].totalPaid === 0 || creditResult.appliedCredit > 0)) {
             updateData[`settlements.${currentMonthKey}`] = settlements[currentMonthKey];
           }
           
@@ -467,7 +643,7 @@ export const useAppStore = create<AppState>((set, get) => {
               restaurantName: settlement.restaurantName,
               ...updateData,
               settlements: settlements,
-              createdAt: Date.now(),
+              createdAt: now,
             };
             await setDoc(settRef, fullData);
           }
@@ -484,11 +660,11 @@ export const useAppStore = create<AppState>((set, get) => {
     });
   },
 
-  setRestaurantStatus: (restaurantId: string, status: 'Active' | 'Inactive' | 'Suspended' | 'Off') => {
+  setRestaurantStatus: (restaurantId: string, status: 'Active' | 'Inactive' | 'Suspended' | 'Off', source: 'manual' | 'system' = 'manual', reason: string | null = null) => {
     set((state) => {
       const updated = state.restaurants.map((r) => {
         if (r.id === restaurantId) {
-          const updatedRestaurant = { ...r, status };
+          const updatedRestaurant = { ...r, status, statusManagedBy: source, statusReason: reason };
           // Handle inactive timestamp based on status change
           if (status === 'Inactive') {
             // Set timestamp when becoming inactive
@@ -506,7 +682,11 @@ export const useAppStore = create<AppState>((set, get) => {
       (async () => {
         try {
           const rRef = doc(db, 'Restaurant', restaurantId);
-          const updateData: Record<string, unknown> = { status };
+          const updateData: Record<string, unknown> = {
+            status,
+            statusManagedBy: source,
+            statusReason: reason,
+          };
           // Find the current restaurant to check its previous status
           const currentRestaurant = state.restaurants.find(r => r.id === restaurantId);
           if (status === 'Inactive') {
@@ -517,7 +697,7 @@ export const useAppStore = create<AppState>((set, get) => {
             updateData.inactiveTimestamp = null; // Firestore accepts null
           }
           await setDoc(rRef, updateData, { merge: true });
-          console.log('[Firebase] setRestaurantStatus: saved', { restaurantId, status });
+          console.log('[Firebase] setRestaurantStatus: saved', { restaurantId, status, source, reason });
         } catch (err) {
           console.error('[Firebase] setRestaurantStatus: failed', err);
         }
@@ -686,6 +866,17 @@ export const useAppStore = create<AppState>((set, get) => {
           });
 
           console.log('[Firebase] addPaymentToSettlementById: write complete', { restaurantId: settlement.restaurantId, month: currentMonthKey, newTotalPaid });
+          if (newStatus === 'Paid') {
+            const restaurantRef = doc(db, 'Restaurant', settlement.restaurantId);
+            const restaurantSnap = await getDoc(restaurantRef);
+            const restaurantData = restaurantSnap.exists() ? restaurantSnap.data() as FirebaseRestaurantData : null;
+            if (
+              (restaurantData?.status === 'Inactive' || restaurantData?.status === 'Off') &&
+              canSystemManageSettlementStatus(restaurantData)
+            ) {
+              get().setRestaurantStatus(settlement.restaurantId, 'Active', 'system', 'settlement_paid');
+            }
+          }
         } catch (err) {
           console.error('Failed to save payment to Firebase:', err);
         }
@@ -714,7 +905,7 @@ export const useAppStore = create<AppState>((set, get) => {
 
         const settRef = doc(db, 'Restaurant', restaurantId, 'Settlement', 'settlement');
         const snap = await getDoc(settRef);
-        const currentMonthKey = new Date().toLocaleString('default', { month: 'short', year: 'numeric' });
+        const currentMonthKey = getCurrentMonthKey();
         
         if (!snap.exists()) {
           // Create new settlement document with empty settlements object
@@ -735,19 +926,93 @@ export const useAppStore = create<AppState>((set, get) => {
           // Document exists, but ensure current month exists in settlements
           const data = snap.data() as FirebaseSettlementData;
           if (!data.settlements?.[currentMonthKey]) {
-            // Add current month if it doesn't exist
+            const defaultAmount = data.defaultSettlementAmount || 0;
+            const availableCredit = data.currentOverpayment || 0;
+            const appliedCredit = Math.min(availableCredit, defaultAmount);
+            const remainingOverpayment = Math.max(0, availableCredit - appliedCredit);
+            const now = Date.now();
+            const autoPayment: PaymentEntry | null = appliedCredit > 0 ? {
+              id: `auto_${restaurantId}_${currentMonthKey}_${now}`,
+              amount: appliedCredit,
+              date: now,
+              timestamp: now,
+              isAutoPayment: true,
+            } : null;
+            const totalPaid = appliedCredit;
+            const status: SettlementStatus = totalPaid >= defaultAmount ? 'Paid' : totalPaid > 0 ? 'Processing' : 'Pending';
+            const currentPeriod: SettlementPeriod = {
+              period: currentMonthKey,
+              totalAmountDue: defaultAmount,
+              defaultAmountForMonth: defaultAmount,
+              carryOverCredit: appliedCredit,
+              totalPaid,
+              status,
+              installments: autoPayment ? 1 : 0,
+              cycleStartDate: now,
+              paymentHistory: autoPayment ? [autoPayment] : [],
+              ...(status === 'Paid' ? { settledDate: now } : {}),
+            };
+
+            // Add current month if it doesn't exist and consume any previous overpayment as an auto payment.
             await updateDoc(settRef, {
-              [`settlements.${currentMonthKey}`]: {
-                period: currentMonthKey,
-                totalAmountDue: data.defaultSettlementAmount || 0,
-                defaultAmountForMonth: data.defaultSettlementAmount || 0,
-                totalPaid: 0,
-                status: 'Pending',
-                installments: 0,
-                cycleStartDate: Date.now(),
-                paymentHistory: [],
-              },
+              currentOverpayment: remainingOverpayment,
+              [`settlements.${currentMonthKey}`]: currentPeriod,
+              lastUpdated: now,
             });
+            syncRestaurantStatusForCurrentSettlement(restaurantId, {
+              settlementId: data.settlementId || `settlement_${restaurantId}`,
+              restaurantId,
+              restaurantName: data.restaurantName || restaurant.Restaurant_name,
+              defaultSettlementAmount: data.defaultSettlementAmount || 0,
+              defaultSettlementStartDate: data.defaultSettlementStartDate || 0,
+              currentOverpayment: remainingOverpayment,
+              settlements: {
+                ...normalizeSettlementPeriods(data.settlements),
+                [currentMonthKey]: currentPeriod,
+              },
+              createdAt: data.createdAt,
+              lastUpdated: now,
+            }, restaurant);
+          } else {
+            const settlements = normalizeSettlementPeriods(data.settlements);
+            const currentPeriod = settlements[currentMonthKey];
+            const availableCredit = data.currentOverpayment || 0;
+            const now = Date.now();
+            const creditResult = applyOverpaymentToPeriod(currentPeriod, restaurantId, currentMonthKey, availableCredit, now);
+
+            if (creditResult.appliedCredit > 0) {
+              await updateDoc(settRef, {
+                currentOverpayment: creditResult.remainingOverpayment,
+                [`settlements.${currentMonthKey}`]: creditResult.period,
+                lastUpdated: now,
+              });
+              syncRestaurantStatusForCurrentSettlement(restaurantId, {
+                settlementId: data.settlementId || `settlement_${restaurantId}`,
+                restaurantId,
+                restaurantName: data.restaurantName || restaurant.Restaurant_name,
+                defaultSettlementAmount: data.defaultSettlementAmount || 0,
+                defaultSettlementStartDate: data.defaultSettlementStartDate || 0,
+                currentOverpayment: creditResult.remainingOverpayment,
+                settlements: {
+                  ...settlements,
+                  [currentMonthKey]: creditResult.period,
+                },
+                createdAt: data.createdAt,
+                lastUpdated: now,
+              }, restaurant);
+            } else {
+              syncRestaurantStatusForCurrentSettlement(restaurantId, {
+                settlementId: data.settlementId || `settlement_${restaurantId}`,
+                restaurantId,
+                restaurantName: data.restaurantName || restaurant.Restaurant_name,
+                defaultSettlementAmount: data.defaultSettlementAmount || 0,
+                defaultSettlementStartDate: data.defaultSettlementStartDate || 0,
+                currentOverpayment: availableCredit,
+                settlements,
+                createdAt: data.createdAt,
+                lastUpdated: data.lastUpdated,
+              }, restaurant);
+            }
           }
         }
       } catch (err) {
@@ -762,20 +1027,13 @@ export const useAppStore = create<AppState>((set, get) => {
     
     if (!settlement) return;
 
-    // Pause monthly generation if restaurant is not Active
     const restaurant = state.restaurants.find((r) => r.id === restaurantId);
-    const restaurantStatus = (restaurant as Restaurant)?.status ?? 'Off';
-    if (restaurantStatus !== 'Active') {
-      console.log('[Store] createNextSettlementIfNeeded: paused — restaurant status', restaurantStatus, restaurantId);
-      return;
-    }
     
     const cycleStartDate = settlement.defaultSettlementStartDate;
     if (!cycleStartDate || cycleStartDate === 0) return; // No cycle started yet
     
     // Get current and next month keys
-    const now = new Date();
-    const currentMonthKey = now.toLocaleString('default', { month: 'short', year: 'numeric' });
+    const currentMonthKey = getCurrentMonthKey();
     
     // Check if we need to create next month's settlement
     const currentMonthData = settlement.settlements?.[currentMonthKey];
@@ -783,66 +1041,104 @@ export const useAppStore = create<AppState>((set, get) => {
       // Current month doesn't exist yet, create it
       console.log('[Store] createNextSettlementIfNeeded: creating current month settlement', { restaurantId, month: currentMonthKey });
       
-      // Get carryover credit from global overpayment field
-      const carryOverCredit = settlement.currentOverpayment ?? 0;
-      
-      // Calculate amount due after applying carryover
       const defaultAmount = settlement.defaultSettlementAmount;
-      const amountDueAfterCarryover = Math.max(0, defaultAmount - carryOverCredit);
-      const statusAfterCarryover = amountDueAfterCarryover === 0 ? 'Paid' : 'Pending';
-      
-      // Reduce global overpayment after applying it as carryover
-      const remainingOverpayment = Math.max(0, carryOverCredit - defaultAmount);
+      const availableCredit = settlement.currentOverpayment ?? 0;
+      const appliedCredit = Math.min(availableCredit, defaultAmount);
+      const remainingOverpayment = Math.max(0, availableCredit - appliedCredit);
+      const nowMs = Date.now();
+      const autoPayment: PaymentEntry | null = appliedCredit > 0 ? {
+        id: `auto_${restaurantId}_${currentMonthKey}_${nowMs}`,
+        amount: appliedCredit,
+        date: nowMs,
+        timestamp: nowMs,
+        isAutoPayment: true,
+      } : null;
+      const totalPaid = appliedCredit;
+      const statusAfterCarryover: SettlementStatus = totalPaid >= defaultAmount ? 'Paid' : totalPaid > 0 ? 'Processing' : 'Pending';
+      const newPeriod: SettlementPeriod = {
+        period: currentMonthKey,
+        totalAmountDue: defaultAmount,
+        defaultAmountForMonth: defaultAmount,
+        carryOverCredit: appliedCredit,
+        totalPaid,
+        status: statusAfterCarryover,
+        installments: autoPayment ? 1 : 0,
+        cycleStartDate: nowMs,
+        paymentHistory: autoPayment ? [autoPayment] : [],
+        ...(statusAfterCarryover === 'Paid' ? { settledDate: nowMs } : {}),
+      };
       
       const newSettlement: Settlement = {
         ...settlement,
         currentOverpayment: remainingOverpayment, // Auto-reduce global overpayment after applying to this month
         settlements: {
           ...settlement.settlements,
-          [currentMonthKey]: {
-            period: currentMonthKey,
-            totalAmountDue: amountDueAfterCarryover,
-            defaultAmountForMonth: settlement.defaultSettlementAmount,
-            carryOverCredit: carryOverCredit,
-            totalPaid: 0,
-            status: statusAfterCarryover,
-            installments: 0,
-            cycleStartDate: Date.now(),
-            paymentHistory: [],
-          },
+          [currentMonthKey]: newPeriod,
         },
-        lastUpdated: Date.now(),
+        lastUpdated: nowMs,
       };
       
       set((s) => ({
         settlements: s.settlements.map((sett) => (sett.restaurantId === restaurantId ? newSettlement : sett)),
       }));
+      syncRestaurantStatusForCurrentSettlement(restaurantId, newSettlement, restaurant);
       
       // Save to Firebase
       (async () => {
         try {
           const settRef = doc(db, 'Restaurant', restaurantId, 'Settlement', 'settlement');
-          console.log('[Store] createNextSettlementIfNeeded: writing new month settlement', { restaurantId, month: currentMonthKey, carryOverCredit, amountDueAfterCarryover, remainingOverpayment });
+          console.log('[Store] createNextSettlementIfNeeded: writing new month settlement', { restaurantId, month: currentMonthKey, appliedCredit, remainingOverpayment });
           await updateDoc(settRef, {
             currentOverpayment: remainingOverpayment, // Update global overpayment after deduction
-            [`settlements.${currentMonthKey}`]: {
-              period: currentMonthKey,
-              totalAmountDue: amountDueAfterCarryover,
-              defaultAmountForMonth: settlement.defaultSettlementAmount,
-              carryOverCredit: carryOverCredit,
-              totalPaid: 0,
-              status: statusAfterCarryover,
-              installments: 0,
-              cycleStartDate: Date.now(),
-              paymentHistory: [],
-            },
-            lastUpdated: Date.now(),
+            [`settlements.${currentMonthKey}`]: newPeriod,
+            lastUpdated: nowMs,
           });
           console.log('[Store] createNextSettlementIfNeeded: write complete', { restaurantId, month: currentMonthKey });
         } catch (err) {
           console.error('Failed to create next settlement in Firebase:', err);
         }
       })();
+    } else {
+      const nowMs = Date.now();
+      const creditResult = applyOverpaymentToPeriod(
+        currentMonthData,
+        restaurantId,
+        currentMonthKey,
+        settlement.currentOverpayment || 0,
+        nowMs
+      );
+
+      if (creditResult.appliedCredit > 0) {
+        const updatedSettlement: Settlement = {
+          ...settlement,
+          currentOverpayment: creditResult.remainingOverpayment,
+          settlements: {
+            ...settlement.settlements,
+            [currentMonthKey]: creditResult.period,
+          },
+          lastUpdated: nowMs,
+        };
+
+        set((s) => ({
+          settlements: s.settlements.map((sett) => (sett.restaurantId === restaurantId ? updatedSettlement : sett)),
+        }));
+        syncRestaurantStatusForCurrentSettlement(restaurantId, updatedSettlement, restaurant);
+
+        (async () => {
+          try {
+            const settRef = doc(db, 'Restaurant', restaurantId, 'Settlement', 'settlement');
+            await updateDoc(settRef, {
+              currentOverpayment: creditResult.remainingOverpayment,
+              [`settlements.${currentMonthKey}`]: creditResult.period,
+              lastUpdated: nowMs,
+            });
+          } catch (err) {
+            console.error('Failed to apply overpayment to current settlement in Firebase:', err);
+          }
+        })();
+      } else {
+        syncRestaurantStatusForCurrentSettlement(restaurantId, settlement, restaurant);
+      }
     }
   },
 
@@ -903,6 +1199,8 @@ export const useAppStore = create<AppState>((set, get) => {
           IFSC: s('IFSC') || s('ifsc'),
           joinDate: new Date(),
           inactiveTimestamp: (data.inactiveTimestamp as number) || undefined,
+          statusManagedBy: (data.statusManagedBy as 'manual' | 'system' | undefined),
+          statusReason: (data.statusReason as string | null | undefined),
         };
         console.log('[Store] loadPrimaryRestaurants: mapped restaurant', { 
           id: restaurant.id, 
@@ -961,55 +1259,6 @@ export const useAppStore = create<AppState>((set, get) => {
           const snapSet = await getDoc(settRef);
           if (snapSet.exists()) {
             const data = snapSet.data() as FirebaseSettlementData;
-            const normalizePayments = (arr: unknown[]) => {
-              const getTimestamp = (date: unknown, timestamp: unknown): number => {
-                if (typeof timestamp === 'number') return timestamp;
-                if (typeof date === 'number') return date;
-                if (date && typeof date === 'object' && 'getTime' in date && typeof (date as unknown as { getTime: () => number }).getTime === 'function') {
-                  return (date as unknown as { getTime: () => number }).getTime();
-                }
-                return Date.now();
-              };
-              return (arr || []).filter((p) => {
-                const payment = p as Record<string, unknown>;
-                return payment && typeof payment.amount === 'number' && (payment.amount as number) > 0;
-              }).map((p) => {
-              const payment = p as Record<string, unknown>;
-              return {
-              id: payment.id || `pay_${Date.now()}`,
-              amount: payment.amount as number,
-              date: (payment.date ?? payment.timestamp ?? Date.now()) as number,
-              timestamp: getTimestamp(payment.date, payment.timestamp),
-              isAutoPayment: !!payment.isAutoPayment,
-            } as PaymentEntry;
-            });
-            };
-
-            // Normalize month-wise settlements
-            const normalizeSettlements = (settlements: Record<string, unknown> = {}) => {
-              const result: Record<string, SettlementPeriod> = {};
-              for (const [monthKey, period] of Object.entries(settlements || {})) {
-                const monthData = period as Record<string, unknown>;
-                const paymentHistory = (monthData?.paymentHistory || []) as unknown[];
-                const normalizedPayments = normalizePayments(paymentHistory);
-                const totalPaid = normalizedPayments.reduce((s, p) => s + (p.amount || 0), 0);
-                const totalDue = (monthData?.totalAmountDue as number) ?? 0;
-                const status = (totalPaid >= totalDue ? 'Paid' : totalPaid > 0 ? 'Processing' : 'Pending') as SettlementStatus;
-                
-                result[monthKey] = {
-                  period: monthKey,
-                  totalAmountDue: totalDue,
-                  totalPaid: totalPaid,
-                  status: status,
-                  installments: normalizedPayments.length,
-                  cycleStartDate: (monthData?.cycleStartDate as number) ?? Date.now(),
-                  paymentHistory: normalizedPayments,
-                  settledDate: monthData?.settledDate as number | undefined,
-                };
-              }
-              return result;
-            };
-
             const loaded: Settlement = {
               settlementId: data.settlementId || `settlement_${rest.id}`,
               restaurantId: rest.id,
@@ -1017,12 +1266,45 @@ export const useAppStore = create<AppState>((set, get) => {
               defaultSettlementAmount: data.defaultSettlementAmount ?? 0,
               defaultSettlementStartDate: data.defaultSettlementStartDate ?? 0,
               currentOverpayment: data.currentOverpayment ?? 0, // Preserve global overpayment
-              settlements: normalizeSettlements(data.settlements),
+              settlements: normalizeSettlementPeriods(data.settlements),
               createdAt: data.createdAt ?? Date.now(),
               lastUpdated: data.lastUpdated ?? Date.now(),
             };
 
-            settlementsAcc.push(loaded);
+            let resolvedLoaded = loaded;
+            const currentMonthKey = getCurrentMonthKey();
+            const currentPeriod = loaded.settlements[currentMonthKey];
+            if (currentPeriod && loaded.currentOverpayment > 0) {
+              const now = Date.now();
+              const creditResult = applyOverpaymentToPeriod(
+                currentPeriod,
+                rest.id,
+                currentMonthKey,
+                loaded.currentOverpayment,
+                now
+              );
+
+              if (creditResult.appliedCredit > 0) {
+                resolvedLoaded = {
+                  ...loaded,
+                  currentOverpayment: creditResult.remainingOverpayment,
+                  settlements: {
+                    ...loaded.settlements,
+                    [currentMonthKey]: creditResult.period,
+                  },
+                  lastUpdated: now,
+                };
+
+                await updateDoc(settRef, {
+                  currentOverpayment: creditResult.remainingOverpayment,
+                  [`settlements.${currentMonthKey}`]: creditResult.period,
+                  lastUpdated: now,
+                });
+              }
+            }
+
+            settlementsAcc.push(resolvedLoaded);
+            syncRestaurantStatusForCurrentSettlement(rest.id, resolvedLoaded, rest);
           }
         } catch (e: unknown) {
           console.error('[Store] loadPrimaryRestaurants: failed to fetch settlement for', rest.id, e);
@@ -1113,6 +1395,8 @@ export const useAppStore = create<AppState>((set, get) => {
                 IFSC: s('IFSC') || s('ifsc'),
                 joinDate: new Date(),
                 inactiveTimestamp: (data.inactiveTimestamp as number) || undefined,
+                statusManagedBy: (data.statusManagedBy as 'manual' | 'system' | undefined),
+                statusReason: (data.statusReason as string | null | undefined),
               };
               
               allUpdatedRestaurants.push(restaurant);
@@ -1188,19 +1472,32 @@ export const useAppStore = create<AppState>((set, get) => {
 
   loadCustomerTransactions: async () => {
     try {
-      set({ isLoadingTransactions: true });
       console.log('[Store] loadCustomerTransactions: attaching realtime listeners');
       const state = get();
 
       console.log('[Store] loadCustomerTransactions: processing', state.restaurants.length, 'restaurants');
-      
-      let activeRestaurantCount = 0;
 
-      for (const restaurant of state.restaurants) {
-        if (customerOrderListeners[restaurant.id]) {
-          activeRestaurantCount += 1;
-          continue;
+      const restaurantsNeedingListeners = state.restaurants.filter(
+        (restaurant) => !customerOrderListeners[restaurant.id]
+      );
+
+      if (restaurantsNeedingListeners.length === 0) {
+        set({ isLoadingTransactions: false });
+        return;
+      }
+
+      set({ isLoadingTransactions: true });
+
+      let pendingInitialSnapshots = restaurantsNeedingListeners.length;
+      const markInitialSnapshotDone = () => {
+        pendingInitialSnapshots -= 1;
+        if (pendingInitialSnapshots <= 0) {
+          set({ isLoadingTransactions: false });
         }
+      };
+
+      for (const restaurant of restaurantsNeedingListeners) {
+        let hasReceivedInitialSnapshot = false;
 
         try {
           console.log('[Store] loadCustomerTransactions: listening to customers for restaurant', {
@@ -1225,8 +1522,12 @@ export const useAppStore = create<AppState>((set, get) => {
                   ...s.transactions.filter((transaction) => transaction.restaurantId !== restaurant.id),
                   ...restaurantTransactions,
                 ],
-                isLoadingTransactions: false,
               }));
+
+              if (!hasReceivedInitialSnapshot) {
+                hasReceivedInitialSnapshot = true;
+                markInitialSnapshotDone();
+              }
 
               console.log('[Store] loadCustomerTransactions: realtime transaction update', {
                 restaurantId: restaurant.id,
@@ -1236,22 +1537,77 @@ export const useAppStore = create<AppState>((set, get) => {
             },
             (err) => {
               console.error('[Store] loadCustomerTransactions: listener error', restaurant.id, err);
-              set({ isLoadingTransactions: false });
+              if (!hasReceivedInitialSnapshot) {
+                hasReceivedInitialSnapshot = true;
+                markInitialSnapshotDone();
+              }
             }
           );
-          activeRestaurantCount += 1;
         } catch (e) {
           console.error('[Store] loadCustomerTransactions: failed to listen to customers for restaurant', restaurant.id, e);
+          if (!hasReceivedInitialSnapshot) {
+            hasReceivedInitialSnapshot = true;
+            markInitialSnapshotDone();
+          }
         }
-      }
-
-      if (activeRestaurantCount === 0) {
-        set({ isLoadingTransactions: false });
       }
     } catch (err) {
       console.error('Failed to load customer transactions from Firebase', err);
       set({ isLoadingTransactions: false });
     }
+  },
+
+  updateTransactionSettlement: async (payload) => {
+    const customerRef = doc(db, 'Restaurant', payload.restaurantId, 'customers', payload.customerId);
+    const customerSnap = await getDoc(customerRef);
+
+    if (!customerSnap.exists()) {
+      throw new Error('Customer transaction document was not found.');
+    }
+
+    const customerData = customerSnap.data() as FirebaseCustomerData;
+    const pastOrders = Array.isArray(customerData.pastOrders) ? customerData.pastOrders : [];
+    const settlementDate = toOptionalIsoString(payload.settlementDate);
+
+    if (!settlementDate) {
+      throw new Error('Settlement date is invalid.');
+    }
+
+    let updated = false;
+    const updatedPastOrders = pastOrders.map((order) => {
+      const orderIdMatches = String(order.id || '') === payload.orderId;
+      const paymentIdMatches = payload.razorpayPaymentId
+        ? String(order.razorpayPaymentId || '') === payload.razorpayPaymentId
+        : false;
+
+      if (!orderIdMatches && !paymentIdMatches) {
+        return order;
+      }
+
+      updated = true;
+      return {
+        ...order,
+        razorpayPaymentId: order.razorpayPaymentId || payload.razorpayPaymentId,
+        razorpaySettlementStatus: payload.settlementStatus || 'processed',
+        razorpayAdminSettlementAmount: payload.adminReceivedAmount,
+        razorpaySettlementAmount: payload.adminReceivedAmount,
+        razorpaySettlementCreatedAt: settlementDate,
+        razorpaySettlementExpectedAt: settlementDate,
+        razorpaySettlementUtr: payload.settlementUtr || order.razorpaySettlementUtr || null,
+        razorpayFeeAmount: payload.razorpayFeeAmount ?? order.razorpayFeeAmount ?? null,
+        razorpayTaxAmount: payload.razorpayTaxAmount ?? order.razorpayTaxAmount ?? null,
+        razorpaySyncSource: 'manual',
+        razorpaySyncedAt: new Date().toISOString(),
+      };
+    });
+
+    if (!updated) {
+      throw new Error('Matching order was not found in the customer transaction document.');
+    }
+
+    await updateDoc(customerRef, {
+      pastOrders: updatedPastOrders,
+    });
   },
 
   logout: () => {

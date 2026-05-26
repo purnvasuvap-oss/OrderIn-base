@@ -5,70 +5,163 @@ import { DataTable } from '../components/DataTable';
 import { Badge } from '../components/Badge';
 import { Modal } from '../components/Modal';
 import { format } from 'date-fns';
-import { Eye, Download } from 'lucide-react';
+import { Eye, Download, Upload } from 'lucide-react';
 import type { Transaction } from '../types';
 
 type LedgerRow = Transaction & {
   transactionDate: Date;
   receivedDate: Date | null;
+  expectedReceivingDate: Date | null;
   collectedAmount: number;
   receivedByClient: number;
   receivedByAdmin: number;
   receivedStatus: 'Processing' | 'Received';
 };
 
-type RazorpaySyncPayload = Partial<Transaction>;
+type SettlementDraft = {
+  adminReceivedAmount: string;
+  settlementDate: string;
+  settlementUtr: string;
+  razorpayFeeAmount: string;
+  razorpayTaxAmount: string;
+};
 
-const FUNCTION_BASE_URL = 'https://us-central1-orderin-7f8bc.cloudfunctions.net';
-const ENABLE_RAZORPAY_LEDGER_SYNC = import.meta.env.VITE_ENABLE_RAZORPAY_LEDGER_SYNC === 'true';
-const SYNC_PAYMENT_ENDPOINTS = [
-  `${FUNCTION_BASE_URL}/syncRazorpayPayment`,
-];
+const toOptionalDate = (value: unknown): Date | null => {
+  if (!value) return null;
+  if (typeof value === 'object' && 'toDate' in value && typeof (value as { toDate?: unknown }).toDate === 'function') {
+    const timestampDate = (value as { toDate: () => Date }).toDate();
+    return Number.isNaN(timestampDate.getTime()) ? null : timestampDate;
+  }
+  const date = new Date(value as string | number | Date);
+  return Number.isNaN(date.getTime()) ? null : date;
+};
 
-const syncRazorpayTransaction = async (txn: Transaction): Promise<RazorpaySyncPayload | null> => {
-  if (!txn.razorpayPaymentId) {
-    return null;
+const getExactRazorpayReceivingDate = (txn: Partial<Transaction>): Date | null =>
+  toOptionalDate(
+    txn.razorpayTransferSettlementExpectedAt ||
+      txn.razorpayTransferSettlementCreatedAt ||
+      txn.razorpaySettlementExpectedAt ||
+      txn.razorpaySettlementCreatedAt ||
+      null
+  );
+
+const getEstimatedReceivingDate = (txn: Transaction): Date => {
+  const baseDate = toOptionalDate(txn.paymentTimestamp || txn.razorpayCapturedAt || txn.createdAt) || new Date();
+  const estimate = new Date(baseDate);
+  estimate.setDate(estimate.getDate() + 7);
+  estimate.setHours(21, 0, 0, 0);
+  return estimate;
+};
+
+const isSettlementProcessed = (status: unknown): boolean => {
+  const normalized = String(status || '').toLowerCase();
+  return normalized.includes('processed') || normalized.includes('settled') || normalized.includes('success');
+};
+
+const toCurrencyNumber = (value: unknown): number | undefined => {
+  if (value === null || value === undefined || value === '') return undefined;
+  const parsed = Number(String(value).replace(/[^0-9.-]/g, ''));
+  return Number.isFinite(parsed) ? parsed : undefined;
+};
+
+const toDateInputValue = (value: Date | string | null | undefined): string => {
+  const date = toOptionalDate(value || null);
+  if (!date) return '';
+  const offsetMs = date.getTimezoneOffset() * 60 * 1000;
+  return new Date(date.getTime() - offsetMs).toISOString().slice(0, 16);
+};
+
+const parseSettlementDate = (value: string): Date | null => {
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+
+  const directDate = new Date(trimmed);
+  if (!Number.isNaN(directDate.getTime())) return directDate;
+
+  const match = trimmed.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{2,4})(?:[,\s]+(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(AM|PM|am|pm)?)?/);
+  if (!match) return null;
+
+  const [, dayRaw, monthRaw, yearRaw, hourRaw = '0', minuteRaw = '0', secondRaw = '0', meridiem] = match;
+  const year = Number(yearRaw.length === 2 ? `20${yearRaw}` : yearRaw);
+  const month = Number(monthRaw) - 1;
+  const day = Number(dayRaw);
+  let hour = Number(hourRaw);
+
+  if (meridiem) {
+    const upper = meridiem.toUpperCase();
+    if (upper === 'PM' && hour < 12) hour += 12;
+    if (upper === 'AM' && hour === 12) hour = 0;
   }
 
-  let lastError: Error | null = null;
+  const parsed = new Date(year, month, day, hour, Number(minuteRaw), Number(secondRaw));
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+};
 
-  for (const url of SYNC_PAYMENT_ENDPOINTS) {
-    try {
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          razorpayPaymentId: txn.razorpayPaymentId,
-          restaurantId: txn.restaurantId,
-          customerPhone: txn.customerId,
-          orderId: txn.orderId,
-        }),
-      });
+const parseCsvText = (text: string): Record<string, string>[] => {
+  const rows: string[][] = [];
+  let row: string[] = [];
+  let cell = '';
+  let inQuotes = false;
 
-      if (!response.ok) {
-        const errorText = await response.text().catch(() => '');
-        lastError = new Error(`HTTP ${response.status}${errorText ? ` - ${errorText}` : ''}`);
-        continue;
-      }
+  for (let i = 0; i < text.length; i += 1) {
+    const char = text[i];
+    const next = text[i + 1];
 
-      const data = await response.json();
-      return (data?.payment || null) as RazorpaySyncPayload | null;
-    } catch (error) {
-      lastError = error instanceof Error ? error : new Error(String(error));
+    if (char === '"' && inQuotes && next === '"') {
+      cell += '"';
+      i += 1;
+    } else if (char === '"') {
+      inQuotes = !inQuotes;
+    } else if (char === ',' && !inQuotes) {
+      row.push(cell.trim());
+      cell = '';
+    } else if ((char === '\n' || char === '\r') && !inQuotes) {
+      if (char === '\r' && next === '\n') i += 1;
+      row.push(cell.trim());
+      if (row.some(Boolean)) rows.push(row);
+      row = [];
+      cell = '';
+    } else {
+      cell += char;
     }
   }
 
-  console.error('[LedgerPage] Razorpay sync failed for transaction:', txn.id, lastError);
-  return null;
+  row.push(cell.trim());
+  if (row.some(Boolean)) rows.push(row);
+
+  if (rows.length < 2) return [];
+
+  const headers = rows[0].map((header) => header.toLowerCase().replace(/[^a-z0-9]/g, ''));
+  return rows.slice(1).map((values) => {
+    const item: Record<string, string> = {};
+    headers.forEach((header, index) => {
+      item[header] = values[index] || '';
+    });
+    return item;
+  });
+};
+
+const pickCsvValue = (row: Record<string, string>, aliases: string[]): string => {
+  for (const alias of aliases) {
+    const key = alias.toLowerCase().replace(/[^a-z0-9]/g, '');
+    if (row[key]) return row[key];
+  }
+  return '';
 };
 
 export const LedgerPage = () => {
-  const { restaurants, getFilteredTransactions, loadCustomerTransactions, isLoadingTransactions } = useAppStore();
+  const { restaurants, getFilteredTransactions, loadCustomerTransactions, isLoadingTransactions, updateTransactionSettlement } = useAppStore();
   const [groupBy, setGroupBy] = useState<'restaurant' | 'date' | 'paymentMethod'>('date');
   const [selectedTxn, setSelectedTxn] = useState<LedgerRow | null>(null);
-  const [razorpaySyncByTxnId, setRazorpaySyncByTxnId] = useState<Record<string, RazorpaySyncPayload>>({});
+  const [settlementDraft, setSettlementDraft] = useState<SettlementDraft>({
+    adminReceivedAmount: '',
+    settlementDate: '',
+    settlementUtr: '',
+    razorpayFeeAmount: '',
+    razorpayTaxAmount: '',
+  });
+  const [settlementSaveStatus, setSettlementSaveStatus] = useState('');
+  const [csvImportStatus, setCsvImportStatus] = useState('');
 
   // Load customer transactions on mount AND when restaurants are loaded
   useEffect(() => {
@@ -82,91 +175,23 @@ export const LedgerPage = () => {
 
   const filteredTransactions = getFilteredTransactions();
 
-  // Debug logging
-  useEffect(() => {
-    console.log('[LedgerPage] Debug Info:', {
-      restaurants: restaurants.length,
-      filteredTransactionsCount: filteredTransactions.length,
-      transactions: filteredTransactions.map(t => ({
-        id: t.id,
-        orderId: t.orderId,
-        paymentMethod: t.paymentMethod,
-        OnlinePayMethod: t.OnlinePayMethod,
-        restaurantName: restaurants.find(r => r.id === t.restaurantId)?.Restaurant_name || 'Unknown'
-      })),
-      isLoading: isLoadingTransactions
-    });
-  }, [filteredTransactions, isLoadingTransactions, restaurants]);
-
   // Filter transactions to show only those explicitly marked as 'online' payment method
   // NOTE: Store already filters these, but applying here as well for safety
   const onlineTransactions = useMemo(() => {
     return filteredTransactions.length > 0 ? filteredTransactions : [];
   }, [filteredTransactions]);
 
-  useEffect(() => {
-    let cancelled = false;
-
-    const transactionsToSync = onlineTransactions.filter((txn) => {
-      if (!ENABLE_RAZORPAY_LEDGER_SYNC) {
-        return false;
-      }
-
-      if (!txn.razorpayPaymentId) {
-        return false;
-      }
-
-      if (txn.razorpaySettlementStatus === 'processed') {
-        return false;
-      }
-
-      return !razorpaySyncByTxnId[txn.id];
-    });
-
-    if (transactionsToSync.length === 0) {
-      return;
-    }
-
-    Promise.all(
-      transactionsToSync.map(async (txn) => {
-        const synced = await syncRazorpayTransaction(txn);
-        return synced ? [txn.id, synced] as const : null;
-      })
-    ).then((results) => {
-      if (cancelled) {
-        return;
-      }
-
-      const updates = results.filter((entry): entry is readonly [string, RazorpaySyncPayload] => entry !== null);
-
-      if (updates.length === 0) {
-        return;
-      }
-
-      setRazorpaySyncByTxnId((current) => {
-        const next = { ...current };
-        updates.forEach(([txnId, payload]) => {
-          next[txnId] = payload;
-        });
-        return next;
-      });
-    });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [onlineTransactions, razorpaySyncByTxnId]);
-
   const ledgerRows = useMemo<LedgerRow[]>(() => {
     return onlineTransactions.map((txn) => {
-      const syncedTxn = razorpaySyncByTxnId[txn.id] || {};
-      const mergedTxn = { ...txn, ...syncedTxn };
-      const settlementProcessed = mergedTxn.razorpaySettlementStatus === 'processed';
+      const mergedTxn = txn;
+      const settlementProcessed = isSettlementProcessed(mergedTxn.razorpaySettlementStatus);
       const collectedAmount = mergedTxn.razorpayAmount ?? txn.grossAmount;
       const settledAmount = mergedTxn.razorpaySettlementAmount;
-      const actualAdminAmount = settlementProcessed && typeof settledAmount === 'number'
-        ? Math.max(0, settledAmount - txn.restaurantReceivable)
+      const actualAdminAmount = settlementProcessed
+        ? mergedTxn.razorpayAdminSettlementAmount ??
+          (typeof settledAmount === 'number' ? Math.max(0, settledAmount - txn.restaurantReceivable) : 0)
         : 0;
+      const expectedReceivingDate = getExactRazorpayReceivingDate(mergedTxn) || getEstimatedReceivingDate(mergedTxn as Transaction);
 
       return {
         ...mergedTxn,
@@ -174,18 +199,132 @@ export const LedgerPage = () => {
         receivedDate: settlementProcessed
           ? new Date(
               mergedTxn.razorpaySettlementCreatedAt ||
+                mergedTxn.razorpaySettlementExpectedAt ||
                 mergedTxn.paymentTimestamp ||
                 mergedTxn.razorpayCapturedAt ||
                 mergedTxn.createdAt
             )
           : null,
+        expectedReceivingDate,
         collectedAmount,
         receivedByClient: settlementProcessed ? txn.restaurantReceivable : 0,
         receivedByAdmin: actualAdminAmount,
         receivedStatus: settlementProcessed ? 'Received' : 'Processing',
       };
     });
-  }, [onlineTransactions, razorpaySyncByTxnId]);
+  }, [onlineTransactions]);
+
+  const openTransactionDetails = (txn: LedgerRow) => {
+    setSelectedTxn(txn);
+    setSettlementSaveStatus('');
+    setSettlementDraft({
+      adminReceivedAmount: txn.razorpayAdminSettlementAmount ? String(txn.razorpayAdminSettlementAmount) : '',
+      settlementDate: toDateInputValue(txn.receivedDate || new Date()),
+      settlementUtr: txn.razorpaySettlementUtr || '',
+      razorpayFeeAmount: txn.razorpayFeeAmount ? String(txn.razorpayFeeAmount) : '',
+      razorpayTaxAmount: txn.razorpayTaxAmount ? String(txn.razorpayTaxAmount) : '',
+    });
+  };
+
+  const saveSettlementForSelectedTxn = async () => {
+    if (!selectedTxn) return;
+
+    const adminReceivedAmount = toCurrencyNumber(settlementDraft.adminReceivedAmount);
+    const razorpayFeeAmount = toCurrencyNumber(settlementDraft.razorpayFeeAmount);
+    const razorpayTaxAmount = toCurrencyNumber(settlementDraft.razorpayTaxAmount);
+
+    if (adminReceivedAmount === undefined || adminReceivedAmount < 0) {
+      setSettlementSaveStatus('Enter a valid admin received amount.');
+      return;
+    }
+
+    if (!settlementDraft.settlementDate) {
+      setSettlementSaveStatus('Enter the settlement date and time.');
+      return;
+    }
+
+    setSettlementSaveStatus('Saving settlement...');
+
+    try {
+      await updateTransactionSettlement({
+        restaurantId: selectedTxn.restaurantId,
+        customerId: selectedTxn.customerId,
+        orderId: selectedTxn.orderId,
+        razorpayPaymentId: selectedTxn.razorpayPaymentId,
+        adminReceivedAmount,
+        settlementDate: new Date(settlementDraft.settlementDate).toISOString(),
+        settlementUtr: settlementDraft.settlementUtr.trim() || undefined,
+        razorpayFeeAmount,
+        razorpayTaxAmount,
+        settlementStatus: 'processed',
+      });
+      setSettlementSaveStatus('Settlement saved. Ledger will refresh automatically.');
+    } catch (error) {
+      setSettlementSaveStatus(error instanceof Error ? error.message : 'Could not save settlement.');
+    }
+  };
+
+  const handleSettlementCsvImport = async (file: File | null) => {
+    if (!file) return;
+
+    setCsvImportStatus('Reading CSV...');
+
+    try {
+      const rows = parseCsvText(await file.text());
+      let updated = 0;
+      let skipped = 0;
+
+      for (const row of rows) {
+        const paymentId = pickCsvValue(row, ['razorpay_payment_id', 'payment_id', 'payment id', 'paymentid']);
+        const orderId = pickCsvValue(row, ['order_id', 'order id', 'orderid', 'receipt']);
+        const adminAmount = toCurrencyNumber(pickCsvValue(row, [
+          'admin_received_amount',
+          'admin received amount',
+          'settled amount',
+          'settlement amount',
+          'amount',
+          'credit',
+        ]));
+        const settlementDate =
+          pickCsvValue(row, ['settled_at', 'settled at', 'settlement date', 'settlement_date', 'created_at', 'date']) || '';
+
+        const matchingTxn = ledgerRows.find((txn) => {
+          const paymentMatches = paymentId && txn.razorpayPaymentId === paymentId;
+          const orderMatches = orderId && txn.orderId === orderId;
+          return paymentMatches || orderMatches;
+        });
+
+        if (!matchingTxn || adminAmount === undefined || !settlementDate) {
+          skipped += 1;
+          continue;
+        }
+
+        const parsedSettlementDate = parseSettlementDate(settlementDate);
+        if (!parsedSettlementDate) {
+          skipped += 1;
+          continue;
+        }
+
+        await updateTransactionSettlement({
+          restaurantId: matchingTxn.restaurantId,
+          customerId: matchingTxn.customerId,
+          orderId: matchingTxn.orderId,
+          razorpayPaymentId: matchingTxn.razorpayPaymentId || paymentId,
+          adminReceivedAmount: adminAmount,
+          settlementDate: parsedSettlementDate.toISOString(),
+          settlementUtr: pickCsvValue(row, ['utr', 'settlement utr', 'utr number', 'reference', 'settlement id']) || undefined,
+          razorpayFeeAmount: toCurrencyNumber(pickCsvValue(row, ['fee', 'fees', 'razorpay fee'])),
+          razorpayTaxAmount: toCurrencyNumber(pickCsvValue(row, ['tax', 'gst', 'razorpay tax'])),
+          settlementStatus: 'processed',
+        });
+        updated += 1;
+      }
+
+      setCsvImportStatus(`CSV import complete: ${updated} updated, ${skipped} skipped.`);
+    } catch (error) {
+      setCsvImportStatus(error instanceof Error ? error.message : 'CSV import failed.');
+    }
+  };
 
   const ledgerTotals = useMemo(() => {
     return ledgerRows.reduce(
@@ -204,14 +343,6 @@ export const LedgerPage = () => {
       }
     );
   }, [ledgerRows]);
-
-  // Debug: Log filtering details
-  useEffect(() => {
-    console.log('[LedgerPage] Online Transactions:', {
-      count: onlineTransactions.length,
-      transactions: ledgerRows
-    });
-  }, [ledgerRows, onlineTransactions.length]);
 
   const groupedData = useMemo<Record<string, LedgerRow[]>>(() => {
     const groups: Record<string, LedgerRow[]> = {};
@@ -262,9 +393,14 @@ export const LedgerPage = () => {
       render: (value: unknown): React.ReactNode => format(new Date(value as Date), 'dd MMM HH:mm'),
     },
     {
+      header: 'Expected Receiving',
+      accessor: 'expectedReceivingDate',
+      render: (value: unknown): React.ReactNode => value ? format(new Date(value as Date), 'dd MMM yyyy, hh:mm a') : 'Not available',
+    },
+    {
       header: 'Received Date',
       accessor: 'receivedDate',
-      render: (value: unknown): React.ReactNode => value ? format(new Date(value as Date), 'dd MMM HH:mm') : 'Not received',
+      render: (value: unknown): React.ReactNode => value ? format(new Date(value as Date), 'dd MMM yyyy, hh:mm a') : 'Not received',
     },
     { header: 'Order ID', accessor: 'orderId' },
     {
@@ -281,7 +417,6 @@ export const LedgerPage = () => {
       accessor: 'id',
       render: (_value: unknown, row: unknown): React.ReactNode => {
         const txn = row as Transaction;
-        console.log('[Method Column Direct] Transaction:', txn, 'OnlinePayMethod:', txn.OnlinePayMethod);
         return txn.OnlinePayMethod || 'N/A';
       },
     },
@@ -369,6 +504,37 @@ export const LedgerPage = () => {
               Export
             </button>
           </div>
+        </div>
+
+        <div className="card" style={{ padding: '1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+          <div>
+            <p style={{ color: '#f8fafc', fontWeight: 700, marginBottom: '0.25rem' }}>Settlement updates</p>
+            <p style={{ color: '#94a3b8', fontSize: '0.875rem' }}>Import Razorpay settlement CSV or open a transaction to enter the actual received amount.</p>
+            {csvImportStatus && <p style={{ color: '#38bdf8', fontSize: '0.875rem', marginTop: '0.5rem' }}>{csvImportStatus}</p>}
+          </div>
+          <label style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            padding: '0.75rem 1rem',
+            borderRadius: '0.75rem',
+            background: 'rgba(6, 182, 212, 0.16)',
+            color: '#67e8f9',
+            cursor: 'pointer',
+            fontWeight: 700,
+          }}>
+            <Upload size={18} />
+            Import CSV
+            <input
+              type="file"
+              accept=".csv,text/csv"
+              style={{ display: 'none' }}
+              onChange={(event) => {
+                handleSettlementCsvImport(event.target.files?.[0] || null);
+                event.currentTarget.value = '';
+              }}
+            />
+          </label>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: '1rem' }}>
@@ -492,7 +658,7 @@ export const LedgerPage = () => {
                     </div>
                   </div>
                   <div style={{ padding: '1.5rem' }}>
-                    <DataTable columns={columns} data={txns as unknown as Record<string, unknown>[]} onRowClick={(row) => setSelectedTxn(row as unknown as LedgerRow)} />
+                    <DataTable columns={columns} data={txns as unknown as Record<string, unknown>[]} onRowClick={(row) => openTransactionDetails(row as unknown as LedgerRow)} />
                   </div>
                 </div>
               );
@@ -520,6 +686,10 @@ export const LedgerPage = () => {
                 <div>
                   <p style={{ fontSize: '0.875rem', color: '#94a3b8' }}>Transaction Date</p>
                   <p style={{ fontSize: '1.125rem', fontWeight: '600', color: '#f1f5f9' }}>{format(new Date(selectedTxn.transactionDate), 'dd MMM yyyy, hh:mm a')}</p>
+                </div>
+                <div>
+                  <p style={{ fontSize: '0.875rem', color: '#94a3b8' }}>Expected Receiving Date</p>
+                  <p style={{ fontSize: '1.125rem', fontWeight: '600', color: '#f1f5f9' }}>{selectedTxn.expectedReceivingDate ? format(new Date(selectedTxn.expectedReceivingDate), 'dd MMM yyyy, hh:mm a') : 'Not available'}</p>
                 </div>
                 <div>
                   <p style={{ fontSize: '0.875rem', color: '#94a3b8' }}>Received Date</p>
@@ -568,6 +738,56 @@ export const LedgerPage = () => {
                     <span>Received by Admin</span>
                     <span>₹{selectedTxn.receivedByAdmin}</span>
                   </div>
+                </div>
+              </div>
+              <div style={{ borderTop: '1px solid rgba(6, 182, 212, 0.2)', paddingTop: '1rem' }}>
+                <h3 style={{ fontWeight: '700', marginBottom: '1rem', color: '#f1f5f9' }}>Manual Settlement Update</h3>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem' }}>
+                  <label style={{ color: '#cbd5e1', fontSize: '0.875rem' }}>
+                    Admin Received Amount
+                    <input
+                      value={settlementDraft.adminReceivedAmount}
+                      onChange={(event) => setSettlementDraft((draft) => ({ ...draft, adminReceivedAmount: event.target.value }))}
+                      placeholder="1.40"
+                      style={{ width: '100%', marginTop: '0.4rem', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid rgba(148, 163, 184, 0.3)', background: 'rgba(15, 23, 42, 0.75)', color: '#f8fafc' }}
+                    />
+                  </label>
+                  <label style={{ color: '#cbd5e1', fontSize: '0.875rem' }}>
+                    Settlement Date
+                    <input
+                      type="datetime-local"
+                      value={settlementDraft.settlementDate}
+                      onChange={(event) => setSettlementDraft((draft) => ({ ...draft, settlementDate: event.target.value }))}
+                      style={{ width: '100%', marginTop: '0.4rem', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid rgba(148, 163, 184, 0.3)', background: 'rgba(15, 23, 42, 0.75)', color: '#f8fafc' }}
+                    />
+                  </label>
+                  <label style={{ color: '#cbd5e1', fontSize: '0.875rem' }}>
+                    UTR / Reference
+                    <input
+                      value={settlementDraft.settlementUtr}
+                      onChange={(event) => setSettlementDraft((draft) => ({ ...draft, settlementUtr: event.target.value }))}
+                      placeholder="Optional"
+                      style={{ width: '100%', marginTop: '0.4rem', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid rgba(148, 163, 184, 0.3)', background: 'rgba(15, 23, 42, 0.75)', color: '#f8fafc' }}
+                    />
+                  </label>
+                  <label style={{ color: '#cbd5e1', fontSize: '0.875rem' }}>
+                    Razorpay Fee
+                    <input
+                      value={settlementDraft.razorpayFeeAmount}
+                      onChange={(event) => setSettlementDraft((draft) => ({ ...draft, razorpayFeeAmount: event.target.value }))}
+                      placeholder="Optional"
+                      style={{ width: '100%', marginTop: '0.4rem', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid rgba(148, 163, 184, 0.3)', background: 'rgba(15, 23, 42, 0.75)', color: '#f8fafc' }}
+                    />
+                  </label>
+                </div>
+                <div style={{ marginTop: '1rem', display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+                  <button
+                    onClick={saveSettlementForSelectedTxn}
+                    style={{ padding: '0.75rem 1.25rem', borderRadius: '0.75rem', border: 'none', background: 'linear-gradient(135deg, #06b6d4 0%, #10b981 100%)', color: '#fff', fontWeight: 800, cursor: 'pointer' }}
+                  >
+                    Save Settlement
+                  </button>
+                  {settlementSaveStatus && <span style={{ color: '#38bdf8', fontSize: '0.875rem' }}>{settlementSaveStatus}</span>}
                 </div>
               </div>
             </div>
