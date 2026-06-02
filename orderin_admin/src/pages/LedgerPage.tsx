@@ -26,6 +26,17 @@ type SettlementDraft = {
   razorpayTaxAmount: string;
 };
 
+type SettlementTimingSource = Partial<Transaction> & {
+  expectedReceivingDate?: Date | null;
+  receivedDate?: Date | null;
+  receivedStatus?: 'Processing' | 'Received';
+};
+
+type SettlementTimingRow = {
+  label: string;
+  value: string;
+};
+
 const toOptionalDate = (value: unknown): Date | null => {
   if (!value) return null;
   if (typeof value === 'object' && 'toDate' in value && typeof (value as { toDate?: unknown }).toDate === 'function') {
@@ -36,12 +47,18 @@ const toOptionalDate = (value: unknown): Date | null => {
   return Number.isNaN(date.getTime()) ? null : date;
 };
 
+const formatOptionalDate = (value: unknown): string => {
+  const date = toOptionalDate(value);
+  return date ? format(date, 'dd MMM yyyy, hh:mm a') : '';
+};
+
+const getActualRazorpaySettlementDate = (txn: Partial<Transaction>): Date | null =>
+  toOptionalDate(txn.razorpayTransferSettlementCreatedAt || txn.razorpaySettlementCreatedAt || null);
+
 const getExactRazorpayReceivingDate = (txn: Partial<Transaction>): Date | null =>
   toOptionalDate(
     txn.razorpayTransferSettlementExpectedAt ||
-      txn.razorpayTransferSettlementCreatedAt ||
       txn.razorpaySettlementExpectedAt ||
-      txn.razorpaySettlementCreatedAt ||
       null
   );
 
@@ -56,6 +73,84 @@ const getEstimatedReceivingDate = (txn: Transaction): Date => {
 const isSettlementProcessed = (status: unknown): boolean => {
   const normalized = String(status || '').toLowerCase();
   return normalized.includes('processed') || normalized.includes('settled') || normalized.includes('success');
+};
+
+const hasSettlementReceipt = (txn: Partial<Transaction>): boolean => {
+  if (
+    isSettlementProcessed(txn.razorpaySettlementStatus) ||
+    isSettlementProcessed(txn.razorpayTransferSettlementStatus)
+  ) {
+    return true;
+  }
+  return Boolean(
+    txn.razorpaySettlementCreatedAt ||
+      txn.razorpayTransferSettlementCreatedAt ||
+      txn.razorpaySettlementUtr ||
+      txn.razorpayTransferSettlementUtr
+  );
+};
+
+const getExpectedSettlementRows = (txn: SettlementTimingSource): SettlementTimingRow[] => {
+  const rows: SettlementTimingRow[] = [];
+  const clientExpected = formatOptionalDate(txn.razorpayTransferSettlementExpectedAt);
+  const adminExpected = formatOptionalDate(txn.razorpaySettlementExpectedAt);
+
+  if (clientExpected) rows.push({ label: 'Client expected', value: clientExpected });
+  if (adminExpected) rows.push({ label: 'Admin expected', value: adminExpected });
+
+  if (!rows.length) {
+    const fallback = formatOptionalDate(txn.expectedReceivingDate);
+    if (fallback) rows.push({ label: 'Estimated receiving', value: fallback });
+  }
+
+  return rows;
+};
+
+const getReceivedSettlementRows = (txn: SettlementTimingSource): SettlementTimingRow[] => {
+  const rows: SettlementTimingRow[] = [];
+  const clientSettled = formatOptionalDate(txn.razorpayTransferSettlementCreatedAt);
+  const adminSettled = formatOptionalDate(txn.razorpaySettlementCreatedAt);
+  const reference = txn.razorpayTransferSettlementUtr || txn.razorpaySettlementUtr || txn.razorpayTransferSettlementId || txn.razorpaySettlementId;
+
+  if (clientSettled) rows.push({ label: 'Client settled', value: clientSettled });
+  if (adminSettled) rows.push({ label: 'Admin settled', value: adminSettled });
+  if (!rows.length) {
+    const fallback = formatOptionalDate(txn.receivedDate);
+    if (fallback) rows.push({ label: 'Received', value: fallback });
+  }
+  if (!rows.length && txn.receivedStatus === 'Received') {
+    rows.push({ label: 'Settled time', value: 'Pending 11:30 PM sync' });
+  }
+  if (reference) rows.push({ label: 'Settlement ref', value: reference });
+
+  return rows;
+};
+
+const renderSettlementTimingRows = (rows: SettlementTimingRow[], fallback: string): React.ReactNode => {
+  const finalRows = rows.length ? rows : [{ label: 'Settlement', value: fallback }];
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', minWidth: '190px' }}>
+      {finalRows.map((row) => (
+        <div key={`${row.label}-${row.value}`} style={{ display: 'flex', flexDirection: 'column', gap: '0.1rem' }}>
+          <span style={{ color: '#94a3b8', fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            {row.label}
+          </span>
+          <span style={{ color: '#f8fafc', fontSize: '0.82rem', lineHeight: 1.35, wordBreak: 'break-word' }}>
+            {row.value}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+const formatSettlementTimingText = (settledAt: unknown, expectedAt: unknown): string => {
+  const settled = formatOptionalDate(settledAt);
+  if (settled) return `Settled ${settled}`;
+
+  const expected = formatOptionalDate(expectedAt);
+  return expected ? `Expected ${expected}` : 'Not available';
 };
 
 const toCurrencyNumber = (value: unknown): number | undefined => {
@@ -184,27 +279,22 @@ export const LedgerPage = () => {
   const ledgerRows = useMemo<LedgerRow[]>(() => {
     return onlineTransactions.map((txn) => {
       const mergedTxn = txn;
-      const settlementProcessed = isSettlementProcessed(mergedTxn.razorpaySettlementStatus);
+      const settlementProcessed = hasSettlementReceipt(mergedTxn);
       const collectedAmount = mergedTxn.razorpayAmount ?? txn.grossAmount;
       const settledAmount = mergedTxn.razorpaySettlementAmount;
       const actualAdminAmount = settlementProcessed
         ? mergedTxn.razorpayAdminSettlementAmount ??
-          (typeof settledAmount === 'number' ? Math.max(0, settledAmount - txn.restaurantReceivable) : 0)
+          (typeof settledAmount === 'number'
+            ? Math.max(0, settledAmount >= txn.restaurantReceivable ? settledAmount - txn.restaurantReceivable : settledAmount)
+            : 0)
         : 0;
       const expectedReceivingDate = getExactRazorpayReceivingDate(mergedTxn) || getEstimatedReceivingDate(mergedTxn as Transaction);
+      const receivedDate = getActualRazorpaySettlementDate(mergedTxn);
 
       return {
         ...mergedTxn,
         transactionDate: new Date(mergedTxn.paymentTimestamp || mergedTxn.createdAt),
-        receivedDate: settlementProcessed
-          ? new Date(
-              mergedTxn.razorpaySettlementCreatedAt ||
-                mergedTxn.razorpaySettlementExpectedAt ||
-                mergedTxn.paymentTimestamp ||
-                mergedTxn.razorpayCapturedAt ||
-                mergedTxn.createdAt
-            )
-          : null,
+        receivedDate: settlementProcessed ? receivedDate : null,
         expectedReceivingDate,
         collectedAmount,
         receivedByClient: settlementProcessed ? txn.restaurantReceivable : 0,
@@ -395,12 +485,14 @@ export const LedgerPage = () => {
     {
       header: 'Expected Receiving',
       accessor: 'expectedReceivingDate',
-      render: (value: unknown): React.ReactNode => value ? format(new Date(value as Date), 'dd MMM yyyy, hh:mm a') : 'Not available',
+      render: (_value: unknown, row: Record<string, unknown>): React.ReactNode =>
+        renderSettlementTimingRows(getExpectedSettlementRows(row as unknown as LedgerRow), 'Not available'),
     },
     {
       header: 'Received Date',
       accessor: 'receivedDate',
-      render: (value: unknown): React.ReactNode => value ? format(new Date(value as Date), 'dd MMM yyyy, hh:mm a') : 'Not received',
+      render: (_value: unknown, row: Record<string, unknown>): React.ReactNode =>
+        renderSettlementTimingRows(getReceivedSettlementRows(row as unknown as LedgerRow), 'Not received'),
     },
     { header: 'Order ID', accessor: 'orderId' },
     {
@@ -689,11 +781,19 @@ export const LedgerPage = () => {
                 </div>
                 <div>
                   <p style={{ fontSize: '0.875rem', color: '#94a3b8' }}>Expected Receiving Date</p>
-                  <p style={{ fontSize: '1.125rem', fontWeight: '600', color: '#f1f5f9' }}>{selectedTxn.expectedReceivingDate ? format(new Date(selectedTxn.expectedReceivingDate), 'dd MMM yyyy, hh:mm a') : 'Not available'}</p>
+                  <p style={{ fontSize: '1.125rem', fontWeight: '600', color: '#f1f5f9' }}>{formatOptionalDate(selectedTxn.expectedReceivingDate) || 'Not available'}</p>
                 </div>
                 <div>
                   <p style={{ fontSize: '0.875rem', color: '#94a3b8' }}>Received Date</p>
-                  <p style={{ fontSize: '1.125rem', fontWeight: '600', color: '#f1f5f9' }}>{selectedTxn.receivedDate ? format(new Date(selectedTxn.receivedDate), 'dd MMM yyyy, hh:mm a') : 'Not received'}</p>
+                  <p style={{ fontSize: '1.125rem', fontWeight: '600', color: '#f1f5f9' }}>{formatOptionalDate(selectedTxn.receivedDate) || 'Not received'}</p>
+                </div>
+                <div>
+                  <p style={{ fontSize: '0.875rem', color: '#94a3b8' }}>Client Settlement Timing</p>
+                  <p style={{ fontSize: '1.125rem', fontWeight: '600', color: '#f1f5f9' }}>{formatSettlementTimingText(selectedTxn.razorpayTransferSettlementCreatedAt, selectedTxn.razorpayTransferSettlementExpectedAt)}</p>
+                </div>
+                <div>
+                  <p style={{ fontSize: '0.875rem', color: '#94a3b8' }}>Admin Settlement Timing</p>
+                  <p style={{ fontSize: '1.125rem', fontWeight: '600', color: '#f1f5f9' }}>{formatSettlementTimingText(selectedTxn.razorpaySettlementCreatedAt, selectedTxn.razorpaySettlementExpectedAt)}</p>
                 </div>
                 <div>
                   <p style={{ fontSize: '0.875rem', color: '#94a3b8' }}>Razorpay Payment ID</p>
@@ -701,7 +801,11 @@ export const LedgerPage = () => {
                 </div>
                 <div>
                   <p style={{ fontSize: '0.875rem', color: '#94a3b8' }}>Settlement Status</p>
-                  <p style={{ fontSize: '1.125rem', fontWeight: '600', color: '#f1f5f9' }}>{selectedTxn.razorpaySettlementStatus || 'Pending'}</p>
+                  <p style={{ fontSize: '1.125rem', fontWeight: '600', color: '#f1f5f9' }}>{selectedTxn.razorpayTransferSettlementStatus || selectedTxn.razorpaySettlementStatus || selectedTxn.razorpayTransferStatus || 'Pending'}</p>
+                </div>
+                <div>
+                  <p style={{ fontSize: '0.875rem', color: '#94a3b8' }}>Settlement Reference</p>
+                  <p style={{ fontSize: '0.75rem', fontFamily: 'monospace', color: '#cbd5e1' }}>{selectedTxn.razorpayTransferSettlementUtr || selectedTxn.razorpaySettlementUtr || selectedTxn.razorpayTransferSettlementId || selectedTxn.razorpaySettlementId || '—'}</p>
                 </div>
               </div>
               <div style={{ borderTop: '1px solid rgba(6, 182, 212, 0.2)', paddingTop: '1rem' }}>

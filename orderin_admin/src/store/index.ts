@@ -75,8 +75,18 @@ interface FirebaseOrderData {
   razorpaySettlementUtr?: string;
   razorpaySettlementCreatedAt?: string | number;
   razorpaySettlementExpectedAt?: string | number;
+  razorpayTransferId?: string;
+  razorpayTransferStatus?: string;
+  razorpayTransferSettlementId?: string;
+  razorpayTransferSettlementStatus?: string;
+  razorpayTransferSettlementUtr?: string;
   razorpayTransferSettlementExpectedAt?: string | number;
   razorpayTransferSettlementCreatedAt?: string | number;
+  razorpayTransferRecipient?: string;
+  razorpayTransferAmount?: string | number;
+  razorpayTransferCurrency?: string;
+  routePlatformGrossAmount?: string | number;
+  routePlatformNetAmount?: string | number;
   razorpaySyncSource?: 'api' | 'webhook' | 'manual';
   razorpaySyncedAt?: string | number;
   [key: string]: unknown;
@@ -402,8 +412,18 @@ const buildTransactionsFromCustomers = (
           razorpaySettlementUtr: orderData.razorpaySettlementUtr,
           razorpaySettlementCreatedAt: toOptionalIsoString(orderData.razorpaySettlementCreatedAt),
           razorpaySettlementExpectedAt: toOptionalIsoString(orderData.razorpaySettlementExpectedAt),
+          razorpayTransferId: orderData.razorpayTransferId,
+          razorpayTransferStatus: orderData.razorpayTransferStatus,
+          razorpayTransferSettlementId: orderData.razorpayTransferSettlementId,
+          razorpayTransferSettlementStatus: orderData.razorpayTransferSettlementStatus,
+          razorpayTransferSettlementUtr: orderData.razorpayTransferSettlementUtr,
           razorpayTransferSettlementExpectedAt: toOptionalIsoString(orderData.razorpayTransferSettlementExpectedAt),
           razorpayTransferSettlementCreatedAt: toOptionalIsoString(orderData.razorpayTransferSettlementCreatedAt),
+          razorpayTransferRecipient: orderData.razorpayTransferRecipient,
+          razorpayTransferAmount: toFiniteNumber(orderData.razorpayTransferAmount),
+          razorpayTransferCurrency: orderData.razorpayTransferCurrency,
+          routePlatformGrossAmount: toFiniteNumber(orderData.routePlatformGrossAmount),
+          routePlatformNetAmount: toFiniteNumber(orderData.routePlatformNetAmount),
           razorpaySyncSource: orderData.razorpaySyncSource,
           razorpaySyncedAt: toOptionalIsoString(orderData.razorpaySyncedAt),
         });

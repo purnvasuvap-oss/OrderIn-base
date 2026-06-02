@@ -58,8 +58,18 @@ export interface Transaction {
   razorpaySettlementUtr?: string;
   razorpaySettlementCreatedAt?: string;
   razorpaySettlementExpectedAt?: string;
+  razorpayTransferId?: string;
+  razorpayTransferStatus?: string;
+  razorpayTransferSettlementId?: string;
+  razorpayTransferSettlementStatus?: string;
+  razorpayTransferSettlementUtr?: string;
   razorpayTransferSettlementExpectedAt?: string;
   razorpayTransferSettlementCreatedAt?: string;
+  razorpayTransferRecipient?: string;
+  razorpayTransferAmount?: number;
+  razorpayTransferCurrency?: string;
+  routePlatformGrossAmount?: number;
+  routePlatformNetAmount?: number;
   razorpaySyncSource?: 'api' | 'webhook' | 'manual';
   razorpaySyncedAt?: string;
 }

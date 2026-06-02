@@ -137,6 +137,21 @@ function OnlinePayment() {
           razorpayCurrency: event.data.razorpayCurrency,
           razorpaySettlementId: event.data.razorpaySettlementId,
           razorpaySettlementStatus: event.data.razorpaySettlementStatus,
+          razorpaySettlementAmount: event.data.razorpaySettlementAmount,
+          razorpayAdminSettlementAmount: event.data.razorpayAdminSettlementAmount,
+          razorpaySettlementUtr: event.data.razorpaySettlementUtr,
+          razorpaySettlementCreatedAt: event.data.razorpaySettlementCreatedAt,
+          razorpaySettlementExpectedAt: event.data.razorpaySettlementExpectedAt,
+          razorpayTransferId: event.data.razorpayTransferId,
+          razorpayTransferStatus: event.data.razorpayTransferStatus,
+          razorpayTransferSettlementId: event.data.razorpayTransferSettlementId,
+          razorpayTransferSettlementStatus: event.data.razorpayTransferSettlementStatus,
+          razorpayTransferSettlementCreatedAt: event.data.razorpayTransferSettlementCreatedAt,
+          razorpayTransferSettlementExpectedAt: event.data.razorpayTransferSettlementExpectedAt,
+          razorpayTransferSettlementUtr: event.data.razorpayTransferSettlementUtr,
+          razorpayTransferRecipient: event.data.razorpayTransferRecipient,
+          razorpayTransferAmount: event.data.razorpayTransferAmount,
+          razorpayTransferCurrency: event.data.razorpayTransferCurrency,
         });
         sessionStorage.removeItem('pendingOrderId');
         localStorage.removeItem('orderin_onlinepayment_orderId');

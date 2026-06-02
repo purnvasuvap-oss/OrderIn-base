@@ -35,8 +35,21 @@ interface VerifyPaymentData {
   payment_status?: string;
   settlement_id?: string | null;
   settlement_status?: string | null;
+  settlement_amount?: number | null;
+  settlement_created_at?: string | null;
   settlement_expected_at?: string | null;
+  settlement_utr?: string | null;
+  transfer_id?: string | null;
+  transfer_status?: string | null;
+  transfer_settlement_id?: string | null;
+  transfer_settlement_status?: string | null;
+  transfer_settlement_created_at?: string | null;
   transfer_settlement_expected_at?: string | null;
+  transfer_settlement_utr?: string | null;
+  transfer_recipient?: string | null;
+  transfer_amount?: number | null;
+  transfer_currency?: string | null;
+  admin_settlement_amount?: number | null;
   amount?: number;
   currency?: string;
 }
@@ -97,6 +110,34 @@ const buildRazorpayReceipt = (restaurantId: string, orderId: string) => {
 };
 
 const idsMatch = (left: unknown, right: unknown) => String(left) === String(right);
+
+const removeUndefined = <T extends Record<string, unknown>>(value: T): Partial<T> => (
+  Object.fromEntries(Object.entries(value).filter(([, entryValue]) => entryValue !== undefined)) as Partial<T>
+);
+
+const mapVerifySettlementFields = (verifyData: VerifyPaymentData | null): Record<string, unknown> => {
+  if (!verifyData) return {};
+
+  return removeUndefined({
+    razorpaySettlementId: verifyData.settlement_id || undefined,
+    razorpaySettlementStatus: verifyData.settlement_status || undefined,
+    razorpaySettlementAmount: verifyData.settlement_amount ?? undefined,
+    razorpayAdminSettlementAmount: verifyData.admin_settlement_amount ?? undefined,
+    razorpaySettlementUtr: verifyData.settlement_utr || undefined,
+    razorpaySettlementCreatedAt: verifyData.settlement_created_at || undefined,
+    razorpaySettlementExpectedAt: verifyData.settlement_expected_at || undefined,
+    razorpayTransferId: verifyData.transfer_id || undefined,
+    razorpayTransferStatus: verifyData.transfer_status || undefined,
+    razorpayTransferSettlementId: verifyData.transfer_settlement_id || undefined,
+    razorpayTransferSettlementStatus: verifyData.transfer_settlement_status || undefined,
+    razorpayTransferSettlementCreatedAt: verifyData.transfer_settlement_created_at || undefined,
+    razorpayTransferSettlementExpectedAt: verifyData.transfer_settlement_expected_at || undefined,
+    razorpayTransferSettlementUtr: verifyData.transfer_settlement_utr || undefined,
+    razorpayTransferRecipient: verifyData.transfer_recipient || undefined,
+    razorpayTransferAmount: verifyData.transfer_amount ?? undefined,
+    razorpayTransferCurrency: verifyData.transfer_currency || undefined,
+  });
+};
 
 export const PaymentHubPage = () => {
   const [searchParams] = useSearchParams();
@@ -362,6 +403,9 @@ export const PaymentHubPage = () => {
                    razorpay_payment_id: response.razorpay_payment_id,
                    razorpay_order_id: response.razorpay_order_id,
                    razorpay_signature: response.razorpay_signature,
+                   restaurantId: finalRestaurantId,
+                   customerPhone: finalCustomerPhone,
+                   orderId: finalOrderId,
                  };
                  const { response: verifyResponse, url } = await postToFunction(VERIFY_PAYMENT_ENDPOINTS, verifyPayload, 'Verify payment');
 
@@ -390,6 +434,7 @@ export const PaymentHubPage = () => {
             };
             const razorpayMethod = verifyData?.method || response.method;
             const actualPaymentMethod = paymentMethodMap[String(razorpayMethod || '').toLowerCase()] || razorpayMethod || 'Online';
+            const settlementFields = mapVerifySettlementFields(verifyData);
 
             // Step 4: Update Firebase with Payment Details (if we have valid data)
             if (finalRestaurantId && finalCustomerPhone && finalOrderId) {
@@ -437,10 +482,7 @@ export const PaymentHubPage = () => {
                           razorpayStatus: verifyData?.payment_status || 'captured',
                           razorpayAmount: typeof verifyData?.amount === 'number' ? verifyData.amount / 100 : undefined,
                           razorpayCurrency: verifyData?.currency,
-                          razorpaySettlementId: verifyData?.settlement_id || undefined,
-                          razorpaySettlementStatus: verifyData?.settlement_status || undefined,
-                          razorpaySettlementExpectedAt: verifyData?.settlement_expected_at || undefined,
-                          razorpayTransferSettlementExpectedAt: verifyData?.transfer_settlement_expected_at || undefined,
+                          ...settlementFields,
                         };
                         return Object.fromEntries(
                           Object.entries(updatedOrder).filter(([, value]) => value !== undefined)
@@ -503,10 +545,7 @@ export const PaymentHubPage = () => {
                 razorpayStatus: verifyData?.payment_status || 'captured',
                 razorpayAmount: typeof verifyData?.amount === 'number' ? verifyData.amount / 100 : undefined,
                 razorpayCurrency: verifyData?.currency,
-                razorpaySettlementId: verifyData?.settlement_id || undefined,
-                razorpaySettlementStatus: verifyData?.settlement_status || undefined,
-                razorpaySettlementExpectedAt: verifyData?.settlement_expected_at || undefined,
-                razorpayTransferSettlementExpectedAt: verifyData?.transfer_settlement_expected_at || undefined,
+                ...settlementFields,
                 transactionId: response.razorpay_order_id,
               };
               addDebugLog(`✓ Sending PAYMENT_SUCCESS to parent window`);
