@@ -539,3 +539,466 @@
     transform: rotate(360deg);
   }
 }
+
+/* Cleaner dark-mode About Restaurant layout */
+.about-root {
+  --about-bg: #1E1E1E;
+  --about-surface: #2A2A2A;
+  --about-surface-soft: #333333;
+  --about-ink: #FFFFFF;
+  --about-muted: #CCCCCC;
+  --about-subtle: #AAAAAA;
+  --about-border: #3A3A3A;
+  --about-accent: #FFB703;
+  --about-accent-soft: rgba(255, 183, 3, 0.12);
+
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: var(--about-bg);
+  color: var(--about-ink);
+  font-family: "Segoe UI", Arial, sans-serif;
+  overflow-x: hidden;
+}
+
+.about-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 64px;
+  padding: 10px 28px;
+  background: rgba(42, 42, 42, 0.96);
+  border-bottom: 1px solid #333333;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.26);
+  backdrop-filter: blur(12px);
+}
+
+.about-back-button {
+  width: 42px;
+  height: 42px;
+  border: 1px solid #444444;
+  border-radius: 50%;
+  background: #333333;
+  color: #FFFFFF;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+}
+
+.about-back-button:hover {
+  background: #3A3A3A;
+  color: var(--about-accent);
+}
+
+.about-topbar-title {
+  color: var(--about-ink);
+  font-size: 1.05rem;
+  font-weight: 850;
+}
+
+.about-hero {
+  min-height: 500px;
+  display: flex;
+  align-items: flex-end;
+  padding: 56px 48px;
+  color: #FFFFFF;
+  background:
+    linear-gradient(90deg, rgba(16, 16, 16, 0.94) 0%, rgba(16, 16, 16, 0.74) 44%, rgba(16, 16, 16, 0.32) 100%),
+    url("/background-image.jpg");
+  background-size: cover;
+  background-position: center;
+}
+
+.about-hero-content {
+  width: 100%;
+  max-width: 760px;
+}
+
+.about-eyebrow {
+  margin: 0 0 10px;
+  color: var(--about-accent);
+  font-size: 0.85rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.about-hero h1 {
+  margin: 0;
+  color: #FFFFFF;
+  font-size: 3.5rem;
+  line-height: 1.04;
+  font-weight: 900;
+  letter-spacing: 0;
+  text-transform: none;
+  background: none;
+  -webkit-text-fill-color: currentColor;
+}
+
+.about-hero-copy {
+  max-width: 620px;
+  margin: 16px 0 0;
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 1.08rem;
+  line-height: 1.6;
+}
+
+.about-hero-facts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  max-width: 720px;
+  margin-top: 26px;
+}
+
+.about-fact {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid rgba(255, 183, 3, 0.28);
+  border-radius: 8px;
+  background: rgba(42, 42, 42, 0.72);
+  backdrop-filter: blur(8px);
+}
+
+.about-fact svg {
+  flex: 0 0 auto;
+  color: var(--about-accent);
+}
+
+.about-fact span,
+.about-fact strong {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.about-fact span {
+  color: var(--about-subtle);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.about-fact strong {
+  color: #FFFFFF;
+  font-size: 0.95rem;
+  font-weight: 850;
+}
+
+.about-main {
+  width: min(100%, 1080px);
+  margin: 0 auto;
+  box-sizing: border-box;
+  padding: 32px 22px 44px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.about-section-shell,
+.about-highlight-card,
+.about-cta {
+  border-radius: 8px;
+  border: 1px solid var(--about-border);
+  background: var(--about-surface);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.24);
+}
+
+.about-section-shell {
+  padding: 24px;
+}
+
+.about-story-section {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  gap: 26px;
+  align-items: start;
+}
+
+.about-section-heading p,
+.about-cta p {
+  margin: 0 0 6px;
+  color: var(--about-accent);
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.about-section-heading h2,
+.about-cta h2 {
+  margin: 0;
+  color: var(--about-ink);
+  font-size: 1.65rem;
+  line-height: 1.22;
+  font-weight: 850;
+  letter-spacing: 0;
+}
+
+.about-story-copy {
+  margin: 0;
+  color: var(--about-muted);
+  font-size: 1rem;
+  line-height: 1.7;
+}
+
+.about-highlight-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.about-highlight-card {
+  padding: 20px;
+}
+
+.about-card-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--about-accent-soft);
+  color: var(--about-accent);
+}
+
+.about-highlight-card h3 {
+  margin: 16px 0 8px;
+  color: var(--about-ink);
+  font-size: 1.05rem;
+}
+
+.about-highlight-card p {
+  margin: 0;
+  color: var(--about-muted);
+  font-size: 0.94rem;
+  line-height: 1.55;
+}
+
+.about-branch-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.about-branch-card {
+  min-width: 0;
+  padding: 18px;
+  border: 1px solid #3E3E3E;
+  border-radius: 8px;
+  background: var(--about-surface-soft);
+}
+
+.about-branch-card h3 {
+  margin: 0 0 14px;
+  color: var(--about-ink);
+  font-size: 1.05rem;
+}
+
+.about-branch-card p,
+.about-branch-phone {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 9px 0;
+  color: var(--about-muted);
+  font-size: 0.92rem;
+  line-height: 1.45;
+  text-decoration: none;
+}
+
+.about-branch-card svg,
+.about-branch-phone svg {
+  flex: 0 0 auto;
+  margin-top: 2px;
+  color: var(--about-accent);
+}
+
+.about-branch-phone {
+  width: fit-content;
+  color: var(--about-accent);
+  font-weight: 850;
+}
+
+.about-branch-phone:hover {
+  color: #FFC230;
+}
+
+.about-team-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.about-team-card {
+  min-height: 104px;
+  padding: 16px;
+  border: 1px solid #3E3E3E;
+  border-radius: 8px;
+  background: var(--about-surface-soft);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  text-align: center;
+}
+
+.about-team-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--about-accent-soft);
+  color: var(--about-accent);
+}
+
+.about-team-card span {
+  color: var(--about-ink);
+  font-size: 0.95rem;
+  font-weight: 850;
+}
+
+.about-cta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 24px;
+  background: linear-gradient(135deg, #2A2A2A 0%, #333333 100%);
+}
+
+.about-primary-action {
+  min-height: 48px;
+  padding: 0 18px;
+  border: none;
+  border-radius: 8px;
+  background: var(--about-accent);
+  color: #1E1E1E;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 0.98rem;
+  font-weight: 900;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.about-primary-action:hover {
+  background: #FFC230;
+}
+
+.about-footer {
+  padding: 18px 20px;
+  border-top: 1px solid #333333;
+  background: #2A2A2A;
+  text-align: center;
+}
+
+.about-footer p {
+  margin: 0;
+  color: var(--about-subtle);
+  font-size: 0.9rem;
+}
+
+@media (max-width: 820px) {
+  .about-hero {
+    min-height: 460px;
+    padding: 42px 24px;
+    background:
+      linear-gradient(90deg, rgba(16, 16, 16, 0.92) 0%, rgba(16, 16, 16, 0.74) 100%),
+      url("/background-image.jpg");
+    background-size: cover;
+    background-position: center;
+  }
+
+  .about-hero h1 {
+    font-size: 2.7rem;
+  }
+
+  .about-hero-facts,
+  .about-highlight-grid,
+  .about-branch-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .about-story-section {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .about-team-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 520px) {
+  .about-topbar {
+    min-height: 58px;
+    padding: 8px 14px;
+  }
+
+  .about-back-button {
+    width: 38px;
+    height: 38px;
+  }
+
+  .about-topbar-title {
+    font-size: 1rem;
+  }
+
+  .about-hero {
+    min-height: 430px;
+    padding: 32px 18px;
+  }
+
+  .about-hero h1 {
+    font-size: 2.25rem;
+  }
+
+  .about-hero-copy {
+    font-size: 1rem;
+  }
+
+  .about-fact {
+    padding: 11px;
+  }
+
+  .about-main {
+    padding: 18px 14px 32px;
+    gap: 14px;
+  }
+
+  .about-section-shell,
+  .about-highlight-card,
+  .about-cta {
+    padding: 18px;
+  }
+
+  .about-section-heading h2,
+  .about-cta h2 {
+    font-size: 1.35rem;
+  }
+
+  .about-team-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .about-cta {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .about-primary-action {
+    width: 100%;
+  }
+}

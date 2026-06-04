@@ -14,7 +14,7 @@ function ItemDetails() {
   const location = useLocation();
   const navigate = useNavigate();
   const { id } = useParams();
-  const { addToCart } = useCart();
+  const { addToCart, cartItems, updateQuantity, updateInstructions } = useCart();
   const { getPathWithTable } = useTableNumber();
 
   const [item, setItem] = useState(location.state?.item || null);
@@ -24,11 +24,34 @@ function ItemDetails() {
   const [quantity, setQuantity] = useState(1);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [instructions, setInstructions] = useState("");
-  const [isAddedToCart, setIsAddedToCart] = useState(false);
   const [touchStart, setTouchStart] = useState(null);
   const [touchEnd, setTouchEnd] = useState(null);
   const [isFavorited, setIsFavorited] = useState(false);
   const [resolvedImage, setResolvedImage] = useState(item ? (item.image || item.imageURL || item.image_url || '') : '');
+
+  // helper: normalize string for matching
+  const normalizeString = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim();
+
+  const cartItemForCurrentItem = cartItems.find((cartItem) => {
+    if (!item || !cartItem) return false;
+    const itemId = item.id || item.productId || item.itemId;
+    const cartId = cartItem.id || cartItem.productId || cartItem.itemId;
+    if (itemId && cartId && String(itemId) === String(cartId)) return true;
+    return normalizeString(cartItem.name) === normalizeString(item.name);
+  });
+
+  const cartQuantity = Number(cartItemForCurrentItem?.quantity) || 0;
+  const savedInstructions = cartItemForCurrentItem?.instructions || "";
+  const instructionDraft = instructions.trim();
+  const isCurrentSelectionAdded =
+    Boolean(cartItemForCurrentItem) &&
+    quantity === cartQuantity &&
+    instructionDraft === savedInstructions;
+  const actionLabel = (() => {
+    if (isCurrentSelectionAdded) return "Added";
+    if (!cartItemForCurrentItem) return "Add to Cart";
+    return quantity > cartQuantity ? "Add Again" : "Update Cart";
+  })();
 
   useEffect(() => {
     let mounted = true;
@@ -48,8 +71,21 @@ function ItemDetails() {
     return () => { mounted = false; };
   }, [item]);
 
-  // helper: normalize string for matching
-  const normalizeString = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim();
+  useEffect(() => {
+    if (!item) return;
+    if (cartItemForCurrentItem) {
+      setQuantity(Math.max(1, Number(cartItemForCurrentItem.quantity) || 1));
+      setInstructions(cartItemForCurrentItem.instructions || "");
+    } else {
+      setQuantity(1);
+      setInstructions("");
+    }
+  }, [
+    item,
+    cartItemForCurrentItem?.quantity,
+    cartItemForCurrentItem?.instructions,
+    cartItemForCurrentItem?.name
+  ]);
 
   // initialize favorite state from Firestore (if user logged in)
   useEffect(() => {
@@ -148,17 +184,30 @@ function ItemDetails() {
   };
 
   const handleAddToCart = () => {
+    if (isCurrentSelectionAdded) return;
     setIsModalOpen(true);
   };
 
-  const handleSaveInstructions = () => {
-    addToCart(item, quantity, instructions);
-    setIsAddedToCart(true);
+  const completeAddToCart = (instructionText = "", shouldSaveInstructions = false) => {
+    const cleanedInstructions = instructionText.trim();
+    if (cartItemForCurrentItem) {
+      updateQuantity(cartItemForCurrentItem.name, quantity);
+      if (shouldSaveInstructions) {
+        updateInstructions(cartItemForCurrentItem.name, cleanedInstructions);
+      }
+    } else {
+      addToCart(item, quantity, shouldSaveInstructions ? cleanedInstructions : "");
+    }
     setIsModalOpen(false);
+    setInstructions(shouldSaveInstructions ? cleanedInstructions : (cartItemForCurrentItem?.instructions || ""));
+  };
+
+  const handleSaveInstructions = () => {
+    completeAddToCart(instructions, true);
   };
 
   const handleCancelInstructions = () => {
-    setIsModalOpen(false);
+    completeAddToCart("", false);
   };
 
   const handleFavoriteToggle = async () => {
@@ -276,17 +325,21 @@ function ItemDetails() {
             <p className="price-value">₹{totalPrice}</p>
           </div>
           <button
-            className={`add-to-cart-btn ${isAddedToCart ? 'added' : ''}`}
+            className={`add-to-cart-btn ${isCurrentSelectionAdded ? 'added' : cartItemForCurrentItem ? 'needs-update' : ''}`}
             onClick={handleAddToCart}
-            disabled={isAddedToCart}
+            disabled={isCurrentSelectionAdded}
           >
-            {isAddedToCart ? (
+            {isCurrentSelectionAdded ? (
               <>
-                <Check size={18} /> ✓ Added
+                <Check size={18} /> Added
+              </>
+            ) : cartItemForCurrentItem ? (
+              <>
+                <ShoppingCart size={18} /> {actionLabel}
               </>
             ) : (
               <>
-                <ShoppingCart size={18} /> Add to Cart
+                <ShoppingCart size={18} /> {actionLabel}
               </>
             )}
           </button>

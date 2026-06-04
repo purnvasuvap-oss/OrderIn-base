@@ -28,46 +28,49 @@ function Bill() {
       const pendingFromLocal = localStorage.getItem('orderin_countercode_orderId') || localStorage.getItem('orderin_orderId');
       const orderId = pendingFromSession || pendingFromLocal || null;
 
-      let found = null;
-      if (orderId && Array.isArray(orderHistory)) {
-        found = orderHistory.find(o => String(o.id) === String(orderId));
+      let history = Array.isArray(orderHistory) ? orderHistory : [];
+      if (!history.length) {
+        try {
+          const storedHistory = JSON.parse(localStorage.getItem('orderHistory') || '[]');
+          history = Array.isArray(storedHistory) ? storedHistory : [];
+        } catch (parseErr) {
+          history = [];
+        }
       }
-      if (!found && Array.isArray(orderHistory) && orderHistory.length) {
-        found = orderHistory[orderHistory.length - 1];
+
+      let found = null;
+      if (orderId && history.length) {
+        found = history.find(o => String(o.id) === String(orderId));
+      }
+      if (!found && history.length) {
+        found = history[history.length - 1];
       }
 
       if (found) return found;
 
-      // fallback minimal order
-      return {
-        id: `local-${Date.now()}`,
-        tableNo: localStorage.getItem('tableNumber') || 1,
-        items: [{ name: 'Sample Item', price: '0.00' }],
-        subtotal: '0.00',
-        taxes: '0.00',
-        total: '0.00',
-        paymentMethod: 'Cash',
-        createdAt: new Date().toISOString(),
-      };
+      return null;
     } catch (e) {
       console.warn('resolveOrder error', e);
-      return {
-        id: `local-${Date.now()}`,
-        tableNo: localStorage.getItem('tableNumber') || 1,
-        items: [{ name: 'Sample Item', price: '0.00' }],
-        subtotal: '0.00',
-        taxes: '0.00',
-        total: '0.00',
-        paymentMethod: 'Cash',
-        createdAt: new Date().toISOString(),
-      };
+      return null;
     }
   };
 
   const order = resolveOrder();
-  const id = order.id;
+  if (!order) {
+    return (
+      <div className="bill-container">
+        <div className="bill-empty">
+          <h2>Receipt Not Available</h2>
+          <p>We could not find a completed order for this receipt.</p>
+          <button className="btn btn-primary" onClick={() => navigate(getPathWithTable('/menu'))}>Back to Menu</button>
+        </div>
+      </div>
+    );
+  }
+
+  const id = order.id || localStorage.getItem('orderin_countercode_orderId') || localStorage.getItem('orderin_orderId') || 'unknown-order';
   const tableNo = order.tableNo || localStorage.getItem('tableNumber') || 1;
-  const items = Array.isArray(order.items) && order.items.length ? order.items : [{ name: 'Sample Item', price: '0.00', quantity: 1 }];
+  const items = Array.isArray(order.items) ? order.items : [];
   const subtotal = order.subtotal ?? order.sub_total ?? order.subtotalAmount ?? null;
   const taxes = order.taxes ?? order.tax ?? order.taxesAmount ?? '0.00';
   const total = order.total ?? order.amount ?? order.totalAmount ?? '0.00';
@@ -267,7 +270,7 @@ function Bill() {
           <div className="dotted" />
 
           <div className="items">
-            {items.map((item, idx) => {
+            {items.length > 0 ? items.map((item, idx) => {
               const unit = parseFloat(String(item.price || '').replace(/[^0-9.\-]/g, '')) || 0;
               const qty = parseInt(item.quantity ?? item.qty ?? 1, 10) || 1;
               const lineTotal = (unit * qty).toFixed(2);
@@ -278,14 +281,18 @@ function Bill() {
                   <div className="item-price">₹{lineTotal}</div>
                 </div>
               );
-            })}
+            }) : (
+              <div className="item-row item-row-empty">
+                <div className="item-name">No items recorded</div>
+              </div>
+            )}
           </div>
 
           <div className="dotted" />
 
           <div className="summary">
             <div className="row"><span>Sub Total</span><span>₹{safeSubtotal.toFixed(2)}</span></div>
-            <div className="row"><span>Sales Tax</span><span>₹{safeTaxes.toFixed(2)}</span></div>
+            <div className="row"><span>Additional Charges</span><span>₹{safeTaxes.toFixed(2)}</span></div>
             <div className="total"><span>TOTAL</span><span>₹{safeTotal.toFixed(2)}</span></div>
           </div>
 

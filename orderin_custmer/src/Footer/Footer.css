@@ -9,6 +9,7 @@
   height: 50px;
   background-color: white;
   padding: 5px;
+  z-index: 2500;
 }
 
 .icon-container {
@@ -45,6 +46,33 @@
 .footer-icon {
   font-size: 20px;
   margin-bottom: 2px;
+}
+
+.footer-icon-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.cart-count-badge {
+  position: absolute;
+  top: -9px;
+  right: -12px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: #f0182d;
+  color: #fff;
+  border: 2px solid #fff;
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 16px;
+  text-align: center;
+  box-sizing: border-box;
+  box-shadow: 0 2px 6px rgba(240, 24, 45, 0.32);
 }
 
 .icon-container span {

@@ -191,6 +191,16 @@
   cursor: not-allowed;
 }
 
+.add-to-cart-btn.needs-update {
+  background: linear-gradient(135deg, #FFB703 0%, #FFC230 100%);
+  color: #1E1E1E;
+  box-shadow: 0 8px 22px rgba(255, 183, 3, 0.24);
+}
+
+.add-to-cart-btn.needs-update:hover {
+  background: #FFD15A;
+}
+
 /* ======== FOOD INSTRUCTIONS MODAL - COMPLETELY REBUILT ======== */
 
 .food-instructions-modal-overlay {

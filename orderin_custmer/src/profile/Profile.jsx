@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { ChevronLeft, ChevronDown, Plus } from "lucide-react";
+import { ChevronLeft, ChevronDown } from "lucide-react";
 import { AiOutlineShoppingCart } from "react-icons/ai";
 import Footer from "../Footer/Footer";
 import { useNavigate } from 'react-router-dom';
@@ -39,55 +39,30 @@ function Profile({ onBackClick, onCartClick }) {
     const fetchOrderHistory = async () => {
       try {
         const stored = localStorage.getItem('user');
-        if (!stored) return;
+        if (!stored) {
+          loadLocalOrderHistory();
+          return;
+        }
         const u = JSON.parse(stored);
-        if (!u || !u.phone) return;
+        if (!u || !u.phone) {
+          loadLocalOrderHistory();
+          return;
+        }
 
         const customerRef = doc(db, 'Restaurant', 'orderin_restaurant_1', 'customers', u.phone);
         const snap = await getDoc(customerRef);
         if (!snap.exists()) {
           // no customer doc yet
-          setOrderHistory([]);
+          if (!loadLocalOrderHistory()) setOrderHistory([]);
           return;
         }
 
         const data = snap.data();
         const pastOrders = Array.isArray(data.pastOrders) ? data.pastOrders : [];
-
-        // Map firestore pastOrders into UI-friendly items, attempting to match menu products
-        const mapped = pastOrders.map((o, idx) => {
-          // o.items might be an array of items; we'll display first item summary for list
-          const first = Array.isArray(o.items) && o.items.length > 0 ? o.items[0] : { name: o.itemName || 'Item', price: o.total || '₹0.00' };
-
-          // Try to find product in current menu products using smarter matching
-          const productsListLocal = (menuStore && menuStore.get().length > 0) ? menuStore.get() : (typeof window !== 'undefined' ? (window.__menu_products__ || []) : []);
-          const prod = findProductMatch(first);
-          // If products list is empty we can't conclude item is unavailable; only mark unavailable when products list exists but no match
-          const isUnavailable = (!prod && productsListLocal.length > 0);
-
-          // If we found a product match, prefer the full menu product details so UI shows canonical image/description/price
-          const fullProd = prod ? { ...prod } : null;
-          const resolvedImage = fullProd ? (fullProd.image || fullProd.imageUrl || fullProd.imageURL || fullProd.image_url || fullProd.img || '') : (first.image || first.image_url || PLACEHOLDER_IMAGE);
-          const resolvedPrice = fullProd ? (fullProd.price || first.price) : (first.price || '₹0.00');
-          const itemObj = fullProd ? { ...fullProd, image: (resolvedImage || PLACEHOLDER_IMAGE), price: resolvedPrice } // take full product object from menu but normalize image/price
-            : { name: first.name, image: (resolvedImage || PLACEHOLDER_IMAGE), price: resolvedPrice, unavailable: isUnavailable };
-          // include paidPrice from the historical record so UI can show what was actually paid
-          if (!itemObj.paidPrice) itemObj.paidPrice = (first && (first.price || first.paidPrice)) || o.total || null;
-
-          // timestamp can be stored as ISO string or createdAt field
-          return {
-            id: o.id || (`order-${idx}`),
-            item: itemObj,
-            quantity: o.items && o.items.length > 0 ? (o.items[0].quantity || 1) : (o.quantity || 1),
-            instructions: (o.items && o.items.length > 0 && o.items[0].instructions) || o.instructions || '',
-            rawItem: first,
-            timestamp: parseOrderTimestamp(o)
-          };
-        }).reverse();
-
-        setOrderHistory(mapped);
+        setOrderHistory(buildOrderHistory(pastOrders));
       } catch (err) {
         console.error('Profile: error fetching pastOrders', err);
+        loadLocalOrderHistory();
       }
     };
 
@@ -300,6 +275,57 @@ function Profile({ onBackClick, onCartClick }) {
     return null;
   };
 
+  const buildOrderHistory = (pastOrders) => {
+    return (Array.isArray(pastOrders) ? pastOrders : []).map((o, idx) => {
+      const first = Array.isArray(o.items) && o.items.length > 0
+        ? o.items[0]
+        : (o.item || { name: o.itemName || 'Item', price: o.total || o.price || '₹0.00' });
+
+      const productsListLocal = (menuStore && menuStore.get().length > 0)
+        ? menuStore.get()
+        : (typeof window !== 'undefined' ? (window.__menu_products__ || []) : []);
+      const prod = findProductMatch(first);
+      const isUnavailable = (!prod && productsListLocal.length > 0);
+      const fullProd = prod ? { ...prod } : null;
+      const resolvedImage = fullProd
+        ? (fullProd.image || fullProd.imageUrl || fullProd.imageURL || fullProd.image_url || fullProd.img || '')
+        : (first.image || first.image_url || PLACEHOLDER_IMAGE);
+      const resolvedPrice = fullProd ? (fullProd.price || first.price) : (first.price || '₹0.00');
+      const itemObj = fullProd
+        ? { ...fullProd, image: (resolvedImage || PLACEHOLDER_IMAGE), price: resolvedPrice }
+        : { name: first.name, image: (resolvedImage || PLACEHOLDER_IMAGE), price: resolvedPrice, unavailable: isUnavailable };
+
+      if (!itemObj.paidPrice) itemObj.paidPrice = (first && (first.price || first.paidPrice)) || o.total || null;
+
+      return {
+        id: o.id || (`order-${idx}`),
+        item: itemObj,
+        quantity: Array.isArray(o.items) && o.items.length > 0 ? (o.items[0].quantity || 1) : (o.quantity || 1),
+        itemCount: Array.isArray(o.items) ? o.items.length : 1,
+        instructions: (Array.isArray(o.items) && o.items.length > 0 && o.items[0].instructions) || o.instructions || '',
+        rawItem: first,
+        paidAmount: o.total || itemObj.paidPrice || itemObj.price,
+        status: o.status || o.paymentStatus || '',
+        paymentMethod: o.paymentMethod || '',
+        timestamp: parseOrderTimestamp(o)
+      };
+    }).reverse();
+  };
+
+  const loadLocalOrderHistory = () => {
+    try {
+      const saved = localStorage.getItem('orderHistory');
+      if (!saved) return false;
+      const parsed = JSON.parse(saved);
+      if (!Array.isArray(parsed) || parsed.length === 0) return false;
+      setOrderHistory(buildOrderHistory(parsed));
+      return true;
+    } catch (err) {
+      console.error('Profile: error loading local order history', err);
+      return false;
+    }
+  };
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
   const [tempInstructions, setTempInstructions] = useState("");
@@ -309,7 +335,8 @@ function Profile({ onBackClick, onCartClick }) {
 
   const handleAddToCart = (item, quantity = 1, instructions = "") => {
     // Ensure we add the canonical product (with image) if available in menu
-    const matched = findProductMatch(item) || (products || []).find(p => String(p.name || '').toLowerCase() === String(item.name || '').toLowerCase());
+    const productsListLocal = (menuStore && menuStore.get().length > 0) ? menuStore.get() : (typeof window !== 'undefined' ? (window.__menu_products__ || []) : []);
+    const matched = findProductMatch(item) || productsListLocal.find(p => String(p.name || '').toLowerCase() === String(item.name || '').toLowerCase());
     if (!matched) {
       // Item no longer present in menu - show small message and do not add
       setToastMessage(`${item.name} is no longer present`);
@@ -386,7 +413,13 @@ function Profile({ onBackClick, onCartClick }) {
   };
 
   const formatDate = (date) => {
-    return date.toLocaleDateString() + " at " + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    if (!date || Number.isNaN(date.getTime?.())) return "Recent order";
+    return `${date.toLocaleDateString([], { month: 'short', day: 'numeric' })} at ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+  };
+
+  const formatPlateCount = (quantity) => {
+    const count = Number(quantity) || 1;
+    return `${count} ${count === 1 ? 'plate' : 'plates'}`;
   };
 
   return (
@@ -426,53 +459,80 @@ function Profile({ onBackClick, onCartClick }) {
                   {orderHistory.length === 0 ? (
                     <p className="empty-message">No orders yet</p>
                   ) : (
-                    orderHistory.map((order) => (
-                      <div key={order.id} className="order-item">
-                        <div className="order-info">
-                          <img src={order.item.image} alt={order.item.name} className="order-image" onError={(e) => { console.warn('Image load failed', e.currentTarget.src, 'order', order && (order.id || order.item && (order.item.id || order.item.name))); e.currentTarget.src = getPlaceholder('No Image'); }} />
-                          <div className="order-details">
-                            <div className="order-title-zone">
-                              <h4 className="order-title">{order.item.name}</h4>
-                              {order.item.category && <span className="order-category">{order.item.category}</span>}
-                              <div className="order-timestamp">{formatDate(order.timestamp)}</div>
+                    orderHistory.map((order) => {
+                      const extraItems = Math.max(0, (order.itemCount || 1) - 1);
+                      const menuPriceChanged = order.item.price && order.item.paidPrice && formatPrice(order.item.price) !== formatPrice(order.item.paidPrice);
+
+                      return (
+                        <div key={order.id} className="order-item">
+                          <div className="order-card-main">
+                            <img
+                              src={order.item.image}
+                              alt={order.item.name}
+                              className="order-image"
+                              onError={(e) => { console.warn('Image load failed', e.currentTarget.src, 'order', order && (order.id || order.item && (order.item.id || order.item.name))); e.currentTarget.src = getPlaceholder('No Image'); }}
+                            />
+
+                            <div className="order-details">
+                              <div className="order-title-row">
+                                <h4 className="order-title">{order.item.name}</h4>
+                                {extraItems > 0 && <span className="order-count-chip">+{extraItems}</span>}
+                              </div>
+                              <p className="order-timestamp">{formatDate(order.timestamp)}</p>
+
+                              <div className="order-pill-row">
+                                <span>{formatPlateCount(order.quantity)}</span>
+                                {order.status && <span>{order.status}</span>}
+                                {order.paymentMethod && <span>{order.paymentMethod}</span>}
+                              </div>
                             </div>
 
-                            <div className="order-meta-zone">
-                              <span className="order-qty">{order.quantity} plates</span>
-                              <span className="dot">•</span>
-                              <span className="order-paid">Paid: {formatPrice(order.item.paidPrice || order.item.price)}</span>
-                              {order.item.price && order.item.price !== order.item.paidPrice && (
-                                <><span className="dot">•</span><span className="order-menu-price">Menu: {formatPrice(order.item.price)}</span></>
-                              )}
+                            <button
+                              className={`order-reorder-btn ${addedItems.has(order.item.name) ? 'added' : ''}`}
+                              onClick={() => handleAddToCart(order.item, order.quantity, order.instructions)}
+                              disabled={addedItems.has(order.item.name) || order.item.unavailable}
+                              title={order.item.unavailable ? 'Unavailable' : (addedItems.has(order.item.name) ? 'Added' : 'Reorder')}
+                            >
+                              <AiOutlineShoppingCart size={20} />
+                              <span>{addedItems.has(order.item.name) ? 'Added' : 'Reorder'}</span>
+                            </button>
+                          </div>
+
+                          <div className="order-card-footer">
+                            <div className="order-paid-summary">
+                              <span>Paid</span>
+                              <strong>{formatPrice(order.paidAmount || order.item.paidPrice || order.item.price)}</strong>
                             </div>
 
-                            {order.item.description && (
-                              <p className="order-desc-zone">
-                                {order.item.description}
-                              </p>
+                            {menuPriceChanged && (
+                              <div className="order-menu-price">
+                                Menu price {formatPrice(order.item.price)}
+                              </div>
                             )}
 
-                            {order.instructions && (
-                              <p className="order-instructions-zone">
-                                <strong>Specifications:</strong> {order.instructions}
-                              </p>
-                            )}
-
-                            {order.item.unavailable && (
-                              <p className="order-unavailable">This item is no longer available</p>
+                            {order.item.category && (
+                              <div className="order-category">{order.item.category}</div>
                             )}
                           </div>
+
+                          {order.item.description && (
+                            <p className="order-desc-zone">
+                              {order.item.description}
+                            </p>
+                          )}
+
+                          {order.instructions && (
+                            <p className="order-instructions-zone">
+                              <strong>Instructions:</strong> {order.instructions}
+                            </p>
+                          )}
+
+                          {order.item.unavailable && (
+                            <p className="order-unavailable">This item is no longer available</p>
+                          )}
                         </div>
-                        <button
-                          className={`add-btn ${addedItems.has(order.item.name) ? 'added' : ''}`}
-                          onClick={() => handleAddToCart(order.item, order.quantity, order.instructions)}
-                          disabled={addedItems.has(order.item.name) || order.item.unavailable}
-                          title={order.item.unavailable ? 'Unavailable' : (addedItems.has(order.item.name) ? 'Added' : 'Add to Cart')}
-                        >
-                          <AiOutlineShoppingCart size={20} />
-                        </button>
-                      </div>
-                    ))
+                      );
+                    })
                   )}
                 </div>
               </div>

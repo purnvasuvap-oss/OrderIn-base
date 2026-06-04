@@ -250,8 +250,8 @@ function Payments({ onBackClick }) {
       setIsSaving(false);
     }
 
-    // Do not continue to payment unless the backend order was saved.
-    if (orderSaveError) {
+    // Only show error alert if order creation completely failed
+    if (orderSaveError && (!order || !order.id)) {
       console.warn("Order save failed - showing error to user:", orderSaveError.message);
       alert("Error saving order to backend: " + orderSaveError.message);
       return;
@@ -388,7 +388,7 @@ function Payments({ onBackClick }) {
             <span>₹{displayedBilling.subtotal.toFixed(2)}</span>
           </div>
           <div className="billing-row">
-            <span>Taxes :</span>
+            <span>Additional Charges :</span>
             <span>₹{displayedBilling.taxes.toFixed(2)}</span>
           </div>
           <div className="billing-total">

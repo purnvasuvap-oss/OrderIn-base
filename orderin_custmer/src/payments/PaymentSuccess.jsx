@@ -24,10 +24,31 @@ function PaymentSuccess() {
   // On mount, fetch the latest paid order from Firestore backend
   useEffect(() => {
     const fetchLatestOrderFromBackend = async () => {
+      const getFallbackOrderId = () => {
+        const savedOrderId = localStorage.getItem('orderin_countercode_orderId') || localStorage.getItem('orderin_orderId');
+        let fallbackOrderId = orderHistory[orderHistory.length - 1]?.id;
+        if (!fallbackOrderId) {
+          try {
+            const storedHistory = JSON.parse(localStorage.getItem('orderHistory') || '[]');
+            fallbackOrderId = Array.isArray(storedHistory) ? storedHistory[storedHistory.length - 1]?.id : null;
+          } catch (parseErr) {
+            fallbackOrderId = null;
+          }
+        }
+        return savedOrderId || fallbackOrderId || null;
+      };
+
+      const immediateOrderId = getFallbackOrderId();
+      if (immediateOrderId) {
+        setDisplayOrderId(immediateOrderId);
+        setIsLoading(false);
+      }
+
       try {
         const user = JSON.parse(localStorage.getItem("user"));
         if (!user || !user.phone) {
           console.log('PaymentSuccess: User not logged in, using fallback');
+          setDisplayOrderId(immediateOrderId);
           setIsLoading(false);
           return;
         }
@@ -55,18 +76,14 @@ function PaymentSuccess() {
         }
         
         // Fallback to localStorage or orderHistory if backend fetch fails
-        const savedOrderId = localStorage.getItem('orderin_countercode_orderId') || localStorage.getItem('orderin_orderId');
-        const fallbackOrderId = orderHistory[orderHistory.length - 1]?.id;
-        const orderIdToDisplay = savedOrderId || fallbackOrderId || 'N/A';
+        const orderIdToDisplay = getFallbackOrderId();
         console.log('PaymentSuccess: using fallback orderId=', orderIdToDisplay);
         setDisplayOrderId(orderIdToDisplay);
         setIsLoading(false);
       } catch (err) {
         console.error('PaymentSuccess: Error fetching order from backend:', err);
         // Fallback to localStorage or orderHistory
-        const savedOrderId = localStorage.getItem('orderin_countercode_orderId') || localStorage.getItem('orderin_orderId');
-        const fallbackOrderId = orderHistory[orderHistory.length - 1]?.id;
-        const orderIdToDisplay = savedOrderId || fallbackOrderId || 'N/A';
+        const orderIdToDisplay = getFallbackOrderId();
         setDisplayOrderId(orderIdToDisplay);
         setIsLoading(false);
       }
@@ -104,9 +121,15 @@ function PaymentSuccess() {
           </svg>
         </div>
         <h2>Payment Successful!</h2>
-        <p className="order-id">Order ID : {displayOrderId}</p>
+        {isLoading ? (
+          <p className="order-id">Preparing your receipt...</p>
+        ) : displayOrderId ? (
+          <p className="order-id">Order ID: {displayOrderId}</p>
+        ) : (
+          <p className="order-id order-id-warning">Order details unavailable. Please ask the counter for help.</p>
+        )}
 
-        <button className="view-bill-btn" onClick={() => navigate(getPathWithTable('/bill'))}>
+        <button className="view-bill-btn" disabled={!displayOrderId} onClick={() => navigate(getPathWithTable('/bill'))}>
           View Bill
         </button>
 

@@ -383,7 +383,7 @@ function Menu({ setIsLoading }) {
           <FiSearch className="search-icon" />
           <input
             type="text"
-            placeholder="Search menu items..."
+            placeholder="Search menu"
             className="search-input"
             value={searchTerm}
             onChange={handleSearchChange}

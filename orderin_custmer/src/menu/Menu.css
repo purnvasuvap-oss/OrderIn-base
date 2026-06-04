@@ -4,8 +4,10 @@
     flex-direction: column;
     overflow-x: hidden;
     overflow-y: auto;
-    height: 100vh;
-    padding-bottom: 80px;
+    min-height: 100vh;
+    min-height: 100dvh;
+    padding-bottom: calc(80px + env(safe-area-inset-bottom));
+    box-sizing: border-box;
 }
 
 .menu-container::-webkit-scrollbar {
@@ -29,6 +31,7 @@
   z-index: 10;
   background: transparent; /* Transparent background */
   box-shadow: none; /* Remove shadow for transparency */
+  box-sizing: border-box;
 }
 
 .search-bar {
@@ -40,6 +43,7 @@
   width: 90%;
   max-width: 1800px;
   box-shadow: 0 0 3px rgba(0, 0, 0, 0.05);
+  box-sizing: border-box;
 }
 
 .search-icon {
@@ -69,6 +73,8 @@
   width: 90%;
   max-width: 1800px;
   justify-items: center;
+  box-sizing: border-box;
+  margin: 0 auto;
 }
 
 @media (max-width: 768px) {
@@ -84,6 +90,66 @@
 }
 
 @media (max-width: 480px) {
+  .search-bar-container {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+  }
+
+  .search-bar {
+    width: 100%;
+    min-width: 0;
+    padding: 10px 14px;
+  }
+
+  .filters-container {
+    margin-left: 0;
+  }
+
+  .category-dropdown {
+    margin-bottom: 8px;
+  }
+
+  .category-button {
+    min-height: 44px;
+    padding: 10px 14px;
+    font-size: 14px;
+    white-space: nowrap;
+  }
+
+  .veg-toggle {
+    width: 96px;
+    height: 32px;
+  }
+
+  .veg-toggle::before {
+    width: 30px;
+    height: 30px;
+  }
+
+  .veg-toggle.veg::before {
+    width: 26px;
+    height: 26px;
+  }
+
+  .veg-toggle.all::before {
+    transform: translateX(32px);
+    width: 30px;
+    height: 30px;
+  }
+
+  .veg-toggle.nonveg::before {
+    transform: translateX(64px);
+    width: 26px;
+    height: 26px;
+  }
+
+  .veg-toggle.nonveg::after {
+    left: 73px;
+  }
+
   .app-container {
     grid-template-columns: repeat(2, 1fr);
     gap: 16px;
@@ -114,6 +180,27 @@
 
   .card-price {
     font-size: 1rem;
+  }
+}
+
+@media (max-width: 360px) {
+  .search-bar-container {
+    grid-template-columns: 1fr;
+  }
+
+  .filters-container {
+    width: 100%;
+    flex-direction: row;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .category-dropdown {
+    margin-bottom: 0;
+  }
+
+  .search-input {
+    font-size: 14px;
   }
 }
 

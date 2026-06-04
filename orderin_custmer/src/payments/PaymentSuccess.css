@@ -40,6 +40,12 @@ h2 {
   margin-bottom: 25px;
 }
 
+.order-id-warning {
+  color: #7c3f00;
+  font-size: 0.95rem;
+  line-height: 1.35;
+}
+
 .view-bill-btn {
   background-color: #00a693;
   color: white;
@@ -55,6 +61,12 @@ h2 {
 
 .view-bill-btn:hover {
   background-color: #009784;
+}
+
+.view-bill-btn:disabled {
+  background-color: #b7c7c5;
+  cursor: not-allowed;
+  box-shadow: none;
 }
 
 .back-home-btn {

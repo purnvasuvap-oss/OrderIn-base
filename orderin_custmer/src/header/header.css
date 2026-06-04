@@ -3,41 +3,66 @@
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
-    height: 60px;
+    position: relative;
+    min-height: 60px;
     width: 100%;
     background-color: white;
+    padding: 0 14px;
+    box-sizing: border-box;
+    gap: 12px;
+    flex-shrink: 0;
 }
 .orderin-logo-header {
-    width: 80px;
+    width: min(34vw, 120px);
+    max-height: 56px;
     height: auto;
-    margin-left: 10px;
+    margin-left: 0;
+    object-fit: contain;
+    position: relative;
+    z-index: 2;
 }
 .table-number {
-    font-size: 18px;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    max-width: calc(100% - 160px);
+    text-align: center;
+    font-size: 20px;
     font-weight: bold;
     color: #00A18D;
-    margin-right: 20px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    pointer-events: none;
+    z-index: 1;
 }
 .menu-icon {
-    margin-right: 10px;
+    flex: 0 0 auto;
+    margin-right: 0;
     cursor: pointer;
     color: #00A18D;
+    position: relative;
+    z-index: 2;
 }
 
 .side-menu {
     position: fixed;
     top: 60px;
-    right: -300px;
-    width: 300px;
+    right: 0;
+    width: min(86vw, 300px);
     height: calc(100vh - 60px);
+    height: calc(100dvh - 60px);
     background-color: white;
     box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1);
-    transition: right 0.3s ease;
+    transition: transform 0.3s ease;
+    transform: translateX(100%);
     z-index: 1000;
+    overflow-y: auto;
 }
 
 .side-menu.open {
-    right: 0;
+    transform: translateX(0);
 }
 
 .side-menu-content {
@@ -76,3 +101,19 @@
     background-color: #ffe6e6;
 }
 
+@media (max-width: 360px) {
+    .header-bar {
+        padding: 0 10px;
+        gap: 8px;
+    }
+
+    .orderin-logo-header {
+        width: min(32vw, 104px);
+        max-height: 54px;
+    }
+
+    .table-number {
+        font-size: 18px;
+        max-width: calc(100% - 132px);
+    }
+}

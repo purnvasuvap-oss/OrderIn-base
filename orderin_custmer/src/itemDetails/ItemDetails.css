@@ -3,12 +3,15 @@
   top: 0;
   left: 0;
   width: 100%;
-  height: calc(100vh - 60px); /* Leaves space for footer */
+  height: calc(100vh - 60px);
+  height: calc(100dvh - 60px);
   background: #fff;
   z-index: 2000;
   overflow-y: auto;
+  overflow-x: hidden;
   border-radius: 20px 20px 0 0;
   animation: slideUp 0.35s ease;
+  box-sizing: border-box;
 }
 
 @keyframes slideUp {
@@ -58,8 +61,9 @@
 
 /* INFO */
 .itemdetails-info {
-  padding: 18px 0 200px; /* Reduced side padding - let elements control their own margins */
+  padding: 18px 0 24px;
   max-width: 100%;
+  box-sizing: border-box;
 }
 
 .itemdetails-title {
@@ -67,6 +71,8 @@
   font-weight: 700;
   margin-left: 18px;
   margin-right: 18px;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
 }
 
 .itemdetails-header-row {
@@ -102,6 +108,7 @@
   font-size: 14px;
   color: #444;
   line-height: 1.4;
+  overflow-wrap: anywhere;
 }
 
 /* Quantity Controls */
@@ -113,7 +120,7 @@
   gap: 16px;
 }
 
-.qty-btn {
+.itemdetails-overlay .qty-btn {
   background: #f4f4f4;
   border: none;
   border-radius: 50%;
@@ -128,25 +135,26 @@
   cursor: pointer;
 }
 
-.qty-value {
+.itemdetails-overlay .qty-value {
   font-size: 18px;
   font-weight: 600;
 }
 
 /* BOTTOM BAR */
 .bottom-bar {
-  position: fixed;
-  left: 12px;
-  right: 12px;
-  bottom: 78px; /* raised to sit above footer */
+  position: sticky;
+  bottom: 14px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   background: #fff;
   padding: 10px 12px;
+  margin: 24px 12px 0;
   border-radius: 12px;
   box-shadow: 0 8px 24px rgba(0,0,0,0.12);
   z-index: 60;
+  gap: 12px;
+  box-sizing: border-box;
 }
 
 .price-label {
@@ -172,11 +180,17 @@
   gap: 8px;
   cursor: pointer;
   transition: background-color 0.18s ease, transform 0.12s ease;
+  min-height: 44px;
+  white-space: nowrap;
 }
 
 .add-to-cart-btn.added {
   background: #28a745;
   cursor: not-allowed;
+}
+
+.add-to-cart-btn.needs-update {
+  background: #008080;
 }
 
 /* MODAL */
@@ -250,5 +264,39 @@
 
   .itemdetails-title {
     font-size: 18px;
+  }
+}
+
+@media (max-width: 360px), (max-height: 640px) {
+  .itemdetails-header {
+    padding: 10px 12px;
+  }
+
+  .itemdetails-image {
+    height: 180px;
+  }
+
+  .itemdetails-info {
+    padding-top: 14px;
+  }
+
+  .quantity-section {
+    margin: 14px 0;
+  }
+
+  .bottom-bar {
+    bottom: 10px;
+    margin-top: 18px;
+    padding: 10px;
+  }
+
+  .price-label,
+  .price-value {
+    margin: 0;
+  }
+
+  .add-to-cart-btn {
+    padding: 10px 14px;
+    font-size: 14px;
   }
 }

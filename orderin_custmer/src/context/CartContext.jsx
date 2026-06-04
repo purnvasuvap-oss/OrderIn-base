@@ -91,6 +91,18 @@ const loadCartFromLocalStorage = () => {
   return null;
 };
 
+const loadOrderHistoryFromLocalStorage = () => {
+  try {
+    const savedOrderHistory = localStorage.getItem('orderHistory');
+    if (!savedOrderHistory) return [];
+    const parsed = JSON.parse(savedOrderHistory);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (err) {
+    console.error('Error loading order history from localStorage:', err);
+    return [];
+  }
+};
+
 // Ensure the cart item has expected fields like `image` and normalized price
 const PLACEHOLDER_IMAGE = getPlaceholder('No Image');
 const normalizeCartItem = (item) => {
@@ -177,7 +189,7 @@ export const CartProvider = ({ children, tableNo = '1' }) => {
     const savedCart = loadCartFromLocalStorage();
     return savedCart || [];
   });
-  const [orderHistory, setOrderHistory] = useState([]);
+  const [orderHistory, setOrderHistory] = useState(() => loadOrderHistoryFromLocalStorage());
   const [currentTableNo, setCurrentTableNo] = useState(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const tableFromUrl = urlParams.get('table');
@@ -187,14 +199,6 @@ export const CartProvider = ({ children, tableNo = '1' }) => {
     }
     return localStorage.getItem('tableNumber') || tableNo;
   });
-
-  // Load orderHistory from localStorage on mount
-  useEffect(() => {
-    const savedOrderHistory = localStorage.getItem('orderHistory');
-    if (savedOrderHistory) {
-      setOrderHistory(JSON.parse(savedOrderHistory));
-    }
-  }, []);
 
   // Persist cartItems to localStorage whenever they change
   useEffect(() => {
@@ -292,13 +296,13 @@ export const CartProvider = ({ children, tableNo = '1' }) => {
   };
 
   const updateQuantity = (name, quantity) => {
-    setCartItems(cartItems.map(item =>
+    setCartItems(prev => prev.map(item =>
       item.name === name ? { ...item, quantity: Math.max(1, quantity) } : item
     ));
   };
 
   const updateInstructions = (name, instructions) => {
-    setCartItems(cartItems.map(item =>
+    setCartItems(prev => prev.map(item =>
       item.name === name ? { ...item, instructions } : item
     ));
   };

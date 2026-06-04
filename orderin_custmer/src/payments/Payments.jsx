@@ -388,7 +388,7 @@ function Payments({ onBackClick }) {
             <span>₹{displayedBilling.subtotal.toFixed(2)}</span>
           </div>
           <div className="billing-row">
-            <span>Taxes :</span>
+            <span>Additional Charges :</span>
             <span>₹{displayedBilling.taxes.toFixed(2)}</span>
           </div>
           <div className="billing-total">

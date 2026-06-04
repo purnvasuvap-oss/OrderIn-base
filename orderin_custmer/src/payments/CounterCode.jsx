@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
+import { ChevronLeft, CreditCard, ShieldCheck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 import { useTableNumber } from "../hooks/useTableNumber";
-import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db } from "../firebaseConfig";
 import { safeDeleteUnpaidOrders } from "../utils/orderCleanupUtils";
 import "./CounterCode.css";
@@ -14,7 +15,7 @@ function CounterCode({ onBackClick }) {
   const [restoredOrderId, setRestoredOrderId] = useState(null); // For displaying restored order ID
   const navigate = useNavigate();
   const { getPathWithTable } = useTableNumber();
-  const { markPaymentSuccessful, orderHistory, clearOrderTempState } = useCart();
+  const { markPaymentSuccessful, orderHistory } = useCart();
 
   // Restore counter code page state from localStorage on mount
   useEffect(() => {
@@ -57,26 +58,46 @@ function CounterCode({ onBackClick }) {
     }
   };
 
-  const handleChange = (index, value) => {
-    if (value.length > 1) return; // allow single character
+  const focusCodeInput = (index) => {
+    const input = document.getElementById(`code-${index}`);
+    if (input) input.focus();
+  };
+
+  const fillCodeFromIndex = (index, value) => {
+    const digits = value.replace(/\D/g, '').slice(0, 4 - index).split('');
+    if (!digits.length) return;
+
     const newCode = [...counterCode];
-    newCode[index] = value;
+    digits.forEach((digit, offset) => {
+      newCode[index + offset] = digit;
+    });
+    setCounterCode(newCode);
+    focusCodeInput(Math.min(index + digits.length, 3));
+  };
+
+  const handleChange = (index, value) => {
+    const digit = value.replace(/\D/g, '').slice(-1);
+    const newCode = [...counterCode];
+    newCode[index] = digit;
     setCounterCode(newCode);
 
     // Auto-focus next input when a digit is entered
-    if (value && index < 3) {
-      const next = document.getElementById(`code-${index + 1}`);
-      if (next) next.focus();
+    if (digit && index < 3) {
+      focusCodeInput(index + 1);
     }
     // Handle backspace on mobile (when field becomes empty after having value)
-    else if (!value && index > 0 && counterCode[index] !== '') {
+    else if (!digit && index > 0 && counterCode[index] !== '') {
       // Previous field had value, now it's empty - move back
       const newCodeBk = [...counterCode];
       newCodeBk[index - 1] = '';
       setCounterCode(newCodeBk);
-      const prev = document.getElementById(`code-${index - 1}`);
-      if (prev) prev.focus();
+      focusCodeInput(index - 1);
     }
+  };
+
+  const handlePaste = (index, e) => {
+    e.preventDefault();
+    fillCodeFromIndex(index, e.clipboardData.getData('text'));
   };
 
   const handleKeyDown = (index, e) => {
@@ -93,8 +114,7 @@ function CounterCode({ onBackClick }) {
         e.preventDefault();
         newCode[index - 1] = '';
         setCounterCode(newCode);
-        const prev = document.getElementById(`code-${index - 1}`);
-        if (prev) prev.focus();
+        focusCodeInput(index - 1);
       }
     }
   };
@@ -233,41 +253,68 @@ function CounterCode({ onBackClick }) {
 
   return (
     <div className="counter-code-container">
-      <h2 className="counter-code-title">Checkout</h2>
+      <header className="counter-code-header">
+        <button
+          className="counter-back-icon"
+          onClick={handleBackClick}
+          aria-label="Back to cart"
+        >
+          <ChevronLeft size={22} />
+        </button>
+        <h1>Payment Verification</h1>
+      </header>
 
       <div className="code-entry-section">
         <div className="code-entry-box">
-          <div className="order-details">
-            <div className="order-number">
-              Order ID<br />
-              #{restoredOrderId || orderHistory[orderHistory.length - 1]?.id || 'N/A'}
+          <div className="counter-code-badge" aria-hidden="true">
+            <ShieldCheck size={32} />
+          </div>
+
+          <div className="counter-copy">
+            <p className="counter-eyebrow">Counter Payment</p>
+            <h2>Enter Verification Code</h2>
+            <p>Ask the counter for the 4 digit code and enter it below to complete payment.</p>
+          </div>
+
+          <div className="counter-order-summary">
+            <div className="counter-order-icon" aria-hidden="true">
+              <CreditCard size={20} />
+            </div>
+            <div>
+              <span>Order ID</span>
+              <strong>#{restoredOrderId || orderHistory[orderHistory.length - 1]?.id || 'N/A'}</strong>
             </div>
           </div>
 
-          <h3>Counter Code</h3>
-
-          <div className="digit-inputs">
+          <div className="digit-inputs" aria-label="Counter code input">
             {counterCode.map((digit, index) => (
               <input
                 key={index}
                 id={`code-${index}`}
                 type="text"
+                pattern="[0-9]*"
                 maxLength="1"
                 value={digit}
                 onChange={(e) => handleChange(index, e.target.value)}
                 onKeyDown={(e) => handleKeyDown(index, e)}
+                onPaste={(e) => handlePaste(index, e)}
                 inputMode="numeric"
+                autoComplete={index === 0 ? "one-time-code" : "off"}
+                aria-label={`Counter code digit ${index + 1}`}
               />
             ))}
           </div>
 
-          <p className="instruction-text">Enter the code to verify payment</p>
-          <button className="verify-button" onClick={handleSubmit}>
-            Verify
-          </button>
-          <button className="back-button" onClick={handleBackClick}>
-            Back
-          </button>
+          <p className="instruction-text">The code is used only to confirm this counter payment.</p>
+
+          <div className="counter-actions">
+            <button className="verify-button" onClick={handleSubmit}>
+              Verify Payment
+            </button>
+            <button className="counter-back-button" onClick={handleBackClick}>
+              Back to Cart
+            </button>
+          </div>
         </div>
       </div>
     </div>

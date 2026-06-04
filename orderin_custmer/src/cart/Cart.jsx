@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { ChevronLeft, Minus, Plus, Edit3 } from "lucide-react";
+import { ChevronLeft, Minus, Plus, Edit3, Trash2 } from "lucide-react";
 import Footer from "../Footer/Footer";
 import { useCart } from "../context/CartContext";
 import { useNavigate } from "react-router-dom";
@@ -169,6 +169,20 @@ function Cart({ onBackClick }) {
     navigate(getPathWithTable('/payments'));
   };
 
+  const parsePrice = (price) => parseFloat(String(price || '').replace(/[^0-9.\-]/g, '')) || 0;
+
+  const formatPrice = (price) => `₹${price.toFixed(2)}`;
+
+  const getCartItemImage = (item) => {
+    const key = item.name || item.id || JSON.stringify(item);
+    const resolved = resolvedImages[key];
+    const image = item.image || '';
+
+    if (resolved) return resolved;
+    if (typeof image === 'string' && image && !image.startsWith('gs://')) return image;
+    return getPlaceholder('No Image');
+  };
+
   return (
     <div className="cart-container">
       <header className="cart-header">
@@ -209,83 +223,114 @@ function Cart({ onBackClick }) {
           </div>
         ) : (
           <div className="cart-content">
-            {cartItems.map((item, index) => (
-              <div key={index} className="cart-item">
-                <img
-                  src={(resolvedImages[item.name] && resolvedImages[item.name] !== '') ? resolvedImages[item.name] : (item.image && !(item.image.startsWith && item.image.startsWith('gs://')) ? item.image : getPlaceholder('No Image'))}
-                  alt={item.name}
-                  className="cart-item-image"
-                  onError={(e) => { console.warn('Cart image load failed', e.currentTarget.src, 'item=', item && (item.id || item.name)); e.currentTarget.src = getPlaceholder('No Image'); }}
-                />
-                <div className="cart-item-details">
-                  <h3 className="cart-item-name">{item.name}</h3>
-                  <p className="cart-item-price">{(() => { const n = parseFloat(String(item.price || '').replace(/[^0-9.\-]/g, '')) || 0; return `₹${n.toFixed(2)}`; })()}</p>
-                  <div className="cart-item-controls">
-                    <div className="quantity-controls">
+            {cartItems.map((item, index) => {
+              const itemPrice = parsePrice(item.price);
+              const quantity = Number(item.quantity) || 0;
+              const itemTotal = itemPrice * quantity;
+
+              return (
+                <div key={item.id || item.name || index} className="cart-item">
+                  <div className="cart-item-media">
+                    <img
+                      src={getCartItemImage(item)}
+                      alt={item.name}
+                      className="cart-item-image"
+                      onError={(e) => { console.warn('Cart image load failed', e.currentTarget.src, 'item=', item && (item.id || item.name)); e.currentTarget.src = getPlaceholder('No Image'); }}
+                    />
+                  </div>
+
+                  <div className="cart-item-details">
+                    <div className="cart-item-main">
+                      <div className="cart-item-copy">
+                        <h3 className="cart-item-name">{item.name}</h3>
+                        <p className="cart-item-price">
+                          {formatPrice(itemPrice)}
+                          <span> each</span>
+                        </p>
+                      </div>
+
+                      <div className="cart-item-subtotal">
+                        <span>Item total</span>
+                        <strong>{formatPrice(itemTotal)}</strong>
+                      </div>
+                    </div>
+
+                    <div className="cart-item-actions">
+                      <div className="quantity-controls" aria-label={`${item.name} quantity`}>
+                        <button
+                          className="qty-btn"
+                          aria-label={`Decrease ${item.name} quantity`}
+                          onClick={() => updateQuantity(item.name, item.quantity - 1)}
+                        >
+                          <Minus size={16} />
+                        </button>
+                        <span className="qty-value">{item.quantity}</span>
+                        <button
+                          className="qty-btn"
+                          aria-label={`Increase ${item.name} quantity`}
+                          onClick={() => updateQuantity(item.name, item.quantity + 1)}
+                        >
+                          <Plus size={16} />
+                        </button>
+                      </div>
+
                       <button
-                        className="qty-btn"
-                        onClick={() => updateQuantity(item.name, item.quantity - 1)}
+                        className="remove-btn"
+                        aria-label={`Remove ${item.name}`}
+                        onClick={() => removeFromCart(item.name)}
                       >
-                        <Minus size={16} />
-                      </button>
-                      <span className="qty-value">{item.quantity}</span>
-                      <button
-                        className="qty-btn"
-                        onClick={() => updateQuantity(item.name, item.quantity + 1)}
-                      >
-                        <Plus size={16} />
+                        <Trash2 size={16} />
+                        <span>Remove</span>
                       </button>
                     </div>
-                    <button
-                      className="remove-btn"
-                      onClick={() => removeFromCart(item.name)}
-                    >
-                      Remove
-                    </button>
-                  </div>
-                  <div className="instructions-section">
-                    {editingInstructions === item.name ? (
-                      <div className="edit-instructions">
-                        <textarea
-                          value={tempInstructions}
-                          onChange={(e) => setTempInstructions(e.target.value)}
-                          placeholder="Add instructions..."
-                          rows={2}
-                        />
-                        <div className="edit-buttons">
-                          <button onClick={() => handleSaveInstructions(item.name)}>Save</button>
-                          <button onClick={handleCancelEdit}>Cancel</button>
+
+                    <div className="instructions-section">
+                      {editingInstructions === item.name ? (
+                        <div className="edit-instructions">
+                          <textarea
+                            value={tempInstructions}
+                            onChange={(e) => setTempInstructions(e.target.value)}
+                            placeholder="Add instructions..."
+                            rows={2}
+                          />
+                          <div className="edit-buttons">
+                            <button onClick={() => handleSaveInstructions(item.name)}>Save</button>
+                            <button onClick={handleCancelEdit}>Cancel</button>
+                          </div>
                         </div>
-                      </div>
-                    ) : (
-                      <div className="instructions-display">
-                        {item.instructions ? (
-                          <>
-                            <p><strong>Instructions:</strong> {item.instructions}</p>
+                      ) : (
+                        <div className="instructions-display">
+                          {item.instructions ? (
+                            <>
+                              <p><strong>Instructions:</strong> {item.instructions}</p>
+                              <button
+                                className="edit-instructions-btn"
+                                onClick={() => handleEditInstructions(item.name, item.instructions)}
+                              >
+                                <Edit3 size={14} /> Edit
+                              </button>
+                            </>
+                          ) : (
                             <button
                               className="edit-instructions-btn"
-                              onClick={() => handleEditInstructions(item.name, item.instructions)}
+                              onClick={() => handleEditInstructions(item.name, "")}
                             >
-                              <Edit3 size={14} /> Edit
+                              <Edit3 size={14} /> Add Instructions
                             </button>
-                          </>
-                        ) : (
-                          <button
-                            className="edit-instructions-btn"
-                            onClick={() => handleEditInstructions(item.name, "")}
-                          >
-                            <Edit3 size={14} /> Add Instructions
-                          </button>
-                        )}
-                      </div>
-                    )}
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
 
             <div className="cart-total">
-              <h3>Total: ₹{getTotalPrice()}</h3>
+              <div className="cart-total-row">
+                <span>Order Total</span>
+                <strong>₹{getTotalPrice()}</strong>
+              </div>
               <button className="checkout-btn" onClick={handleCheckout}>Proceed to Checkout</button>
             </div>
           </div>

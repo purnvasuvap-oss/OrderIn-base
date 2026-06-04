@@ -3,15 +3,24 @@
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
+    position: relative;
+    min-height: 60px;
     height: 60px;
     width: 100%;
+    box-sizing: border-box;
+    padding: 0 14px;
+    gap: 12px;
     background: linear-gradient(135deg, #2F2E2A 0%, #323236 100%);
     border-bottom: 1px solid #3A3935;
 }
 .orderin-logo-header {
     width: 80px;
     height: auto;
-    margin-left: 10px;
+    max-height: 54px;
+    object-fit: contain;
+    margin-left: 0;
+    position: relative;
+    z-index: 2;
     filter: drop-shadow(0 0 6px rgba(255, 245, 180, 0.55)) drop-shadow(0 0 12px rgba(255, 245, 180, 0.4)) drop-shadow(0 0 18px rgba(255, 245, 180, 0.25));
     transition: filter 0.3s ease;
 }
@@ -20,13 +29,27 @@
     filter: drop-shadow(0 0 8px rgba(255, 245, 180, 0.8)) drop-shadow(0 0 16px rgba(255, 245, 180, 0.6)) drop-shadow(0 0 24px rgba(255, 245, 180, 0.35));
 }
 .table-number {
-    font-size: 18px;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    max-width: calc(100% - 170px);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-align: center;
+    pointer-events: none;
+    z-index: 1;
+    font-size: 20px;
     font-weight: bold;
     color: #FFB703;
-    margin-right: 20px;
+    margin-right: 0;
 }
 .menu-icon {
-    margin-right: 10px;
+    flex: 0 0 auto;
+    margin-right: 0;
+    position: relative;
+    z-index: 2;
     cursor: pointer;
     color: #FFB703;
 }
@@ -85,3 +108,17 @@
     background-color: rgba(155, 34, 38, 0.2);
 }
 
+@media (max-width: 380px) {
+    .header-bar {
+        padding: 0 10px;
+    }
+
+    .orderin-logo-header {
+        width: 70px;
+    }
+
+    .table-number {
+        max-width: calc(100% - 142px);
+        font-size: 17px;
+    }
+}

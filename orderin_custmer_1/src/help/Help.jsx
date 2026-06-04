@@ -55,12 +55,12 @@ function Help({ setIsLoading }) {
 
         <div className="help-accordion">
           <div className="accordion-item">
-            <button className="accordion-caption" aria-expanded={openSection === 'about'} onClick={() => toggleSection('about')}>About this project</button>
+            <button className="accordion-caption" aria-expanded={openSection === 'about'} onClick={() => toggleSection('about')}>Ordering Help</button>
             {openSection === 'about' && (
               <div className="accordion-content">
                 <p>
-                  This is the OrderIn demo app — a simple restaurant ordering front-end backed by
-                  Firestore. Use the menu to add items to your cart, proceed to payment, and get a receipt.
+                  Browse the menu, add items to your cart, review the bill, and choose a payment option.
+                  If something looks wrong, go back to the cart before placing the order.
                 </p>
               </div>
             )}
@@ -71,21 +71,20 @@ function Help({ setIsLoading }) {
             {openSection === 'faq' && (
               <div className="accordion-content">
                 <dl>
-                  <dt>How does OTP (verification code) work?</dt>
+                  <dt>How does the verification code work?</dt>
                   <dd>
-                    We collect a verification code (OTP) to verify your phone number. Enter the 4-6 digit code
-                    sent to your phone in the login flow — the app stores it briefly to complete authentication.
+                    The code confirms your phone number during login or payment verification. Enter the
+                    code shown or sent to you to continue.
                   </dd>
 
-                  <dt>Why is the price shown with ₹125 when item is ₹100?</dt>
+                  <dt>Can I change cooking preferences?</dt>
                   <dd>
-                    Items marked with promotions will show an increased display price of +25% (visual only) next to the normal
-                    menu price. The original price remains the primary price displayed.
+                    Yes. Add instructions from the item details page or edit them from the cart before checkout.
                   </dd>
 
                   <dt>What if an item shows unavailable?</dt>
                   <dd>
-                    Items marked unavailable are dimmed and non-interactive; you can still view them but cannot add them to cart.
+                    Unavailable items cannot be added to the cart. Please choose another item or ask the counter.
                   </dd>
                 </dl>
               </div>
@@ -97,8 +96,8 @@ function Help({ setIsLoading }) {
             {openSection === 'contact' && (
               <div className="accordion-content">
                 <p>
-                  If you need additional assistance, send us a message. Enter your email and message below, then click
-                  <strong> Send </strong> — your email client will open with the message prefilled and addressed to our support.
+                  If you need additional assistance, send us a message. Your email app will open with the
+                  details filled in.
                 </p>
 
                 <form className="help-form" onSubmit={sendMail}>
