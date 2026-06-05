@@ -59,6 +59,11 @@ function App() {
     return Number.isFinite(n) ? n.toFixed(2) : "0.00";
   };
 
+  const formatEarningsPaymentLabel = (type) => {
+    const normalizedType = String(type || "").trim().toLowerCase();
+    return normalizedType === "upi" ? "ONLINE" : normalizedType.toUpperCase();
+  };
+
   const getDateOrNull = (value) => {
     if (!value) return null;
     if (value.toDate && typeof value.toDate === "function") {
@@ -745,9 +750,9 @@ function App() {
       {/* EARNINGS CALCULATION TAB */}
       {activeTab === "EARNINGS CALCULATION" && (
         <div className="fin-orders-container">
-          <div style={{ padding: "20px", background: "#f9f9f9", borderRadius: "8px", marginBottom: "20px" }}>
+          <div className="fin-earnings-filter-card" style={{ padding: "20px", background: "#f9f9f9", borderRadius: "8px", marginBottom: "20px" }}>
             <h3 style={{ margin: "0 0 15px 0", fontSize: "16px", fontWeight: "600" }}>Filter by Date</h3>
-            <div style={{ display: "flex", gap: "15px", flexWrap: "wrap", alignItems: "center" }}>
+            <div className="fin-earnings-filter-controls" style={{ display: "flex", gap: "15px", flexWrap: "wrap", alignItems: "center" }}>
               <select 
                 value={earningsFilterType} 
                 onChange={(e) => setEarningsFilterType(e.target.value)}
@@ -787,13 +792,13 @@ function App() {
           ) : (
             <>
               {/* Summary Cards */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", marginBottom: "30px" }}>
-                <div style={{ background: "#f0f7ff", padding: "20px", borderRadius: "12px", border: "2px solid #2196f3" }}>
+              <div className="fin-earnings-summary-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", marginBottom: "30px" }}>
+                <div className="fin-earnings-summary-card" style={{ background: "#f0f7ff", padding: "20px", borderRadius: "12px", border: "2px solid #2196f3" }}>
                   <div style={{ fontSize: "12px", color: "#666", marginBottom: "5px", fontWeight: "600" }}>TOTAL EARNINGS</div>
                   <div style={{ fontSize: "28px", fontWeight: "700", color: "#2196f3" }}>₹{formatCurrency(earningsData.totalEarnings)}</div>
                   <div style={{ fontSize: "12px", color: "#666", marginTop: "5px" }}>Orders: {filteredEarnings.length}</div>
                 </div>
-                <div style={{ background: "#fff3e0", padding: "20px", borderRadius: "12px", border: "2px solid #ff9800" }}>
+                <div className="fin-earnings-summary-card" style={{ background: "#fff3e0", padding: "20px", borderRadius: "12px", border: "2px solid #ff9800" }}>
                   <div style={{ fontSize: "12px", color: "#666", marginBottom: "5px", fontWeight: "600" }}>TOTAL TAX</div>
                   <div style={{ fontSize: "28px", fontWeight: "700", color: "#ff9800" }}>₹{formatCurrency(earningsData.totalTax)}</div>
                   <div style={{ fontSize: "12px", color: "#666", marginTop: "5px" }}>From all payments</div>
@@ -801,13 +806,13 @@ function App() {
               </div>
 
               {/* Earnings by Payment Type */}
-              <div style={{ background: "#f9f9f9", padding: "20px", borderRadius: "12px", marginBottom: "20px" }}>
+              <div className="fin-earnings-section" style={{ background: "#f9f9f9", padding: "20px", borderRadius: "12px", marginBottom: "20px" }}>
                 <h3 style={{ margin: "0 0 20px 0", fontSize: "16px", fontWeight: "600" }}>EARNINGS BY PAYMENT TYPE</h3>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "15px" }}>
+                <div className="fin-earnings-breakdown-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "15px" }}>
                   {Object.entries(earningsData.byPaymentType).map(([type, data]) => (
-                    <div key={type} style={{ background: "white", padding: "15px", borderRadius: "8px", border: "1px solid #eee" }}>
+                    <div key={type} className="fin-earnings-breakdown-card" style={{ background: "white", padding: "15px", borderRadius: "8px", border: "1px solid #eee" }}>
                       <div style={{ fontSize: "12px", color: "#666", fontWeight: "600", marginBottom: "10px", textTransform: "uppercase" }}>
-                        {type}
+                        {formatEarningsPaymentLabel(type)}
                       </div>
                       <div style={{ fontSize: "18px", fontWeight: "700", color: "#2196f3", marginBottom: "8px" }}>
                         ₹{formatCurrency(data.earnings)}
@@ -827,13 +832,13 @@ function App() {
               </div>
 
               {/* Tax by Payment Type */}
-              <div style={{ background: "#f9f9f9", padding: "20px", borderRadius: "12px" }}>
+              <div className="fin-earnings-section" style={{ background: "#f9f9f9", padding: "20px", borderRadius: "12px" }}>
                 <h3 style={{ margin: "0 0 20px 0", fontSize: "16px", fontWeight: "600" }}>TAX BY PAYMENT TYPE</h3>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "15px" }}>
+                <div className="fin-earnings-breakdown-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "15px" }}>
                   {Object.entries(earningsData.byPaymentType).map(([type, data]) => (
-                    <div key={`tax-${type}`} style={{ background: "white", padding: "15px", borderRadius: "8px", border: "1px solid #eee" }}>
+                    <div key={`tax-${type}`} className="fin-earnings-breakdown-card" style={{ background: "white", padding: "15px", borderRadius: "8px", border: "1px solid #eee" }}>
                       <div style={{ fontSize: "12px", color: "#666", fontWeight: "600", marginBottom: "10px", textTransform: "uppercase" }}>
-                        {type} TAX
+                        {formatEarningsPaymentLabel(type)} TAX
                       </div>
                       <div style={{ fontSize: "18px", fontWeight: "700", color: "#ff9800", marginBottom: "8px" }}>
                         ₹{formatCurrency(data.tax)}

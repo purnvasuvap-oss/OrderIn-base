@@ -25,18 +25,19 @@ export default function FinanceLogin() {
   };
 
   return (
-    <div className="sub-login">
-      {/* Left branding column */}
-      <aside className="sub-login-left" aria-hidden="false">
+    <div className="sub-login login-redesign">
+      <aside className="sub-login-left login-brand-panel" aria-hidden="false">
         <div className="sub-brand-section">
-          <img src="/images/OrderIn.png" alt="OrderIn logo" className="sub-orderin-logo" />
+          <div className="login-logo-card">
+            <img src="/images/OrderIn.png" alt="OrderIn logo" className="sub-orderin-logo" />
+          </div>
           <div className="sub-by-row">
             <span className="sub-by-text">by</span>
             <p className="sub-company-name-text">PurnVasu Tech Solutions Pvt. Ltd.</p>
           </div>
         </div>
 
-        <div className="sub-illustration">
+        <div className="sub-illustration login-visual">
           <div className="sub-circle-outer" aria-hidden="true">
             <div className="sub-circle-inner" aria-hidden="true"></div>
             <img
@@ -45,47 +46,66 @@ export default function FinanceLogin() {
               className="sub-food-img"
             />
           </div>
-          <p className="sub-tagline">✅ Personalized Restaurant<br/>Control Unit</p>
+          <div className="login-brand-caption">
+            <span>OrderIn Console</span>
+            <p className="sub-tagline">Personalized Restaurant<br/>Control Unit</p>
+          </div>
         </div>
       </aside>
 
-      {/* Right content */}
-      <main className="sub-login-right">
-        <header className="sub-login-header">
-          <h2 className="sub-restaurant-name">XYZ Restaurant</h2>
-          <p className="sub-welcome-text">Welcome XYZ Restaurant</p>
-        </header>
+      <main className="sub-login-right login-auth-area">
+        <div className="login-auth-panel">
+          <header className="sub-login-header">
+            <p className="login-eyebrow">Restaurant Portal</p>
+            <h2 className="sub-restaurant-name">XYZ Restaurant</h2>
+            <p className="sub-welcome-text">Welcome back</p>
+          </header>
 
-        <section className="sub-login-card" aria-label="login form">
-          <h3>Finance Section Login</h3>
-          <p className="sub">To your account to continue</p>
+          <section className="sub-login-card" aria-label="login form">
+            <div className="login-card-heading">
+              <div>
+                <h3>Finance Section Login</h3>
+                <p className="sub">To your account to continue</p>
+              </div>
+              <span className="login-status-pill is-active">Active</span>
+            </div>
 
-          <form onSubmit={handleSubmit} className="sub-login-form">
-            <label className="sub-sr-only" htmlFor="pin">PIN</label>
-            <input
-              id="pin"
-              name="pin"
-              type="password"
-              placeholder="Enter PIN"
-              value={pin}
-              onChange={(e) => setPin(e.target.value)}
-              required
-            />
+            <form onSubmit={handleSubmit} className="sub-login-form">
+              <div className="sub-field">
+                <label className="sub-field-label" htmlFor="pin">PIN</label>
+                <input
+                  id="pin"
+                  name="pin"
+                  type="password"
+                  placeholder="Enter PIN"
+                  value={pin}
+                  onChange={(e) => setPin(e.target.value)}
+                  autoComplete="current-password"
+                  required
+                />
+              </div>
 
-            <button type="submit" className="sub-primary-cta">Enter</button>
-          </form>
-        </section>
+              <button type="submit" className="sub-primary-cta">Enter</button>
+              <button
+                type="button"
+                className="sub-dashboard-back"
+                onClick={() => navigate(routes.dashboard)}
+              >
+                Back to Dashboard
+              </button>
+            </form>
+          </section>
 
-        <div className="sub-contact-info">
-          <p>
-            Contact PurnVasu for queries:<br/>
-            Email: <strong>OrderIn.vap@gmail.com</strong>
-          </p>
-          <p className="sub-tagline sub-tagline-below-contact">✅ Personalized Restaurant<br/>Control Unit</p>
+          <div className="sub-contact-info login-support-card">
+            <span>Support</span>
+            <p>
+              Contact PurnVasu for queries<br/>
+              <strong>OrderIn.vap@gmail.com</strong>
+            </p>
+          </div>
         </div>
       </main>
 
-      {/* Decorative right-bottom image (vector PNG from attachments) */}
       <div className="sub-red-blob" aria-hidden="true">
         <img src="/images/Vector.png" alt="decorative vector" />
       </div>

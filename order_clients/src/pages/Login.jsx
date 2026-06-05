@@ -1,5 +1,5 @@
 // src/pages/Login.js
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { verifyMainLogin, getRestaurantStatus } from "../firebase";
 import "./Login.css";
@@ -8,7 +8,24 @@ export default function Login() {
   const [userId, setUserId] = useState("");
   const [password, setPassword] = useState("");
   const [restaurantStatus, setRestaurantStatus] = useState({ status: 'Unknown', allowed: true, daysLeft: null });
+  const loginFormRef = useRef(null);
   const navigate = useNavigate();
+  const accessState =
+    restaurantStatus.status === "Unknown"
+      ? "checking"
+      : restaurantStatus.status === "Inactive" && restaurantStatus.allowed
+        ? "limited"
+        : restaurantStatus.allowed
+          ? "active"
+          : "disabled";
+  const accessLabel =
+    accessState === "checking"
+      ? "Checking"
+      : accessState === "limited"
+        ? "Limited"
+        : accessState === "active"
+          ? "Active"
+          : "Disabled";
 
   useEffect(() => {
     let mounted = true;
@@ -48,19 +65,38 @@ export default function Login() {
     }
   };
 
+  useEffect(() => {
+    const handleEnterSubmit = (event) => {
+      if (event.key !== "Enter" || event.defaultPrevented) return;
+
+      const target = event.target;
+      if (target instanceof HTMLElement) {
+        if (target.tagName === "TEXTAREA") return;
+        if (target.closest("form")) return;
+      }
+
+      event.preventDefault();
+      loginFormRef.current?.requestSubmit();
+    };
+
+    window.addEventListener("keydown", handleEnterSubmit);
+    return () => window.removeEventListener("keydown", handleEnterSubmit);
+  }, []);
+
   return (
-    <div className="sub-login">
-      {/* Left branding column */}
-      <aside className="sub-login-left" aria-hidden="false">
+    <div className="sub-login login-redesign">
+      <aside className="sub-login-left login-brand-panel" aria-hidden="false">
         <div className="sub-brand-section">
-          <img src="/images/OrderIn.png" alt="OrderIn logo" className="sub-orderin-logo" />
+          <div className="login-logo-card">
+            <img src="/images/OrderIn.png" alt="OrderIn logo" className="sub-orderin-logo" />
+          </div>
           <div className="sub-by-row">
             <span className="sub-by-text">by</span>
             <p className="sub-company-name-text">PurnVasu Tech Solutions Pvt. Ltd.</p>
           </div>
         </div>
 
-        <div className="sub-illustration">
+        <div className="sub-illustration login-visual">
           <div className="sub-circle-outer" aria-hidden="true">
             <div className="sub-circle-inner" aria-hidden="true"></div>
             <img
@@ -69,63 +105,78 @@ export default function Login() {
               className="sub-food-img"
             />
           </div>
-          <p className="sub-tagline">✅ Personalized Restaurant<br/>Control Unit</p>
+          <div className="login-brand-caption">
+            <span>OrderIn Console</span>
+            <p className="sub-tagline">Personalized Restaurant<br/>Control Unit</p>
+          </div>
         </div>
       </aside>
 
-      {/* Right content */}
-      <main className="sub-login-right">
-        <header className="sub-login-header">
-          <h2 className="sub-restaurant-name">XYZ Restaurant</h2>
-          <p className="sub-welcome-text">Welcome XYZ Restaurant</p>
-        </header>
+      <main className="sub-login-right login-auth-area">
+        <div className="login-auth-panel">
+          <header className="sub-login-header">
+            <p className="login-eyebrow">Restaurant Portal</p>
+            <h2 className="sub-restaurant-name">XYZ Restaurant</h2>
+            <p className="sub-welcome-text">Welcome back</p>
+          </header>
 
-        <section className="sub-login-card" aria-label="login form">
-          <h3>Login</h3>
-          <p className="sub">To your account to continue</p>
+          <section className="sub-login-card" aria-label="login form">
+            <div className="login-card-heading">
+              <div>
+                <h3>Sign in</h3>
+                <p className="sub">To your account to continue</p>
+              </div>
+              <span className={`login-status-pill is-${accessState}`}>{accessLabel}</span>
+            </div>
 
-          <form onSubmit={handleLogin} className="sub-login-form">
-            <label className="sub-sr-only" htmlFor="userId">User Id</label>
-            <input
-              id="userId"
-              name="userId"
-              type="text"
-              placeholder="User Id"
-              value={userId}
-              onChange={(e) => setUserId(e.target.value)}
-              required
-            />
+            <form ref={loginFormRef} onSubmit={handleLogin} className="sub-login-form">
+              <div className="sub-field">
+                <label className="sub-field-label" htmlFor="userId">User ID</label>
+                <input
+                  id="userId"
+                  name="userId"
+                  type="text"
+                  placeholder="Enter user ID"
+                  value={userId}
+                  onChange={(e) => setUserId(e.target.value)}
+                  autoComplete="username"
+                  required
+                />
+              </div>
 
-            <label className="sub-sr-only" htmlFor="password">Password</label>
-            <input
-              id="password"
-              name="password"
-              type="password"
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
+              <div className="sub-field">
+                <label className="sub-field-label" htmlFor="password">Password</label>
+                <input
+                  id="password"
+                  name="password"
+                  type="password"
+                  placeholder="Enter password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  autoComplete="current-password"
+                  required
+                />
+              </div>
 
-            <button type="submit" className="sub-primary-cta" disabled={!restaurantStatus.allowed}>
-              Login
-            </button>
-            {restaurantStatus.status === 'Inactive' && restaurantStatus.daysLeft !== null && (
-              <p className="status-note">Limited access: {restaurantStatus.daysLeft} day(s) left</p>
-            )}
-          </form>
-        </section>
+              <button type="submit" className="sub-primary-cta" disabled={!restaurantStatus.allowed}>
+                Login
+              </button>
+              {restaurantStatus.status === 'Inactive' && restaurantStatus.daysLeft !== null && (
+                <p className="status-note">Limited access: {restaurantStatus.daysLeft} day(s) left</p>
+              )}
+            </form>
+          </section>
 
-        <div className="sub-contact-info">
-          <p>
-            Contact PurnVasu for queries:<br/>
-            Email: <strong>OrderIn.vap@gmail.com</strong>
-          </p>
-          <p className="sub-tagline sub-tagline-below-contact">✅ Personalized Restaurant<br/>Control Unit</p>
+          <div className="sub-contact-info login-support-card">
+            <span>Support</span>
+            <p>
+              Contact PurnVasu for queries<br/>
+              <strong>OrderIn.vap@gmail.com</strong>
+            </p>
+          </div>
         </div>
       </main>
 
-      {/* Decorative right-bottom image (vector PNG from attachments) */}
       <div className="sub-red-blob" aria-hidden="true">
         <img src="/images/Vector.png" alt="decorative vector" />
       </div>

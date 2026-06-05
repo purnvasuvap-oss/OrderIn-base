@@ -30,6 +30,10 @@ const MenuPage = () => {
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState(null); // { type: 'success'|'error', message: string }
+  const isEditingMenu = isAdding || editingIndex !== null || isSaving;
+  const editModeLabel = isAdding ? "Adding new menu item" : editingIndex !== null ? "Editing menu item" : "";
+  const activeEditItem = editedItems[0] || {};
+  const activeEditorImage = activeEditItem.image || activeEditItem.image_url || activeEditItem.oldImage || "";
 
 
 
@@ -81,10 +85,8 @@ const MenuPage = () => {
       description: "",
       type: "",
     };
-    // Insert placeholder at top and start single-row edit for it
-    setMenuItems([newItem, ...menuItems]);
     setIsAdding(true);
-    setEditingIndex(0);
+    setEditingIndex(null);
     setEditedItems([newItem]);
   }; 
 
@@ -321,29 +323,36 @@ const MenuPage = () => {
   };
 
   const handleCancel = () => {
-    if (isAdding) {
-      setMenuItems(menuItems.slice(1));
-    }
     setIsAdding(false);
     setEditingIndex(null);
     setEditedItems([]);
   };  
 
+  const handleDraftChange = (field, value) => {
+    setEditedItems((current) => [{ ...(current[0] || {}), [field]: value }]);
+  };
+
+  const handleDraftFileChange = (field, file) => {
+    setEditedItems((current) => [{ ...(current[0] || {}), [`${field}File`]: file }]);
+  };
+
   const handleInputChange = (rowIndex, field, value) => {
     if (editingIndex !== null) {
       if (rowIndex !== editingIndex) return;
-      setEditedItems((current) => [{ ...(current[0] || {}), [field]: value }]);
+      handleDraftChange(field, value);
     }
   };
 
   const handleFileChange = (rowIndex, field, file) => {
     if (editingIndex !== null) {
       if (rowIndex !== editingIndex) return;
-      setEditedItems((current) => [{ ...(current[0] || {}), [`${field}File`]: file }]);
+      handleDraftFileChange(field, file);
     }
   };  
 
   const handleDelete = async (index) => {
+    if (isEditingMenu) return;
+
     try {
       const itemToDelete = menuItems[index];
       if (itemToDelete.id) {
@@ -395,10 +404,10 @@ const MenuPage = () => {
         {/* Action Buttons */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <div className="header-actions">
-            {(isAdding || editingIndex !== null) ? (
+            {isEditingMenu ? (
               <>
-                <button className="btn-primary" onClick={handleSave} disabled={isSaving}>{isSaving ? 'SAVING...' : 'SAVE'}</button>
-                <button className="btn-primary" onClick={handleCancel} disabled={isSaving}>CANCEL</button>
+                <button className="btn-primary menu-save-btn" onClick={handleSave} disabled={isSaving}>{isSaving ? 'SAVING...' : 'SAVE'}</button>
+                <button className="btn-primary menu-cancel-btn" onClick={handleCancel} disabled={isSaving}>CANCEL</button>
               </>
             ) : (
               <>
@@ -417,6 +426,146 @@ const MenuPage = () => {
           {saveStatus.message}
         </div>
       )} 
+
+      {isEditingMenu && (
+        <section className="menu-editor-panel" aria-label={editModeLabel}>
+          <div className="menu-editor-header">
+            <div>
+              <span className="menu-editor-kicker">{isAdding ? "New item" : "Selected item"}</span>
+              <h2>{isAdding ? "Add Menu Item" : activeEditItem.name ? `Edit ${activeEditItem.name}` : "Edit Menu Item"}</h2>
+            </div>
+            <span className="menu-editor-state">{isSaving ? "Saving" : isAdding ? "Draft" : `Row ${editingIndex + 1}`}</span>
+          </div>
+
+          <div className="menu-editor-grid">
+            <label className="menu-editor-field">
+              <span>Category</span>
+              <input
+                className="menu-editor-control"
+                type="text"
+                value={activeEditItem.category || ""}
+                onChange={(e) => handleDraftChange("category", e.target.value)}
+                placeholder="Starters"
+              />
+            </label>
+
+            <label className="menu-editor-field">
+              <span>Item Name</span>
+              <input
+                className="menu-editor-control"
+                type="text"
+                value={activeEditItem.name || ""}
+                onChange={(e) => handleDraftChange("name", e.target.value)}
+                placeholder="Paneer Tikka"
+              />
+            </label>
+
+            <label className="menu-editor-field">
+              <span>Price</span>
+              <input
+                className="menu-editor-control"
+                type="text"
+                inputMode="decimal"
+                value={activeEditItem.price || ""}
+                onChange={(e) => handleDraftChange("price", e.target.value)}
+                placeholder="199"
+              />
+            </label>
+
+            <label className="menu-editor-field">
+              <span>Type</span>
+              <input
+                className="menu-editor-control"
+                type="text"
+                value={activeEditItem.type || ""}
+                onChange={(e) => handleDraftChange("type", e.target.value)}
+                placeholder="Veg / Non-Veg"
+              />
+            </label>
+
+            <label className="menu-editor-field">
+              <span>Availability</span>
+              <select
+                className="menu-editor-control"
+                value={activeEditItem.availability || ""}
+                onChange={(e) => handleDraftChange("availability", e.target.value)}
+              >
+                <option value="">Select</option>
+                <option value="Yes">Yes</option>
+                <option value="No">No</option>
+              </select>
+            </label>
+
+            <div className="menu-editor-field menu-editor-toggle-field">
+              <span>Promotions</span>
+              <div className="menu-editor-toggle-row">
+                <strong>{activeEditItem.promotions ? "Enabled" : "Disabled"}</strong>
+                <label className="switch">
+                  <input
+                    type="checkbox"
+                    checked={Boolean(activeEditItem.promotions)}
+                    onChange={(e) => handleDraftChange("promotions", e.target.checked)}
+                  />
+                  <span className="slider round"></span>
+                </label>
+              </div>
+            </div>
+
+            <div className="menu-editor-field menu-editor-image-field">
+              <span>Item Image</span>
+              <div className="menu-editor-image-card">
+                {activeEditorImage ? (
+                  <img src={activeEditorImage} alt="" className="menu-editor-image-preview" />
+                ) : (
+                  <div className="menu-editor-image-empty">Image</div>
+                )}
+                <div className="menu-editor-image-meta">
+                  <label className="menu-editor-upload">
+                    Choose Image
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.target.files[0];
+                        if (file) {
+                          handleDraftFileChange("image", file);
+                          const reader = new FileReader();
+                          reader.onload = (event) => {
+                            handleDraftChange("image", event.target.result);
+                          };
+                          reader.readAsDataURL(file);
+                        }
+                      }}
+                    />
+                  </label>
+                  {activeEditItem.imageFile && (
+                    <small>{activeEditItem.imageFile.name}</small>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <label className="menu-editor-field menu-editor-description-field">
+              <span>Description</span>
+              <textarea
+                className="menu-editor-control menu-editor-textarea"
+                value={activeEditItem.description || ""}
+                onChange={(e) => handleDraftChange("description", e.target.value)}
+                rows="4"
+                placeholder="Short item description"
+              />
+            </label>
+          </div>
+
+          <div className="menu-editor-footer">
+            <span>{isAdding ? "New item draft" : "Unsaved item changes"}</span>
+            <div className="menu-editor-actions">
+              <button className="btn-primary menu-cancel-btn" onClick={handleCancel} disabled={isSaving}>CANCEL</button>
+              <button className="btn-primary menu-save-btn" onClick={handleSave} disabled={isSaving}>{isSaving ? "SAVING..." : "SAVE ITEM"}</button>
+            </div>
+          </div>
+        </section>
+      )}
 
       <div className="menu-content-area">
         <div className="menu-table-wrapper">
@@ -448,101 +597,41 @@ const MenuPage = () => {
 
               <tbody>
                 {menuItems.map((item, index) => {
-                  const rowItem = (editingIndex === index ? (editedItems[0] || {}) : item);
                   const rowIsEditing = (editingIndex === index);
                   return (
-                    <tr key={index}>
+                    <tr key={index} className={rowIsEditing ? "menu-row-editing" : ""}>
                       <td>
-                        {rowIsEditing ? (
-                          <textarea
-                            value={rowItem.category || ''}
-                            onChange={(e) => handleInputChange(index, 'category', e.target.value)}
-                            rows="1"
-                            style={{ width: '100%', border: 'none', background: 'transparent' }}
-                          />
-                        ) : (
-                          item.category
-                        )}
+                        {item.category}
                       </td>
 
                       <td>
-                        {rowIsEditing ? (
-                          <textarea
-                            value={rowItem.name || ''}
-                            onChange={(e) => handleInputChange(index, 'name', e.target.value)}
-                            rows="1"
-                            style={{ width: '100%', border: 'none', background: 'transparent' }}
-                          />
-                        ) : (
-                          item.name && item.name.length > 10 ? item.name.substring(0, 10) + '...' : item.name
-                        )}
+                        {item.name && item.name.length > 18 ? item.name.substring(0, 18) + '...' : item.name}
                       </td>
 
                       <td>
-                        {rowIsEditing ? (
-                          <div>
-                            <input
-                              type="file"
-                              accept="image/*"
-                              onChange={(e) => {
-                                const file = e.target.files[0];
-                                if (file) {
-                                  handleFileChange(index, 'image', file);
-                                  const reader = new FileReader();
-                                  reader.onload = (event) => {
-                                    handleInputChange(index, 'image', event.target.result);
-                                  };
-                                  reader.readAsDataURL(file);
-                                }
-                              }}
-                              style={{ marginBottom: '5px' }}
-                            />
-                            <img
-                              src={rowItem.image_url || rowItem.image}
-                              alt=""
-                              className="item-img"
-                            />
-                            {rowItem.imageFile && (
-                              <div style={{ marginTop: 6, fontSize: 12, color: '#555' }}>Selected file: {rowItem.imageFile.name}</div>
-                            )}
-                          </div>
-                        ) : (
-                          <img
-                            src={item.image_url || item.image}
-                            alt={item.name}
-                            className="item-img"
-                          />
-                        )}
+                        <img
+                          src={item.image_url || item.image}
+                          alt={item.name}
+                          className="item-img"
+                        />
                       </td>
 
                       <td>
-                        {rowIsEditing ? (
-                          <textarea
-                            value={rowItem.price || ''}
-                            onChange={(e) => handleInputChange(index, 'price', e.target.value)}
-                            rows="1"
-                            style={{ width: '100%', border: 'none', background: 'transparent' }}
-                          />
-                        ) : (
-                          item.price
-                        )}
+                        {item.price}
                       </td>
 
                       <td>
                         <label className="switch">
                           <input
                             type="checkbox"
-                            checked={Boolean(rowItem.promotions)}
+                            checked={Boolean(item.promotions)}
                             onChange={(e) => {
                               const value = e.target.checked;
-                              if (rowIsEditing) {
-                                handleInputChange(index, 'promotions', value);
-                              } else {
-                                const updatedItems = [...menuItems];
-                                updatedItems[index].promotions = value;
-                                setMenuItems(updatedItems);
-                              }
+                              const updatedItems = [...menuItems];
+                              updatedItems[index].promotions = value;
+                              setMenuItems(updatedItems);
                             }}
+                            disabled={isEditingMenu}
                           />
 
                           <span className="slider round"></span>
@@ -550,51 +639,31 @@ const MenuPage = () => {
                       </td>
 
                       <td>
-                        {rowIsEditing ? (
-                          <textarea
-                            value={rowItem.availability || ''}
-                            onChange={(e) => handleInputChange(index, 'availability', e.target.value)}
-                            rows="1"
-                            style={{ width: '100%', border: 'none', background: 'transparent' }}
-                          />
-                        ) : (
-                          item.availability
-                        )}
+                        {item.availability}
                       </td>
 
                       <td>
-                        {rowIsEditing ? (
-                          <textarea
-                            value={rowItem.description || ''}
-                            onChange={(e) => handleInputChange(index, 'description', e.target.value)}
-                            rows="3"
-                            style={{ width: '100%', border: 'none', background: 'transparent' }}
-                          />
-                        ) : (
-                          item.description && item.description.length > 10 ? item.description.substring(0, 10) + '...' : item.description
-                        )}
+                        {item.description && item.description.length > 24 ? item.description.substring(0, 24) + '...' : item.description}
                       </td>
 
 
 
                       <td>
-                        {rowIsEditing ? (
-                          <textarea
-                            value={rowItem.type || ''}
-                            onChange={(e) => handleInputChange(index, 'type', e.target.value)}
-                            rows="1"
-                            style={{ width: '100%', border: 'none', background: 'transparent' }}
-                          />
-                        ) : (
-                          item.type
-                        )}
+                        {item.type}
                       </td>
 
-                      <td style={{ display: 'flex', gap: 8 }}>
-                        {!rowIsEditing && editingIndex === null && (
-                          <button className="btn-primary" onClick={() => handleEditRow(index)}>Edit</button>
-                        )}
-                        <button className="btn-primary" onClick={() => handleDelete(index)}>Delete</button>
+                      <td className="menu-actions-cell">
+                        <button className="btn-primary" onClick={() => handleEditRow(index)} disabled={isEditingMenu}>
+                          {rowIsEditing ? "Editing" : "Edit"}
+                        </button>
+                        <button
+                          className="btn-primary"
+                          onClick={() => handleDelete(index)}
+                          disabled={isEditingMenu}
+                          aria-disabled={isEditingMenu}
+                        >
+                          Delete
+                        </button>
                       </td>
                     </tr>
                   );
