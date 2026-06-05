@@ -15,7 +15,12 @@
 
 .menu-container {
   -ms-overflow-style: none;
-  scrollbar-width: none;
+}
+
+@supports (scrollbar-width: none) {
+  .menu-container {
+    scrollbar-width: none;
+  }
 }
 
 .search-bar-container {
