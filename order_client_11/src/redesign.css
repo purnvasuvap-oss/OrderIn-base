@@ -384,6 +384,25 @@ textarea:focus-visible {
   background: var(--oi-teal) !important;
 }
 
+.sub-dashboard-back {
+  width: 100%;
+  min-height: 46px;
+  margin-top: 10px;
+  border: 1px solid rgba(21, 23, 26, 0.14);
+  border-radius: var(--oi-radius);
+  background: #ffffff;
+  color: var(--oi-ink);
+  font-weight: 800;
+  cursor: pointer;
+  transition: background-color 0.18s ease, color 0.18s ease, border-color 0.18s ease;
+}
+
+.sub-dashboard-back:hover {
+  border-color: var(--oi-ink);
+  background: var(--oi-ink);
+  color: #ffffff;
+}
+
 .contact-info,
 .sub-contact-info {
   position: static;

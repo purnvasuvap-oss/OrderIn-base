@@ -12,18 +12,33 @@ export default function Login() {
 
   useEffect(() => {
     let mounted = true;
+
+    // If user is already authenticated, never keep them on the login screen.
+    // This prevents browser/device back-button history from trapping them on `/`.
+    const existingAuth = localStorage.getItem("auth");
+    if (existingAuth) {
+      // Replace history entry so that the login page doesn't remain in the back stack.
+      window.history.replaceState({}, document.title, window.location.pathname);
+      navigate("/dashboard", { replace: true });
+      return;
+    }
+
     (async () => {
       try {
         const statusInfo = await getRestaurantStatus();
         if (mounted) setRestaurantStatus(statusInfo);
       } catch (err) {
-        console.warn('Failed to load restaurant status:', err);
+        console.warn("Failed to load restaurant status:", err);
       }
     })();
-    return () => { mounted = false; };
-  }, []);
+
+    return () => {
+      mounted = false;
+    };
+  }, [navigate]);
 
   const handleLogin = async (e) => {
+
     e.preventDefault();
     try {
       if (!restaurantStatus.allowed) {

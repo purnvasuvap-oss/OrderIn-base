@@ -162,11 +162,16 @@ function App() {
     }
   };
 
+  const handleBackToDashboard = () => {
+    sessionStorage.removeItem("inventoryAuth");
+    navigate(routes.dashboard, { replace: true });
+  };
+
   return (
     <div className="inventory-container">
       {/* Header */}
       <div className="Inventory-app-header">
-        <button className="Inventory-btn-back" onClick={() => navigate(routes.dashboard)}>Back</button>
+        <button className="Inventory-btn-back" onClick={handleBackToDashboard}>Back</button>
         <h2 className="Inventory-title-main">Inventory Management</h2>
       </div>
 

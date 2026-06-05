@@ -18,6 +18,7 @@ const MenuPage = () => {
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState(null); // { type: 'success'|'error', message: string }
+  const isEditingMenu = isAdding || editingIndex !== null || isSaving;
 
   // Fetch menu items from Firestore on component mount
   useEffect(() => {
@@ -330,6 +331,8 @@ const MenuPage = () => {
   };  
 
   const handleDelete = async (index) => {
+    if (isEditingMenu) return;
+
     try {
       const itemToDelete = menuItems[index];
       if (itemToDelete.id) {
@@ -383,7 +386,7 @@ const MenuPage = () => {
         {/* Action Buttons */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <div className="header-actions">
-            {(isAdding || editingIndex !== null) ? (
+            {isEditingMenu ? (
               <>
                 <button className="btn-primary btn-save" onClick={handleSave} disabled={isSaving}>{isSaving ? 'SAVING...' : 'SAVE'}</button>
                 <button className="btn-primary btn-cancel" onClick={handleCancel} disabled={isSaving}>CANCEL</button>
@@ -407,7 +410,7 @@ const MenuPage = () => {
       )} 
 
       <div className="menu-content-area">
-        {(isAdding || editingIndex !== null) && (
+        {isEditingMenu && (
           <div className="menu-edit-banner" role="status">
             <div>
               <strong>{isAdding ? "Adding new item" : "Editing menu item"}</strong>
@@ -448,7 +451,7 @@ const MenuPage = () => {
                   const rowIsEditing = (editingIndex === index);
                   return (
                     <tr key={index} data-editing={rowIsEditing ? "true" : "false"}>
-                      <td>
+                      <td data-label="Category">
                         {rowIsEditing ? (
                           <textarea
                             className="menu-edit-field"
@@ -461,7 +464,7 @@ const MenuPage = () => {
                         )}
                       </td>
 
-                      <td>
+                      <td data-label="Name">
                         {rowIsEditing ? (
                           <textarea
                             className="menu-edit-field"
@@ -474,7 +477,7 @@ const MenuPage = () => {
                         )}
                       </td>
 
-                      <td>
+                      <td data-label="Item Image">
                         {rowIsEditing ? (
                           <div className="menu-image-edit">
                             <input
@@ -515,7 +518,7 @@ const MenuPage = () => {
                         )}
                       </td>
 
-                      <td>
+                      <td data-label="Price">
                         {rowIsEditing ? (
                           <textarea
                             className="menu-edit-field menu-edit-field--price"
@@ -528,7 +531,7 @@ const MenuPage = () => {
                         )}
                       </td>
 
-                      <td>
+                      <td data-label="Promotions">
                         <label className="switch">
                           <input
                             type="checkbox"
@@ -549,7 +552,7 @@ const MenuPage = () => {
                         </label>
                       </td>
 
-                      <td>
+                      <td data-label="Availability">
                         {rowIsEditing ? (
                           <textarea
                             className="menu-edit-field"
@@ -562,7 +565,7 @@ const MenuPage = () => {
                         )}
                       </td>
 
-                      <td>
+                      <td data-label="Description">
                         {rowIsEditing ? (
                           <textarea
                             className="menu-edit-field menu-edit-field--long"
@@ -577,7 +580,7 @@ const MenuPage = () => {
 
 
 
-                      <td>
+                      <td data-label="Type">
                         {rowIsEditing ? (
                           <textarea
                             className="menu-edit-field"
@@ -590,11 +593,18 @@ const MenuPage = () => {
                         )}
                       </td>
 
-                      <td className="menu-row-actions">
+                      <td className="menu-row-actions" data-label="Actions">
                         {!rowIsEditing && editingIndex === null && (
-                          <button className="btn-primary btn-row-edit" onClick={() => handleEditRow(index)}>Edit</button>
+                          <button className="btn-primary btn-row-edit" onClick={() => handleEditRow(index)} disabled={isEditingMenu}>Edit</button>
                         )}
-                        <button className="btn-primary btn-row-delete" onClick={() => handleDelete(index)}>Delete</button>
+                        <button
+                          className="btn-primary btn-row-delete"
+                          onClick={() => handleDelete(index)}
+                          disabled={isEditingMenu}
+                          aria-disabled={isEditingMenu}
+                        >
+                          Delete
+                        </button>
                       </td>
                     </tr>
                   );

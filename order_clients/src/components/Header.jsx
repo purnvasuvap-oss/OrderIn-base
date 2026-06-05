@@ -9,8 +9,18 @@ export default function Header() {
   const [showNotification, setShowNotification] = useState(false);
 
   const handleLogout = () => {
+    // Clear main auth
     localStorage.removeItem("auth");
-    navigate("/");
+
+    // Clear section auth so back/forward cannot bypass menu/finance/inventory login screens
+    localStorage.removeItem("menuAuth");
+    localStorage.removeItem("financeAuth");
+    localStorage.removeItem("inventoryAuth");
+    sessionStorage.removeItem("menuAuth");
+    sessionStorage.removeItem("financeAuth");
+    sessionStorage.removeItem("inventoryAuth");
+
+    navigate("/", { replace: true });
   };
 
   const handleNotificationClick = () => {

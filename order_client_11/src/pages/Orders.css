@@ -1668,4 +1668,155 @@ body,html,#root{height:100%;margin:0}
   }
 }
 
+/* Mobile order cards: the desktop table is too dense for phone widths. */
+@media (max-width: 680px) {
+  .content {
+    gap: 12px;
+  }
+
+  .left-stats {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .back-button-container {
+    grid-column: 1 / -1;
+  }
+
+  .stat {
+    min-height: 82px;
+    padding: 10px;
+  }
+
+  .stat .label {
+    font-size: 11px;
+  }
+
+  .stat .value {
+    font-size: 26px;
+  }
+
+  .main-panel {
+    padding: 12px;
+    border-radius: 10px;
+  }
+
+  .heading-row {
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  .heading-row h2 {
+    font-size: 22px;
+  }
+
+  .orders-table {
+    max-height: none;
+    overflow: visible;
+    border: 0;
+    background: transparent;
+  }
+
+  .table-header {
+    display: none;
+  }
+
+  .table-row {
+    min-width: 0;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0;
+    margin-bottom: 12px;
+    padding: 12px;
+    border: 1px solid rgba(21, 23, 26, 0.1);
+    border-radius: 12px;
+    background: #ffffff;
+    box-shadow: 0 8px 18px rgba(21, 23, 26, 0.08);
+  }
+
+  .table-row:hover {
+    background: #ffffff;
+  }
+
+  .table-row .col {
+    display: grid;
+    grid-template-columns: 92px minmax(0, 1fr);
+    gap: 10px;
+    align-items: start;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(21, 23, 26, 0.08);
+    font-size: 13px;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+  }
+
+  .table-row .col:last-child {
+    border-bottom: 0;
+  }
+
+  .table-row .col::before {
+    color: #667085;
+    font-size: 11px;
+    font-weight: 850;
+    line-height: 1.35;
+  }
+
+  .table-row .order-id::before {
+    content: "Order ID";
+  }
+
+  .table-row .customer::before {
+    content: "Customer";
+  }
+
+  .table-row .phone::before {
+    content: "Phone";
+  }
+
+  .table-row .table::before {
+    content: "Table";
+  }
+
+  .table-row .items::before {
+    content: "Items";
+  }
+
+  .table-row .specs::before {
+    content: "Specs";
+  }
+
+  .table-row .status-cell::before {
+    content: "Status";
+  }
+
+  .table-row .time::before {
+    content: "Time";
+  }
+
+  .items-directory {
+    width: 100%;
+  }
+
+  .items-directory .item-name {
+    width: fit-content;
+    max-width: 100%;
+    white-space: normal;
+  }
+
+  .status-cell .status {
+    width: fit-content;
+    min-width: 104px;
+  }
+}
+
+@media (max-width: 360px) {
+  .table-row .col {
+    grid-template-columns: 78px minmax(0, 1fr);
+    gap: 8px;
+  }
+
+  .stat {
+    padding: 8px;
+  }
+}
 

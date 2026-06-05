@@ -4,6 +4,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-d
 import routes from "./routes.jsx";
 import Header from "./components/Header.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
+import SectionProtectedRoute from "./components/SectionProtectedRoute.jsx";
 import Login from "./pages/Login.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
 import Orders from "./pages/Orders.jsx";
@@ -64,10 +65,12 @@ function App() {
           path={routes.menu}
           element={
             <ProtectedRoute>
-              <>
-                <Header />
-                <MenuPage />
-              </>
+              <SectionProtectedRoute storageKey="menuAuth" redirectTo={routes.menuLogin}>
+                <>
+                  <Header />
+                  <MenuPage />
+                </>
+              </SectionProtectedRoute>
             </ProtectedRoute>
           }
         />
@@ -77,10 +80,12 @@ function App() {
           path={routes.promotions}
           element={
             <ProtectedRoute>
-              <>
-                <Header />
-                <Promotions />
-              </>
+              <SectionProtectedRoute storageKey="menuAuth" redirectTo={routes.menuLogin}>
+                <>
+                  <Header />
+                  <Promotions />
+                </>
+              </SectionProtectedRoute>
             </ProtectedRoute>
           }
         />
@@ -98,10 +103,12 @@ function App() {
           path={routes.finance}
           element={
             <ProtectedRoute>
-              <>
-                <Header />
-                <Finance />
-              </>
+              <SectionProtectedRoute storageKey="financeAuth" redirectTo={routes.financeLogin}>
+                <>
+                  <Header />
+                  <Finance />
+                </>
+              </SectionProtectedRoute>
             </ProtectedRoute>
           }
         />
@@ -119,10 +126,12 @@ function App() {
           path={routes.inventory}
           element={
             <ProtectedRoute>
-              <>
-                <Header />
-                <Inventory />
-              </>
+              <SectionProtectedRoute storageKey="inventoryAuth" redirectTo={routes.inventoryLogin}>
+                <>
+                  <Header />
+                  <Inventory />
+                </>
+              </SectionProtectedRoute>
             </ProtectedRoute>
           }
         />

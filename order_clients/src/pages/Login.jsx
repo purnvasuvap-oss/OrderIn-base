@@ -28,17 +28,30 @@ export default function Login() {
           : "Disabled";
 
   useEffect(() => {
+    // If already authenticated, avoid keeping `/` login in history
+    // (prevents browser/device back/undo/redo from trapping user on login screen).
+    const existingAuth = localStorage.getItem("auth");
+    if (existingAuth) {
+      window.history.replaceState({}, document.title, window.location.pathname);
+      navigate("/dashboard", { replace: true });
+      return;
+    }
+
     let mounted = true;
     (async () => {
       try {
         const statusInfo = await getRestaurantStatus();
         if (mounted) setRestaurantStatus(statusInfo);
       } catch (err) {
-        console.warn('Failed to load restaurant status:', err);
+        console.warn("Failed to load restaurant status:", err);
       }
     })();
-    return () => { mounted = false; };
-  }, []);
+
+    return () => {
+      mounted = false;
+    };
+  }, [navigate]);
+
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -55,7 +68,13 @@ export default function Login() {
       const isValid = await verifyMainLogin(userId.trim(), password.trim());
       if (isValid) {
         localStorage.setItem("auth", "true");
-        navigate("/dashboard");
+        localStorage.removeItem("menuAuth");
+        localStorage.removeItem("financeAuth");
+        localStorage.removeItem("inventoryAuth");
+        sessionStorage.removeItem("menuAuth");
+        sessionStorage.removeItem("financeAuth");
+        sessionStorage.removeItem("inventoryAuth");
+        navigate("/dashboard", { replace: true });
       } else {
         alert("Invalid Credentials");
       }

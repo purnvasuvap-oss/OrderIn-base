@@ -35,6 +35,11 @@ const MenuPage = () => {
   const activeEditItem = editedItems[0] || {};
   const activeEditorImage = activeEditItem.image || activeEditItem.image_url || activeEditItem.oldImage || "";
 
+  const handleBackToDashboard = () => {
+    sessionStorage.removeItem("menuAuth");
+    navigate(routes.dashboard, { replace: true });
+  };
+
 
 
 
@@ -397,7 +402,7 @@ const MenuPage = () => {
 
       <div className="menu-header-bar header-top-row">
 
-        <button className="btn-back" onClick={() => navigate(routes.dashboard)}>Back</button>
+        <button className="btn-back" onClick={handleBackToDashboard}>Back</button>
 
         <h1 className="h1-page-title">Menu Management</h1>
 

@@ -10,7 +10,10 @@ export default function Header() {
 
   const handleLogout = () => {
     localStorage.removeItem("auth");
-    navigate("/");
+    sessionStorage.removeItem("menuAuth");
+    sessionStorage.removeItem("financeAuth");
+    sessionStorage.removeItem("inventoryAuth");
+    navigate("/", { replace: true });
   };
 
   const handleNotificationClick = () => {

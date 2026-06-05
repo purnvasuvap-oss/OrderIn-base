@@ -934,3 +934,242 @@
     padding: 32px;
   }
 }
+
+/* Mobile/tablet inventory layout polish. Desktop keeps the existing table. */
+@media (max-width: 768px) {
+  .inventory-container {
+    padding-bottom: 18px;
+  }
+
+  .Inventory-app-header {
+    margin-top: 60px;
+    padding: 10px 12px 6px;
+  }
+
+  .Inventory-title-main {
+    max-width: calc(100vw - 120px);
+    text-align: center;
+    line-height: 1.15;
+  }
+
+  .Inventory-dashboard-wrapper {
+    padding: 10px 12px;
+  }
+
+  .Inventory-stats-row {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    align-items: stretch;
+    margin-bottom: 8px;
+  }
+
+  .Inventory-card-stat {
+    width: auto !important;
+    min-width: 0;
+    max-width: none;
+    min-height: 92px;
+    height: auto;
+    padding: 10px 8px;
+    border-radius: 10px;
+  }
+
+  .Inventory-card-good {
+    background-color: #4caf50 !important;
+  }
+
+  .Inventory-card-low {
+    background-color: #f4b400 !important;
+  }
+
+  .Inventory-card-verylow {
+    background-color: #e74c3c !important;
+  }
+
+  .Inventory-card-good h4,
+  .Inventory-card-good p,
+  .Inventory-card-low h4,
+  .Inventory-card-low p,
+  .Inventory-card-verylow h4,
+  .Inventory-card-verylow p {
+    color: #ffffff;
+  }
+
+  .Inventory-card-top {
+    align-items: flex-start;
+    gap: 5px;
+  }
+
+  .Inventory-card-top svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .Inventory-card-stat h4 {
+    font-size: 10px;
+    line-height: 1.15;
+  }
+
+  .Inventory-card-stat p {
+    display: none;
+  }
+
+  .Inventory-card-stat h2 {
+    font-size: 22px;
+    line-height: 1;
+  }
+
+  .Inventory-card-activity {
+    grid-column: 1 / -1;
+    width: 100% !important;
+    min-height: auto;
+    padding: 12px;
+  }
+
+  .Inventory-card-activity h4 {
+    color: #000;
+    font-size: 13px;
+  }
+
+  .Inventory-activity-entry {
+    margin-bottom: 6px;
+  }
+
+  .Inventory-toolbar-container {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+    padding: 0 12px 10px;
+  }
+
+  .Inventory-toolbar-left {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .Inventory-toolbar-title {
+    margin: 0;
+    font-size: 13px;
+  }
+
+  .Inventory-input-search {
+    width: 100%;
+    min-height: 40px;
+    border-radius: 12px;
+  }
+
+  .Inventory-toolbar-right {
+    position: static;
+    left: auto;
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .Inventory-btn-action {
+    width: 100%;
+    height: 40px;
+    margin-left: 0;
+    padding: 8px 10px;
+    font-size: 12px;
+  }
+
+  .Inventory-container {
+    height: auto;
+    overflow: visible;
+    padding: 0 12px 18px;
+  }
+
+  .Inventory-table-wrapper {
+    height: auto;
+    overflow: visible;
+    padding: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .Inventory-inventory-table,
+  .Inventory-inventory-table tbody,
+  .Inventory-inventory-table tr,
+  .Inventory-inventory-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .Inventory-inventory-table {
+    border: 0;
+    border-collapse: separate;
+    box-shadow: none;
+    background: transparent;
+  }
+
+  .Inventory-inventory-table thead {
+    display: none;
+  }
+
+  .Inventory-inventory-table tbody tr {
+    margin-bottom: 10px;
+    padding: 12px;
+    border: 1px solid #e4e7eb;
+    border-radius: 12px;
+    background: #ffffff;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+  }
+
+  .Inventory-inventory-table tr:nth-child(odd),
+  .Inventory-inventory-table tr:nth-child(even) {
+    background: #ffffff;
+  }
+
+  .Inventory-inventory-table td {
+    display: grid;
+    grid-template-columns: 88px minmax(0, 1fr);
+    gap: 10px;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid #e4e7eb;
+    font-size: 13px;
+    overflow-wrap: anywhere;
+  }
+
+  .Inventory-inventory-table td::before {
+    content: attr(data-label);
+    color: #667085;
+    font-size: 11px;
+    font-weight: 800;
+  }
+
+  .Inventory-inventory-table td:last-child {
+    border-bottom: 0;
+  }
+
+  .Inventory-status {
+    width: fit-content;
+    gap: 4px;
+  }
+
+  .Inventory-modal-box {
+    width: min(94vw, 420px);
+    max-height: 88svh;
+    overflow-y: auto;
+  }
+}
+
+@media (max-width: 360px) {
+  .Inventory-stats-row {
+    gap: 6px;
+  }
+
+  .Inventory-card-stat {
+    padding: 8px 6px;
+  }
+
+  .Inventory-inventory-table td {
+    grid-template-columns: 76px minmax(0, 1fr);
+    gap: 8px;
+  }
+}

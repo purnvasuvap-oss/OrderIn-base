@@ -8,13 +8,18 @@ export default function FinanceLogin() {
   const [pin, setPin] = useState("");
   const navigate = useNavigate();
 
+  React.useEffect(() => {
+    sessionStorage.removeItem("financeAuth");
+    localStorage.removeItem("financeAuth");
+  }, []);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       const isValid = await verifySectionPasscode("FinanceAccess", pin);
       if (isValid) {
-        localStorage.setItem("financeAuth", "true");
-        navigate(routes.finance);
+        sessionStorage.setItem("financeAuth", "true");
+        navigate(routes.finance, { replace: true });
       } else {
         alert("Wrong Passcode");
       }
@@ -23,6 +28,7 @@ export default function FinanceLogin() {
       alert("Login failed. Please try again.");
     }
   };
+
 
   return (
     <div className="sub-login login-redesign">
@@ -89,7 +95,7 @@ export default function FinanceLogin() {
               <button
                 type="button"
                 className="sub-dashboard-back"
-                onClick={() => navigate(routes.dashboard)}
+                onClick={() => navigate(routes.dashboard, { replace: true })}
               >
                 Back to Dashboard
               </button>

@@ -8,13 +8,18 @@ export default function InventoryLogin() {
   const [pin, setPin] = useState("");
   const navigate = useNavigate();
 
+  React.useEffect(() => {
+    sessionStorage.removeItem("inventoryAuth");
+    localStorage.removeItem("inventoryAuth");
+  }, []);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       const isValid = await verifySectionPasscode("InventoryAccess", pin);
       if (isValid) {
-        localStorage.setItem("inventoryAuth", "true");
-        navigate(routes.inventory);
+        sessionStorage.setItem("inventoryAuth", "true");
+        navigate(routes.inventory, { replace: true });
       } else {
         alert("Wrong Passcode");
       }
@@ -23,6 +28,7 @@ export default function InventoryLogin() {
       alert("Login failed. Please try again.");
     }
   };
+
 
   return (
     <div className="sub-login login-redesign">
@@ -89,7 +95,7 @@ export default function InventoryLogin() {
               <button
                 type="button"
                 className="sub-dashboard-back"
-                onClick={() => navigate(routes.dashboard)}
+                onClick={() => navigate(routes.dashboard, { replace: true })}
               >
                 Back to Dashboard
               </button>

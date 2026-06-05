@@ -392,53 +392,73 @@ function Menu({ setIsLoading }) {
 
       <div className="app-container">
         {filteredProducts.length > 0 ? (
-          filteredProducts.map((item, index) => {
-            const isUnavailable = isUnavailableStatus(item.availability || item.status || item.availabilty);
-            return (
-              <div
-                className={`card ${isUnavailable ? 'unavailable' : ''}`}
-                key={item.id || index}
-                onClick={() => {
-                  if (isUnavailable) {
-                    console.debug('Navigation blocked: item unavailable', item && (item.id || item.name));
-                    return;
-                  }
-                  handleCardClick(item);
-                }}
-                role="button"
-                aria-disabled={isUnavailable}
-                tabIndex={isUnavailable ? -1 : 0}
-              >
-                <img
-                  loading="lazy"
-                  src={item.image || item.imageURL || item.image_url || getPlaceholder('No Image')}
-                  alt={item.name}
-                  className="card-img"
-                  onError={(e) => {
-                    console.warn('Image load failed', e.target.src, 'item', item && (item.id || item.name));
-                    e.target.src = getPlaceholder('No Image');
-                  }}
-                />
-                <div className="card-body">
-                  <h3 className="card-title">{item.name}</h3>
-                  <p className="card-price">
-                    {isOnPromotion(item) ? (() => {
-                      const { value, symbol } = parsePrice(item.price);
-                      const increased = (value * 1.25).toFixed(2);
-                      return (
-                        <>
-                          <span className="price-normal">{symbol}{Number(value).toFixed(2)}</span>
-                          <span className="price-increased">{symbol}{Number(increased).toFixed(2)}</span>
-                        </>
-                      );
-                    })() : (
-                      <span className="price-normal">{parsePrice(item.price).symbol}{parsePrice(item.price).value.toFixed(2)}</span>
-                    )}
-                  </p>
-                </div>
-              </div>
-            );
-          })
+          (() => {
+            // Group items by category while preserving first-appearance order from filteredProducts
+            const categoryOrder = [];
+            const buckets = new Map();
+
+            filteredProducts.forEach((item) => {
+              const cat = (item.category || '').trim() || 'Uncategorized';
+              if (!buckets.has(cat)) {
+                buckets.set(cat, []);
+                categoryOrder.push(cat);
+              }
+              buckets.get(cat).push(item);
+            });
+
+            return categoryOrder.map((cat) => (
+              <React.Fragment key={cat}>
+                <div className="menu-category-header">{cat}</div>
+                {buckets.get(cat).map((item, index) => {
+                  const isUnavailable = isUnavailableStatus(item.availability || item.status || item.availabilty);
+                  return (
+                    <div
+                      className={`card ${isUnavailable ? 'unavailable' : ''}`}
+                      key={item.id || `${cat}-${index}`}
+                      onClick={() => {
+                        if (isUnavailable) {
+                          console.debug('Navigation blocked: item unavailable', item && (item.id || item.name));
+                          return;
+                        }
+                        handleCardClick(item);
+                      }}
+                      role="button"
+                      aria-disabled={isUnavailable}
+                      tabIndex={isUnavailable ? -1 : 0}
+                    >
+                      <img
+                        loading="lazy"
+                        src={item.image || item.imageURL || item.image_url || getPlaceholder('No Image')}
+                        alt={item.name}
+                        className="card-img"
+                        onError={(e) => {
+                          console.warn('Image load failed', e.target.src, 'item', item && (item.id || item.name));
+                          e.target.src = getPlaceholder('No Image');
+                        }}
+                      />
+                      <div className="card-body">
+                        <h3 className="card-title">{item.name}</h3>
+                        <p className="card-price">
+                          {isOnPromotion(item) ? (() => {
+                            const { value, symbol } = parsePrice(item.price);
+                            const increased = (value * 1.25).toFixed(2);
+                            return (
+                              <>
+                                <span className="price-normal">{symbol}{Number(value).toFixed(2)}</span>
+                                <span className="price-increased">{symbol}{Number(increased).toFixed(2)}</span>
+                              </>
+                            );
+                          })() : (
+                            <span className="price-normal">{parsePrice(item.price).symbol}{parsePrice(item.price).value.toFixed(2)}</span>
+                          )}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </React.Fragment>
+            ));
+          })()
         ) : (
           <div className="no-results">
             <p>No items found matching your search.</p>

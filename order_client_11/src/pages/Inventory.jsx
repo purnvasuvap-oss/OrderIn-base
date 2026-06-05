@@ -309,11 +309,11 @@ function App() {
           <tbody>
             {filteredData.map((item, i) => (
               <tr key={i} className={item.status === "Very Low" ? "Inventory-row-verylow" : ""}>
-                <td>{item.name}</td>
-                <td>{item.itemCategory}</td>
-                <td>{item.quantity}</td>
-                <td>{item.locationOfStorage}</td>
-                <td>{getStatusIcon(item.status)}</td>
+                <td data-label="Item Name">{item.name}</td>
+                <td data-label="Category">{item.itemCategory}</td>
+                <td data-label="Quantity">{item.quantity}</td>
+                <td data-label="Storage">{item.locationOfStorage}</td>
+                <td data-label="Status">{getStatusIcon(item.status)}</td>
               </tr>
             ))}
           </tbody>

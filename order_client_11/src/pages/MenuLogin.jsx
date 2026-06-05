@@ -10,6 +10,8 @@ export default function MenuLogin() {
   const navigate = useNavigate();
 
   React.useEffect(() => {
+    sessionStorage.removeItem("menuAuth");
+    localStorage.removeItem("menuAuth");
     // initial check
     setAuthInfo(getAuthInfo());
     // re-check after a short delay to catch async anonymous sign-in result
@@ -22,8 +24,8 @@ export default function MenuLogin() {
     try {
       const isValid = await verifySectionPasscode("menuAccess", pin);
       if (isValid) {
-        localStorage.setItem("menuAuth", "true");
-        navigate(routes.menu);
+        sessionStorage.setItem("menuAuth", "true");
+        navigate(routes.menu, { replace: true });
       } else {
         alert("Wrong Passcode");
       }
@@ -84,6 +86,13 @@ export default function MenuLogin() {
             />
 
             <button type="submit" className="sub-primary-cta">Enter</button>
+            <button
+              type="button"
+              className="sub-dashboard-back"
+              onClick={() => navigate(routes.dashboard, { replace: true })}
+            >
+              Back to Dashboard
+            </button>
           </form>
         </section>
 

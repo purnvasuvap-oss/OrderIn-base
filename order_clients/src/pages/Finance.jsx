@@ -388,6 +388,10 @@ function App() {
   );
 
 
+  const handleBackToDashboard = () => {
+    sessionStorage.removeItem("financeAuth");
+    navigate(routes.dashboard, { replace: true });
+  };
 
   return (
     <div className="fin-app">
@@ -395,7 +399,7 @@ function App() {
 
       <div className="fin-top-row">
         <div className="fin-back-col">
-          <button className="fin-back-btn" onClick={() => navigate(routes.dashboard)}>Back</button>
+          <button className="fin-back-btn" onClick={handleBackToDashboard}>Back</button>
         </div>
 
         <div className="fin-nav-center">
