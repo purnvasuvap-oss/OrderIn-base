@@ -10,6 +10,46 @@ const RESTAURANT_NUMBER = import.meta.env.VITE_RESTAURANT_NUMBER || '0';
 
 import "./MenuPage.css";
 
+const TYPE_VEG = "Veg";
+const TYPE_NON_VEG = "Non-Veg";
+
+const normalizeMenuType = (value) => {
+  const normalized = String(value || "").trim().toLowerCase();
+  return normalized.includes("non") ? TYPE_NON_VEG : TYPE_VEG;
+};
+
+const sanitizePriceInput = (value) => {
+  const raw = String(value ?? "");
+  const cleaned = raw.replace(/[^\d.]/g, "");
+  if (!cleaned) return "";
+
+  const [wholePart = "", ...decimalParts] = cleaned.split(".");
+  const whole = wholePart.replace(/^0+(?=\d)/, "");
+
+  if (!cleaned.includes(".")) {
+    return whole;
+  }
+
+  const decimals = decimalParts.join("").slice(0, 2);
+  return `${whole || "0"}.${decimals}`;
+};
+
+const normalizePrice = (value) => {
+  const sanitized = sanitizePriceInput(value);
+  if (!sanitized) return "0";
+  return sanitized.endsWith(".") ? sanitized.slice(0, -1) || "0" : sanitized;
+};
+
+const priceToNumber = (value) => {
+  const parsed = Number.parseFloat(normalizePrice(value));
+  return Number.isFinite(parsed) ? parsed : 0;
+};
+
+const formatSteppedPrice = (value) => {
+  const rounded = Math.round(Math.max(0, value) * 100) / 100;
+  return rounded.toFixed(2);
+};
+
 const MenuPage = () => {
   const navigate = useNavigate();
   const { addActivity } = useNotification();
@@ -20,18 +60,52 @@ const MenuPage = () => {
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState(null); // { type: 'success'|'error', message: string }
-  const [deletionNotice, setDeletionNotice] = useState(null);
+  const [menuNotice, setMenuNotice] = useState(null);
+  const [allVegMode, setAllVegMode] = useState(false);
+  const [isApplyingAllVeg, setIsApplyingAllVeg] = useState(false);
   const isEditingMenu = isAdding || editingIndex !== null || isSaving;
 
   useEffect(() => {
-    if (!deletionNotice) return undefined;
+    if (!menuNotice) return undefined;
 
     const timer = window.setTimeout(() => {
-      setDeletionNotice(null);
+      setMenuNotice(null);
     }, 3500);
 
     return () => window.clearTimeout(timer);
-  }, [deletionNotice]);
+  }, [menuNotice]);
+
+  const showMenuNotice = (message, type) => {
+    setMenuNotice({ id: Date.now(), message, type });
+  };
+
+  const handleAllVegToggle = async (checked) => {
+    setAllVegMode(checked);
+
+    if (!checked) return;
+
+    setMenuItems((current) => current.map((item) => ({ ...item, type: TYPE_VEG })));
+    setEditedItems((current) => current.map((item) => ({ ...item, type: TYPE_VEG })));
+
+    const itemsToUpdate = menuItems.filter((item) => item.id && normalizeMenuType(item.type) !== TYPE_VEG);
+    if (itemsToUpdate.length === 0) return;
+
+    setIsApplyingAllVeg(true);
+    try {
+      const menuCollection = collection(db, "Restaurant", "orderin_restaurant_2", "menu");
+      await Promise.all(
+        itemsToUpdate.map((item) => updateDoc(doc(menuCollection, item.id), { type: TYPE_VEG }))
+      );
+      setSaveStatus({ type: "success", message: "All menu items are set to Veg." });
+      setTimeout(() => setSaveStatus(null), 4000);
+    } catch (error) {
+      console.error("Error setting all menu items to veg:", error);
+      setSaveStatus({ type: "error", message: "Error setting all menu items to Veg: " + error.message });
+      setTimeout(() => setSaveStatus(null), 6000);
+    } finally {
+      setIsApplyingAllVeg(false);
+    }
+  };
 
   // Fetch menu items from Firestore on component mount
   useEffect(() => {
@@ -44,6 +118,7 @@ const MenuPage = () => {
           ...doc.data()
         }));
         setMenuItems(items);
+        setAllVegMode(items.every((item) => normalizeMenuType(item.type) === TYPE_VEG));
       } catch (error) {
         console.error("Error fetching menu items:", error);
       } finally {
@@ -62,6 +137,8 @@ const MenuPage = () => {
     const item = menuItems[rowIndex] || {};
     const single = {
       ...item,
+      type: normalizeMenuType(item.type),
+      price: normalizePrice(item.price),
       oldImage: item.image_url || item.image || null,
       // store previous firebase storage path (if any) so we can delete on replace
       oldImagePath: item.image_path || null
@@ -78,7 +155,7 @@ const MenuPage = () => {
       promotions: false,
       availability: "Yes",
       description: "",
-      type: "",
+      type: TYPE_VEG,
     };
     // Insert placeholder at top and start single-row edit for it
     setMenuItems([newItem, ...menuItems]);
@@ -96,6 +173,11 @@ const MenuPage = () => {
       console.log("Starting save process...");
       // Prepare a local copy of edited items so we can adjust behavior (image uploads only)
       let itemsToProcess = editedItems.map(i => ({ ...i }));
+      itemsToProcess = itemsToProcess.map((item) => ({
+        ...item,
+        price: normalizePrice(item.price),
+        type: allVegMode ? TYPE_VEG : normalizeMenuType(item.type)
+      }));
 
       // Validate edited items. Only require an image for NEW items (no id).
       // For existing items, allow partial updates (updating fields without providing an image).
@@ -135,6 +217,7 @@ const MenuPage = () => {
 
       const menuCollection = collection(db, "Restaurant", "orderin_restaurant_2", "menu");
       console.log("Menu collection:", menuCollection);
+      const savedMenuActivities = [];
       
       for (const item of itemsToProcess) {
         console.log("Processing item:", item);
@@ -235,6 +318,8 @@ const MenuPage = () => {
 
         // Videos are not supported. Construct item data with canonical image fields only.
         const itemData = { ...data, image_id, image_url, image_delete_hash, image_name, image_path: (item._image_path_for_save || data.image_path || null) };
+        itemData.price = normalizePrice(itemData.price);
+        itemData.type = allVegMode ? TYPE_VEG : normalizeMenuType(itemData.type);
         // Remove legacy external-only fields if present (cleanup on write)
         delete itemData.imageDeleteUrl; delete itemData.imageId;
         console.log("Item data to save:", itemData);
@@ -283,7 +368,14 @@ const MenuPage = () => {
             }
           } else {
             console.log("Adding new item");
-            await addDoc(menuCollection, itemData);
+            const addedDocRef = await addDoc(menuCollection, itemData);
+            const addedItemName = itemData.name || "Item";
+            savedMenuActivities.push({
+              message: `${addedItemName} has been added to menu.`,
+              type: "menu_add",
+              itemId: addedDocRef.id,
+              itemName: addedItemName
+            });
           }
         } catch (fireErr) {
           console.error("Firestore write error:", fireErr);
@@ -306,6 +398,22 @@ const MenuPage = () => {
       setMenuItems(updatedItems);
       setIsAdding(false);
       setEditingIndex(null);
+      if (savedMenuActivities.length > 0) {
+        const noticeMessage = savedMenuActivities.length === 1
+          ? savedMenuActivities[0].message
+          : `${savedMenuActivities.length} menu items have been added to menu.`;
+        showMenuNotice(noticeMessage, "menu_add");
+
+        for (const activity of savedMenuActivities) {
+          await addActivity(activity.message, {
+            persist: true,
+            type: activity.type,
+            source: "menu",
+            itemId: activity.itemId,
+            itemName: activity.itemName
+          });
+        }
+      }
       setSaveStatus({ type: 'success', message: 'Menu items saved successfully.' });
       // clear success message after a short delay
       setTimeout(() => setSaveStatus(null), 4000);
@@ -384,7 +492,7 @@ const MenuPage = () => {
 
       const deletedItemName = itemToDelete.name || "Item";
       const deletionMessage = `${deletedItemName} has been deleted from menu.`;
-      setDeletionNotice({ id: Date.now(), message: deletionMessage });
+      showMenuNotice(deletionMessage, "menu_delete");
       await addActivity(deletionMessage, {
         persist: true,
         type: "menu_delete",
@@ -424,6 +532,15 @@ const MenuPage = () => {
               </>
             )} 
           </div>
+          <label className="menu-all-veg-control">
+            <input
+              type="checkbox"
+              checked={allVegMode}
+              onChange={(e) => handleAllVegToggle(e.target.checked)}
+              disabled={isSaving || isApplyingAllVeg}
+            />
+            <span>All Veg</span>
+          </label>
 
         </div>
 
@@ -435,10 +552,10 @@ const MenuPage = () => {
         </div>
       )} 
 
-      {deletionNotice && (
-        <div className="menu-delete-toast" role="status" aria-live="polite">
+      {menuNotice && (
+        <div className={`menu-action-toast menu-action-toast--${menuNotice.type === "menu_delete" ? "delete" : "add"}`} role="status" aria-live="polite">
           <strong>Menu updated</strong>
-          <span>{deletionNotice.message}</span>
+          <span>{menuNotice.message}</span>
         </div>
       )}
 
@@ -472,7 +589,7 @@ const MenuPage = () => {
 
                   <th>Description</th>
 
-                  <th>Type</th>
+                  {!allVegMode && <th>Type</th>}
 
                   <th>Delete</th>
                 </tr>
@@ -553,12 +670,28 @@ const MenuPage = () => {
 
                       <td data-label="Price">
                         {rowIsEditing ? (
-                          <textarea
-                            className="menu-edit-field menu-edit-field--price"
-                            value={rowItem.price || ''}
-                            onChange={(e) => handleInputChange(index, 'price', e.target.value)}
-                            rows="1"
-                          />
+                          <div className="menu-price-stepper menu-price-stepper--inline">
+                            <button
+                              type="button"
+                              onClick={() => handleInputChange(index, 'price', formatSteppedPrice(priceToNumber(rowItem.price) - 0.01))}
+                              disabled={isSaving}
+                            >
+                              -
+                            </button>
+                            <input
+                              type="text"
+                              inputMode="decimal"
+                              value={sanitizePriceInput(rowItem.price)}
+                              onChange={(e) => handleInputChange(index, 'price', sanitizePriceInput(e.target.value))}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => handleInputChange(index, 'price', formatSteppedPrice(priceToNumber(rowItem.price) + 0.01))}
+                              disabled={isSaving}
+                            >
+                              +
+                            </button>
+                          </div>
                         ) : (
                           item.price
                         )}
@@ -613,18 +746,28 @@ const MenuPage = () => {
 
 
 
-                      <td data-label="Type">
-                        {rowIsEditing ? (
-                          <textarea
-                            className="menu-edit-field"
-                            value={rowItem.type || ''}
-                            onChange={(e) => handleInputChange(index, 'type', e.target.value)}
-                            rows="1"
-                          />
-                        ) : (
-                          item.type
-                        )}
-                      </td>
+                      {!allVegMode && (
+                        <td data-label="Type">
+                          {rowIsEditing ? (
+                            <div className="menu-type-toggle menu-type-toggle--inline">
+                              <span className={normalizeMenuType(rowItem.type) === TYPE_VEG ? "active" : ""}>Veg</span>
+                              <button
+                                type="button"
+                                className={`menu-type-switch ${normalizeMenuType(rowItem.type) === TYPE_NON_VEG ? "is-nonveg" : ""}`}
+                                role="switch"
+                                aria-checked={normalizeMenuType(rowItem.type) === TYPE_NON_VEG}
+                                onClick={() => handleInputChange(index, 'type', normalizeMenuType(rowItem.type) === TYPE_NON_VEG ? TYPE_VEG : TYPE_NON_VEG)}
+                                disabled={isSaving}
+                              >
+                                <span></span>
+                              </button>
+                              <span className={normalizeMenuType(rowItem.type) === TYPE_NON_VEG ? "active" : ""}>Non-Veg</span>
+                            </div>
+                          ) : (
+                            normalizeMenuType(item.type)
+                          )}
+                        </td>
+                      )}
 
                       <td className="menu-row-actions" data-label="Actions">
                         {!rowIsEditing && editingIndex === null && (
