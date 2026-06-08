@@ -4,6 +4,7 @@ import routes from "../routes";
 import { db, getAuthInfo, trySignInAnonymously } from "../firebase";
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, deleteField } from "firebase/firestore";
 import storageService from "../services/storageService";
+import { useNotification } from "../hooks/useNotification";
 
 const RESTAURANT_NUMBER = import.meta.env.VITE_RESTAURANT_NUMBER || '0';
 
@@ -23,6 +24,7 @@ const imageBase64 = {
 
 const MenuPage = () => {
   const navigate = useNavigate();
+  const { addActivity } = useNotification();
   const [menuItems, setMenuItems] = useState([]);
   const [isAdding, setIsAdding] = useState(false);
   const [editingIndex, setEditingIndex] = useState(null); // single-row edit index (null = none)
@@ -30,6 +32,7 @@ const MenuPage = () => {
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState(null); // { type: 'success'|'error', message: string }
+  const [deletionNotice, setDeletionNotice] = useState(null);
 
   // Shared textarea styling for consistency
   const textareaStyle = {
@@ -43,6 +46,16 @@ const MenuPage = () => {
   };
 
 
+
+  useEffect(() => {
+    if (!deletionNotice) return undefined;
+
+    const timer = window.setTimeout(() => {
+      setDeletionNotice(null);
+    }, 3500);
+
+    return () => window.clearTimeout(timer);
+  }, [deletionNotice]);
 
 
   // Fetch menu items from Firestore on component mount
@@ -360,6 +373,8 @@ const MenuPage = () => {
   const handleDelete = async (index) => {
     try {
       const itemToDelete = menuItems[index];
+      if (!itemToDelete) return;
+
       if (itemToDelete.id) {
         // Delete associated image if it's stored on Firebase Storage
         if (itemToDelete.image_path) {
@@ -391,6 +406,17 @@ const MenuPage = () => {
           setEditingIndex(editingIndex - 1);
         }
       }
+
+      const deletedItemName = itemToDelete.name || "Item";
+      const deletionMessage = `${deletedItemName} has been deleted from menu.`;
+      setDeletionNotice({ id: Date.now(), message: deletionMessage });
+      await addActivity(deletionMessage, {
+        persist: true,
+        type: "menu_delete",
+        source: "menu",
+        itemId: itemToDelete.id || null,
+        itemName: deletedItemName
+      });
     } catch (error) {
       console.error("Error deleting menu item:", error);
     }
@@ -433,6 +459,13 @@ const MenuPage = () => {
           {saveStatus.message}
         </div>
       )} 
+
+      {deletionNotice && (
+        <div className="menu-delete-toast" role="status" aria-live="polite">
+          <strong>Menu updated</strong>
+          <span>{deletionNotice.message}</span>
+        </div>
+      )}
 
       <div className="menu-content-area">
         <div className="menu-table-wrapper">

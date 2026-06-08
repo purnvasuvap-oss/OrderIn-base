@@ -4,6 +4,7 @@ import routes from "../routes";
 import { db, getAuthInfo, trySignInAnonymously } from "../firebase";
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, deleteField } from "firebase/firestore";
 import storageService from "../services/storageService";
+import { useNotification } from "../hooks/useNotification";
 
 const RESTAURANT_NUMBER = import.meta.env.VITE_RESTAURANT_NUMBER || '0';
 
@@ -23,6 +24,7 @@ const imageBase64 = {
 
 const MenuPage = () => {
   const navigate = useNavigate();
+  const { addActivity } = useNotification();
   const [menuItems, setMenuItems] = useState([]);
   const [isAdding, setIsAdding] = useState(false);
   const [editingIndex, setEditingIndex] = useState(null); // single-row edit index (null = none)
@@ -30,10 +32,25 @@ const MenuPage = () => {
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState(null); // { type: 'success'|'error', message: string }
+  const [menuNotice, setMenuNotice] = useState(null);
   const isEditingMenu = isAdding || editingIndex !== null || isSaving;
   const editModeLabel = isAdding ? "Adding new menu item" : editingIndex !== null ? "Editing menu item" : "";
   const activeEditItem = editedItems[0] || {};
   const activeEditorImage = activeEditItem.image || activeEditItem.image_url || activeEditItem.oldImage || "";
+
+  useEffect(() => {
+    if (!menuNotice) return undefined;
+
+    const timer = window.setTimeout(() => {
+      setMenuNotice(null);
+    }, 3500);
+
+    return () => window.clearTimeout(timer);
+  }, [menuNotice]);
+
+  const showMenuNotice = (message, type) => {
+    setMenuNotice({ id: Date.now(), message, type });
+  };
 
   const handleBackToDashboard = () => {
     sessionStorage.removeItem("menuAuth");
@@ -142,6 +159,7 @@ const MenuPage = () => {
 
       const menuCollection = collection(db, "Restaurant", "orderin_restaurant_1", "menu");
       console.log("Menu collection:", menuCollection);
+      const savedMenuActivities = [];
       
       for (const item of itemsToProcess) {
         console.log("Processing item:", item);
@@ -290,7 +308,14 @@ const MenuPage = () => {
             }
           } else {
             console.log("Adding new item");
-            await addDoc(menuCollection, itemData);
+            const addedDocRef = await addDoc(menuCollection, itemData);
+            const addedItemName = itemData.name || "Item";
+            savedMenuActivities.push({
+              message: `${addedItemName} has been added to menu.`,
+              type: "menu_add",
+              itemId: addedDocRef.id,
+              itemName: addedItemName
+            });
           }
         } catch (fireErr) {
           console.error("Firestore write error:", fireErr);
@@ -313,6 +338,22 @@ const MenuPage = () => {
       setMenuItems(updatedItems);
       setIsAdding(false);
       setEditingIndex(null);
+      if (savedMenuActivities.length > 0) {
+        const noticeMessage = savedMenuActivities.length === 1
+          ? savedMenuActivities[0].message
+          : `${savedMenuActivities.length} menu items have been added to menu.`;
+        showMenuNotice(noticeMessage, "menu_add");
+
+        for (const activity of savedMenuActivities) {
+          await addActivity(activity.message, {
+            persist: true,
+            type: activity.type,
+            source: "menu",
+            itemId: activity.itemId,
+            itemName: activity.itemName
+          });
+        }
+      }
       setSaveStatus({ type: 'success', message: 'Menu items saved successfully.' });
       // clear success message after a short delay
       setTimeout(() => setSaveStatus(null), 4000);
@@ -360,6 +401,8 @@ const MenuPage = () => {
 
     try {
       const itemToDelete = menuItems[index];
+      if (!itemToDelete) return;
+
       if (itemToDelete.id) {
         // Delete associated image if it's stored on Firebase Storage
         if (itemToDelete.image_path) {
@@ -391,6 +434,17 @@ const MenuPage = () => {
           setEditingIndex(editingIndex - 1);
         }
       }
+
+      const deletedItemName = itemToDelete.name || "Item";
+      const deletionMessage = `${deletedItemName} has been deleted from menu.`;
+      showMenuNotice(deletionMessage, "menu_delete");
+      await addActivity(deletionMessage, {
+        persist: true,
+        type: "menu_delete",
+        source: "menu",
+        itemId: itemToDelete.id || null,
+        itemName: deletedItemName
+      });
     } catch (error) {
       console.error("Error deleting menu item:", error);
     }
@@ -431,6 +485,13 @@ const MenuPage = () => {
           {saveStatus.message}
         </div>
       )} 
+
+      {menuNotice && (
+        <div className={`menu-action-toast menu-action-toast--${menuNotice.type === "menu_delete" ? "delete" : "add"}`} role="status" aria-live="polite">
+          <strong>Menu updated</strong>
+          <span>{menuNotice.message}</span>
+        </div>
+      )}
 
       {isEditingMenu && (
         <section className="menu-editor-panel" aria-label={editModeLabel}>
