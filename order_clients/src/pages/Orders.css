@@ -348,6 +348,18 @@ body,html,#root{height:100%;margin:0}
   background: #555;
 }
 
+.main-panel{
+  flex:1;
+  display:flex;
+  flex-direction:column;
+}
+
+.orders-table{
+  flex:1;
+  max-height:none;
+  min-height:0;
+  overflow-y:auto;
+}
 .table-header{
   display:grid;
   grid-template-columns: 130px 140px 120px 100px 1fr 150px 120px 100px;
@@ -421,6 +433,36 @@ body,html,#root{height:100%;margin:0}
 .status.preparing{background:#ef6b6b}
 .status.pending{background:#f7c23b; color:#3a2b00}
 .status.ready{background:#4caf50; color:#fff}
+
+/* Status dropdown */
+.status-cell select.status {
+  background: #ffffff !important;
+  color: #222 !important;
+  border: 1px solid #dcdcdc;
+  appearance: auto;
+  -webkit-appearance: menulist;
+  -moz-appearance: menulist;
+  padding-right: 28px; /* space for arrow */
+}
+
+/* Dropdown options */
+.status-cell select.status option {
+  background: #ffffff !important;
+  color: #222 !important;
+}
+
+/* Hovered option (supported browsers) */
+.status-cell select.status option:hover {
+  background: #f5f5f5 !important;
+  color: #222 !important;
+}
+
+/* Focus state */
+.status-cell select.status:focus {
+  outline: none;
+  border-color: #e53935;
+  box-shadow: 0 0 0 3px rgba(229, 57, 53, 0.15);
+}
 
 /* layout curve at bottom-left like image */
 .corner-curve{
