@@ -19,11 +19,11 @@
   display:flex;
   justify-content:space-between;
   align-items:center;
-
-  margin-bottom:25px;
+  height:170px;
+  margin-bottom:10px;
 }
 .dashboard-wrapper{
-  min-height:100vh;
+  min-height:90vh;
   background:#f6f5f3;
   padding:20px;
 }
@@ -42,34 +42,18 @@
   color: #43A047;
   margin: 0;
 }
-/* .date-card{
-  background:white;
-  padding:5px 20px;
-  border-radius:12px;
-  height:90px;
-  display:flex;
-  gap:20px;
-  align-items:center;
-
-  min-width:200px;
-} */
-.date-card{
-  background:#fff;
-
-  padding:12px 18px;
-
-  border-radius:12px;
-
-  display:flex;
-  align-items:center;
-  gap:14px;
-
-  min-width:180px;
-  height:80px;
-
-  box-shadow:0 2px 8px rgba(0,0,0,.05);
+.date-card {
+  background: #fff;
+  padding: 12px 18px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 160px;
+  height: auto; /* ✅ important */
+  box-shadow: 0 2px 8px rgba(0,0,0,.05);
+  flex-wrap: wrap; /* ✅ allows wrapping */
 }
-
 .date-card p{
   margin:0;
   font-size:13px;
@@ -171,100 +155,6 @@
 
 .tables h2 {
   color: #43A047;
-}
-/* ===================================
-   QUICK ACTIONS
-=================================== */
-
-.quick-actions-container{
-  background:#fff;
-  border-radius:16px;
-  padding:28px;
-
-  display:grid;
-  grid-template-columns:180px repeat(3,1fr);
-  gap:22px;
-
-  align-items:center;
-  margin-bottom:28px;
-
-  box-shadow:0 3px 12px rgba(0,0,0,.05);
-}
-
-.quick-title{
-  height:100%;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  border-right:1px solid #ececec;
-}
-
-.quick-title h3{
-  margin:0;
-  font-size:26px;
-  font-weight:700;
-}
-
-.quick-card{
-  display:flex;
-  align-items:center;
-  gap:14px;
-
-  padding:18px;
-  border-radius:12px;
-  cursor:pointer;
-  transition:.3s;
-}
-
-.quick-card:hover{
-  transform:translateY(-3px);
-}
-
-.red-card{
-  background:#fff4f4;
-}
-
-.green-card{
-  background:#f5fcf5;
-}
-
-.yellow-card{
-  background:#fff9ed;
-}
-
-.quick-icon{
-  width:42px;
-  height:42px;
-  border-radius:10px;
-
-  display:flex;
-  align-items:center;
-  justify-content:center;
-
-  color:white;
-}
-
-.red-icon{
-  background:#ef4444;
-}
-
-.green-icon{
-  background:#43a047;
-}
-
-.yellow-icon{
-  background:#fbc02d;
-}
-
-.quick-card h4{
-  margin:0;
-  font-size:15px;
-}
-
-.quick-card p{
-  margin-top:4px;
-  font-size:12px;
-  color:#666;
 }
 
 /* ===================================
@@ -477,5 +367,16 @@
 
   .footer-divider{
     display:none;
+  }
+}
+@media (max-width: 992px) {
+  .stats-grid {
+    display: none;
+  }
+}
+
+@media (max-width: 576px) {
+  .dashboard-banner {
+    display: none;
   }
 }

@@ -151,50 +151,7 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
-
-      {/* Quick Actions */}
-      <div className="quick-actions-container">
-        <div className="quick-title">
-          <h3>Quick Actions</h3>
-        </div>
-
-        <div className="quick-card red-card" onClick={goTo("/orders")}>
-          <div className="quick-icon red-icon">
-            <Plus size={18} />
-          </div>
-
-          <div>
-            <h4>New Order</h4>
-            <p>Create a new customer order</p>
-          </div>
-        </div>
-
-        <div className="quick-card green-card" onClick={goTo("/menu-login")}>
-          <div className="quick-icon green-icon">
-            <Plus size={18} />
-          </div>
-
-          <div>
-            <h4>Add Menu Item</h4>
-            <p>Add new dish or item</p>
-          </div>
-        </div>
-
-        <div
-          className="quick-card yellow-card"
-          onClick={goTo("/inventory-login")}
-        >
-          <div className="quick-icon yellow-icon">
-            <Package size={18} />
-          </div>
-
-          <div>
-            <h4>Stock Update</h4>
-            <p>Update inventory stock</p>
-          </div>
-        </div>
-      </div>
-
+      
       {/* Modules */}
 
       <div className="modules-grid">

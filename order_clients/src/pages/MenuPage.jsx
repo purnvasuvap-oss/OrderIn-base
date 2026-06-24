@@ -5,7 +5,10 @@ import { db, getAuthInfo, trySignInAnonymously } from "../firebase";
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, deleteField } from "firebase/firestore";
 import storageService from "../services/storageService";
 import { useNotification } from "../hooks/useNotification";
-
+import AvailableDishesIcon from "./landingpage/Available_dishes.svg";
+import CategoryIcon from "./landingpage/Category.svg";
+import PromotionsIcon from "./landingpage/Promotions.svg";
+import TotalDishesIcon from "./landingpage/Total_dishes.svg";
 const RESTAURANT_NUMBER = import.meta.env.VITE_RESTAURANT_NUMBER || '0';
 
 import "./MenuPage.css";
@@ -79,7 +82,9 @@ const MenuPage = () => {
   const editModeLabel = isAdding ? "Adding new menu item" : editingIndex !== null ? "Editing menu item" : "";
   const activeEditItem = editedItems[0] || {};
   const activeEditorImage = activeEditItem.image || activeEditItem.image_url || activeEditItem.oldImage || "";
-
+  const [searchTerm, setSearchTerm] = useState("");
+const [selectedCategory, setSelectedCategory] = useState("All");
+const [selectedAvailability, setSelectedAvailability] = useState("All");
   useEffect(() => {
     if (!menuNotice) return undefined;
 
@@ -543,45 +548,68 @@ const MenuPage = () => {
       console.error("Error deleting menu item:", error);
     }
   };
+const filteredItems = menuItems.filter((item) => {
+  const matchesSearch =
+    item.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    item.category?.toLowerCase().includes(searchTerm.toLowerCase());
 
+  const matchesCategory =
+    selectedCategory === "All" || item.category === selectedCategory;
+
+  const matchesAvailability =
+    selectedAvailability === "All" ||
+    item.availability === selectedAvailability;
+
+  return matchesSearch && matchesCategory && matchesAvailability;
+});
   return (
     <div className="menu-management-container">
        {/* --- TOP HEADER ROW: Back Button and Title --- */}
+<div className="menu-header">
 
-      <div className="menu-header-bar header-top-row">
+  {/* TOP ROW */}
+  <div className="menu-header-bar">
 
-        <button className="btn-back" onClick={handleBackToDashboard}>Back</button>
+    <button className="btn-back" onClick={handleBackToDashboard}>
+      Back
+    </button>
 
-        <h1 className="h1-page-title">Menu Management</h1>
+    <h1 className="h1-page-title">Menu Management</h1>
 
-        {/* Action Buttons */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <div className="header-actions">
-            {isEditingMenu ? (
-              <>
-                <button className="btn-primary menu-save-btn" onClick={handleSave} disabled={isSaving}>{isSaving ? 'SAVING...' : 'SAVE'}</button>
-                <button className="btn-primary menu-cancel-btn" onClick={handleCancel} disabled={isSaving}>CANCEL</button>
-              </>
-            ) : (
-              <>
-                <button className="btn-primary" onClick={handleAdd}>ADD</button>
-                <button className="btn-primary" onClick={() => navigate(routes.promotions)}>Create Promotions</button>
-              </>
-            )} 
-          </div>
-          <label className="menu-all-veg-control">
-            <input
-              type="checkbox"
-              checked={allVegMode}
-              onChange={(e) => handleAllVegToggle(e.target.checked)}
-              disabled={isSaving || isApplyingAllVeg}
-            />
-            <span>All Veg</span>
-          </label>
-
-        </div>
-
+    <div style={{ display: 'flex', alignItems: 'start', gap: 10 }}>
+      <div className="header-actions">
+        {isEditingMenu ? (
+          <>
+            <button className="btn-primary menu-save-btn" onClick={handleSave} disabled={isSaving}>
+              {isSaving ? 'SAVING...' : 'SAVE'}
+            </button>
+            <button className="btn-primary menu-cancel-btn" onClick={handleCancel} disabled={isSaving}>
+              CANCEL
+            </button>
+          </>
+        ) : (
+          <>
+            <button className="btn-primary" onClick={handleAdd}>+ Add Menu Item</button>
+            <button className="btn-primary" onClick={() => navigate(routes.promotions)}>
+              Create Promotions
+            </button>
+          </>
+        )}
       </div>
+
+      <label className="menu-all-veg-control">
+        <input
+          type="checkbox"
+          checked={allVegMode}
+          onChange={(e) => handleAllVegToggle(e.target.checked)}
+          disabled={isSaving || isApplyingAllVeg}
+        />
+        <span>All Veg</span>
+      </label>
+    </div>
+
+  </div>
+</div>
 
       {saveStatus && (
         <div style={{ margin: '8px 0', color: saveStatus.type === 'success' ? '#155724' : '#721c24', background: saveStatus.type === 'success' ? '#d4edda' : '#f8d7da', padding: '8px 12px', borderRadius: 4 }}>
@@ -746,7 +774,116 @@ const MenuPage = () => {
           </div>
         </section>
       )}
+<div className="stats-container">
 
+  <div className="stat-card">
+    <div className="stat-icon red">
+      <img src={TotalDishesIcon} alt="" />
+    </div>
+    <div>
+      <p>Total Dishes</p>
+      <h2>{menuItems.length}</h2>
+      <span>Across {new Set(menuItems.map(i => i.category)).size} categories</span>
+    </div>
+  </div>
+
+  <div className="stat-card">
+    <div className="stat-icon green">
+      <img src={CategoryIcon} alt="" />
+    </div>
+    <div>
+      <p>Category Count</p>
+      <h2>{new Set(menuItems.map(i => i.category)).size}</h2>
+      <span>Active categories</span>
+    </div>
+  </div>
+
+  <div className="stat-card">
+    <div className="stat-icon yellow">
+      <img src={PromotionsIcon} alt="" />
+    </div>
+    <div>
+      <p>Active Promotions</p>
+      <h2>{menuItems.filter(i => i.promotions).length}</h2>
+      <span>Running Promotions</span>
+    </div>
+  </div>
+
+  <div className="stat-card">
+    <div className="stat-icon red">
+      <img src={AvailableDishesIcon} alt="" />
+    </div>
+    <div>
+      <p>Available dishes</p>
+      <h2>{menuItems.filter(i => i.availability === "Yes").length}</h2>
+      <span>Are ready to serve/available</span>
+    </div>
+  </div>
+
+</div>
+
+{/* ================= FILTER BAR ================= */}
+<div className="filters-bar">
+
+  {/* Search */}
+  <div className="search-box">
+    <span className="search-icon">🔍</span>
+    <input
+      type="text"
+      placeholder="Search dish name..."
+      onChange={(e) => {
+        const value = e.target.value.toLowerCase();
+        setMenuItems(prev =>
+          prev.filter(item =>
+            item.name.toLowerCase().includes(value)
+          )
+        );
+      }}
+    />
+  </div>
+
+  {/* Category */}
+  <select
+  className="filter-dropdown"
+  value={selectedCategory}
+  onChange={(e) => setSelectedCategory(e.target.value)}
+>
+  <option value="All">All Categories</option>
+  {[...new Set(menuItems.map(i => i.category))].map((cat, i) => (
+    <option key={i} value={cat}>{cat}</option>
+  ))}
+</select>
+
+  {/* Availability */}
+<select
+  className="filter-dropdown"
+  value={selectedAvailability}
+  onChange={(e) => setSelectedAvailability(e.target.value)}
+>
+  <option value="All">Availability: All</option>
+  <option value="Yes">Yes</option>
+  <option value="No">No</option>
+</select>
+  {/* Veg Toggle */}
+  <label className="veg-toggle-ui">
+    <input
+      type="checkbox"
+      checked={allVegMode}
+      onChange={(e) => handleAllVegToggle(e.target.checked)}
+    />
+    <span></span>
+    <p>Veg Only</p>
+  </label>
+
+  {/* Reset */}
+  <button
+    className="reset-btn"
+    onClick={() => window.location.reload()}
+  >
+    ⟳ Reset Filters
+  </button>
+
+</div>
       <div className="menu-content-area">
         <div className="menu-table-wrapper">
           <div className="table-scroll-container">
@@ -776,7 +913,7 @@ const MenuPage = () => {
               </thead>
 
               <tbody>
-                {menuItems.map((item, index) => {
+               {filteredItems.map((item, index) => {
                   const rowIsEditing = (editingIndex === index);
                   return (
                     <tr key={index} className={rowIsEditing ? "menu-row-editing" : ""}>

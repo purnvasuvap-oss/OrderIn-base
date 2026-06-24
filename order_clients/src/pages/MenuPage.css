@@ -51,7 +51,7 @@ body {
   box-sizing: border-box;
 
   /* background image should reference the public/images folder */
-  background-image: url('/images/Vectors.png');
+  background-image: url("/images/Vectors.png");
 
   background-size: contain;
 
@@ -60,22 +60,25 @@ body {
   background-position: bottom;
 }
 
+/* MAIN HEADER WRAPPER */
+.menu-header {
+  margin-bottom: 10px;
+}
+
+/* TOP ROW */
 .menu-header-bar {
   display: flex;
-
-  justify-content: space-between;
-
-  align-items: center;
-
-  margin-bottom: 24px;
-
   flex-shrink: 0; /* Prevents header from shrinking */
-}
-.header-actions {
- display: flex; 
- gap: 16px;
+  justify-content: space-between;
 }
 
+/* ACTIONS */
+.header-actions {
+  display: flex;
+  gap: 10px;
+}
+
+/* VEG BUTTON */
 .menu-all-veg-control {
   display: inline-flex;
   align-items: center;
@@ -91,55 +94,7 @@ body {
   box-shadow: 0 8px 18px rgba(67, 160, 71, 0.08);
   cursor: pointer;
 }
-
-.menu-all-veg-control input {
-  width: 16px;
-  height: 16px;
-  accent-color: var(--secondary-green);
-}
-
-.menu-content-area {
-  background-color: var(--surface-white);
-
-  border-radius: 12px;
-
-  padding: 32px;
-  padding-top: 0; /* Removed to start content after header */
-  margin-top: -10px; /* Added to position content below header */
-  box-sizing: border-box;
-  display: flex;
-
-  flex-direction: column;
-
-  /* Ensure padding/border is included in the flex-grow calculation */
-
-  min-height: 0;
-}
-
-.menu-controls {
-  display: flex;
-
-  gap: 8px;
-
-  margin-bottom: 16px;
-
-  flex-shrink: 0; /* Prevents controls from shrinking */
-}
-
-/* --- Table Scrolling Configuration --- */
-
-.menu-table-wrapper {
-  flex-grow: 1; /* Takes remaining space in menu-content-area */
-
-  display: flex;
-
-  flex-direction: column;
-
-  overflow: hidden; /* Ensures the wrapper itself doesn't scroll */
-
-  min-height: 0; /* Critical for flex containers with scrolling children */
-}
-
+.menu-all-veg-control input { width: 16px; height: 16px; accent-color: var(--secondary-green); }
 .table-scroll-container {
   overflow-y: auto; /* **This is the ONLY area that should scroll vertically** */
 
@@ -197,7 +152,6 @@ body {
   border-bottom: 1px solid var(--border-light-gray);
 }
 
-
 /* --- Other Styles (Buttons, Toggle, etc.) --- */
 
 .btn-back {
@@ -209,7 +163,9 @@ body {
   font-weight: 600;
   cursor: pointer;
   box-shadow: 0 6px 12px rgba(237, 105, 105, 0.12);
-  transition: background-color 0.2s, color 0.2s;
+  transition:
+    background-color 0.2s,
+    color 0.2s;
 }
 
 .btn-back:hover {
@@ -364,7 +320,9 @@ body {
   font: inherit;
   font-size: 14px;
   box-shadow: 0 8px 18px rgba(97, 67, 52, 0.06);
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .menu-editor-control:focus {
@@ -648,7 +606,9 @@ body {
   font-size: 13px;
   line-height: 1.3;
   box-shadow: 0 4px 12px rgba(125, 85, 62, 0.06);
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .menu-edit-field:focus {
@@ -947,7 +907,8 @@ input:checked + .slider:before {
     height: 30px;
   }
 
-  .btn-primary, .btn-back {
+  .btn-primary,
+  .btn-back {
     padding: 6px 12px;
     font-size: 12px;
   }
@@ -960,7 +921,9 @@ input:checked + .slider:before {
 
 /* ===== MOBILE RESPONSIVE (480px and below) ===== */
 @media (max-width: 480px) {
-  html, body, #root {
+  html,
+  body,
+  #root {
     height: 100%;
     overflow: hidden;
   }
@@ -1284,5 +1247,166 @@ input:checked + .slider:before {
 
   input:checked + .slider:before {
     transform: translateX(12px);
+  }
+}
+
+/* STATS */
+.stats-container {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 40px;
+  margin: 10px 10px;
+}
+
+.stat-card {
+  background: #fff;
+  border-radius: 10px;
+  padding: 14px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.stat-icon {
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.stat-icon img {
+  width: 50px;
+}
+
+.stat-icon.green {
+  background: #e5f7ec;
+}
+.stat-icon.yellow {
+  background: #fff4e5;
+}
+
+.stat-card p {
+  font-size: 13px;
+  color: #555;
+}
+
+.stat-card h2 {
+  margin: 0;
+  color: #ff4d4d;
+}
+
+.stat-card span {
+  font-size: 12px;
+  color: #888;
+}
+
+/* FILTER BAR */
+.filters-bar {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin: 15px 5px;
+  padding: 10px;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.search-box {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  background: #f5f5f5;
+  padding: 6px 10px;
+  border-radius: 6px;
+}
+
+.search-box input {
+  border: none;
+  background: transparent;
+  outline: none;
+  width: 100%;
+}
+
+.filter-dropdown {
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid #ddd;
+  background: #f9f9f9;
+}
+
+/* Veg Toggle */
+.veg-toggle-ui {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.veg-toggle-ui input {
+  display: none;
+}
+
+.veg-toggle-ui span {
+  width: 34px;
+  height: 18px;
+  background: #ccc;
+  border-radius: 20px;
+  position: relative;
+}
+
+.veg-toggle-ui span::after {
+  content: "";
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  background: white;
+  border-radius: 50%;
+  top: 2px;
+  left: 2px;
+  transition: 0.3s;
+}
+
+.veg-toggle-ui input:checked + span {
+  background: #28c76f;
+}
+
+.veg-toggle-ui input:checked + span::after {
+  transform: translateX(16px);
+}
+
+/* Reset */
+.reset-btn {
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: none;
+  background: #f2f2f2;
+  cursor: pointer;
+}
+/* Tablet view → show 2 per row */
+@media (max-width: 1024px) {
+  .stats-container {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+}
+
+/* Mobile → hide completely */
+@media (max-width: 768px) {
+  .stats-container {
+    display: none;
+  }
+}
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: center; /* mobile center */
+}
+
+@media (min-width: 768px) {
+  .header {
+    justify-content: flex-start; /* desktop left */
   }
 }
