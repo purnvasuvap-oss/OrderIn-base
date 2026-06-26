@@ -44,10 +44,10 @@ export default function Header() {
 
         <div className="header-right">
           <button className="icon-btn" onClick={handleNotificationClick}>
-            <img src="/images/Notification.png" alt="notifications" className="icon-img" />
+            <img src="/images/Notification.svg" alt="notifications" className="icon-img" />
           </button>
           <button className="icon-btn" onClick={handleLogout}>
-            <img src="/images/Export.png" alt="logout" className="icon-img" />
+            <img src="/images/Export.svg" alt="logout" className="icon-img" />
           </button>
         </div>
       </header>

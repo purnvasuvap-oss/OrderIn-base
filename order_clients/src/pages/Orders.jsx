@@ -1,15 +1,26 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import routes from "../routes";
-import './Orders.css';
+import "./Orders.css";
 import {
-  fetchTodaysOrders,
   updateOrderStatus,
-  formatOrderItems,
   formatTime,
   subscribeTodaysOrders,
 } from "../services/orderService";
-import { collection, getDocs, addDoc, serverTimestamp, doc, getDoc, updateDoc, setDoc } from "firebase/firestore";
+
+import TotalOrdersIcon from "./landingpage/Total_orders.svg";
+import ActiveOrdersIcon from "./landingpage/Active_Orders.svg";
+import CompletedIcon from "./landingpage/Completed.svg";
+import {
+  collection,
+  getDocs,
+  addDoc,
+  serverTimestamp,
+  doc,
+  getDoc,
+  updateDoc,
+  setDoc,
+} from "firebase/firestore";
 import { db } from "../firebase";
 
 function ManualOrderModal({ isOpen, onClose, menuItems, onOrderCreated }) {
@@ -21,18 +32,21 @@ function ManualOrderModal({ isOpen, onClose, menuItems, onOrderCreated }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
 
-  const filteredMenu = menuItems.filter(item =>
-    item.name?.toLowerCase().includes(menuSearch.toLowerCase())
+  const filteredMenu = menuItems.filter((item) =>
+    item.name?.toLowerCase().includes(menuSearch.toLowerCase()),
   );
 
   const addItemToOrder = (menuItem) => {
-    setSelectedItems([...selectedItems, {
-      name: menuItem.name,
-      quantity: 1,
-      instructions: "",
-      menuId: menuItem.id,
-      price: menuItem.price || 0
-    }]);
+    setSelectedItems([
+      ...selectedItems,
+      {
+        name: menuItem.name,
+        quantity: 1,
+        instructions: "",
+        menuId: menuItem.id,
+        price: menuItem.price || 0,
+      },
+    ]);
   };
 
   const updateItemQuantity = (index, quantity) => {
@@ -74,22 +88,29 @@ function ManualOrderModal({ isOpen, onClose, menuItems, onOrderCreated }) {
       setIsSubmitting(true);
 
       // Store manual order in customers collection (same as regular orders)
-      const customerRef = doc(db, "Restaurant", "orderin_restaurant_1", "customers", phoneNumber);
-      
+      const customerRef = doc(
+        db,
+        "Restaurant",
+        "orderin_restaurant_1",
+        "customers",
+        phoneNumber,
+      );
+
       // Get existing customer data or create new
       const customerSnap = await getDoc(customerRef);
       const customerData = customerSnap.exists() ? customerSnap.data() : {};
-      
+
       // Calculate order totals
       let subtotal = 0;
-      selectedItems.forEach(item => {
-        const itemPrice = Number(String(item.price || 0).replace(/[^0-9.-]+/g, "")) || 0;
+      selectedItems.forEach((item) => {
+        const itemPrice =
+          Number(String(item.price || 0).replace(/[^0-9.-]+/g, "")) || 0;
         const itemQty = Number(item.quantity) || 1;
         subtotal += itemPrice * itemQty;
       });
       const tax = subtotal > 0 ? Math.ceil(subtotal / 100) : 0;
       const totalCost = subtotal + tax;
-      
+
       // Add manual order to pastOrders array
       const newOrder = {
         username: customerName,
@@ -104,17 +125,23 @@ function ManualOrderModal({ isOpen, onClose, menuItems, onOrderCreated }) {
         subtotal: subtotal,
         tax: tax,
         totalCost: totalCost,
-        amount: totalCost
+        amount: totalCost,
       };
-      
-      const pastOrders = Array.isArray(customerData.pastOrders) ? customerData.pastOrders : [];
+
+      const pastOrders = Array.isArray(customerData.pastOrders)
+        ? customerData.pastOrders
+        : [];
       pastOrders.push(newOrder);
-      
-      await setDoc(customerRef, {
-        username: customerName,
-        names: [customerName],
-        pastOrders: pastOrders
-      }, { merge: true });
+
+      await setDoc(
+        customerRef,
+        {
+          username: customerName,
+          names: [customerName],
+          pastOrders: pastOrders,
+        },
+        { merge: true },
+      );
 
       onOrderCreated();
       onClose();
@@ -138,7 +165,9 @@ function ManualOrderModal({ isOpen, onClose, menuItems, onOrderCreated }) {
       <div className="manual-order-modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <h2>Create Manual Order</h2>
-          <button className="close-btn" onClick={onClose}>×</button>
+          <button className="close-btn" onClick={onClose}>
+            ×
+          </button>
         </div>
 
         {error && <div className="error-message">{error}</div>}
@@ -191,7 +220,9 @@ function ManualOrderModal({ isOpen, onClose, menuItems, onOrderCreated }) {
                 <div key={item.id} className="menu-item">
                   <div className="item-info">
                     <div className="item-name">{item.name}</div>
-                    {item.price && <div className="item-price">₹{item.price}</div>}
+                    {item.price && (
+                      <div className="item-price">₹{item.price}</div>
+                    )}
                   </div>
                   <button
                     className="add-item-btn"
@@ -202,7 +233,13 @@ function ManualOrderModal({ isOpen, onClose, menuItems, onOrderCreated }) {
                 </div>
               ))}
               {filteredMenu.length === 0 && (
-                <div style={{ padding: "12px", textAlign: "center", color: "#999" }}>
+                <div
+                  style={{
+                    padding: "12px",
+                    textAlign: "center",
+                    color: "#999",
+                  }}
+                >
                   No items found
                 </div>
               )}
@@ -219,7 +256,9 @@ function ManualOrderModal({ isOpen, onClose, menuItems, onOrderCreated }) {
                       type="number"
                       min="1"
                       value={item.quantity}
-                      onChange={(e) => updateItemQuantity(index, e.target.value)}
+                      onChange={(e) =>
+                        updateItemQuantity(index, e.target.value)
+                      }
                       className="qty-input"
                     />
                     <span className="item-label">x {item.name}</span>
@@ -228,7 +267,9 @@ function ManualOrderModal({ isOpen, onClose, menuItems, onOrderCreated }) {
                     <input
                       type="text"
                       value={item.instructions}
-                      onChange={(e) => updateItemInstructions(index, e.target.value)}
+                      onChange={(e) =>
+                        updateItemInstructions(index, e.target.value)
+                      }
                       placeholder="Special instructions..."
                       className="specs-input"
                     />
@@ -246,7 +287,11 @@ function ManualOrderModal({ isOpen, onClose, menuItems, onOrderCreated }) {
         </div>
 
         <div className="modal-footer">
-          <button className="cancel-btn" onClick={onClose} disabled={isSubmitting}>
+          <button
+            className="cancel-btn"
+            onClick={onClose}
+            disabled={isSubmitting}
+          >
             Cancel
           </button>
           <button
@@ -301,7 +346,14 @@ function StatusPill({ status, onStatusChange, orderId, isLoading }) {
   }
 
   return (
-    <div className={cls} onClick={handleClick} style={{ cursor: isLoading ? "not-allowed" : "pointer", opacity: isLoading ? 0.6 : 1 }}>
+    <div
+      className={cls}
+      onClick={handleClick}
+      style={{
+        cursor: isLoading ? "not-allowed" : "pointer",
+        opacity: isLoading ? 0.6 : 1,
+      }}
+    >
       {isLoading ? "Updating..." : status}
     </div>
   );
@@ -322,11 +374,16 @@ function Orders() {
   useEffect(() => {
     const fetchMenuItems = async () => {
       try {
-        const menuRef = collection(db, "Restaurant", "orderin_restaurant_1", "menu");
+        const menuRef = collection(
+          db,
+          "Restaurant",
+          "orderin_restaurant_1",
+          "menu",
+        );
         const menuSnapshot = await getDocs(menuRef);
-        const items = menuSnapshot.docs.map(doc => ({
+        const items = menuSnapshot.docs.map((doc) => ({
           id: doc.id,
-          ...doc.data()
+          ...doc.data(),
         }));
         setMenuItems(items);
       } catch (err) {
@@ -342,14 +399,19 @@ function Orders() {
     console.log("=== ORDERS COMPONENT: Subscribing to orders (real-time) ===");
     setLoading(true);
     const unsubscribe = subscribeTodaysOrders((fetchedOrders) => {
-      console.log(`=== ORDERS COMPONENT (realtime): Received ${fetchedOrders.length} orders ===`);
+      console.log(
+
+        `=== ORDERS COMPONENT (realtime): Received ${fetchedOrders.length} orders ===`,
+      );
       console.log(`Orders data (realtime):`, fetchedOrders);
       // Display orders that have paymentStatus === 'paid' OR manual orders
-      const displayOrders = fetchedOrders.filter(o => {
-        const status = String(o.paymentStatus || '').toLowerCase();
-        return status === 'paid' || status === 'manual';
+      const displayOrders = fetchedOrders.filter((o) => {
+        const status = String(o.paymentStatus || "").toLowerCase();
+        return status === "paid" || status === "manual";
       });
-      console.log(`Filtered to paid and manual orders: ${displayOrders.length}`);
+      console.log(
+        `Filtered to paid and manual orders: ${displayOrders.length}`,
+      );
       setOrders(displayOrders);
       setError(null);
       setLoading(false);
@@ -377,8 +439,8 @@ function Orders() {
       // Update local state
       setOrders((prevOrders) =>
         prevOrders.map((o) =>
-          o.id === orderId ? { ...o, status: newStatus } : o
-        )
+          o.id === orderId ? { ...o, status: newStatus } : o,
+        ),
       );
     } catch (err) {
       console.error("Error updating status:", err);
@@ -397,187 +459,270 @@ function Orders() {
     if (filter === "completed") {
       filtered = orders.filter((o) => o.status === "Delivered");
     } else if (filter === "active") {
-      filtered = orders.filter((o) => o.status !== "Delivered").slice().reverse();
+      filtered = orders
+        .filter((o) => o.status !== "Delivered")
+        .slice()
+        .reverse();
     }
     if (searchTerm) {
-      filtered = filtered.filter((o) =>
-        o.items.some((item) => {
-          if (typeof item === 'string') {
-            return item.toLowerCase().includes(searchTerm.toLowerCase());
-          } else if (typeof item === 'object' && item !== null) {
-            // Search in name and instructions fields if present
-            const nameMatch = item.name && item.name.toLowerCase().includes(searchTerm.toLowerCase());
-            const instructionsMatch = item.instructions && item.instructions.toLowerCase().includes(searchTerm.toLowerCase());
-            return nameMatch || instructionsMatch;
-          }
-          return false;
-        }) ||
-        o.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        o.phoneNumber.toLowerCase().includes(searchTerm.toLowerCase())
+      filtered = filtered.filter(
+        (o) =>
+          o.items.some((item) => {
+            if (typeof item === "string") {
+              return item.toLowerCase().includes(searchTerm.toLowerCase());
+            } else if (typeof item === "object" && item !== null) {
+              // Search in name and instructions fields if present
+              const nameMatch =
+                item.name &&
+                item.name.toLowerCase().includes(searchTerm.toLowerCase());
+              const instructionsMatch =
+                item.instructions &&
+                item.instructions
+                  .toLowerCase()
+                  .includes(searchTerm.toLowerCase());
+              return nameMatch || instructionsMatch;
+            }
+            return false;
+          }) ||
+          o.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          o.phoneNumber.toLowerCase().includes(searchTerm.toLowerCase()),
       );
     }
     return filtered;
   })();
 
   return (
-     <div className="app">
-      <div className="topbar">
-        <div className="top-left">
-            {/* ... rest of topbar content ... */}
-          </div>
-
-          <div className="logo-area">
-            {/* ... rest of logo content ... */}
-          </div>
-
-          <div className="top-right">
-            {/* ... rest of right icons ... */}
-          </div>
-      </div>
+    <div className="app">
 
       <div className="content">
         <aside className="left-stats">
           <div className="back-button-container">
-            <button className="custom-btn" onClick={() => navigate(routes.dashboard)}>
+            <button
+              className="custom-btn"
+              onClick={() => navigate(routes.dashboard)}
+            >
               Back
             </button>
           </div>
           <div
-
-            className={`stat red ${filter === "all" ? "selected" : ""}`}
+            className={`stat red ${filter === "all" ? "active" : ""}`}
             onClick={() => setFilter("all")}
           >
-            <div className="label">Total Orders:</div>
-            <div className="value">{total}</div>
+            <div className="card-icon">
+              <img src={TotalOrdersIcon} alt="" />
+            </div>
+
+            <h4>Total Orders</h4>
+
+            <h1>{total}</h1>
+
+            <p>All orders today</p>
           </div>
           <div
             className={`stat yellow ${filter === "active" ? "selected" : ""}`}
             onClick={() => setFilter("active")}
           >
-            <div className="label">Active Orders:</div>
-            <div className="value">{active}</div>
+            <div className="card-icon">
+              <img src={ActiveOrdersIcon} alt="" />
+            </div>
+
+            <h4>Active Orders</h4>
+
+            <h1>{active}</h1>
+
+            <p>Active Orders</p>
           </div>
           <div
             className={`stat green ${filter === "completed" ? "selected" : ""}`}
             onClick={() => setFilter("completed")}
           >
-            <div className="label">Completed:</div>
-            <div className="value">{completed}</div>
+            <div className="card-icon">
+              <img src={CompletedIcon} alt="" />
+            </div>
+
+            <h4>Served Orders</h4>
+
+            <h1>{completed}</h1>
+
+            <p>Served Orders</p>
           </div>
         </aside>
 
         <main className="main-panel">
           <div className="heading-row">
-            <h2 className={filter === "completed" || filter === "active" ? "big-left" : ""}>
-              {filter === "completed" ? "COMPLETED" : filter === "active" ? "Active Orders" : "Total Orders"}
+            <h2
+              className={
+                filter === "completed" || filter === "active" ? "big-left" : ""
+              }
+            >
+              {filter === "completed"
+                ? "Completed Orders"
+                : filter === "active"
+                  ? "Active Orders"
+                  : "Total Orders"}
             </h2>
             <div className="heading-controls">
-              <button className="manual-order-btn" onClick={() => setShowManualOrderModal(true)}>
+              <button
+                className="manual-order-btn"
+                onClick={() => setShowManualOrderModal(true)}
+              >
                 + Manual Order
               </button>
               <div className="search">
                 <span className="search-icon" aria-hidden="true">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M21 21l-4.35-4.35" stroke="#666" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    <circle cx="11" cy="11" r="6" stroke="#666" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M21 21l-4.35-4.35"
+                      stroke="#666"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                    <circle
+                      cx="11"
+                      cy="11"
+                      r="6"
+                      stroke="#666"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
                   </svg>
                 </span>
-                <input placeholder="Search" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+                <input
+                  placeholder="Search"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
               </div>
             </div>
           </div>
 
           {error && (
-            <div style={{ padding: "12px", background: "#ffebee", color: "#c62828", borderRadius: "8px", marginBottom: "12px" }}>
+            <div
+              style={{
+                padding: "12px",
+                background: "#ffebee",
+                color: "#c62828",
+                borderRadius: "8px",
+                marginBottom: "12px",
+              }}
+            >
               {error}
             </div>
           )}
 
           {loading ? (
-            <div style={{ padding: "40px", textAlign: "center", color: "#666" }}>
+            <div
+              style={{ padding: "40px", textAlign: "center", color: "#666" }}
+            >
               Loading today's orders...
             </div>
           ) : filteredOrders.length === 0 ? (
-            <div style={{ padding: "40px", textAlign: "center", color: "#999" }}>
-              {orders.length === 0 ? "No orders found for today" : "No orders match your search"}
+            <div
+              style={{ padding: "40px", textAlign: "center", color: "#999" }}
+            >
+              {orders.length === 0
+                ? "No orders found for today"
+                : "No orders match your search"}
             </div>
           ) : (
-            <div
-              className={`orders-table ${filter === "completed" ? "completed-view" : ""} ${filter === "active" ? "active-view" : ""}`}
-            >
-              <div className="table-header">
-                <div>Order ID</div>
-                <div>Customer</div>
-                <div>Phone</div>
-                <div>Table</div>
-                <div>Items</div>
-                <div>Specs</div>
-                <div>Status</div>
-                <div>Time</div>
-              </div>
+            <>
+    {/* DESKTOP TABLE VIEW (Visible on larger screens) */}
+    <div className={`orders-table desktop-only-view ${filter === "completed" ? "completed-view" : ""} ${filter === "active" ? "active-view" : ""}`}>
+      <div className="table-header">
+        <div>Order ID</div>
+        <div>Customer</div>
+        <div>Phone</div>
+        <div>Table</div>
+        <div>Items</div>
+        <div>Specs</div>
+        <div>Status</div>
+        <div>Time</div>
+      </div>
 
-              {filteredOrders.map((o, orderIdx) => (
-                <div key={o.id + '-' + orderIdx} className="table-row">
-                  <div className="col order-id">
-                    {typeof o.id === 'string' || typeof o.id === 'number' ? o.id : JSON.stringify(o.id)}
-                  </div>
-
-                  <div className="col customer">
-                    <div className="cust-name">{typeof o.username === 'string' ? o.username : JSON.stringify(o.username)}</div>
-                  </div>
-
-                  <div className="col phone">
-                    {typeof o.phoneNumber === 'string' || typeof o.phoneNumber === 'number' ? o.phoneNumber : JSON.stringify(o.phoneNumber)}
-                  </div>
-
-                  <div className="col table">
-                    Table {typeof o.tableNumber === 'string' || typeof o.tableNumber === 'number' ? o.tableNumber : JSON.stringify(o.tableNumber)}
-                  </div>
-
-                  <div className="col items">
-                    <div className="items-directory">
-                      {o.items && Array.isArray(o.items) && o.items.map((item, i) => (
-                        typeof item === 'object' && item !== null ? (
-                          <div key={i} className="item-row">
-                            <span className="item-name">{item.quantity ? `${item.quantity}x ` : ''}{item.name}</span>
-                            {item.instructions && <span className="item-instructions">{item.instructions}</span>}
-                          </div>
-                        ) : (
-                          <div key={i} className="item-row">
-                            <span className="item-name">{item}</span>
-                          </div>
-                        )
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="col specs">
-                    {o.items && Array.isArray(o.items)
-                      ? o.items
-                          .map(item => {
-                            if (typeof item === 'object' && item !== null) {
-                              return item.instructions || item.specs || '';
-                            }
-                            return '';
-                          })
-                          .filter(Boolean)
-                          .join(', ') || '-'
-                      : '-'}
-                  </div>
-
-                  <div className="col status-cell">
-                    <StatusPill
-                      status={typeof o.status === 'string' ? o.status : JSON.stringify(o.status)}
-                      onStatusChange={handleStatusChange}
-                      orderId={typeof o.id === 'string' || typeof o.id === 'number' ? o.id : JSON.stringify(o.id)}
-                      isLoading={updatingOrderId === o.id}
-                    />
-                  </div>
-
-                  <div className="col time">{formatTime(o.timestamp)}</div>
+      {filteredOrders.map((o, orderIdx) => (
+        <div key={o.id + "-" + orderIdx} className="table-row">
+          <div className="col order-id">{o.id}</div>
+          <div className="col customer">
+            <div className="cust-name">{o.username}</div>
+          </div>
+          <div className="col phone">{o.phoneNumber}</div>
+          <div className="col table">Table {o.tableNumber}</div>
+          <div className="col items">
+            <div className="items-directory">
+              {o.items && Array.isArray(o.items) && o.items.map((item, i) => (
+                <div key={i} className="item-row">
+                  <span className="item-name">
+                    {item.quantity ? `${item.quantity}x ` : ""}{item.name}
+                  </span>
                 </div>
               ))}
             </div>
+          </div>
+          <div className="col specs">
+            {o.items && Array.isArray(o.items)
+              ? o.items.map((item) => item.instructions || "").filter(Boolean).join(", ") || "-"
+              : "-"}
+          </div>
+          <div className="col status-cell">
+            <StatusPill
+              status={o.status}
+              onStatusChange={handleStatusChange}
+              orderId={o.id}
+              isLoading={updatingOrderId === o.id}
+            />
+          </div>
+          <div className="col time">{formatTime(o.timestamp)}</div>
+        </div>
+      ))}
+    </div>
+
+    {/* MOBILE RESPONSIVE CARD VIEW (Visible on smaller screens) */}
+    <div className="orders-cards-container mobile-only-view">
+      {filteredOrders.map((o, orderIdx) => (
+        <div key={"card-" + o.id + "-" + orderIdx} className="order-mobile-card">
+          <div className="card-header-row">
+            <span className="mobile-id">#{o.id}</span>
+            <span className="mobile-time">{formatTime(o.timestamp)}</span>
+          </div>
+
+          <div className="card-body-row">
+            <div className="mobile-cust-info">
+              <strong>{o.username}</strong>
+              <span className="mobile-sub">Table {o.tableNumber} • {o.phoneNumber}</span>
+            </div>
+            <div className="mobile-status-wrapper">
+              <StatusPill
+                status={o.status}
+                onStatusChange={handleStatusChange}
+                orderId={o.id}
+                isLoading={updatingOrderId === o.id}
+              />
+            </div>
+          </div>
+
+          <div className="mobile-items-box">
+            {o.items && Array.isArray(o.items) && o.items.map((item, i) => (
+              <div key={i} className="mobile-item-line">
+                <span className="qty">{item.quantity || 1}x</span>
+                <span className="name">{item.name}</span>
+                {item.instructions && (
+                  <span className="instructions">({item.instructions})</span>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  </>
           )}
         </main>
       </div>
@@ -589,10 +734,9 @@ function Orders() {
         onOrderCreated={() => setShowManualOrderModal(false)}
       />
 
-      <div className="bottom-wave" />
     </div>
   );
 }
 
 export default Orders;
-// ...existing code...
+

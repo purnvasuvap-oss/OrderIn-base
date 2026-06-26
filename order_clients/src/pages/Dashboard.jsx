@@ -231,7 +231,7 @@ const Dashboard = () => {
 
         <div className="footer-divider"></div>
 
-        <div className="footer-item">✉️ OrderIn.vap@gmail.com</div>
+        <div className="footer-item">✉️ purnvasu.vap@gmail.com</div>
       </footer>
     </div>
   );

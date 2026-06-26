@@ -21,13 +21,14 @@ body{
   left: clamp(10px, 2vw, 20px);
   background-color: #ffffff;
   color: #E53935;
-  padding: 8px 16px;
+  padding: 14px 16px;
   border: 1px solid #E53935;
   border-radius: 8px;
   cursor: pointer;
   font-size: 14px;
   font-weight: 500;
   z-index: 100;
+  margin-bottom: 20px;
 }
 
 .fin-page-title {
@@ -111,8 +112,8 @@ body{
 
 
 .fin-filter-modal {
-  background: #222; /* darker modal background */
-  color: #fff;
+  background: #ffffff; /* darker modal background */
+  color: #000000;
   padding: 36px 40px;
   border-radius: 18px;
   box-shadow: 0 8px 32px rgba(0,0,0,0.35);

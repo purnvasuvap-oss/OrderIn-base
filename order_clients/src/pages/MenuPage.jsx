@@ -2,14 +2,22 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import routes from "../routes";
 import { db, getAuthInfo, trySignInAnonymously } from "../firebase";
-import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, deleteField } from "firebase/firestore";
+import {
+  collection,
+  getDocs,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  doc,
+  deleteField,
+} from "firebase/firestore";
 import storageService from "../services/storageService";
 import { useNotification } from "../hooks/useNotification";
 import AvailableDishesIcon from "./landingpage/Available_dishes.svg";
 import CategoryIcon from "./landingpage/Category.svg";
 import PromotionsIcon from "./landingpage/Promotions.svg";
 import TotalDishesIcon from "./landingpage/Total_dishes.svg";
-const RESTAURANT_NUMBER = import.meta.env.VITE_RESTAURANT_NUMBER || '0';
+const RESTAURANT_NUMBER = import.meta.env.VITE_RESTAURANT_NUMBER || "0";
 
 import "./MenuPage.css";
 // Placeholder images for the item images (use actual image paths or URLs)
@@ -29,7 +37,9 @@ const TYPE_VEG = "Veg";
 const TYPE_NON_VEG = "Non-Veg";
 
 const normalizeMenuType = (value) => {
-  const normalized = String(value || "").trim().toLowerCase();
+  const normalized = String(value || "")
+    .trim()
+    .toLowerCase();
   return normalized.includes("non") ? TYPE_NON_VEG : TYPE_VEG;
 };
 
@@ -79,12 +89,20 @@ const MenuPage = () => {
   const [allVegMode, setAllVegMode] = useState(false);
   const [isApplyingAllVeg, setIsApplyingAllVeg] = useState(false);
   const isEditingMenu = isAdding || editingIndex !== null || isSaving;
-  const editModeLabel = isAdding ? "Adding new menu item" : editingIndex !== null ? "Editing menu item" : "";
+  const editModeLabel = isAdding
+    ? "Adding new menu item"
+    : editingIndex !== null
+      ? "Editing menu item"
+      : "";
   const activeEditItem = editedItems[0] || {};
-  const activeEditorImage = activeEditItem.image || activeEditItem.image_url || activeEditItem.oldImage || "";
+  const activeEditorImage =
+    activeEditItem.image ||
+    activeEditItem.image_url ||
+    activeEditItem.oldImage ||
+    "";
   const [searchTerm, setSearchTerm] = useState("");
-const [selectedCategory, setSelectedCategory] = useState("All");
-const [selectedAvailability, setSelectedAvailability] = useState("All");
+  const [selectedCategory, setSelectedCategory] = useState("All");
+  const [selectedAvailability, setSelectedAvailability] = useState("All");
   useEffect(() => {
     if (!menuNotice) return undefined;
 
@@ -110,7 +128,10 @@ const [selectedAvailability, setSelectedAvailability] = useState("All");
 
   const handleTypeToggle = () => {
     const currentType = normalizeMenuType(activeEditItem.type);
-    handleDraftChange("type", currentType === TYPE_NON_VEG ? TYPE_VEG : TYPE_NON_VEG);
+    handleDraftChange(
+      "type",
+      currentType === TYPE_NON_VEG ? TYPE_VEG : TYPE_NON_VEG,
+    );
   };
 
   const handleAllVegToggle = async (checked) => {
@@ -118,23 +139,42 @@ const [selectedAvailability, setSelectedAvailability] = useState("All");
 
     if (!checked) return;
 
-    setMenuItems((current) => current.map((item) => ({ ...item, type: TYPE_VEG })));
-    setEditedItems((current) => current.map((item) => ({ ...item, type: TYPE_VEG })));
+    setMenuItems((current) =>
+      current.map((item) => ({ ...item, type: TYPE_VEG })),
+    );
+    setEditedItems((current) =>
+      current.map((item) => ({ ...item, type: TYPE_VEG })),
+    );
 
-    const itemsToUpdate = menuItems.filter((item) => item.id && normalizeMenuType(item.type) !== TYPE_VEG);
+    const itemsToUpdate = menuItems.filter(
+      (item) => item.id && normalizeMenuType(item.type) !== TYPE_VEG,
+    );
     if (itemsToUpdate.length === 0) return;
 
     setIsApplyingAllVeg(true);
     try {
-      const menuCollection = collection(db, "Restaurant", "orderin_restaurant_1", "menu");
-      await Promise.all(
-        itemsToUpdate.map((item) => updateDoc(doc(menuCollection, item.id), { type: TYPE_VEG }))
+      const menuCollection = collection(
+        db,
+        "Restaurant",
+        "orderin_restaurant_1",
+        "menu",
       );
-      setSaveStatus({ type: "success", message: "All menu items are set to Veg." });
+      await Promise.all(
+        itemsToUpdate.map((item) =>
+          updateDoc(doc(menuCollection, item.id), { type: TYPE_VEG }),
+        ),
+      );
+      setSaveStatus({
+        type: "success",
+        message: "All menu items are set to Veg.",
+      });
       setTimeout(() => setSaveStatus(null), 4000);
     } catch (error) {
       console.error("Error setting all menu items to veg:", error);
-      setSaveStatus({ type: "error", message: "Error setting all menu items to Veg: " + error.message });
+      setSaveStatus({
+        type: "error",
+        message: "Error setting all menu items to Veg: " + error.message,
+      });
       setTimeout(() => setSaveStatus(null), 6000);
     } finally {
       setIsApplyingAllVeg(false);
@@ -146,21 +186,25 @@ const [selectedAvailability, setSelectedAvailability] = useState("All");
     navigate(routes.dashboard, { replace: true });
   };
 
-
-
-
   // Fetch menu items from Firestore on component mount
   useEffect(() => {
     const fetchMenuItems = async () => {
       try {
-        const menuCollection = collection(db, "Restaurant", "orderin_restaurant_1", "menu");
+        const menuCollection = collection(
+          db,
+          "Restaurant",
+          "orderin_restaurant_1",
+          "menu",
+        );
         const menuSnapshot = await getDocs(menuCollection);
-        const items = menuSnapshot.docs.map(doc => ({
+        const items = menuSnapshot.docs.map((doc) => ({
           id: doc.id,
-          ...doc.data()
+          ...doc.data(),
         }));
         setMenuItems(items);
-        setAllVegMode(items.every((item) => normalizeMenuType(item.type) === TYPE_VEG));
+        setAllVegMode(
+          items.every((item) => normalizeMenuType(item.type) === TYPE_VEG),
+        );
       } catch (error) {
         console.error("Error fetching menu items:", error);
       } finally {
@@ -183,10 +227,10 @@ const [selectedAvailability, setSelectedAvailability] = useState("All");
       price: normalizePrice(item.price),
       oldImage: item.image_url || item.image || null,
       // store previous firebase storage path (if any) so we can delete on replace
-      oldImagePath: item.image_path || null
+      oldImagePath: item.image_path || null,
     };
     setEditedItems([single]);
-  }; 
+  };
 
   const handleAdd = () => {
     const newItem = {
@@ -202,7 +246,7 @@ const [selectedAvailability, setSelectedAvailability] = useState("All");
     setIsAdding(true);
     setEditingIndex(null);
     setEditedItems([newItem]);
-  }; 
+  };
 
   // Video uploads are no longer supported in the project. Removed uploadWithRetry and all video handling.
 
@@ -212,11 +256,11 @@ const [selectedAvailability, setSelectedAvailability] = useState("All");
     try {
       console.log("Starting save process...");
       // Prepare a local copy of edited items so we can adjust behavior (image uploads only)
-      let itemsToProcess = editedItems.map(i => ({ ...i }));
+      let itemsToProcess = editedItems.map((i) => ({ ...i }));
       itemsToProcess = itemsToProcess.map((item) => ({
         ...item,
         price: normalizePrice(item.price),
-        type: allVegMode ? TYPE_VEG : normalizeMenuType(item.type)
+        type: allVegMode ? TYPE_VEG : normalizeMenuType(item.type),
       }));
 
       // Validate edited items. Only require an image for NEW items (no id).
@@ -224,28 +268,53 @@ const [selectedAvailability, setSelectedAvailability] = useState("All");
       for (const [idx, item] of itemsToProcess.entries()) {
         const isNew = !item.id;
         const hasNewFile = Boolean(item.imageFile);
-        const hasDataUrl = item.image && typeof item.image === 'string' && item.image.startsWith('data:');
-        let hasExistingImage = Boolean(item.image_url) || (item.image && typeof item.image === 'string' && item.image.startsWith('http')) || hasDataUrl;
+        const hasDataUrl =
+          item.image &&
+          typeof item.image === "string" &&
+          item.image.startsWith("data:");
+        let hasExistingImage =
+          Boolean(item.image_url) ||
+          (item.image &&
+            typeof item.image === "string" &&
+            item.image.startsWith("http")) ||
+          hasDataUrl;
 
         // If this is a single-row edit, fallback to the original menuItems entry for the image if needed
         if (!hasExistingImage && editingIndex !== null) {
           const original = menuItems[editingIndex];
-          if (original && (original.image_url || (original.image && typeof original.image === 'string' && (original.image.startsWith('http') || original.image.startsWith('data:'))))) {
+          if (
+            original &&
+            (original.image_url ||
+              (original.image &&
+                typeof original.image === "string" &&
+                (original.image.startsWith("http") ||
+                  original.image.startsWith("data:"))))
+          ) {
             hasExistingImage = true;
           }
         }
 
         // Secondary fallback: find original by id
         if (!hasExistingImage && item.id) {
-          const originalById = menuItems.find(m => m.id === item.id);
-          if (originalById && (originalById.image_url || (originalById.image && typeof originalById.image === 'string' && (originalById.image.startsWith('http') || originalById.image.startsWith('data:'))))) {
+          const originalById = menuItems.find((m) => m.id === item.id);
+          if (
+            originalById &&
+            (originalById.image_url ||
+              (originalById.image &&
+                typeof originalById.image === "string" &&
+                (originalById.image.startsWith("http") ||
+                  originalById.image.startsWith("data:"))))
+          ) {
             hasExistingImage = true;
           }
         }
 
         // Enforce image only for new items
         if (isNew && !hasExistingImage && !hasNewFile) {
-          setSaveStatus({ type: 'error', message: 'Image is required for new items.' });
+          setSaveStatus({
+            type: "error",
+            message: "Image is required for new items.",
+          });
           setIsSaving(false);
           setTimeout(() => setSaveStatus(null), 6000);
           return;
@@ -254,49 +323,80 @@ const [selectedAvailability, setSelectedAvailability] = useState("All");
         // For existing items: do not require image; proceed with partial updates
       }
 
-      const menuCollection = collection(db, "Restaurant", "orderin_restaurant_1", "menu");
+      const menuCollection = collection(
+        db,
+        "Restaurant",
+        "orderin_restaurant_1",
+        "menu",
+      );
       console.log("Menu collection:", menuCollection);
       const savedMenuActivities = [];
-      
+
       for (const item of itemsToProcess) {
         console.log("Processing item:", item);
         const { id, imageFile, image, ...data } = item;
         let imageUrl = item.image_url || image || null; // prefer canonical field for display
 
-
         // Do NOT delete the old storage image before uploading the new one.
         // We'll delete the previous image only after a successful upload below to avoid data loss on upload failure.
         if (imageFile && (item.oldImageDeleteHash || item.oldImageId)) {
           // Legacy external image metadata found — automatic deletion is skipped for safety
-          console.warn("Legacy external image metadata present on item; automatic deletion is skipped.");
+          console.warn(
+            "Legacy external image metadata present on item; automatic deletion is skipped.",
+          );
         }
-
-
 
         // Prepare canonical image metadata placeholders
         let image_id = data.image_id || data.imageId || null;
-        let image_delete_hash = data.image_delete_hash || data.imageDeleteUrl || null;
+        let image_delete_hash =
+          data.image_delete_hash || data.imageDeleteUrl || null;
         let image_name = data.image_name || data.imageName || null;
         let image_url = data.image_url || data.image || null;
 
         // Accept File object or data URL (base64) for uploading
-        const uploadInput = imageFile || (typeof item.image === 'string' && item.image.startsWith('data:') ? item.image : null);
+        const uploadInput =
+          imageFile ||
+          (typeof item.image === "string" && item.image.startsWith("data:")
+            ? item.image
+            : null);
         if (uploadInput) {
           try {
-            console.log("Uploading image to Firebase Storage (menu/images):", uploadInput && uploadInput.name ? `${uploadInput.name} (${(uploadInput.size/1024).toFixed(2)}KB)` : (typeof uploadInput === 'string' ? '(data-url or url)' : uploadInput));
-            const result = await storageService.uploadFile(uploadInput, 'menu/images', RESTAURANT_NUMBER);
+            console.log(
+              "Uploading image to Firebase Storage (menu/images):",
+              uploadInput && uploadInput.name
+                ? `${uploadInput.name} (${(uploadInput.size / 1024).toFixed(2)}KB)`
+                : typeof uploadInput === "string"
+                  ? "(data-url or url)"
+                  : uploadInput,
+            );
+            const result = await storageService.uploadFile(
+              uploadInput,
+              "menu/images",
+              RESTAURANT_NUMBER,
+            );
             image_url = result.image_url || null;
             const image_path = result.image_path || null;
             image_name = result.image_name || null;
-            console.log("Firebase upload success:", image_url, image_path, image_name);
+            console.log(
+              "Firebase upload success:",
+              image_url,
+              image_path,
+              image_name,
+            );
 
             // Delete old firebase image if present and replaced
             if (item.oldImagePath) {
               try {
                 await storageService.deleteFileByPath(item.oldImagePath);
-                console.log('Deleted old firebase image at path:', item.oldImagePath);
+                console.log(
+                  "Deleted old firebase image at path:",
+                  item.oldImagePath,
+                );
               } catch (delErr) {
-                console.warn('Failed to delete previous firebase image (not fatal):', delErr);
+                console.warn(
+                  "Failed to delete previous firebase image (not fatal):",
+                  delErr,
+                );
               }
             }
 
@@ -310,57 +410,113 @@ const [selectedAvailability, setSelectedAvailability] = useState("All");
 
             // If the upload didn't produce a URL, treat as error
             if (!image_url) {
-              console.error('Firebase upload completed but returned no image URL:', result);
-              setSaveStatus({ type: 'error', message: 'Image upload did not return a URL. Please try a different file.' });
+              console.error(
+                "Firebase upload completed but returned no image URL:",
+                result,
+              );
+              setSaveStatus({
+                type: "error",
+                message:
+                  "Image upload did not return a URL. Please try a different file.",
+              });
               setIsSaving(false);
               return;
             }
           } catch (uploadError) {
-            console.error("Error uploading image to Firebase Storage:", uploadError);
+            console.error(
+              "Error uploading image to Firebase Storage:",
+              uploadError,
+            );
 
             // If unauthorized, attempt a one-time anonymous sign-in (dev-friendly) and retry once
-            const isAuthError = (uploadError && (uploadError.code === 'storage/unauthorized' || (uploadError.message || '').toLowerCase().includes('permission')));
+            const isAuthError =
+              uploadError &&
+              (uploadError.code === "storage/unauthorized" ||
+                (uploadError.message || "")
+                  .toLowerCase()
+                  .includes("permission"));
             if (isAuthError) {
-              console.warn('Upload failed due to authorization; attempting anonymous sign-in and retry...');
+              console.warn(
+                "Upload failed due to authorization; attempting anonymous sign-in and retry...",
+              );
               try {
                 const res = await trySignInAnonymously();
                 if (res && res.success) {
-                  console.log('Anonymous sign-in succeeded; retrying upload once...');
+                  console.log(
+                    "Anonymous sign-in succeeded; retrying upload once...",
+                  );
                   try {
-                    const retryResult = await storageService.uploadFile(uploadInput, 'menu/images', RESTAURANT_NUMBER);
+                    const retryResult = await storageService.uploadFile(
+                      uploadInput,
+                      "menu/images",
+                      RESTAURANT_NUMBER,
+                    );
                     image_url = retryResult.image_url || null;
                     const image_path = retryResult.image_path || null;
                     image_name = retryResult.image_name || null;
-                    console.log('Retry upload success:', image_url, image_path, image_name);
+                    console.log(
+                      "Retry upload success:",
+                      image_url,
+                      image_path,
+                      image_name,
+                    );
                     item._image_path_for_save = image_path;
                   } catch (retryErr) {
-                    console.error('Retry upload failed:', retryErr);
-                    const msg = retryErr && retryErr.message ? retryErr.message : 'Image upload failed. Please try again.';
-                    setSaveStatus({ type: 'error', message: 'Image upload failed: ' + msg });
+                    console.error("Retry upload failed:", retryErr);
+                    const msg =
+                      retryErr && retryErr.message
+                        ? retryErr.message
+                        : "Image upload failed. Please try again.";
+                    setSaveStatus({
+                      type: "error",
+                      message: "Image upload failed: " + msg,
+                    });
                     setIsSaving(false);
                     return;
                   }
                 } else {
-                  console.warn('Anonymous sign-in attempt failed:', res && res.error);
+                  console.warn(
+                    "Anonymous sign-in attempt failed:",
+                    res && res.error,
+                  );
                 }
               } catch (signErr) {
-                console.warn('Anonymous sign-in attempt threw an error:', signErr);
+                console.warn(
+                  "Anonymous sign-in attempt threw an error:",
+                  signErr,
+                );
               }
             }
 
-            const msg = uploadError && uploadError.message ? uploadError.message : 'Image upload failed. Please try again.';
-            setSaveStatus({ type: 'error', message: 'Image upload failed: ' + msg });
+            const msg =
+              uploadError && uploadError.message
+                ? uploadError.message
+                : "Image upload failed. Please try again.";
+            setSaveStatus({
+              type: "error",
+              message: "Image upload failed: " + msg,
+            });
             setIsSaving(false);
             return; // abort save on upload failure to avoid saving without an image
           }
         }
 
         // Videos are not supported. Construct item data with canonical image fields only.
-        const itemData = { ...data, image_id, image_url, image_delete_hash, image_name, image_path: (item._image_path_for_save || data.image_path || null) };
+        const itemData = {
+          ...data,
+          image_id,
+          image_url,
+          image_delete_hash,
+          image_name,
+          image_path: item._image_path_for_save || data.image_path || null,
+        };
         itemData.price = normalizePrice(itemData.price);
-        itemData.type = allVegMode ? TYPE_VEG : normalizeMenuType(itemData.type);
+        itemData.type = allVegMode
+          ? TYPE_VEG
+          : normalizeMenuType(itemData.type);
         // Remove legacy external-only fields if present (cleanup on write)
-        delete itemData.imageDeleteUrl; delete itemData.imageId;
+        delete itemData.imageDeleteUrl;
+        delete itemData.imageId;
         console.log("Item data to save:", itemData);
 
         // Estimate final document size in bytes and abort early if it would exceed Firestore's limit
@@ -370,7 +526,9 @@ const [selectedAvailability, setSelectedAvailability] = useState("All");
         const estimateBytes = (obj) => {
           try {
             const str = JSON.stringify(obj);
-            return typeof TextEncoder !== 'undefined' ? new TextEncoder().encode(str).length : str.length;
+            return typeof TextEncoder !== "undefined"
+              ? new TextEncoder().encode(str).length
+              : str.length;
           } catch (e) {
             return 0;
           }
@@ -380,8 +538,13 @@ const [selectedAvailability, setSelectedAvailability] = useState("All");
         if (docSize > MAX_DOC_BYTES) {
           const sizeMB = (docSize / (1024 * 1024)).toFixed(2);
           const maxMB = (MAX_DOC_BYTES / (1024 * 1024)).toFixed(2);
-          console.error(`Estimated document size ${sizeMB} MB exceeds allowed ${maxMB} MB`);
-          setSaveStatus({ type: 'error', message: `Document too large to save (${sizeMB} MB). Use smaller images.` });
+          console.error(
+            `Estimated document size ${sizeMB} MB exceeds allowed ${maxMB} MB`,
+          );
+          setSaveStatus({
+            type: "error",
+            message: `Document too large to save (${sizeMB} MB). Use smaller images.`,
+          });
           setIsSaving(false);
           return;
         }
@@ -400,10 +563,13 @@ const [selectedAvailability, setSelectedAvailability] = useState("All");
                 imageDeleteUrl: deleteField(),
                 imageName: deleteField(),
                 videos: deleteField(),
-                oldVideos: deleteField()
+                oldVideos: deleteField(),
               });
             } catch (cleanupErr) {
-              console.warn('Failed to remove legacy fields from document:', cleanupErr);
+              console.warn(
+                "Failed to remove legacy fields from document:",
+                cleanupErr,
+              );
             }
           } else {
             console.log("Adding new item");
@@ -413,15 +579,20 @@ const [selectedAvailability, setSelectedAvailability] = useState("All");
               message: `${addedItemName} has been added to menu.`,
               type: "menu_add",
               itemId: addedDocRef.id,
-              itemName: addedItemName
+              itemName: addedItemName,
             });
           }
         } catch (fireErr) {
           console.error("Firestore write error:", fireErr);
-          const serverMsg = fireErr && fireErr.message ? fireErr.message : String(fireErr);
-          const isSizeError = serverMsg.includes('exceeds the maximum allowed size') || serverMsg.includes('TOO_LARGE');
-          const friendlyMsg = isSizeError ? 'Document too large to write to Firestore. Use smaller images.' : 'Error writing to Firestore: ' + serverMsg;
-          setSaveStatus({ type: 'error', message: friendlyMsg });
+          const serverMsg =
+            fireErr && fireErr.message ? fireErr.message : String(fireErr);
+          const isSizeError =
+            serverMsg.includes("exceeds the maximum allowed size") ||
+            serverMsg.includes("TOO_LARGE");
+          const friendlyMsg = isSizeError
+            ? "Document too large to write to Firestore. Use smaller images."
+            : "Error writing to Firestore: " + serverMsg;
+          setSaveStatus({ type: "error", message: friendlyMsg });
           setIsSaving(false);
           throw new Error(friendlyMsg);
         }
@@ -429,18 +600,19 @@ const [selectedAvailability, setSelectedAvailability] = useState("All");
       // Refetch to get updated data with IDs
       console.log("Refetching items...");
       const menuSnapshot = await getDocs(menuCollection);
-      const updatedItems = menuSnapshot.docs.map(doc => ({
+      const updatedItems = menuSnapshot.docs.map((doc) => ({
         id: doc.id,
-        ...doc.data()
+        ...doc.data(),
       }));
       console.log("Updated items:", updatedItems);
       setMenuItems(updatedItems);
       setIsAdding(false);
       setEditingIndex(null);
       if (savedMenuActivities.length > 0) {
-        const noticeMessage = savedMenuActivities.length === 1
-          ? savedMenuActivities[0].message
-          : `${savedMenuActivities.length} menu items have been added to menu.`;
+        const noticeMessage =
+          savedMenuActivities.length === 1
+            ? savedMenuActivities[0].message
+            : `${savedMenuActivities.length} menu items have been added to menu.`;
         showMenuNotice(noticeMessage, "menu_add");
 
         for (const activity of savedMenuActivities) {
@@ -449,17 +621,23 @@ const [selectedAvailability, setSelectedAvailability] = useState("All");
             type: activity.type,
             source: "menu",
             itemId: activity.itemId,
-            itemName: activity.itemName
+            itemName: activity.itemName,
           });
         }
       }
-      setSaveStatus({ type: 'success', message: 'Menu items saved successfully.' });
+      setSaveStatus({
+        type: "success",
+        message: "Menu items saved successfully.",
+      });
       // clear success message after a short delay
       setTimeout(() => setSaveStatus(null), 4000);
       setIsSaving(false);
     } catch (error) {
       console.error("Error saving menu items:", error);
-      setSaveStatus({ type: 'error', message: 'Error saving menu items: ' + error.message });
+      setSaveStatus({
+        type: "error",
+        message: "Error saving menu items: " + error.message,
+      });
       setIsSaving(false);
       setTimeout(() => setSaveStatus(null), 6000);
     } finally {
@@ -471,14 +649,16 @@ const [selectedAvailability, setSelectedAvailability] = useState("All");
     setIsAdding(false);
     setEditingIndex(null);
     setEditedItems([]);
-  };  
+  };
 
   const handleDraftChange = (field, value) => {
     setEditedItems((current) => [{ ...(current[0] || {}), [field]: value }]);
   };
 
   const handleDraftFileChange = (field, file) => {
-    setEditedItems((current) => [{ ...(current[0] || {}), [`${field}File`]: file }]);
+    setEditedItems((current) => [
+      { ...(current[0] || {}), [`${field}File`]: file },
+    ]);
   };
 
   const handleInputChange = (rowIndex, field, value) => {
@@ -493,7 +673,7 @@ const [selectedAvailability, setSelectedAvailability] = useState("All");
       if (rowIndex !== editingIndex) return;
       handleDraftFileChange(field, file);
     }
-  };  
+  };
 
   const handleDelete = async (index) => {
     if (isEditingMenu) return;
@@ -507,15 +687,33 @@ const [selectedAvailability, setSelectedAvailability] = useState("All");
         if (itemToDelete.image_path) {
           try {
             await storageService.deleteFileByPath(itemToDelete.image_path);
-            console.log("Deleted firebase image via stored path:", itemToDelete.image_path);
+            console.log(
+              "Deleted firebase image via stored path:",
+              itemToDelete.image_path,
+            );
           } catch (err) {
-            console.error("Error deleting firebase image via stored path:", err);
+            console.error(
+              "Error deleting firebase image via stored path:",
+              err,
+            );
           }
-        } else if (itemToDelete.image && itemToDelete.image.startsWith('https://firebasestorage.googleapis.com')) {
-          console.warn('Found a legacy Firebase-hosted image URL; automatic deletion is disabled unless storage path is known.');
+        } else if (
+          itemToDelete.image &&
+          itemToDelete.image.startsWith(
+            "https://firebasestorage.googleapis.com",
+          )
+        ) {
+          console.warn(
+            "Found a legacy Firebase-hosted image URL; automatic deletion is disabled unless storage path is known.",
+          );
         }
 
-        const menuCollection = collection(db, "Restaurant", "orderin_restaurant_1", "menu");
+        const menuCollection = collection(
+          db,
+          "Restaurant",
+          "orderin_restaurant_1",
+          "menu",
+        );
         await deleteDoc(doc(menuCollection, itemToDelete.id));
       }
       const updatedItems = [...menuItems];
@@ -542,83 +740,105 @@ const [selectedAvailability, setSelectedAvailability] = useState("All");
         type: "menu_delete",
         source: "menu",
         itemId: itemToDelete.id || null,
-        itemName: deletedItemName
+        itemName: deletedItemName,
       });
     } catch (error) {
       console.error("Error deleting menu item:", error);
     }
   };
-const filteredItems = menuItems.filter((item) => {
-  const matchesSearch =
-    item.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.category?.toLowerCase().includes(searchTerm.toLowerCase());
+  const filteredItems = menuItems.filter((item) => {
+    const matchesSearch =
+      item.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.category?.toLowerCase().includes(searchTerm.toLowerCase());
 
-  const matchesCategory =
-    selectedCategory === "All" || item.category === selectedCategory;
+    const matchesCategory =
+      selectedCategory === "All" || item.category === selectedCategory;
 
-  const matchesAvailability =
-    selectedAvailability === "All" ||
-    item.availability === selectedAvailability;
+    const matchesAvailability =
+      selectedAvailability === "All" ||
+      item.availability === selectedAvailability;
 
-  return matchesSearch && matchesCategory && matchesAvailability;
-});
+    return matchesSearch && matchesCategory && matchesAvailability;
+  });
   return (
     <div className="menu-management-container">
-       {/* --- TOP HEADER ROW: Back Button and Title --- */}
-<div className="menu-header">
+      {/* --- TOP HEADER ROW: Back Button and Title --- */}
+      <div className="menu-header">
+        {/* TOP ROW */}
+        <div className="menu-header-bar">
+          <button className="btn-back" onClick={handleBackToDashboard}>
+            Back
+          </button>
 
-  {/* TOP ROW */}
-  <div className="menu-header-bar">
+          <h1 className="h1-page-title">Menu Management</h1>
 
-    <button className="btn-back" onClick={handleBackToDashboard}>
-      Back
-    </button>
+          <div style={{ display: "flex", alignItems: "start", gap: 10 }}>
+            <div className="header-actions">
+              {isEditingMenu ? (
+                <>
+                  <button
+                    className="btn-primary menu-save-btn"
+                    onClick={handleSave}
+                    disabled={isSaving}
+                  >
+                    {isSaving ? "SAVING..." : "SAVE"}
+                  </button>
+                  <button
+                    className="btn-primary menu-cancel-btn"
+                    onClick={handleCancel}
+                    disabled={isSaving}
+                  >
+                    CANCEL
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button className="btn-primary" onClick={handleAdd}>
+                    + Add Menu Item
+                  </button>
+                  <button
+                    className="btn-primary"
+                    onClick={() => navigate(routes.promotions)}
+                  >
+                    Create Promotions
+                  </button>
+                </>
+              )}
+            </div>
 
-    <h1 className="h1-page-title">Menu Management</h1>
-
-    <div style={{ display: 'flex', alignItems: 'start', gap: 10 }}>
-      <div className="header-actions">
-        {isEditingMenu ? (
-          <>
-            <button className="btn-primary menu-save-btn" onClick={handleSave} disabled={isSaving}>
-              {isSaving ? 'SAVING...' : 'SAVE'}
-            </button>
-            <button className="btn-primary menu-cancel-btn" onClick={handleCancel} disabled={isSaving}>
-              CANCEL
-            </button>
-          </>
-        ) : (
-          <>
-            <button className="btn-primary" onClick={handleAdd}>+ Add Menu Item</button>
-            <button className="btn-primary" onClick={() => navigate(routes.promotions)}>
-              Create Promotions
-            </button>
-          </>
-        )}
+            <label className="menu-all-veg-control">
+              <input
+                type="checkbox"
+                checked={allVegMode}
+                onChange={(e) => handleAllVegToggle(e.target.checked)}
+                disabled={isSaving || isApplyingAllVeg}
+              />
+              <span>All Veg</span>
+            </label>
+          </div>
+        </div>
       </div>
 
-      <label className="menu-all-veg-control">
-        <input
-          type="checkbox"
-          checked={allVegMode}
-          onChange={(e) => handleAllVegToggle(e.target.checked)}
-          disabled={isSaving || isApplyingAllVeg}
-        />
-        <span>All Veg</span>
-      </label>
-    </div>
-
-  </div>
-</div>
-
       {saveStatus && (
-        <div style={{ margin: '8px 0', color: saveStatus.type === 'success' ? '#155724' : '#721c24', background: saveStatus.type === 'success' ? '#d4edda' : '#f8d7da', padding: '8px 12px', borderRadius: 4 }}>
+        <div
+          style={{
+            margin: "8px 0",
+            color: saveStatus.type === "success" ? "#155724" : "#721c24",
+            background: saveStatus.type === "success" ? "#d4edda" : "#f8d7da",
+            padding: "8px 12px",
+            borderRadius: 4,
+          }}
+        >
           {saveStatus.message}
         </div>
-      )} 
+      )}
 
       {menuNotice && (
-        <div className={`menu-action-toast menu-action-toast--${menuNotice.type === "menu_delete" ? "delete" : "add"}`} role="status" aria-live="polite">
+        <div
+          className={`menu-action-toast menu-action-toast--${menuNotice.type === "menu_delete" ? "delete" : "add"}`}
+          role="status"
+          aria-live="polite"
+        >
           <strong>Menu updated</strong>
           <span>{menuNotice.message}</span>
         </div>
@@ -628,10 +848,24 @@ const filteredItems = menuItems.filter((item) => {
         <section className="menu-editor-panel" aria-label={editModeLabel}>
           <div className="menu-editor-header">
             <div>
-              <span className="menu-editor-kicker">{isAdding ? "New item" : "Selected item"}</span>
-              <h2>{isAdding ? "Add Menu Item" : activeEditItem.name ? `Edit ${activeEditItem.name}` : "Edit Menu Item"}</h2>
+              <span className="menu-editor-kicker">
+                {isAdding ? "New item" : "Selected item"}
+              </span>
+              <h2>
+                {isAdding
+                  ? "Add Menu Item"
+                  : activeEditItem.name
+                    ? `Edit ${activeEditItem.name}`
+                    : "Edit Menu Item"}
+              </h2>
             </div>
-            <span className="menu-editor-state">{isSaving ? "Saving" : isAdding ? "Draft" : `Row ${editingIndex + 1}`}</span>
+            <span className="menu-editor-state">
+              {isSaving
+                ? "Saving"
+                : isAdding
+                  ? "Draft"
+                  : `Row ${editingIndex + 1}`}
+            </span>
           </div>
 
           <div className="menu-editor-grid">
@@ -660,14 +894,26 @@ const filteredItems = menuItems.filter((item) => {
             <label className="menu-editor-field">
               <span>Price</span>
               <div className="menu-price-stepper">
-                <button type="button" onClick={() => handlePriceStep(-0.01)} disabled={isSaving}>-</button>
+                <button
+                  type="button"
+                  onClick={() => handlePriceStep(-0.01)}
+                  disabled={isSaving}
+                >
+                  -
+                </button>
                 <input
                   type="text"
                   inputMode="decimal"
                   value={sanitizePriceInput(activeEditItem.price)}
                   onChange={(e) => handlePriceChange(e.target.value)}
                 />
-                <button type="button" onClick={() => handlePriceStep(0.01)} disabled={isSaving}>+</button>
+                <button
+                  type="button"
+                  onClick={() => handlePriceStep(0.01)}
+                  disabled={isSaving}
+                >
+                  +
+                </button>
               </div>
             </label>
 
@@ -675,18 +921,36 @@ const filteredItems = menuItems.filter((item) => {
               <div className="menu-editor-field">
                 <span>Type</span>
                 <div className="menu-type-toggle">
-                  <span className={normalizeMenuType(activeEditItem.type) === TYPE_VEG ? "active" : ""}>Veg</span>
+                  <span
+                    className={
+                      normalizeMenuType(activeEditItem.type) === TYPE_VEG
+                        ? "active"
+                        : ""
+                    }
+                  >
+                    Veg
+                  </span>
                   <button
                     type="button"
                     className={`menu-type-switch ${normalizeMenuType(activeEditItem.type) === TYPE_NON_VEG ? "is-nonveg" : ""}`}
                     role="switch"
-                    aria-checked={normalizeMenuType(activeEditItem.type) === TYPE_NON_VEG}
+                    aria-checked={
+                      normalizeMenuType(activeEditItem.type) === TYPE_NON_VEG
+                    }
                     onClick={handleTypeToggle}
                     disabled={isSaving}
                   >
                     <span></span>
                   </button>
-                  <span className={normalizeMenuType(activeEditItem.type) === TYPE_NON_VEG ? "active" : ""}>Non-Veg</span>
+                  <span
+                    className={
+                      normalizeMenuType(activeEditItem.type) === TYPE_NON_VEG
+                        ? "active"
+                        : ""
+                    }
+                  >
+                    Non-Veg
+                  </span>
                 </div>
               </div>
             )}
@@ -696,7 +960,9 @@ const filteredItems = menuItems.filter((item) => {
               <select
                 className="menu-editor-control"
                 value={activeEditItem.availability || ""}
-                onChange={(e) => handleDraftChange("availability", e.target.value)}
+                onChange={(e) =>
+                  handleDraftChange("availability", e.target.value)
+                }
               >
                 <option value="">Select</option>
                 <option value="Yes">Yes</option>
@@ -707,12 +973,16 @@ const filteredItems = menuItems.filter((item) => {
             <div className="menu-editor-field menu-editor-toggle-field">
               <span>Promotions</span>
               <div className="menu-editor-toggle-row">
-                <strong>{activeEditItem.promotions ? "Enabled" : "Disabled"}</strong>
+                <strong>
+                  {activeEditItem.promotions ? "Enabled" : "Disabled"}
+                </strong>
                 <label className="switch">
                   <input
                     type="checkbox"
                     checked={Boolean(activeEditItem.promotions)}
-                    onChange={(e) => handleDraftChange("promotions", e.target.checked)}
+                    onChange={(e) =>
+                      handleDraftChange("promotions", e.target.checked)
+                    }
                   />
                   <span className="slider round"></span>
                 </label>
@@ -723,7 +993,11 @@ const filteredItems = menuItems.filter((item) => {
               <span>Item Image</span>
               <div className="menu-editor-image-card">
                 {activeEditorImage ? (
-                  <img src={activeEditorImage} alt="" className="menu-editor-image-preview" />
+                  <img
+                    src={activeEditorImage}
+                    alt=""
+                    className="menu-editor-image-preview"
+                  />
                 ) : (
                   <div className="menu-editor-image-empty">Image</div>
                 )}
@@ -758,7 +1032,9 @@ const filteredItems = menuItems.filter((item) => {
               <textarea
                 className="menu-editor-control menu-editor-textarea"
                 value={activeEditItem.description || ""}
-                onChange={(e) => handleDraftChange("description", e.target.value)}
+                onChange={(e) =>
+                  handleDraftChange("description", e.target.value)
+                }
                 rows="4"
                 placeholder="Short item description"
               />
@@ -768,122 +1044,131 @@ const filteredItems = menuItems.filter((item) => {
           <div className="menu-editor-footer">
             <span>{isAdding ? "New item draft" : "Unsaved item changes"}</span>
             <div className="menu-editor-actions">
-              <button className="btn-primary menu-cancel-btn" onClick={handleCancel} disabled={isSaving}>CANCEL</button>
-              <button className="btn-primary menu-save-btn" onClick={handleSave} disabled={isSaving}>{isSaving ? "SAVING..." : "SAVE ITEM"}</button>
+              <button
+                className="btn-primary menu-cancel-btn"
+                onClick={handleCancel}
+                disabled={isSaving}
+              >
+                CANCEL
+              </button>
+              <button
+                className="btn-primary menu-save-btn"
+                onClick={handleSave}
+                disabled={isSaving}
+              >
+                {isSaving ? "SAVING..." : "SAVE ITEM"}
+              </button>
             </div>
           </div>
         </section>
       )}
-<div className="stats-container">
+      <div className="stats-container">
+        <div className="stat-card">
+          <div className="stat-icon red">
+            <img src={TotalDishesIcon} alt="" />
+          </div>
+          <div>
+            <p>Total Dishes</p>
+            <h2>{menuItems.length}</h2>
+            <span>
+              Across {new Set(menuItems.map((i) => i.category)).size} categories
+            </span>
+          </div>
+        </div>
 
-  <div className="stat-card">
-    <div className="stat-icon red">
-      <img src={TotalDishesIcon} alt="" />
-    </div>
-    <div>
-      <p>Total Dishes</p>
-      <h2>{menuItems.length}</h2>
-      <span>Across {new Set(menuItems.map(i => i.category)).size} categories</span>
-    </div>
-  </div>
+        <div className="stat-card">
+          <div className="stat-icon green">
+            <img src={CategoryIcon} alt="" />
+          </div>
+          <div>
+            <p>Category Count</p>
+            <h2>{new Set(menuItems.map((i) => i.category)).size}</h2>
+            <span>Active categories</span>
+          </div>
+        </div>
 
-  <div className="stat-card">
-    <div className="stat-icon green">
-      <img src={CategoryIcon} alt="" />
-    </div>
-    <div>
-      <p>Category Count</p>
-      <h2>{new Set(menuItems.map(i => i.category)).size}</h2>
-      <span>Active categories</span>
-    </div>
-  </div>
+        <div className="stat-card">
+          <div className="stat-icon yellow">
+            <img src={PromotionsIcon} alt="" />
+          </div>
+          <div>
+            <p>Active Promotions</p>
+            <h2>{menuItems.filter((i) => i.promotions).length}</h2>
+            <span>Running Promotions</span>
+          </div>
+        </div>
 
-  <div className="stat-card">
-    <div className="stat-icon yellow">
-      <img src={PromotionsIcon} alt="" />
-    </div>
-    <div>
-      <p>Active Promotions</p>
-      <h2>{menuItems.filter(i => i.promotions).length}</h2>
-      <span>Running Promotions</span>
-    </div>
-  </div>
+        <div className="stat-card">
+          <div className="stat-icon red">
+            <img src={AvailableDishesIcon} alt="" />
+          </div>
+          <div>
+            <p>Available dishes</p>
+            <h2>{menuItems.filter((i) => i.availability === "Yes").length}</h2>
+            <span>Are ready to serve/available</span>
+          </div>
+        </div>
+      </div>
 
-  <div className="stat-card">
-    <div className="stat-icon red">
-      <img src={AvailableDishesIcon} alt="" />
-    </div>
-    <div>
-      <p>Available dishes</p>
-      <h2>{menuItems.filter(i => i.availability === "Yes").length}</h2>
-      <span>Are ready to serve/available</span>
-    </div>
-  </div>
+      {/* ================= FILTER BAR ================= */}
+      <div className="filters-bar">
+        {/* Search */}
+        <div className="search-box">
+          <span className="search-icon">🔍</span>
+          <input
+            type="text"
+            placeholder="Search dish name..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
 
-</div>
+        {/* Category */}
+        <select
+          className="filter-dropdown"
+          value={selectedCategory}
+          onChange={(e) => setSelectedCategory(e.target.value)}
+        >
+          <option value="All">All Categories</option>
+          {[...new Set(menuItems.map((i) => i.category))].map((cat, i) => (
+            <option key={i} value={cat}>
+              {cat}
+            </option>
+          ))}
+        </select>
 
-{/* ================= FILTER BAR ================= */}
-<div className="filters-bar">
+        {/* Availability */}
+        <select
+          className="filter-dropdown"
+          value={selectedAvailability}
+          onChange={(e) => setSelectedAvailability(e.target.value)}
+        >
+          <option value="All">Availability: All</option>
+          <option value="Yes">Yes</option>
+          <option value="No">No</option>
+        </select>
+        {/* Veg Toggle */}
+        <label className="veg-toggle-ui">
+          <input
+            type="checkbox"
+            checked={allVegMode}
+            onChange={(e) => handleAllVegToggle(e.target.checked)}
+          />
+          <span></span>
+          <p>Veg Only</p>
+        </label>
 
-  {/* Search */}
-  <div className="search-box">
-    <span className="search-icon">🔍</span>
-    <input
-      type="text"
-      placeholder="Search dish name..."
-      onChange={(e) => {
-        const value = e.target.value.toLowerCase();
-        setMenuItems(prev =>
-          prev.filter(item =>
-            item.name.toLowerCase().includes(value)
-          )
-        );
-      }}
-    />
-  </div>
-
-  {/* Category */}
-  <select
-  className="filter-dropdown"
-  value={selectedCategory}
-  onChange={(e) => setSelectedCategory(e.target.value)}
->
-  <option value="All">All Categories</option>
-  {[...new Set(menuItems.map(i => i.category))].map((cat, i) => (
-    <option key={i} value={cat}>{cat}</option>
-  ))}
-</select>
-
-  {/* Availability */}
-<select
-  className="filter-dropdown"
-  value={selectedAvailability}
-  onChange={(e) => setSelectedAvailability(e.target.value)}
->
-  <option value="All">Availability: All</option>
-  <option value="Yes">Yes</option>
-  <option value="No">No</option>
-</select>
-  {/* Veg Toggle */}
-  <label className="veg-toggle-ui">
-    <input
-      type="checkbox"
-      checked={allVegMode}
-      onChange={(e) => handleAllVegToggle(e.target.checked)}
-    />
-    <span></span>
-    <p>Veg Only</p>
-  </label>
-
-  {/* Reset */}
-  <button
-    className="reset-btn"
-    onClick={() => window.location.reload()}
-  >
-    ⟳ Reset Filters
-  </button>
-
-</div>
+        {/* Reset */}
+        <button
+          className="reset-btn"
+          onClick={() => {
+            setSelectedCategory("All");
+            setSelectedAvailability("All");
+          }}
+        >
+          ⟳ Reset Filters
+        </button>
+      </div>
       <div className="menu-content-area">
         <div className="menu-table-wrapper">
           <div className="table-scroll-container">
@@ -900,7 +1185,7 @@ const filteredItems = menuItems.filter((item) => {
 
                   <th>Price</th>
 
-                    <th className="promo-header">Promotions</th>
+                  <th className="promo-header">Promotions</th>
 
                   <th>Availability</th>
 
@@ -913,16 +1198,19 @@ const filteredItems = menuItems.filter((item) => {
               </thead>
 
               <tbody>
-               {filteredItems.map((item, index) => {
-                  const rowIsEditing = (editingIndex === index);
+                {filteredItems.map((item, index) => {
+                  const rowIsEditing = editingIndex === index;
                   return (
-                    <tr key={index} className={rowIsEditing ? "menu-row-editing" : ""}>
-                      <td>
-                        {item.category}
-                      </td>
+                    <tr
+                      key={index}
+                      className={rowIsEditing ? "menu-row-editing" : ""}
+                    >
+                      <td>{item.category}</td>
 
                       <td>
-                        {item.name && item.name.length > 18 ? item.name.substring(0, 18) + '...' : item.name}
+                        {item.name && item.name.length > 18
+                          ? item.name.substring(0, 18) + "..."
+                          : item.name}
                       </td>
 
                       <td>
@@ -933,9 +1221,7 @@ const filteredItems = menuItems.filter((item) => {
                         />
                       </td>
 
-                      <td>
-                        {item.price}
-                      </td>
+                      <td>{item.price}</td>
 
                       <td>
                         <label className="switch">
@@ -955,24 +1241,22 @@ const filteredItems = menuItems.filter((item) => {
                         </label>
                       </td>
 
-                      <td>
-                        {item.availability}
-                      </td>
+                      <td>{item.availability}</td>
 
                       <td>
-                        {item.description && item.description.length > 24 ? item.description.substring(0, 24) + '...' : item.description}
+                        {item.description && item.description.length > 24
+                          ? item.description.substring(0, 24) + "..."
+                          : item.description}
                       </td>
 
-
-
-                      {!allVegMode && (
-                        <td>
-                          {normalizeMenuType(item.type)}
-                        </td>
-                      )}
+                      {!allVegMode && <td>{normalizeMenuType(item.type)}</td>}
 
                       <td className="menu-actions-cell">
-                        <button className="btn-primary" onClick={() => handleEditRow(index)} disabled={isEditingMenu}>
+                        <button
+                          className="btn-primary"
+                          onClick={() => handleEditRow(index)}
+                          disabled={isEditingMenu}
+                        >
                           {rowIsEditing ? "Editing" : "Edit"}
                         </button>
                         <button
