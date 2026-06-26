@@ -63,6 +63,7 @@ body,html,#root{height:100%;margin:0}
   background:white;
   position:relative;
   padding:22px 36px;
+  background-image: url("/images/Vectors.png");
   background-size: contain;
   background-repeat: no-repeat;
   background-position: bottom;

@@ -246,7 +246,7 @@ const Promotions = () => {
         <div className="promotions-page-container">
             <div className="promotions-page-content">
                 {/* Back Button - match Finance/Orders/Menu/Inventory style */}
-                <button className="promotions-back-btn" onClick={() => navigate(routes.dashboard)}>
+                <button className="promotions-back-btn" onClick={() => navigate(routes.menu)}>
                     Back
                 </button>
 

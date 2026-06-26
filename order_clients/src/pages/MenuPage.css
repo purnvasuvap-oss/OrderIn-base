@@ -374,10 +374,10 @@ body {
 }
 
 .menu-type-toggle {
-  display: grid;
+ display: inline-flex;
   grid-template-columns: auto 54px auto;
   align-items: center;
-  gap: 9px;
+  gap: 16px;
   min-height: 44px;
   padding: 10px 12px;
   border: 1px solid #e7d6d0;
@@ -399,7 +399,7 @@ body {
 
 .menu-type-switch {
   position: relative;
-  width: 54px;
+  width: 65px;
   height: 28px;
   border: 0;
   border-radius: 999px;
@@ -412,8 +412,8 @@ body {
   position: absolute;
   top: 4px;
   left: 4px;
-  width: 20px;
-  height: 20px;
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
   background: #ffffff;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
@@ -1344,7 +1344,9 @@ input:checked + .slider:before {
   align-items: center;
   gap: 6px;
 }
-
+.veg-toggle-ui p{
+  color:#2e7d32;
+}
 .veg-toggle-ui input {
   display: none;
 }

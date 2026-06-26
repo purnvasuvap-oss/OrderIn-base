@@ -172,6 +172,7 @@
 .Inventory-activity-heading {
   margin: 0 0 5px 0;
   font-size: 14px;
+  color:#d84332;
   font-weight: 600;
 }
 
@@ -191,6 +192,7 @@
   font-size: 11px;
   margin: 0;
   max-width: 100%;
+  color: #333;
   white-space: normal;
   overflow-wrap: anywhere;
   word-break: break-word;

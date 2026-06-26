@@ -22,10 +22,21 @@
   height:170px;
   margin-bottom:10px;
 }
+.dashboard-banner p{
+  color: #E53935;
+  font:bold 18px "Poppins",sans-serif;
+}
 .dashboard-wrapper{
   min-height:90vh;
   background:#f6f5f3;
   padding:20px;
+  background-image: url("/images/Vectors.png");
+
+  background-size: contain;
+
+  background-repeat: no-repeat;
+
+  background-position: bottom;
 }
 
 /* ===========================
@@ -43,7 +54,7 @@
   margin: 0;
 }
 .date-card {
-  background: #fff;
+  background: #E53935;
   padding: 12px 18px;
   border-radius: 12px;
   display: flex;
@@ -57,7 +68,7 @@
 .date-card p{
   margin:0;
   font-size:13px;
-  color:#555;
+  color:#ffffff;
 }
 
 .date-card h4{
@@ -65,7 +76,7 @@
   margin-bottom:0;
   font-size:18px;
   font-weight:700;
-  color:#222;
+  color:#fffefe;
 }
 /* ===========================
    KPI Cards

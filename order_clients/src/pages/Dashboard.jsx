@@ -98,7 +98,7 @@ const Dashboard = () => {
         </div>
 
         <div className="date-card">
-          <Calendar size={38} color="#E53935" strokeWidth={2.2} />
+          <Calendar size={38} color="white" strokeWidth={2.2} />
 
           <div>
             <p>{currentDate}</p>
