@@ -1393,12 +1393,64 @@ input:checked + .slider:before {
     grid-template-columns: repeat(2, 1fr);
     gap: 16px;
   }
+  .filters-bar {
+    flex-direction: column; /* Stacks everything cleanly downwards */
+    align-items: stretch; /* Makes controls span across the edge of the mobile view */
+    gap: 10px;
+    padding: 12px;
+    margin: 10px 0;
+  }
+
+  .search-box {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  /* Row container for selectors so they sit cleanly side-by-side on mobile if preferred, 
+     or stacked individually for better readability */
+  .filter-dropdown {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 10px; /* Better hit targets for mobile touch */
+  }
+
+  .veg-toggle-ui {
+    justify-content: space-between;
+    padding: 8px 10px;
+    background: #f9f9f9;
+    border: 1px solid #eee;
+    border-radius: 6px;
+  }
+
+  .reset-btn {
+    width: 100%;
+    padding: 10px;
+    text-align: center;
+  }
 }
 
 /* Mobile → hide completely */
 @media (max-width: 768px) {
   .stats-container {
     display: none;
+  }
+  .filters-bar {
+    flex-wrap: wrap; /* Allows items to jump to the next line safely */
+    gap: 12px;
+    padding: 12px;
+    margin: 10px 0;
+  }
+
+  .search-box {
+    flex: 1 1 100%; /* Makes the search bar take up the full first row on tablets */
+  }
+
+  .filter-dropdown,
+  .veg-toggle-ui,
+  .reset-btn {
+    flex: 1; /* Distributes the remaining filters evenly across the screen width */
+    justify-content: center;
+    min-width: 120px;
   }
 }
 .header {
