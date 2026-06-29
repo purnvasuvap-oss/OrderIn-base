@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
 import { db, auth } from "../firebaseConfig";
 import { onAuthStateChanged } from "firebase/auth";
+import { FiUser } from "react-icons/fi";
 import "./login.css";
 
 const Login = () => {
@@ -453,12 +454,17 @@ const Login = () => {
         <img src="/OrderIn.png" alt="OrderIn" className="orderin-logo" />
 
         <>
+        <div className="input-wrapper">
+          <div className="name-icon-wrapper">
+            <FiUser className="name-input-icon" />
+          </div>
           <input
             type="text"
+            className="name-input"
             placeholder="Enter your name"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
-          />
+          /></div>
 
           <div className="phone-input-container">
             <div className="country-code-wrapper">

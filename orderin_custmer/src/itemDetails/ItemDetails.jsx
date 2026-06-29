@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Heart, Minus, Plus, ShoppingCart, Check } from "lucide-react";
 import { collection, getDocs, doc, getDoc, setDoc } from "firebase/firestore";
 import { db } from "../firebaseConfig";
 import { useCart } from "../context/CartContext";
@@ -9,7 +8,16 @@ import Footer from "../Footer/Footer";
 import "./ItemDetails.css";
 import { getPlaceholder } from "../utils/placeholder";
 import { resolveImageUrl } from "../utils/storageResolver";
+import {
+  FiHeart,
+  FiShoppingCart,
+  FiCheck,
+  FiMinus,
+  FiPlus,
+  FiArrowLeft
+} from "react-icons/fi";
 
+import { FaHeart } from "react-icons/fa";
 function ItemDetails() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -265,7 +273,7 @@ function ItemDetails() {
       {/* HEADER */}
       <div className="itemdetails-header">
         <button className="bac-button" onClick={handleBack}>
-          <ArrowLeft size={22} />
+          <FiArrowLeft size={22} />
         </button>
       </div>
 
@@ -292,12 +300,19 @@ function ItemDetails() {
       {/* INFO SECTION */}
       <div className="itemdetails-info">
         <div className="itemdetails-header-row">
-          <h2 className="itemdetails-title">{item.name}</h2>
-          <Heart
-            size={22}
-            className={`heart-icon ${isFavorited ? 'favorited' : ''}`}
-            onClick={handleFavoriteToggle}
-          />
+          <h1 className="itemdetails-title">{item.name}</h1>
+<div
+    className="favorite-btn"
+    onClick={handleFavoriteToggle}
+>
+
+    {isFavorited ? (
+        <FaHeart className="favorite-active" size={24}/>
+    ) : (
+        <FiHeart className="favorite-default" size={24} />
+    )}
+
+</div>
         </div>
 
 
@@ -310,11 +325,11 @@ function ItemDetails() {
             className="qty-btn"
             onClick={() => handleQuantityChange(-1)}
           >
-            <Minus size={18} />
+            <FiMinus/>
           </button>
           <span className="qty-value">{quantity}</span>
           <button className="qty-btn" onClick={() => handleQuantityChange(1)}>
-            <Plus size={18} />
+            <FiPlus/>
           </button>
         </div>
 
@@ -331,15 +346,15 @@ function ItemDetails() {
           >
             {isCurrentSelectionAdded ? (
               <>
-                <Check size={18} /> Added
+                <FiCheck size={18} /> Added
               </>
             ) : cartItemForCurrentItem ? (
               <>
-                <ShoppingCart size={18} /> {actionLabel}
+                <FiShoppingCart size={18} /> {actionLabel}
               </>
             ) : (
               <>
-                <ShoppingCart size={18} /> {actionLabel}
+                <FiShoppingCart size={18} /> {actionLabel}
               </>
             )}
           </button>

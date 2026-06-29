@@ -10,6 +10,7 @@ import "./Cart.css";
 import { getPlaceholder } from "../utils/placeholder";
 import resolveImageUrl from "../utils/storageResolver";
 import { parseOrderTimestamp } from "../utils/orderDateTime";
+import { HiOutlineShoppingCart } from "react-icons/hi2";
 
 function Cart({ onBackClick }) {
   const [activeTab, setActiveTab] = useState("Current Order");
@@ -215,12 +216,26 @@ function Cart({ onBackClick }) {
 
       {activeTab === "Current Order" ? (
         cartItems.length === 0 ? (
-          <div className="empty-cart">
-            <p className="empty-text">Your cart is empty</p>
-            <button className="continue-btn" onClick={handleContinueShopping}>
-              Continue Shopping
-            </button>
-          </div>
+        <div className="empty-cart">
+    <div className="empty-cart-icon">
+        <HiOutlineShoppingCart />
+    </div>
+
+    <h2>Your cart is empty</h2>
+
+    <p>
+        Looks like you haven't added
+        <br />
+        anything yet.
+    </p>
+
+    <button
+        className="continue-shopping-btn"
+        onClick={handleContinueShopping}
+    >
+        Continue Shopping
+    </button>
+</div>
         ) : (
           <div className="cart-content">
             {cartItems.map((item, index) => {

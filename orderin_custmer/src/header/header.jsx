@@ -39,20 +39,20 @@ function Header() {
   };
 
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (sideMenuRef.current && !sideMenuRef.current.contains(event.target)) {
-        setIsMenuOpen(false);
-      }
-    };
-
-    if (isMenuOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
+    function handleClickOutside(e) {
+        if (
+            menuWrapperRef.current &&
+            !menuWrapperRef.current.contains(e.target)
+        ) {
+            setIsMenuOpen(false);
+        }
     }
 
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [isMenuOpen]);
+    document.addEventListener("mousedown", handleClickOutside);
+
+    return () =>
+        document.removeEventListener("mousedown", handleClickOutside);
+}, []);
 
   return (
      <>
