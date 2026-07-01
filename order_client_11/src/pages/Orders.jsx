@@ -467,21 +467,21 @@ function Orders() {
           </div>
           <div
 
-            className={`stat red ${filter === "all" ? "selected" : ""}`}
+            className={`stat total ${filter === "all" ? "selected" : ""}`}
             onClick={() => setFilter("all")}
           >
             <div className="label">Total Orders:</div>
             <div className="value">{total}</div>
           </div>
           <div
-            className={`stat yellow ${filter === "active" ? "selected" : ""}`}
+            className={`stat pending ${filter === "active" ? "selected" : ""}`}
             onClick={() => setFilter("active")}
           >
             <div className="label">Active Orders:</div>
             <div className="value">{active}</div>
           </div>
           <div
-            className={`stat green ${filter === "completed" ? "selected" : ""}`}
+            className={`stat done ${filter === "completed" ? "selected" : ""}`}
             onClick={() => setFilter("completed")}
           >
             <div className="label">Completed:</div>
