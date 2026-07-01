@@ -245,19 +245,20 @@ const Promotions = () => {
     return (
         <div className="promotions-page-container">
             <div className="promotions-page-content">
-                <div className="promotions-topbar">
-                    <button className="fin-back-btn" onClick={() => navigate(routes.menu)}>
-                        <span aria-hidden="true">←</span>
-                        Back to Menu
-                    </button>
+               <div className="promotions-topbar">
+  <button
+    className="fin-back-btn"
+    onClick={() => navigate(routes.menu)}
+  >
+    <span>←</span>
+    Back to Menu
+  </button>
 
-                    <div className="promotions-heading">
-                        <span className="promotions-eyebrow">Campaign builder</span>
-                        <h2 className="promotions-title">
-                            Create Pop Ad
-                        </h2>
-                    </div>
-                </div>
+  <div className="promotions-heading">
+    <span className="promotions-eyebrow">Campaign builder</span>
+    <h2 className="promotions-title">Create Pop Ad</h2>
+  </div>
+</div>
 
                 <form onSubmit={handleSubmit} className="promotions-form-panel">
                     <div className="promotions-content">

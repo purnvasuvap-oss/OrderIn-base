@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import routes from "../routes";
 import { db, getAuthInfo, trySignInAnonymously } from "../firebase";
@@ -12,11 +12,15 @@ import "./MenuPage.css";
 
 const TYPE_VEG = "Veg";
 const TYPE_NON_VEG = "Non-Veg";
+const ALL_CATEGORIES = "All Categories";
+const ALL_AVAILABILITY = "All";
 
 const normalizeMenuType = (value) => {
   const normalized = String(value || "").trim().toLowerCase();
   return normalized.includes("non") ? TYPE_NON_VEG : TYPE_VEG;
 };
+
+const normalizeAvailability = (value) => String(value || "").trim().toLowerCase();
 
 const sanitizePriceInput = (value) => {
   const raw = String(value ?? "");
@@ -50,20 +54,89 @@ const formatSteppedPrice = (value) => {
   return rounded.toFixed(2);
 };
 
+/* --- Small inline icons (no external icon package needed) --- */
+const IconForkKnife = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M6 3v7a2 2 0 0 0 2 2 2 2 0 0 0 2-2V3" />
+    <path d="M8 12v9" />
+    <path d="M17 3c-1.4 0-2.5 1.6-2.5 4.5S15.6 12 17 12s2.5-1.6 2.5-4.5S18.4 3 17 3z" />
+    <path d="M17 12v9" />
+  </svg>
+);
+
+const IconCart = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="9" cy="20" r="1.4" />
+    <circle cx="18" cy="20" r="1.4" />
+    <path d="M3 4h2l2.4 11.4A2 2 0 0 0 9.35 17h8.3a2 2 0 0 0 1.95-1.57L21 8H6" />
+  </svg>
+);
+
+const IconMegaphone = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M3 11v2a2 2 0 0 0 2 2h1l2 5h2l-1.2-5H12l7 4V6l-7 4H6a2 2 0 0 0-2 2z" />
+    <path d="M12 6v10" />
+  </svg>
+);
+
+const IconPlate = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="9" />
+    <circle cx="12" cy="12" r="4" />
+  </svg>
+);
+
+const IconSearch = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="11" cy="11" r="7" />
+    <path d="M21 21l-4.3-4.3" />
+  </svg>
+);
+
+const IconReset = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M3 12a9 9 0 1 0 3-6.7" />
+    <path d="M3 4v5h5" />
+  </svg>
+);
+
+const IconPlus = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 5v14M5 12h14" />
+  </svg>
+);
+
+const StatCard = ({ icon, iconClass, label, value, subtitle }) => (
+  <div className="stat-card">
+    <div className={`stat-icon ${iconClass}`}>{icon}</div>
+    <div className="stat-body">
+      <div className="stat-label">{label}</div>
+      <div className="stat-value">{value}</div>
+      <div className="stat-subtitle">{subtitle}</div>
+    </div>
+  </div>
+);
+
 const MenuPage = () => {
   const navigate = useNavigate();
   const { addActivity } = useNotification();
   const [menuItems, setMenuItems] = useState([]);
   const [isAdding, setIsAdding] = useState(false);
-  const [editingIndex, setEditingIndex] = useState(null); // single-row edit index (null = none)
-  const [editedItems, setEditedItems] = useState([]);
+  const [editingId, setEditingId] = useState(null); // id (or __tempId for a new unsaved row) of the row being edited
+  const [editedItem, setEditedItem] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState(null); // { type: 'success'|'error', message: string }
   const [menuNotice, setMenuNotice] = useState(null);
   const [allVegMode, setAllVegMode] = useState(false);
   const [isApplyingAllVeg, setIsApplyingAllVeg] = useState(false);
-  const isEditingMenu = isAdding || editingIndex !== null || isSaving;
+
+  // --- Search / filter bar state ---
+  const [searchTerm, setSearchTerm] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState(ALL_CATEGORIES);
+  const [availabilityFilter, setAvailabilityFilter] = useState(ALL_AVAILABILITY);
+
+  const isEditingMenu = isAdding || editingId !== null || isSaving;
 
   useEffect(() => {
     if (!menuNotice) return undefined;
@@ -85,7 +158,7 @@ const MenuPage = () => {
     if (!checked) return;
 
     setMenuItems((current) => current.map((item) => ({ ...item, type: TYPE_VEG })));
-    setEditedItems((current) => current.map((item) => ({ ...item, type: TYPE_VEG })));
+    setEditedItem((current) => (current ? { ...current, type: TYPE_VEG } : current));
 
     const itemsToUpdate = menuItems.filter((item) => item.id && normalizeMenuType(item.type) !== TYPE_VEG);
     if (itemsToUpdate.length === 0) return;
@@ -128,13 +201,71 @@ const MenuPage = () => {
     fetchMenuItems();
   }, []);
 
-  // Batch editing has been removed. Use per-row Edit buttons instead.
+  // --- Derived data: stats (always over the full menu, not the filtered view) ---
+  const stats = useMemo(() => {
+    const totalDishes = menuItems.length;
+    const categories = new Set(
+      menuItems.map((item) => String(item.category || "").trim()).filter(Boolean)
+    );
+    const activePromotions = menuItems.filter((item) => Boolean(item.promotions)).length;
+    const availableDishes = menuItems.filter((item) => normalizeAvailability(item.availability) === "yes").length;
+    return {
+      totalDishes,
+      categoryCount: categories.size,
+      activePromotions,
+      availableDishes,
+    };
+  }, [menuItems]);
+
+  // --- Derived data: category options for the filter dropdown ---
+  const categoryOptions = useMemo(() => {
+    const categories = new Set(
+      menuItems.map((item) => String(item.category || "").trim()).filter(Boolean)
+    );
+    return [ALL_CATEGORIES, ...Array.from(categories).sort((a, b) => a.localeCompare(b))];
+  }, [menuItems]);
+
+  const hasActiveFilters =
+    searchTerm.trim() !== "" ||
+    categoryFilter !== ALL_CATEGORIES ||
+    availabilityFilter !== ALL_AVAILABILITY;
+
+  const handleResetFilters = () => {
+    setSearchTerm("");
+    setCategoryFilter(ALL_CATEGORIES);
+    setAvailabilityFilter(ALL_AVAILABILITY);
+    // Note: "All Veg" / "Veg Only" is intentionally left untouched here — it isn't a
+    // display-only filter, it's the same control as the header's "All Veg" checkbox,
+    // and it actually updates the saved menu data. Resetting search/category/availability
+    // shouldn't silently undo that.
+  };
+
+  // --- Derived data: the rows to actually render, after search + filters ---
+  const filteredItems = useMemo(() => {
+    const term = searchTerm.trim().toLowerCase();
+    return menuItems.filter((item) => {
+      // Never hide the row currently being added/edited, even if it doesn't match filters yet
+      if (item.__tempId && item.__tempId === editingId) return true;
+
+      if (term && !String(item.name || "").toLowerCase().includes(term)) return false;
+
+      if (categoryFilter !== ALL_CATEGORIES && String(item.category || "").trim() !== categoryFilter) return false;
+
+      if (availabilityFilter !== ALL_AVAILABILITY) {
+        if (normalizeAvailability(item.availability) !== availabilityFilter.toLowerCase()) return false;
+      }
+
+      // "Veg Only" (filter bar) and "All Veg" (header) are the same control — both are
+      // driven by allVegMode, so this stays in sync with whichever one was clicked.
+      if (allVegMode && normalizeMenuType(item.type) !== TYPE_VEG) return false;
+
+      return true;
+    });
+  }, [menuItems, searchTerm, categoryFilter, availabilityFilter, allVegMode, editingId]);
 
   // Edit a single row in-place without making all rows editable
-  const handleEditRow = (rowIndex) => {
+  const handleEditRow = (item) => {
     setIsAdding(false);
-    setEditingIndex(rowIndex);
-    const item = menuItems[rowIndex] || {};
     const single = {
       ...item,
       type: normalizeMenuType(item.type),
@@ -143,11 +274,14 @@ const MenuPage = () => {
       // store previous firebase storage path (if any) so we can delete on replace
       oldImagePath: item.image_path || null
     };
-    setEditedItems([single]);
-  }; 
+    setEditingId(item.id || item.__tempId);
+    setEditedItem(single);
+  };
 
   const handleAdd = () => {
+    const tempId = `temp-${Date.now()}`;
     const newItem = {
+      __tempId: tempId,
       category: "",
       name: "",
       image: null,
@@ -158,21 +292,19 @@ const MenuPage = () => {
       type: TYPE_VEG,
     };
     // Insert placeholder at top and start single-row edit for it
-    setMenuItems([newItem, ...menuItems]);
+    setMenuItems((current) => [newItem, ...current]);
     setIsAdding(true);
-    setEditingIndex(0);
-    setEditedItems([newItem]);
-  }; 
-
-  // Video uploads are no longer supported in the project. Removed uploadWithRetry and all video handling.
+    setEditingId(tempId);
+    setEditedItem(newItem);
+  };
 
   const handleSave = async () => {
     setIsSaving(true);
     setSaveStatus(null);
     try {
       console.log("Starting save process...");
-      // Prepare a local copy of edited items so we can adjust behavior (image uploads only)
-      let itemsToProcess = editedItems.map(i => ({ ...i }));
+      // Prepare a local copy of the edited item so we can adjust behavior (image uploads only)
+      let itemsToProcess = [{ ...editedItem }];
       itemsToProcess = itemsToProcess.map((item) => ({
         ...item,
         price: normalizePrice(item.price),
@@ -181,7 +313,7 @@ const MenuPage = () => {
 
       // Validate edited items. Only require an image for NEW items (no id).
       // For existing items, allow partial updates (updating fields without providing an image).
-      for (const [idx, item] of itemsToProcess.entries()) {
+      for (const item of itemsToProcess) {
         const isNew = !item.id;
         const hasNewFile = Boolean(item.imageFile);
         const hasDataUrl = item.image && typeof item.image === 'string' && item.image.startsWith('data:');
@@ -189,8 +321,8 @@ const MenuPage = () => {
         let hasExistingImage = hasHttpUrl || hasDataUrl;
 
         // If this is a single-row edit, fallback to the original menuItems entry for the image if needed
-        if (!hasExistingImage && editingIndex !== null) {
-          const original = menuItems[editingIndex];
+        if (!hasExistingImage && editingId !== null) {
+          const original = menuItems.find((m) => (m.id || m.__tempId) === editingId);
           if (original && (original.image_url || (original.image && typeof original.image === 'string' && (original.image.startsWith('http') || original.image.startsWith('data:'))))) {
             hasExistingImage = true;
           }
@@ -218,10 +350,10 @@ const MenuPage = () => {
       const menuCollection = collection(db, "Restaurant", "orderin_restaurant_2", "menu");
       console.log("Menu collection:", menuCollection);
       const savedMenuActivities = [];
-      
+
       for (const item of itemsToProcess) {
         console.log("Processing item:", item);
-        const { id, imageFile, image, ...data } = item;
+        const { id, __tempId, imageFile, image, ...data } = item;
         let imageUrl = item.image_url || image || null; // prefer canonical field for display
 
 
@@ -397,7 +529,8 @@ const MenuPage = () => {
       console.log("Updated items:", updatedItems);
       setMenuItems(updatedItems);
       setIsAdding(false);
-      setEditingIndex(null);
+      setEditingId(null);
+      setEditedItem(null);
       if (savedMenuActivities.length > 0) {
         const noticeMessage = savedMenuActivities.length === 1
           ? savedMenuActivities[0].message
@@ -430,74 +563,56 @@ const MenuPage = () => {
 
   const handleCancel = () => {
     if (isAdding) {
-      setMenuItems(menuItems.slice(1));
+      setMenuItems((current) => current.filter((item) => item.__tempId !== editingId));
     }
     setIsAdding(false);
-    setEditingIndex(null);
-    setEditedItems([]);
-  };  
-
-  const handleInputChange = (rowIndex, field, value) => {
-    if (editingIndex !== null) {
-      if (rowIndex !== editingIndex) return;
-      setEditedItems((current) => [{ ...(current[0] || {}), [field]: value }]);
-    }
+    setEditingId(null);
+    setEditedItem(null);
   };
 
-  const handleFileChange = (rowIndex, field, file) => {
-    if (editingIndex !== null) {
-      if (rowIndex !== editingIndex) return;
-      setEditedItems((current) => [{ ...(current[0] || {}), [`${field}File`]: file }]);
-    }
-  };  
+  const handleInputChange = (rowId, field, value) => {
+    if (editingId === null || rowId !== editingId) return;
+    setEditedItem((current) => ({ ...(current || {}), [field]: value }));
+  };
 
-  const handleDelete = async (index) => {
+  const handleFileChange = (rowId, field, file) => {
+    if (editingId === null || rowId !== editingId) return;
+    setEditedItem((current) => ({ ...(current || {}), [`${field}File`]: file }));
+  };
+
+  const handleDelete = async (item) => {
     if (isEditingMenu) return;
 
     try {
-      const itemToDelete = menuItems[index];
-      if (!itemToDelete) return;
+      if (!item) return;
 
-      if (itemToDelete.id) {
+      if (item.id) {
         // Delete associated image if it's stored on Firebase Storage
-        if (itemToDelete.image_path) {
+        if (item.image_path) {
           try {
-            await storageService.deleteFileByPath(itemToDelete.image_path);
-            console.log("Deleted firebase image via stored path:", itemToDelete.image_path);
+            await storageService.deleteFileByPath(item.image_path);
+            console.log("Deleted firebase image via stored path:", item.image_path);
           } catch (err) {
             console.error("Error deleting firebase image via stored path:", err);
           }
-        } else if (itemToDelete.image && itemToDelete.image.startsWith('https://firebasestorage.googleapis.com')) {
+        } else if (item.image && item.image.startsWith('https://firebasestorage.googleapis.com')) {
           console.warn('Found a legacy Firebase-hosted image URL; automatic deletion is disabled unless storage path is known.');
         }
 
         const menuCollection = collection(db, "Restaurant", "orderin_restaurant_2", "menu");
-        await deleteDoc(doc(menuCollection, itemToDelete.id));
-      }
-      const updatedItems = [...menuItems];
-      updatedItems.splice(index, 1);
-      setMenuItems(updatedItems);
-      // Adjust single-row edit index if necessary
-      if (editingIndex !== null) {
-        if (index === editingIndex) {
-          // Deleted the row being edited — clear edit state
-          setEditingIndex(null);
-          setEditedItems([]);
-          setIsAdding(false);
-        } else if (index < editingIndex) {
-          // Row removed above the editing index — shift the index down
-          setEditingIndex(editingIndex - 1);
-        }
+        await deleteDoc(doc(menuCollection, item.id));
       }
 
-      const deletedItemName = itemToDelete.name || "Item";
+      setMenuItems((current) => current.filter((m) => (m.id || m.__tempId) !== (item.id || item.__tempId)));
+
+      const deletedItemName = item.name || "Item";
       const deletionMessage = `${deletedItemName} has been deleted from menu.`;
       showMenuNotice(deletionMessage, "menu_delete");
       await addActivity(deletionMessage, {
         persist: true,
         type: "menu_delete",
         source: "menu",
-        itemId: itemToDelete.id || null,
+        itemId: item.id || null,
         itemName: deletedItemName
       });
     } catch (error) {
@@ -505,20 +620,16 @@ const MenuPage = () => {
     }
   };
 
-
-
   return (
     <div className="menu-management-container">
-       {/* --- TOP HEADER ROW: Back Button and Title --- */}
-
+      {/* --- TOP HEADER ROW: Back Button and Title --- */}
       <div className="menu-header-bar header-top-row">
-
         <button className="btn-back" onClick={() => navigate(routes.dashboard)}>Back</button>
 
         <h1 className="h1-page-title">Menu Management</h1>
 
         {/* Action Buttons */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div className="menu-header-actions-group">
           <div className="header-actions">
             {isEditingMenu ? (
               <>
@@ -527,10 +638,10 @@ const MenuPage = () => {
               </>
             ) : (
               <>
-                <button className="btn-primary btn-add" onClick={handleAdd}>ADD</button>
+                <button className="btn-primary btn-add" onClick={handleAdd}><IconPlus /> Add Menu Item</button>
                 <button className="btn-primary btn-promotions" onClick={() => navigate(routes.promotions)}>Create Promotions</button>
               </>
-            )} 
+            )}
           </div>
           <label className="menu-all-veg-control">
             <input
@@ -541,16 +652,14 @@ const MenuPage = () => {
             />
             <span>All Veg</span>
           </label>
-
         </div>
-
       </div>
 
       {saveStatus && (
-        <div style={{ margin: '8px 0', color: saveStatus.type === 'success' ? '#155724' : '#721c24', background: saveStatus.type === 'success' ? '#d4edda' : '#f8d7da', padding: '8px 12px', borderRadius: 4 }}>
+        <div className={`menu-save-status menu-save-status--${saveStatus.type}`}>
           {saveStatus.message}
         </div>
-      )} 
+      )}
 
       {menuNotice && (
         <div className={`menu-action-toast menu-action-toast--${menuNotice.type === "menu_delete" ? "delete" : "add"}`} role="status" aria-live="polite">
@@ -558,6 +667,38 @@ const MenuPage = () => {
           <span>{menuNotice.message}</span>
         </div>
       )}
+
+      {/* --- Stat cards --- */}
+      <div className="menu-stats-grid">
+        <StatCard
+          icon={<IconForkKnife />}
+          iconClass="stat-icon--green"
+          label="Total Dishes"
+          value={stats.totalDishes}
+          subtitle={`Across ${stats.categoryCount} categories`}
+        />
+        <StatCard
+          icon={<IconCart />}
+          iconClass="stat-icon--red"
+          label="Category Count"
+          value={stats.categoryCount}
+          subtitle="Active categories"
+        />
+        <StatCard
+          icon={<IconMegaphone />}
+          iconClass="stat-icon--amber"
+          label="Active Promotions"
+          value={stats.activePromotions}
+          subtitle="Running promotions"
+        />
+        <StatCard
+          icon={<IconPlate />}
+          iconClass="stat-icon--blue"
+          label="Available dishes"
+          value={stats.availableDishes}
+          subtitle="Are ready to serve/available"
+        />
+      </div>
 
       <div className="menu-content-area">
         {isEditingMenu && (
@@ -568,6 +709,62 @@ const MenuPage = () => {
             </div>
           </div>
         )}
+
+        {/* --- Search + filter bar --- */}
+        <div className="menu-filter-bar">
+          <div className="menu-search-field">
+            <span className="menu-search-icon"><IconSearch /></span>
+            <input
+              type="text"
+              placeholder="Search dish name..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+
+          <select
+            className="menu-filter-select"
+            value={categoryFilter}
+            onChange={(e) => setCategoryFilter(e.target.value)}
+          >
+            {categoryOptions.map((category) => (
+              <option key={category} value={category}>{category}</option>
+            ))}
+          </select>
+
+          <select
+            className="menu-filter-select"
+            value={availabilityFilter}
+            onChange={(e) => setAvailabilityFilter(e.target.value)}
+          >
+            <option value="All">Availability: All</option>
+            <option value="Yes">Availability: Yes</option>
+            <option value="No">Availability: No</option>
+          </select>
+
+          <label className="menu-veg-only-toggle">
+            <span className="switch switch--small">
+              <input
+                type="checkbox"
+                checked={allVegMode}
+                onChange={(e) => handleAllVegToggle(e.target.checked)}
+                disabled={isSaving || isApplyingAllVeg}
+              />
+              <span className="slider round"></span>
+            </span>
+            <span>{isApplyingAllVeg ? "Applying..." : "Veg Only"}</span>
+          </label>
+
+          <button
+            type="button"
+            className="menu-reset-filters"
+            onClick={handleResetFilters}
+            disabled={!hasActiveFilters}
+          >
+            <IconReset /> Reset Filters
+          </button>
+        </div>
+
         <div className="menu-table-wrapper">
           <div className="table-scroll-container">
             <table className="menu-table">
@@ -583,7 +780,7 @@ const MenuPage = () => {
 
                   <th>Price</th>
 
-                    <th className="promo-header">Promotions</th>
+                  <th className="promo-header">Promotions</th>
 
                   <th>Availability</th>
 
@@ -596,17 +793,26 @@ const MenuPage = () => {
               </thead>
 
               <tbody>
-                {menuItems.map((item, index) => {
-                  const rowItem = (editingIndex === index ? (editedItems[0] || {}) : item);
-                  const rowIsEditing = (editingIndex === index);
+                {filteredItems.length === 0 && (
+                  <tr className="menu-empty-row">
+                    <td colSpan={allVegMode ? 7 : 8}>
+                      No dishes match your search and filters.
+                    </td>
+                  </tr>
+                )}
+
+                {filteredItems.map((item) => {
+                  const rowId = item.id || item.__tempId;
+                  const rowIsEditing = editingId === rowId;
+                  const rowItem = rowIsEditing ? (editedItem || {}) : item;
                   return (
-                    <tr key={index} data-editing={rowIsEditing ? "true" : "false"}>
+                    <tr key={rowId} data-editing={rowIsEditing ? "true" : "false"}>
                       <td data-label="Category">
                         {rowIsEditing ? (
                           <textarea
                             className="menu-edit-field"
                             value={rowItem.category || ''}
-                            onChange={(e) => handleInputChange(index, 'category', e.target.value)}
+                            onChange={(e) => handleInputChange(rowId, 'category', e.target.value)}
                             rows="1"
                           />
                         ) : (
@@ -619,7 +825,7 @@ const MenuPage = () => {
                           <textarea
                             className="menu-edit-field"
                             value={rowItem.name || ''}
-                            onChange={(e) => handleInputChange(index, 'name', e.target.value)}
+                            onChange={(e) => handleInputChange(rowId, 'name', e.target.value)}
                             rows="1"
                           />
                         ) : (
@@ -637,10 +843,10 @@ const MenuPage = () => {
                               onChange={(e) => {
                                 const file = e.target.files[0];
                                 if (file) {
-                                  handleFileChange(index, 'image', file);
+                                  handleFileChange(rowId, 'image', file);
                                   const reader = new FileReader();
                                   reader.onload = (event) => {
-                                    handleInputChange(index, 'image', event.target.result);
+                                    handleInputChange(rowId, 'image', event.target.result);
                                   };
                                   reader.readAsDataURL(file);
                                 }
@@ -673,7 +879,7 @@ const MenuPage = () => {
                           <div className="menu-price-stepper menu-price-stepper--inline">
                             <button
                               type="button"
-                              onClick={() => handleInputChange(index, 'price', formatSteppedPrice(priceToNumber(rowItem.price) - 0.01))}
+                              onClick={() => handleInputChange(rowId, 'price', formatSteppedPrice(priceToNumber(rowItem.price) - 0.01))}
                               disabled={isSaving}
                             >
                               -
@@ -682,11 +888,11 @@ const MenuPage = () => {
                               type="text"
                               inputMode="decimal"
                               value={sanitizePriceInput(rowItem.price)}
-                              onChange={(e) => handleInputChange(index, 'price', sanitizePriceInput(e.target.value))}
+                              onChange={(e) => handleInputChange(rowId, 'price', sanitizePriceInput(e.target.value))}
                             />
                             <button
                               type="button"
-                              onClick={() => handleInputChange(index, 'price', formatSteppedPrice(priceToNumber(rowItem.price) + 0.01))}
+                              onClick={() => handleInputChange(rowId, 'price', formatSteppedPrice(priceToNumber(rowItem.price) + 0.01))}
                               disabled={isSaving}
                             >
                               +
@@ -705,11 +911,11 @@ const MenuPage = () => {
                             onChange={(e) => {
                               const value = e.target.checked;
                               if (rowIsEditing) {
-                                handleInputChange(index, 'promotions', value);
+                                handleInputChange(rowId, 'promotions', value);
                               } else {
-                                const updatedItems = [...menuItems];
-                                updatedItems[index].promotions = value;
-                                setMenuItems(updatedItems);
+                                setMenuItems((current) =>
+                                  current.map((m) => ((m.id || m.__tempId) === rowId ? { ...m, promotions: value } : m))
+                                );
                               }
                             }}
                           />
@@ -723,7 +929,7 @@ const MenuPage = () => {
                           <textarea
                             className="menu-edit-field"
                             value={rowItem.availability || ''}
-                            onChange={(e) => handleInputChange(index, 'availability', e.target.value)}
+                            onChange={(e) => handleInputChange(rowId, 'availability', e.target.value)}
                             rows="1"
                           />
                         ) : (
@@ -736,15 +942,13 @@ const MenuPage = () => {
                           <textarea
                             className="menu-edit-field menu-edit-field--long"
                             value={rowItem.description || ''}
-                            onChange={(e) => handleInputChange(index, 'description', e.target.value)}
+                            onChange={(e) => handleInputChange(rowId, 'description', e.target.value)}
                             rows="3"
                           />
                         ) : (
                           item.description && item.description.length > 10 ? item.description.substring(0, 10) + '...' : item.description
                         )}
                       </td>
-
-
 
                       {!allVegMode && (
                         <td data-label="Type">
@@ -756,7 +960,7 @@ const MenuPage = () => {
                                 className={`menu-type-switch ${normalizeMenuType(rowItem.type) === TYPE_NON_VEG ? "is-nonveg" : ""}`}
                                 role="switch"
                                 aria-checked={normalizeMenuType(rowItem.type) === TYPE_NON_VEG}
-                                onClick={() => handleInputChange(index, 'type', normalizeMenuType(rowItem.type) === TYPE_NON_VEG ? TYPE_VEG : TYPE_NON_VEG)}
+                                onClick={() => handleInputChange(rowId, 'type', normalizeMenuType(rowItem.type) === TYPE_NON_VEG ? TYPE_VEG : TYPE_NON_VEG)}
                                 disabled={isSaving}
                               >
                                 <span></span>
@@ -770,12 +974,12 @@ const MenuPage = () => {
                       )}
 
                       <td className="menu-row-actions" data-label="Actions">
-                        {!rowIsEditing && editingIndex === null && (
-                          <button className="btn-primary btn-row-edit" onClick={() => handleEditRow(index)} disabled={isEditingMenu}>Edit</button>
+                        {!rowIsEditing && editingId === null && (
+                          <button className="btn-primary btn-row-edit" onClick={() => handleEditRow(item)} disabled={isEditingMenu}>Edit</button>
                         )}
                         <button
                           className="btn-primary btn-row-delete"
-                          onClick={() => handleDelete(index)}
+                          onClick={() => handleDelete(item)}
                           disabled={isEditingMenu}
                           aria-disabled={isEditingMenu}
                         >

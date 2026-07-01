@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   ClipboardList,
@@ -14,65 +15,106 @@ import {
 } from "lucide-react";
 // import Header from "./header.jsx"
 // import Footer from "./footer.jsx"
+import { subscribeAllCustomerOrders } from "../services/orderService";
+import { calculateTodaysRevenue, formatCurrency } from "../utils/financeUtils";
+import { subscribeDashboardOrders } from "../utils/dashboardStats";
+import { getTodaysCustomersCount } from "../utils/CustomerCount";
+import { getOccupiedTablesCount } from "../utils/tableCount";
 
 import "./Dashboard.css";
 
+const Dashboard = () => {
+  const navigate = useNavigate();
+  const [dateTime, setDateTime] = useState(new Date());
+
+const [todayRevenue, setTodayRevenue] = useState(0);
+const [todayOrders, setTodayOrders] = useState(0);
+const [orders, setOrders] = useState([]);
+const [tablesOccupied, setTablesOccupied] = useState(0);
+
+const todayCustomers = getTodaysCustomersCount(orders);
+  const goTo = (path) => () => navigate(path);
+
+const dateStr = dateTime.toLocaleDateString("en-GB", {
+  weekday: "long",
+  day: "numeric",
+  month: "long",
+  year: "numeric",
+});
+
+const timeStr = dateTime.toLocaleTimeString([], {
+  hour: "2-digit",
+  minute: "2-digit",
+});
+useEffect(() => {
+  const timer = setInterval(() => {
+    setDateTime(new Date());
+  }, 1000);
+
+  return () => clearInterval(timer);
+}, []);
+
+useEffect(() => {
+  const unsubscribe = subscribeAllCustomerOrders((ordersData) => {
+    setOrders(ordersData);
+
+    setTodayRevenue(calculateTodaysRevenue(ordersData));
+
+    setTablesOccupied(getOccupiedTablesCount(ordersData));
+  });
+
+  return () => {
+    if (typeof unsubscribe === "function") {
+      unsubscribe();
+    }
+  };
+}, []);
+
+useEffect(() => {
+  const unsubscribeOrders = subscribeDashboardOrders(setTodayOrders);
+
+  return () => {
+    if (unsubscribeOrders) unsubscribeOrders();
+  };
+}, []);
 const STATS = [
   {
     icon: DollarSign,
     color: "stat-revenue",
-    label: "Today's revenue",
-    value: "$45,000",
-    delta: "12.5%",
-    deltaLabel: "vs yesterday",
+    label: "Today's Revenue",
+    value: `₹${formatCurrency(todayRevenue)}`,
+    delta: "Live",
+    deltaLabel: "Today's earnings",
     deltaTone: "up",
   },
   {
     icon: ShoppingCart,
     color: "stat-orders",
     label: "Orders Today",
-    value: "324",
-    delta: "8.2%",
-    deltaLabel: "vs yesterday",
+    value: todayOrders,
+    delta: "Live",
+    deltaLabel: "Orders received",
     deltaTone: "up",
   },
   {
     icon: Users,
     color: "stat-customers",
     label: "Customers Today",
-    value: "187",
-    delta: "5.6%",
-    deltaLabel: "vs yesterday",
+    value: todayCustomers,
+    delta: "Live",
+    deltaLabel: "Customers served",
     deltaTone: "up",
   },
   {
     icon: LayoutGrid,
     color: "stat-tables",
     label: "Tables Occupied",
-    value: "18/25",
-    delta: "72%",
+    value: `${tablesOccupied}/25`,
+    delta: `${Math.round((tablesOccupied / 25) * 100)}%`,
     deltaLabel: "Occupancy",
     deltaTone: "neutral",
   },
 ];
-
-const Dashboard = () => {
-  const navigate = useNavigate();
-  const goTo = (path) => () => navigate(path);
-
-  const now = new Date();
-  const dateStr = now.toLocaleDateString("en-GB", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
-  const timeStr = now.toLocaleTimeString("en-GB", {
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  });
-
   const cards = [
     {
       icon: Utensils,
