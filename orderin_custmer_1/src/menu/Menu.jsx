@@ -1,16 +1,28 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { collection, getDocs } from "firebase/firestore";
+import { collection, getDocs, doc, getDoc } from "firebase/firestore";
 import { db } from "../firebaseConfig";
 import { useTableNumber } from "../hooks/useTableNumber";
 import { menuStore } from "./menuStore";
 import "./Menu.css";
-import { FiSearch } from "react-icons/fi";
-import { ChevronDown, Filter } from "lucide-react";
+import {
+  Search,
+  Mic,
+  X,
+  SlidersHorizontal,
+  Star,
+  Flame,
+  Plus,
+  Leaf,
+  Bike,
+} from "lucide-react";
 import Header from "../header/header";
 import Footer from "../Footer/Footer";
 import { getPlaceholder } from "../utils/placeholder";
 import { resolveImageUrl } from "../utils/storageResolver";
+
+const CART_STORAGE_KEY = "orderin_cart";
+const ACTIVE_ORDER_STORAGE_KEY = "orderin_active_order";
 
 const withTimeout = (promise, ms) => {
   const t = new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), ms));
@@ -69,21 +81,89 @@ const prefetchImageWithRetries = (url, attempts = 2, timeout = 3000) => {
   });
 };
 
+// ---- Small presentation helpers -------------------------------------------------
+
+const getGreeting = () => {
+  const h = new Date().getHours();
+  if (h < 12) return "Good morning";
+  if (h < 17) return "Good afternoon";
+  if (h < 21) return "Good evening";
+  return "Late night cravings";
+};
+
+// Deterministic fallback rating (3.8 - 4.8) so cards never look unfinished
+// while real `rating` data is still being populated in Firestore.
+const hashToRating = (id) => {
+  const str = String(id || "item");
+  let h = 0;
+  for (let i = 0; i < str.length; i += 1) h = (h * 31 + str.charCodeAt(i)) >>> 0;
+  return Math.round((3.8 + (h % 11) / 10) * 10) / 10;
+};
+
+const readCart = () => {
+  try {
+    return JSON.parse(localStorage.getItem(CART_STORAGE_KEY) || "[]");
+  } catch (e) {
+    return [];
+  }
+};
+
+const writeCart = (cart) => {
+  try {
+    localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
+    window.dispatchEvent(new CustomEvent("cart:updated", { detail: cart }));
+  } catch (e) {
+    /* ignore */
+  }
+};
+
 function Menu({ setIsLoading }) {
-  const { getPathWithTable } = useTableNumber();
+  const { getPathWithTable, tableNumber: tableNumberFromHook } = useTableNumber();
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("Category");
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [isFilterSheetOpen, setIsFilterSheetOpen] = useState(false);
   const [vegToggle, setVegToggle] = useState("all");
   const [adPromotion, setAdPromotion] = useState(null);
   const [adImageLoaded, setAdImageLoaded] = useState(false);
   const [adImageSrc, setAdImageSrc] = useState("");
   const adObjectUrlRef = useRef(null);
   const [fetchedProducts, setFetchedProducts] = useState([]);
-  const dropdownRef = useRef(null);
-  const filterPanelRef = useRef(null);
+  const [restaurantName, setRestaurantName] = useState("Our Restaurant");
+  const [activeOrder, setActiveOrder] = useState(null);
+  const [isListening, setIsListening] = useState(false);
+  const [pulseId, setPulseId] = useState(null);
+  const recognitionRef = useRef(null);
+
+  const tableNumber = tableNumberFromHook || null;
+
+  // Restaurant name (falls back gracefully if the doc has no `name` field)
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const snap = await getDoc(doc(db, "Restaurant", "orderin_restaurant_2"));
+        if (alive && snap.exists() && snap.data().name) {
+          setRestaurantName(snap.data().name);
+        }
+      } catch (e) {
+        /* keep default name */
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  // Active order status, if one exists locally (e.g. set after checkout)
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(ACTIVE_ORDER_STORAGE_KEY);
+      if (raw) setActiveOrder(JSON.parse(raw));
+    } catch (e) {
+      /* ignore */
+    }
+  }, []);
 
   useEffect(() => {
     let alive = true;
@@ -108,38 +188,52 @@ function Menu({ setIsLoading }) {
           const stats = { total: data.length, missing: 0, gs: 0, http: 0, relative: 0, other: 0 };
           const examples = [];
           data.forEach((it) => {
-            // Support snake_case 'image_url' used in some docs
-            const img = (it.image || it.imageURL || it.imageUrl || it.image_url || it.img || '').toString();
-            if (!img) { stats.missing += 1; if (examples.length < 5) examples.push({ id: it.id, name: it.name, image: img }); return; }
-            if (img.startsWith('gs://')) stats.gs += 1;
-            else if (img.startsWith('http://') || img.startsWith('https://')) stats.http += 1;
-            else if (img.indexOf('/') !== -1) stats.relative += 1;
+            const img = (it.image || it.imageURL || it.imageUrl || it.image_url || it.img || "").toString();
+            if (!img) {
+              stats.missing += 1;
+              if (examples.length < 5) examples.push({ id: it.id, name: it.name, image: img });
+              return;
+            }
+            if (img.startsWith("gs://")) stats.gs += 1;
+            else if (img.startsWith("http://") || img.startsWith("https://")) stats.http += 1;
+            else if (img.indexOf("/") !== -1) stats.relative += 1;
             else stats.other += 1;
-            if (examples.length < 5 && (!img.startsWith('http') && !img.startsWith('gs://'))) examples.push({ id: it.id, name: it.name, image: img });
+            if (examples.length < 5 && !img.startsWith("http") && !img.startsWith("gs://")) {
+              examples.push({ id: it.id, name: it.name, image: img });
+            }
           });
-          console.info('Menu image diagnostics', stats, examples);
-        } catch (e) { /* ignore diagnostics errors */ }
+          console.info("Menu image diagnostics", stats, examples);
+        } catch (e) {
+          /* ignore diagnostics errors */
+        }
 
         (async () => {
           try {
             const promos = await withTimeout(loadActivePromotions(), 5000);
             if (!promos || promos.length === 0) return;
 
-            // Diagnostics: log promotions image field shapes to aid debugging
             try {
               const pstats = { total: promos.length, missing: 0, gs: 0, http: 0, relative: 0, other: 0 };
               const pex = [];
               promos.forEach((p) => {
-                const img = (p.image || p.imageURL || p.imageUrl || p.image_url || '').toString();
-                if (!img) { pstats.missing += 1; if (pex.length < 5) pex.push({ id: p.id, caption: p.caption, image: img }); return; }
-                if (img.startsWith('gs://')) pstats.gs += 1;
-                else if (img.startsWith('http://') || img.startsWith('https://')) pstats.http += 1;
-                else if (img.indexOf('/') !== -1) pstats.relative += 1;
+                const img = (p.image || p.imageURL || p.imageUrl || p.image_url || "").toString();
+                if (!img) {
+                  pstats.missing += 1;
+                  if (pex.length < 5) pex.push({ id: p.id, caption: p.caption, image: img });
+                  return;
+                }
+                if (img.startsWith("gs://")) pstats.gs += 1;
+                else if (img.startsWith("http://") || img.startsWith("https://")) pstats.http += 1;
+                else if (img.indexOf("/") !== -1) pstats.relative += 1;
                 else pstats.other += 1;
-                if (pex.length < 5 && (!img.startsWith('http') && !img.startsWith('gs://'))) pex.push({ id: p.id, caption: p.caption, image: img });
+                if (pex.length < 5 && !img.startsWith("http") && !img.startsWith("gs://")) {
+                  pex.push({ id: p.id, caption: p.caption, image: img });
+                }
               });
-              console.info('Promotions image diagnostics', pstats, pex);
-            } catch (e) { /* ignore */ }
+              console.info("Promotions image diagnostics", pstats, pex);
+            } catch (e) {
+              /* ignore */
+            }
 
             const seenKey = "promotionsSeen";
             const seen = JSON.parse(localStorage.getItem(seenKey) || "[]");
@@ -153,7 +247,6 @@ function Menu({ setIsLoading }) {
               seen.push(candidate.id);
               localStorage.setItem(seenKey, JSON.stringify(seen));
             } catch (e) {}
-            // Resolve gs:// URIs if present
             let adUrl = normalized.imageURL;
             try {
               const resolved = await resolveImageUrl(normalized.imageURL);
@@ -163,13 +256,12 @@ function Menu({ setIsLoading }) {
             const ok = await prefetchImageWithRetries(adUrl, 2, 2500);
             if (!ok) {
               try {
-                const resp = await fetch(adUrl, { cache: 'no-store' });
+                const resp = await fetch(adUrl, { cache: "no-store" });
                 if (resp.ok) {
-                  const contentType = resp.headers && resp.headers.get ? resp.headers.get('content-type') : null;
-                  if (!contentType || !contentType.startsWith('image/')) {
-                    console.warn('Promotion fetch returned non-image content-type, skipping blob fallback', adUrl, resp.status, contentType);
-                    // fall back to placeholder instead of broken image
-                    setAdImageSrc(getPlaceholder('Promotion'));
+                  const contentType = resp.headers && resp.headers.get ? resp.headers.get("content-type") : null;
+                  if (!contentType || !contentType.startsWith("image/")) {
+                    console.warn("Promotion fetch returned non-image content-type, skipping blob fallback", adUrl, resp.status, contentType);
+                    setAdImageSrc(getPlaceholder("Promotion"));
                     setAdImageLoaded(true);
                   } else {
                     const blob = await resp.blob();
@@ -180,12 +272,14 @@ function Menu({ setIsLoading }) {
                     const obj = URL.createObjectURL(blob);
                     adObjectUrlRef.current = obj;
                     setAdImageSrc(obj);
-                    // Keep adImageLoaded as false until onLoad fires (the image might still error)
                   }
                 }
               } catch (err) {
-                console.warn('Promotion blob fallback failed', adUrl, err);
-                try { setAdImageSrc(getPlaceholder('Promotion')); setAdImageLoaded(true); } catch (e) {}
+                console.warn("Promotion blob fallback failed", adUrl, err);
+                try {
+                  setAdImageSrc(getPlaceholder("Promotion"));
+                  setAdImageLoaded(true);
+                } catch (e) {}
               }
             }
           } catch (err) {}
@@ -206,30 +300,25 @@ function Menu({ setIsLoading }) {
   }, [setIsLoading]);
 
   const handleSearchChange = (e) => setSearchTerm(e.target.value);
-  const handleCategorySelect = (c) => {
-    setSelectedCategory(c === "all" ? "Category" : c);
-    setIsDropdownOpen(false);
-  };
-  const toggleDropdown = () => setIsDropdownOpen(!isDropdownOpen);
-  const handleVegToggle = (t) => {
-    // If clicking the same option that's already active, toggle to "all"
-    if (vegToggle === t) {
-      setVegToggle("all");
-    } else {
-      setVegToggle(t);
-    }
-  };
+  const clearSearch = () => setSearchTerm("");
+
+
+
+  const handleCategorySelect = (c) => setSelectedCategory(c);
+  const handleVegToggle = (t) => setVegToggle((prev) => (prev === t ? "all" : t));
   const handleCardClick = (item) => navigate(`/item/${String(item.name || "").replace(/\s+/g, "-").toLowerCase()}${window.location.search}`, { state: { item } });
   const handleAdImageLoad = () => setAdImageLoaded(true);
 
-  useEffect(() => {
-    const docClick = (ev) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(ev.target)) setIsDropdownOpen(false);
-      if (filterPanelRef.current && !filterPanelRef.current.contains(ev.target)) setIsFilterPanelOpen(false);
-    };
-    document.addEventListener("mousedown", docClick);
-    return () => document.removeEventListener("mousedown", docClick);
-  }, []);
+  const handleQuickAdd = (e, item) => {
+    e.stopPropagation();
+    const cart = readCart();
+    const idx = cart.findIndex((c) => c.id === item.id);
+    if (idx >= 0) cart[idx].qty += 1;
+    else cart.push({ id: item.id, name: item.name, price: parsePrice(item.price).value, qty: 1 });
+    writeCart(cart);
+    setPulseId(item.id);
+    setTimeout(() => setPulseId((cur) => (cur === item.id ? null : cur)), 450);
+  };
 
   const normalizeToken = (s) => (s || "").toString().toLowerCase().replace(/[^a-z0-9]/g, "");
   const isNonVegToken = (t) => {
@@ -242,38 +331,62 @@ function Menu({ setIsLoading }) {
     return t.includes("veg") || t.includes("veget");
   };
 
-  // Treat several status/availability values as unavailable (case-insensitive)
+  const getDietType = (item) => {
+    const token = normalizeToken(item.type || item.tags || "");
+    if (isNonVegToken(token)) return "nonveg";
+    if (isVegToken(token)) return "veg";
+    return null;
+  };
+
+  const isBestseller = (item) => {
+    if (!item) return false;
+    if (item.bestseller === true || item.isBestseller === true) return true;
+    return normalizeToken(item.tags || "").includes("bestseller");
+  };
+
+  const getSpiceLevel = (item) => {
+    if (!item) return 0;
+    if (typeof item.spiceLevel === "number") return Math.max(0, Math.min(3, item.spiceLevel));
+    if (item.spicy === true) return 2;
+    const tags = normalizeToken(item.tags || "") + normalizeToken(item.type || "");
+    if (tags.includes("extraspicy") || tags.includes("veryspicy")) return 3;
+    if (tags.includes("spicy")) return 2;
+    if (tags.includes("mild")) return 1;
+    return 0;
+  };
+
   const isUnavailableStatus = (status) => {
     if (status == null) return false;
     try {
       const norm = String(status).toLowerCase().trim();
-      const key = norm.replace(/[^a-z0-9]/g, '');
-      const unavailable = new Set(['no', 'low', 'soldout', 'unavailable', 'outofstock', 'false', '0', 'sold']);
+      const key = norm.replace(/[^a-z0-9]/g, "");
+      const unavailable = new Set(["no", "low", "soldout", "unavailable", "outofstock", "false", "0", "sold"]);
       return unavailable.has(key);
     } catch (e) {
       return false;
     }
   };
+
   const isOnPromotion = (item) => {
     if (!item) return false;
-    const keys = ['promotions', 'promotion', 'onPromotion', 'promo', 'promotionStatus', 'promotion_flag'];
+    const keys = ["promotions", "promotion", "onPromotion", "promo", "promotionStatus", "promotion_flag"];
     for (const k of keys) {
       const v = item[k];
       if (v == null) continue;
-      if (typeof v === 'boolean') return v;
-      if (typeof v === 'number') return v !== 0;
-      if (typeof v === 'string') {
+      if (typeof v === "boolean") return v;
+      if (typeof v === "number") return v !== 0;
+      if (typeof v === "string") {
         const s = v.toLowerCase().trim();
-        if (['true', '1', 'yes', 'on'].includes(s)) return true;
+        if (["true", "1", "yes", "on"].includes(s)) return true;
       }
     }
     return false;
   };
 
   const parsePrice = (priceStr) => {
-    const s = String(priceStr || '');
-    const num = parseFloat(s.replace(/[^0-9.\-]/g, '')) || 0;
-    return { value: num, symbol: '₹' };
+    const s = String(priceStr || "");
+    const num = parseFloat(s.replace(/[^0-9.\-]/g, "")) || 0;
+    return { value: num, symbol: "₹" };
   };
 
   const categories = React.useMemo(() => {
@@ -301,66 +414,64 @@ function Menu({ setIsLoading }) {
     const itemNon = isNonVegToken(itemToken);
     const itemVeg = isVegToken(itemToken);
     const matchesName = name.includes(term) || term === "";
-    const matchesType =
-      vegToggle === "all" || (vegToggle === "veg" && itemVeg) || (vegToggle === "nonveg" && itemNon);
+    const matchesType = vegToggle === "all" || (vegToggle === "veg" && itemVeg) || (vegToggle === "nonveg" && itemNon);
     const matchesSearch = matchesName || (searchNon && itemNon) || (searchVeg && itemVeg);
-    const matchesCategory =
-      selectedCategory === "Category" || (item.category && item.category.toLowerCase() === (selectedCategory || "").toLowerCase());
+    const matchesCategory = selectedCategory === "all" || (item.category && item.category.toLowerCase() === selectedCategory.toLowerCase());
     return matchesSearch && matchesType && matchesCategory;
   });
+
+ 
 
   return (
     <div className="menu-container">
       <Header />
 
-      <div className="search-bar-container" ref={filterPanelRef}>
+      <div className="hero-bar">
+        <div className="hero-greeting">
+          <p className="hero-eyebrow">{getGreeting()}</p>
+          <h1 className="hero-title">{restaurantName}</h1>
+        </div>
+        <div className="hero-meta">
+          {tableNumber && <span className="table-chip">Table {tableNumber}</span>}
+          {activeOrder?.status && (
+            <button className="order-status-pill" onClick={() => navigate(getPathWithTable("/orders"))}>
+              <Bike size={14} />
+              {activeOrder.status}
+            </button>
+          )}
+        </div>
+      </div>
+
+      <div className="search-row">
         <div className="search-bar">
-          <FiSearch className="search-icon" />
+          <Search size={18} className="search-icon" />
           <input
             type="text"
-            placeholder="Search menu items..."
+            placeholder="Search for dishes, cuisines..."
             className="search-input"
             value={searchTerm}
             onChange={handleSearchChange}
           />
-          <button 
-            className="filter-icon-btn"
-            onClick={() => setIsFilterPanelOpen(!isFilterPanelOpen)}
-            title="Open filters"
-          >
-            <Filter size={20} />
-          </button>
+          {searchTerm && (
+            <button className="icon-btn clear-btn" onClick={clearSearch} title="Clear search">
+              <X size={16} />
+            </button>
+          )}
         </div>
+      </div>
 
-        {isFilterPanelOpen && (
-          <div className="filter-panel">
-            <div className="filter-section">
-              <label className="filter-label">Category</label>
-              <div className="category-dropdown-filter" ref={dropdownRef}>
-                <button className="category-button-filter" onClick={toggleDropdown}>
-                  {selectedCategory} <ChevronDown size={14} />
-                </button>
-                {isDropdownOpen && (
-                  <div className="dropdown-menu-filter">
-                    {categories.map((category) => (
-                      <div key={category} className="dropdown-item-filter" onClick={() => handleCategorySelect(category)}>
-                        {category === "all" ? "All" : category.charAt(0).toUpperCase() + category.slice(1)}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="filter-section">
-              <label className="filter-label">Type</label>
-              <div className={`veg-toggle-filter ${vegToggle}`}>
-                <button className="toggle-button-filter" onClick={() => handleVegToggle("veg")}>🥗 Veg</button>
-                <button className="toggle-button-filter" onClick={() => handleVegToggle("nonveg")}>🍗 Non-Veg</button>
-              </div>
-            </div>
-          </div>
-        )}
+      <div className="chip-row" role="tablist" aria-label="Menu categories">
+        {categories.map((category) => (
+          <button
+            key={category}
+            role="tab"
+            aria-selected={selectedCategory === category}
+            className={`chip ${selectedCategory === category ? "active" : ""}`}
+            onClick={() => handleCategorySelect(category)}
+          >
+            {category === "all" ? "All" : category.charAt(0).toUpperCase() + category.slice(1)}
+          </button>
+        ))}
       </div>
 
       {adPromotion && (
@@ -380,8 +491,8 @@ function Menu({ setIsLoading }) {
                 style={{ display: adImageLoaded ? "block" : "none" }}
                 onLoad={handleAdImageLoad}
                 onError={(e) => {
-                  console.warn('Image load failed', e.target.src, 'promotion', adPromotion && (adPromotion.id || adPromotion.caption));
-                  e.target.src = getPlaceholder('Promotion');
+                  console.warn("Image load failed", e.target.src, "promotion", adPromotion && (adPromotion.id || adPromotion.caption));
+                  e.target.src = getPlaceholder("Promotion");
                   setAdImageLoaded(true);
                 }}
               />
@@ -390,15 +501,14 @@ function Menu({ setIsLoading }) {
         </div>
       )}
 
-      <div className="app-container">
+      <div className="menu-grid-section">
         {filteredProducts.length > 0 ? (
           (() => {
-            // Group items by category while preserving first-appearance order from filteredProducts
             const categoryOrder = [];
             const buckets = new Map();
 
             filteredProducts.forEach((item) => {
-              const cat = (item.category || '').trim() || 'Uncategorized';
+              const cat = (item.category || "").trim() || "Uncategorized";
               if (!buckets.has(cat)) {
                 buckets.set(cat, []);
                 categoryOrder.push(cat);
@@ -407,56 +517,82 @@ function Menu({ setIsLoading }) {
             });
 
             return categoryOrder.map((cat) => (
-              <React.Fragment key={cat}>
-                <div className="menu-category-header">{cat}</div>
-                {buckets.get(cat).map((item, index) => {
-                  const isUnavailable = isUnavailableStatus(item.availability || item.status || item.availabilty);
-                  return (
-                    <div
-                      className={`card ${isUnavailable ? 'unavailable' : ''}`}
-                      key={item.id || `${cat}-${index}`}
-                      onClick={() => {
-                        if (isUnavailable) {
-                          console.debug('Navigation blocked: item unavailable', item && (item.id || item.name));
-                          return;
-                        }
-                        handleCardClick(item);
-                      }}
-                      role="button"
-                      aria-disabled={isUnavailable}
-                      tabIndex={isUnavailable ? -1 : 0}
-                    >
-                      <img
-                        loading="lazy"
-                        src={item.image || item.imageURL || item.image_url || getPlaceholder('No Image')}
-                        alt={item.name}
-                        className="card-img"
-                        onError={(e) => {
-                          console.warn('Image load failed', e.target.src, 'item', item && (item.id || item.name));
-                          e.target.src = getPlaceholder('No Image');
+              <div className="category-section" key={cat}>
+                <div className="category-section-header">
+                  <span>{cat}</span>
+                  <span className="category-count">{buckets.get(cat).length}</span>
+                </div>
+                <div className="food-grid">
+                  {buckets.get(cat).map((item, index) => {
+                    const isUnavailable = isUnavailableStatus(item.availability || item.status || item.availabilty);
+                    const diet = getDietType(item);
+                    const bestseller = isBestseller(item);
+                    const spiceLevel = getSpiceLevel(item);
+                    const rating = typeof item.rating === "number" ? item.rating : hashToRating(item.id);
+                    const { value, symbol } = parsePrice(item.price);
+                    const onPromo = isOnPromotion(item);
+                    const increased = (value * 1.25).toFixed(2);
+
+                    return (
+                      <div
+                        className={`food-card ${isUnavailable ? "unavailable" : ""}`}
+                        key={item.id || `${cat}-${index}`}
+                        onClick={() => {
+                          if (isUnavailable) return;
+                          handleCardClick(item);
                         }}
-                      />
-                      <div className="card-body">
-                        <h3 className="card-title">{item.name}</h3>
-                        <p className="card-price">
-                          {isOnPromotion(item) ? (() => {
-                            const { value, symbol } = parsePrice(item.price);
-                            const increased = (value * 1.25).toFixed(2);
-                            return (
-                              <>
-                                <span className="price-normal">{symbol}{Number(value).toFixed(2)}</span>
-                                <span className="price-increased">{symbol}{Number(increased).toFixed(2)}</span>
-                              </>
-                            );
-                          })() : (
-                            <span className="price-normal">{parsePrice(item.price).symbol}{parsePrice(item.price).value.toFixed(2)}</span>
+                        role="button"
+                        aria-disabled={isUnavailable}
+                        tabIndex={isUnavailable ? -1 : 0}
+                      >
+                        <div className="food-card-media">
+                          <img
+                            loading="lazy"
+                            src={item.image || item.imageURL || item.image_url || getPlaceholder("No Image")}
+                            alt={item.name}
+                            className="food-card-img"
+                            onError={(e) => {
+                              console.warn("Image load failed", e.target.src, "item", item && (item.id || item.name));
+                              e.target.src = getPlaceholder("No Image");
+                            }}
+                          />
+                          <div className="media-gradient" aria-hidden="true" />
+                          {bestseller && (
+                            <span className="badge-bestseller">
+                              <Flame size={11} /> Bestseller
+                            </span>
                           )}
-                        </p>
+                        </div>
+
+                        <div className="food-card-body">
+                          <h3 className="food-card-title">
+                            {item.name}
+                            {spiceLevel > 0 && (
+                              <span className="spice-flames" aria-label={`Spice level ${spiceLevel} of 3`}>
+                                {Array.from({ length: spiceLevel }).map((_, i) => (
+                                  <Flame key={i} size={11} />
+                                ))}
+                              </span>
+                            )}
+                          </h3>
+                          <div className="price-row">
+                            <span className="price-current">
+                              {symbol}
+                              {value.toFixed(2)}
+                            </span>
+                            {onPromo && (
+                              <span className="price-original">
+                                {symbol}
+                                {increased}
+                              </span>
+                            )}
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
-              </React.Fragment>
+                    );
+                  })}
+                </div>
+              </div>
             ));
           })()
         ) : (
@@ -465,6 +601,51 @@ function Menu({ setIsLoading }) {
           </div>
         )}
       </div>
+
+      <button className="filter-fab" onClick={() => setIsFilterSheetOpen(true)}>
+        <SlidersHorizontal size={25} />
+        <span>Filter</span>
+      </button>
+
+      {isFilterSheetOpen && (
+        <div className="filter-sheet-backdrop" onClick={() => setIsFilterSheetOpen(false)}>
+          <div className="filter-sheet" onClick={(e) => e.stopPropagation()}>
+            <div className="filter-sheet-handle" />
+            <h3 className="filter-sheet-title">Filters</h3>
+
+            <p className="filter-sheet-label">Food type</p>
+            <div className="filter-toggle-row">
+              <button
+                className={`filter-toggle-btn ${vegToggle === "nonveg" ? "active-nonveg" : ""}`}
+                onClick={() => handleVegToggle("nonveg")}
+              >
+                <Leaf size={14} /> Veg
+              </button>
+              <button
+                className={`filter-toggle-btn ${vegToggle === "veg" ? "active-veg" : ""}`}
+                onClick={() => handleVegToggle("veg")}
+              >
+                <Flame size={14} /> Non-Veg
+              </button>
+            </div>
+
+            <div className="filter-sheet-actions">
+              <button
+                className="btn-clear"
+                onClick={() => {
+                  setVegToggle("all");
+                  setSelectedCategory("all");
+                }}
+              >
+                Clear all
+              </button>
+              <button className="btn-apply" onClick={() => setIsFilterSheetOpen(false)}>
+                Show results
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <Footer onCartClick={() => navigate(getPathWithTable("/cart"))} onHomeClick={() => navigate(getPathWithTable("/menu"))} onProfileClick={() => navigate(getPathWithTable("/profile"))} />
     </div>
