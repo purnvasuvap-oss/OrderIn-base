@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { ChevronLeft, ChevronDown } from "lucide-react";
-import { AiOutlineShoppingCart } from "react-icons/ai";
+import { ChevronLeft, ChevronDown, Sparkles, ShoppingBag, Heart, CreditCard, LogOut } from "lucide-react";
+import { HiOutlineShoppingCart } from "react-icons/hi2";
 import Footer from "../Footer/Footer";
 import { useNavigate } from 'react-router-dom';
 import { useCart } from "../context/CartContext";
@@ -421,6 +421,29 @@ function Profile({ onBackClick, onCartClick }) {
     return `${count} ${count === 1 ? 'plate' : 'plates'}`;
   };
 
+  const displayName = user.username || "Guest";
+  const profileInitials = displayName
+    .split(" ")
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase() || "U";
+  const loyaltyLabel = orderHistory.length >= 8 ? "Gold Member" : orderHistory.length >= 3 ? "Loyal Member" : "New Member";
+  const totalOrders = orderHistory.length;
+  const favoriteCount = likedItems.length;
+  const savingsEstimate = Math.max(0, totalOrders * 38);
+  const memberSince = user.createdAt ? new Date(user.createdAt).toLocaleDateString([], { month: "short", year: "numeric" }) : "since 2024";
+  const paymentMethods = [
+    { label: "Visa • 4242", detail: "Primary card" },
+    { label: "Cash on delivery", detail: "Default at checkout" },
+  ];
+
+  const handleLogout = () => {
+    localStorage.removeItem("user");
+    localStorage.removeItem("cart");
+    navigate(getPathWithTable("/"));
+  };
+
   return (
     <div className="profile-container">
       <header className="profile-header">
@@ -431,30 +454,52 @@ function Profile({ onBackClick, onCartClick }) {
       </header>
 
       <div className="profile-content">
-        <div className="user-info">
-          <div className="user-detail">
-            <label>Name:</label>
-            <span>{user.username}</span>
+        <section className="profile-card">
+          <div className="profile-avatar">{profileInitials}</div>
+          <div className="profile-card-copy">
+            <div className="profile-card-top">
+              <div>
+                <p className="profile-eyebrow">Welcome back</p>
+                <h2>{displayName}</h2>
+              </div>
+              <span className="loyalty-pill">
+                <Sparkles size={14} />
+                {loyaltyLabel}
+              </span>
+            </div>
+            <p className="profile-meta">Member {memberSince}</p>
+            <div className="profile-stats">
+              <div className="stat-pill">
+                <strong>{totalOrders}</strong>
+                <span>Orders</span>
+              </div>
+              <div className="stat-pill">
+                <strong>{favoriteCount}</strong>
+                <span>Favorites</span>
+              </div>
+              <div className="stat-pill">
+                <strong>{formatPrice(savingsEstimate)}</strong>
+                <span>Saved</span>
+              </div>
+            </div>
           </div>
-          <div className="user-detail">
-            <label>Phone:</label>
-            <span>{user.phone}</span>
-          </div>
-        </div>
+        </section>
 
         <div className="profile-sections">
-          {/* Order History Section */}
-          <div className="profile-section order-history">
-            <div className="section-header" onClick={() => toggleSection('orders')}>
-              <h3>Order History</h3>
-              <ChevronDown
-                size={20}
-                className={`chevron ${expandedSection === 'orders' ? 'expanded' : ''}`}
-              />
-            </div>
-            {expandedSection === 'orders' && (
-              <div className="section-content">
-                <div className="scrollable-content">
+          <div className="account-card">
+            <button className="account-card-trigger" onClick={() => toggleSection("orders")}>
+              <div className="account-card-icon">
+                <ShoppingBag size={18} />
+              </div>
+              <div className="account-card-copy">
+                <h3>Orders</h3>
+                <p>View your recent favorites and reorder</p>
+              </div>
+              <ChevronDown size={18} className={`chevron ${expandedSection === "orders" ? "expanded" : ""}`} />
+            </button>
+            {expandedSection === "orders" && (
+              <div className="account-section-body">
+                <div className="section-body-list">
                   {orderHistory.length === 0 ? (
                     <p className="empty-message">No orders yet</p>
                   ) : (
@@ -492,7 +537,7 @@ function Profile({ onBackClick, onCartClick }) {
                               disabled={addedItems.has(order.item.name) || order.item.unavailable}
                               title={order.item.unavailable ? 'Unavailable' : (addedItems.has(order.item.name) ? 'Added' : 'Reorder')}
                             >
-                              <AiOutlineShoppingCart size={20} />
+                              <HiOutlineShoppingCart size={25} />
                               <span>{addedItems.has(order.item.name) ? 'Added' : 'Reorder'}</span>
                             </button>
                           </div>
@@ -515,9 +560,7 @@ function Profile({ onBackClick, onCartClick }) {
                           </div>
 
                           {order.item.description && (
-                            <p className="order-desc-zone">
-                              {order.item.description}
-                            </p>
+                            <p className="order-desc-zone">{order.item.description}</p>
                           )}
 
                           {order.instructions && (
@@ -538,17 +581,19 @@ function Profile({ onBackClick, onCartClick }) {
             )}
           </div>
 
-          {/* Liked List Section */}
-          <div className="profile-section">
-            <div className="section-header" onClick={() => toggleSection('liked')}>
-              <h3>Liked List</h3>
-              <ChevronDown
-                size={20}
-                className={`chevron ${expandedSection === 'liked' ? 'expanded' : ''}`}
-              />
-            </div>
-            {expandedSection === 'liked' && (
-              <div className="section-content">
+          <div className="account-card">
+            <button className="account-card-trigger" onClick={() => toggleSection("favorites")}>
+              <div className="account-card-icon">
+                <Heart size={18} />
+              </div>
+              <div className="account-card-copy">
+                <h3>Favorites</h3>
+                <p>Your most-loved dishes</p>
+              </div>
+              <ChevronDown size={18} className={`chevron ${expandedSection === "favorites" ? "expanded" : ""}`} />
+            </button>
+            {expandedSection === "favorites" && (
+              <div className="account-section-body">
                 {likedItems.length === 0 ? (
                   <p className="empty-message">No liked items yet</p>
                 ) : (
@@ -561,12 +606,8 @@ function Profile({ onBackClick, onCartClick }) {
                           <p className="liked-price">{formatPrice(item.price)}</p>
                         </div>
                       </div>
-                      <button
-                        className="add-btn"
-                        onClick={() => handleLikedAddToCart(item)}
-                        title="Add to Cart"
-                      >
-                        <AiOutlineShoppingCart size={20} />
+                      <button className="add-btn" onClick={() => handleLikedAddToCart(item)} title="Add to Cart" >
+                        <HiOutlineShoppingCart size={25}  />
                       </button>
                     </div>
                   ))
@@ -574,10 +615,56 @@ function Profile({ onBackClick, onCartClick }) {
               </div>
             )}
           </div>
+
+          <div className="account-card">
+            <button className="account-card-trigger" onClick={() => toggleSection("payment")}>
+              <div className="account-card-icon">
+                <CreditCard size={18} />
+              </div>
+              <div className="account-card-copy">
+                <h3>Payment</h3>
+                <p>Cards and checkout methods</p>
+              </div>
+              <ChevronDown size={18} className={`chevron ${expandedSection === "payment" ? "expanded" : ""}`} />
+            </button>
+            {expandedSection === "payment" && (
+              <div className="account-section-body">
+                <div className="payment-list">
+                  {paymentMethods.map((method) => (
+                    <div key={method.label} className="payment-item">
+                      <div>
+                        <p className="payment-label">{method.label}</p>
+                        <p className="payment-detail">{method.detail}</p>
+                      </div>
+                      <span className="payment-chip">Default</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="account-card logout-card">
+            <button className="account-card-trigger" onClick={() => toggleSection("logout")}>
+              <div className="account-card-icon logout-icon">
+                <LogOut size={18} />
+              </div>
+              <div className="account-card-copy">
+                <h3>Logout</h3>
+                <p>Sign out securely</p>
+              </div>
+              <ChevronDown size={18} className={`chevron ${expandedSection === "logout" ? "expanded" : ""}`} />
+            </button>
+            {expandedSection === "logout" && (
+              <div className="account-section-body logout-body">
+                <p>You'll be signed out from this device and can log back in anytime.</p>
+                <button className="logout-btn" onClick={handleLogout}>Logout</button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* MODAL */}
       {isModalOpen && (
         <div className="modal-overlay">
           <div className="modal-content">
@@ -600,7 +687,6 @@ function Profile({ onBackClick, onCartClick }) {
         </div>
       )}
 
-      {/* TOAST */}
       {showToast && (
         <div className="toast">
           {toastMessage}

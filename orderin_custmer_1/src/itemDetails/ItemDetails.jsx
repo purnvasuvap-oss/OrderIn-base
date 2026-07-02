@@ -1,6 +1,19 @@
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Heart, Minus, Plus, ShoppingCart, Check } from "lucide-react";
+import {
+  ArrowLeft,
+  Heart,
+  Minus,
+  Plus,
+  ShoppingCart,
+  Check,
+  Star,
+  Clock,
+  Share2,
+  Leaf,
+  Flame,
+  Link2,
+} from "lucide-react";
 import { collection, getDocs, doc, getDoc, setDoc } from "firebase/firestore";
 import { db } from "../firebaseConfig";
 import { useCart } from "../context/CartContext";
@@ -9,6 +22,13 @@ import Footer from "../Footer/Footer";
 import "./ItemDetails.css";
 import { getPlaceholder } from "../utils/placeholder";
 import { resolveImageUrl } from "../utils/storageResolver";
+
+// Default customization groups shown when the item doesn't define its own.
+// Purely preferential (no price impact) — folded into the saved instructions.
+const DEFAULT_CUSTOMIZATIONS = [
+  { id: "spice", label: "Spice Level", options: ["Mild", "Medium", "Hot"] },
+  { id: "portion", label: "Portion", options: ["Regular", "Large"] },
+];
 
 function ItemDetails() {
   const location = useLocation();
@@ -28,6 +48,8 @@ function ItemDetails() {
   const [touchEnd, setTouchEnd] = useState(null);
   const [isFavorited, setIsFavorited] = useState(false);
   const [resolvedImage, setResolvedImage] = useState(item ? (item.image || item.imageURL || item.image_url || '') : '');
+  const [linkCopied, setLinkCopied] = useState(false);
+  const [customSelections, setCustomSelections] = useState({});
 
   // helper: normalize string for matching
   const normalizeString = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim();
@@ -138,17 +160,31 @@ function ItemDetails() {
     }
   }, [item, id]);
 
-  if (loading) return <div className="itemdetails-loading">Loading item details...</div>;
+  // seed default customization selections once item is available
+  useEffect(() => {
+    if (!item) return;
+    const groups = item.customizations && Array.isArray(item.customizations) && item.customizations.length
+      ? item.customizations
+      : DEFAULT_CUSTOMIZATIONS;
+    setCustomSelections((prev) => {
+      const next = { ...prev };
+      groups.forEach((g) => {
+        const opts = g.options || [];
+        if (!next[g.id] && opts.length) {
+          next[g.id] = typeof opts[0] === 'string' ? opts[0] : opts[0].label;
+        }
+      });
+      return next;
+    });
+  }, [item]);
+
+  if (loading) return <div className="itemdetails-loading">Loading item details…</div>;
   if (error) return <div className="itemdetails-error">{error}</div>;
   if (!item) return <div className="itemdetails-error">No item data found.</div>;
 
-  // Find current item index and next/previous items
-  // Note: For swipe functionality, we would need to fetch all products or use a context.
-  // For now, disable swipe or implement later.
   const nextItem = null;
   const prevItem = null;
 
-  // Swipe handlers
   const minSwipeDistance = 50;
 
   const onTouchStart = (e) => {
@@ -165,11 +201,9 @@ function ItemDetails() {
     const isRightSwipe = distance < -minSwipeDistance;
 
     if (isLeftSwipe && nextItem) {
-      // Swipe left - next item
       navigate(getPathWithTable(`/item/${nextItem.name.replace(/\s+/g, '-').toLowerCase()}`), { state: { item: nextItem } });
     }
     if (isRightSwipe && prevItem) {
-      // Swipe right - previous item
       navigate(getPathWithTable(`/item/${prevItem.name.replace(/\s+/g, '-').toLowerCase()}`), { state: { item: prevItem } });
     }
   };
@@ -188,8 +222,23 @@ function ItemDetails() {
     setIsModalOpen(true);
   };
 
+  const buildInstructionsWithCustomizations = (baseText) => {
+    const groups = item.customizations && Array.isArray(item.customizations) && item.customizations.length
+      ? item.customizations
+      : DEFAULT_CUSTOMIZATIONS;
+    const customLine = groups
+      .map((g) => (customSelections[g.id] ? `${g.label}: ${customSelections[g.id]}` : null))
+      .filter(Boolean)
+      .join(' · ');
+    const trimmedBase = baseText.trim();
+    if (!customLine) return trimmedBase;
+    return trimmedBase ? `${customLine} — ${trimmedBase}` : customLine;
+  };
+
   const completeAddToCart = (instructionText = "", shouldSaveInstructions = false) => {
-    const cleanedInstructions = instructionText.trim();
+    const cleanedInstructions = shouldSaveInstructions
+      ? buildInstructionsWithCustomizations(instructionText)
+      : "";
     if (cartItemForCurrentItem) {
       updateQuantity(cartItemForCurrentItem.name, quantity);
       if (shouldSaveInstructions) {
@@ -199,7 +248,7 @@ function ItemDetails() {
       addToCart(item, quantity, shouldSaveInstructions ? cleanedInstructions : "");
     }
     setIsModalOpen(false);
-    setInstructions(shouldSaveInstructions ? cleanedInstructions : (cartItemForCurrentItem?.instructions || ""));
+    setInstructions(shouldSaveInstructions ? instructionText.trim() : (cartItemForCurrentItem?.instructions || ""));
   };
 
   const handleSaveInstructions = () => {
@@ -211,11 +260,9 @@ function ItemDetails() {
   };
 
   const handleFavoriteToggle = async () => {
-    // toggle and persist to Firestore under customers/<phone>.likedItems
     try {
       const stored = localStorage.getItem('user');
       if (!stored) {
-        // Not logged in - optionally navigate to login or show toast
         alert('Please login to save favorites');
         return;
       }
@@ -230,7 +277,6 @@ function ItemDetails() {
       const existing = snap.exists() ? (Array.isArray(snap.data().likedItems) ? snap.data().likedItems : []) : [];
 
       if (!isFavorited) {
-        // add
         const payload = {
           id: item.id || item.productId || item.name,
           name: item.name,
@@ -238,12 +284,10 @@ function ItemDetails() {
           price: item.price || '',
           addedAt: new Date().toISOString()
         };
-        // prepend so newest appear first
         const newArr = [payload, ...existing.filter(Boolean)];
         await setDoc(customerRef, { likedItems: newArr }, { merge: true });
         setIsFavorited(true);
       } else {
-        // remove by id or name
         const newArr = existing.filter(li => !( (li.id && item.id && String(li.id) === String(item.id)) || normalizeString(li.name) === normalizeString(item.name) ));
         await setDoc(customerRef, { likedItems: newArr }, { merge: true });
         setIsFavorited(false);
@@ -253,7 +297,52 @@ function ItemDetails() {
     }
   };
 
+  const handleShare = async () => {
+    const shareData = {
+      title: item.name,
+      text: `Check out ${item.name} on the menu`,
+      url: window.location.href,
+    };
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+        return;
+      }
+      throw new Error('Web Share unavailable');
+    } catch (e) {
+      try {
+        await navigator.clipboard.writeText(window.location.href);
+        setLinkCopied(true);
+        setTimeout(() => setLinkCopied(false), 1800);
+      } catch (clipErr) {
+        console.error('Unable to share or copy link', clipErr);
+      }
+    }
+  };
+
   const totalPrice = (parseFloat(String(item.price || '').replace(/[^0-9.\-]/g, '')) * quantity).toFixed(2);
+
+  const rating = item.rating || 4.6;
+  const reviewCount = item.reviewCount || item.ratingsCount || null;
+  const prepTime = item.prepTime || item.preparationTime || '15–20 min';
+  const isBestseller = Boolean(item.bestseller || item.isBestseller);
+  const isVeg = item.isVeg === true || (typeof item.dietType === 'string' && item.dietType.toLowerCase() === 'veg');
+  const isNonVeg = item.isVeg === false || (typeof item.dietType === 'string' && item.dietType.toLowerCase() === 'non-veg');
+
+  const nutritionTags = [];
+  if (item.calories) nutritionTags.push({ key: 'calories', label: `${item.calories} kcal`, icon: null });
+  if (isVeg) nutritionTags.push({ key: 'veg', label: 'Vegetarian', icon: Leaf });
+  if (isNonVeg) nutritionTags.push({ key: 'nonveg', label: 'Non-Vegetarian', icon: null });
+  if (item.spiceLevel) nutritionTags.push({ key: 'spice', label: item.spiceLevel, icon: Flame });
+  if (Array.isArray(item.tags)) {
+    item.tags.forEach((t, idx) => nutritionTags.push({ key: `tag-${idx}`, label: t, icon: null }));
+  }
+
+  const ingredients = Array.isArray(item.ingredients) ? item.ingredients.filter(Boolean) : [];
+
+  const customizationGroups = item.customizations && Array.isArray(item.customizations) && item.customizations.length
+    ? item.customizations
+    : DEFAULT_CUSTOMIZATIONS;
 
   return (
     <div
@@ -262,15 +351,8 @@ function ItemDetails() {
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
     >
-      {/* HEADER */}
-      <div className="itemdetails-header">
-        <button className="bac-button" onClick={handleBack}>
-          <ArrowLeft size={22} />
-        </button>
-      </div>
-
-      {/* IMAGE */}
-      <div className="itemdetails-image-container">
+      {/* HERO */}
+      <div className="hero-section">
         {item.videos ? (
           <video
             src={item.videos}
@@ -278,104 +360,205 @@ function ItemDetails() {
             autoPlay
             loop
             muted
-            className="itemdetails-image"
-            onError={(e) => {              console.warn('Media poster failed', e.target.poster, 'item', item && (item.id || item.name));              e.target.poster = getPlaceholder('No Image');
-            }}
+            className="hero-media"
+            onError={(e) => { console.warn('Media poster failed', e.target.poster, 'item', item && (item.id || item.name)); e.target.poster = getPlaceholder('No Image'); }}
           />
         ) : (
-          <img src={resolvedImage || item.image || getPlaceholder('No Image')} alt={item.name} className="itemdetails-image" onError={(e) => { console.warn('Image load failed', e.target.src, 'item', item && (item.id || item.name)); e.target.src = getPlaceholder('No Image'); }} />
+          <img
+            src={resolvedImage || item.image || getPlaceholder('No Image')}
+            alt={item.name}
+            className="hero-media"
+            onError={(e) => { console.warn('Image load failed', e.target.src, 'item', item && (item.id || item.name)); e.target.src = getPlaceholder('No Image'); }}
+          />
         )}
+        <div className="hero-scrim" />
+
+        <div className="hero-topbar">
+          <button className="floating-icon-btn" onClick={handleBack} aria-label="Back to menu">
+            <ArrowLeft size={20} />
+          </button>
+          <div className="floating-icon-group">
+            <button className="floating-icon-btn" onClick={handleShare} aria-label="Share this item">
+              {linkCopied ? <Check size={18} /> : <Share2 size={18} />}
+            </button>
+            <button
+              className="floating-icon-btn"
+              onClick={handleFavoriteToggle}
+              aria-label={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
+            >
+              <Heart size={18} className={isFavorited ? 'heart-filled' : ''} />
+            </button>
+          </div>
+        </div>
+
+        {linkCopied && <div className="link-toast"><Link2 size={13} /> Link copied</div>}
+
+        <div className="hero-info-row">
+          <span className="hero-pill">
+            <Star size={13} className="pill-star" />
+            {rating.toFixed ? rating.toFixed(1) : rating}
+            {reviewCount ? <span className="pill-muted"> ({reviewCount})</span> : null}
+          </span>
+          <span className="hero-pill">
+            <Clock size={13} />
+            {prepTime}
+          </span>
+        </div>
       </div>
 
-      {/* swipe indicator removed per design request */}
-
-      {/* INFO SECTION */}
-      <div className="itemdetails-info">
-        <div className="itemdetails-header-row">
-          <h2 className="itemdetails-title">{item.name}</h2>
-          <Heart
-            size={22}
-            className={`heart-icon ${isFavorited ? 'favorited' : ''}`}
-            onClick={handleFavoriteToggle}
-          />
-        </div>
-
-
-
-        <p className="itemdetails-description">{item.description}</p>
-
-        {/* Quantity Controls */}
-        <div className="quantity-section">
-          <button
-            className="qty-btn"
-            onClick={() => handleQuantityChange(-1)}
-          >
-            <Minus size={18} />
-          </button>
-          <span className="qty-value">{quantity}</span>
-          <button className="qty-btn" onClick={() => handleQuantityChange(1)}>
-            <Plus size={18} />
-          </button>
-        </div>
-
-        {/* BOTTOM BAR */}
-        <div className="bottom-bar">
-          <div className="price-section">
-            <p className="price-label">Total Price</p>
-            <p className="price-value">₹{totalPrice}</p>
+      {/* CONTENT CARD */}
+      <div className="content-card">
+        {isBestseller && (
+          <div className="chef-stamp" aria-label="Bestseller">
+            <span className="chef-stamp-star">★</span>
+            <span>Chef's Pick</span>
           </div>
-          <button
-            className={`add-to-cart-btn ${isCurrentSelectionAdded ? 'added' : cartItemForCurrentItem ? 'needs-update' : ''}`}
-            onClick={handleAddToCart}
-            disabled={isCurrentSelectionAdded}
-          >
-            {isCurrentSelectionAdded ? (
-              <>
-                <Check size={18} /> Added
-              </>
-            ) : cartItemForCurrentItem ? (
-              <>
-                <ShoppingCart size={18} /> {actionLabel}
-              </>
-            ) : (
-              <>
-                <ShoppingCart size={18} /> {actionLabel}
-              </>
-            )}
-          </button>
-        </div>
+        )}
 
-        {/* MODAL */}
-        {isModalOpen && (
-          <div className="modal-overlay">
-            <div className="modal-content">
-              <h3>Food Instructions</h3>
-              <textarea
-                placeholder="Add any special instructions..."
-                value={instructions}
-                onChange={(e) => setInstructions(e.target.value)}
-                rows={4}
-              />
-              <div className="modal-buttons">
-                <button className="cancel-btn" onClick={handleCancelInstructions}>
-                  Cancel
-                </button>
-                <button className="save-btn" onClick={handleSaveInstructions}>
-                  Save
-                </button>
+        <div className="content-inner">
+          <p className="eyebrow">{item.category || 'On The Menu'}</p>
+
+          <div className="title-row">
+            <h1 className="item-title">{item.name}</h1>
+            {(isVeg || isNonVeg) && (
+              <span className={`diet-dot ${isVeg ? 'veg' : 'nonveg'}`} aria-hidden="true" />
+            )}
+          </div>
+
+          <p className="item-description">{item.description}</p>
+
+          {nutritionTags.length > 0 && (
+            <div className="chip-row">
+              {nutritionTags.map((tag) => {
+                const Icon = tag.icon;
+                return (
+                  <span className="nutrition-chip" key={tag.key}>
+                    {Icon && <Icon size={13} />}
+                    {tag.label}
+                  </span>
+                );
+              })}
+            </div>
+          )}
+
+          <div className="section-divider" />
+
+          <section className="detail-section">
+            <h3 className="section-heading">Ingredients</h3>
+            {ingredients.length > 0 ? (
+              <div className="chip-row">
+                {ingredients.map((ing, idx) => (
+                  <span className="ingredient-chip" key={`${ing}-${idx}`}>{ing}</span>
+                ))}
               </div>
+            ) : (
+              <p className="section-placeholder">Ingredient details coming soon — ask your server for allergen information.</p>
+            )}
+          </section>
+
+          <div className="section-divider" />
+
+          <section className="detail-section">
+            <h3 className="section-heading">Customize</h3>
+            <div className="customize-groups">
+              {customizationGroups.map((group) => {
+                const options = (group.options || []).map((o) => (typeof o === 'string' ? { label: o } : o));
+                return (
+                  <div className="customize-group" key={group.id || group.label}>
+                    <p className="customize-label">{group.label}</p>
+                    <div className="chip-row">
+                      {options.map((opt) => {
+                        const isActive = customSelections[group.id] === opt.label;
+                        return (
+                          <button
+                            type="button"
+                            key={opt.label}
+                            className={`option-chip ${isActive ? 'active' : ''}`}
+                            onClick={() => setCustomSelections((prev) => ({ ...prev, [group.id]: opt.label }))}
+                          >
+                            {opt.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+
+          <div className="section-divider" />
+
+          <section className="detail-section quantity-section-wrap">
+            <h3 className="section-heading">Quantity</h3>
+            <div className="quantity-section">
+              <button
+                className="qty-btn"
+                onClick={() => handleQuantityChange(-1)}
+                aria-label="Decrease quantity"
+              >
+                <Minus size={20} />
+              </button>
+              <span className="qty-value">{quantity}</span>
+              <button className="qty-btn" onClick={() => handleQuantityChange(1)} aria-label="Increase quantity">
+                <Plus size={20} />
+              </button>
+            </div>
+          </section>
+        </div>
+      </div>
+
+      {/* STICKY BOTTOM BAR */}
+      <div className="bottom-bar">
+        <div className="price-section">
+          <p className="price-label">Total Price</p>
+          <p className="price-value">₹{totalPrice}</p>
+        </div>
+        <button
+          className={`add-to-cart-btn ${isCurrentSelectionAdded ? 'added' : cartItemForCurrentItem ? 'needs-update' : ''}`}
+          onClick={handleAddToCart}
+          disabled={isCurrentSelectionAdded}
+        >
+          {isCurrentSelectionAdded ? (
+            <>
+              <Check size={18} /> Added
+            </>
+          ) : (
+            <>
+              <ShoppingCart size={18} /> {actionLabel}
+            </>
+          )}
+        </button>
+      </div>
+
+      {/* MODAL */}
+      {isModalOpen && (
+        <div className="food-instructions-modal-overlay">
+          <div className="food-instructions-modal-content">
+            <h3>Food Instructions</h3>
+            <textarea
+              placeholder="Add any special instructions…"
+              value={instructions}
+              onChange={(e) => setInstructions(e.target.value)}
+              rows={4}
+            />
+            <div className="food-instructions-modal-buttons">
+              <button className="food-instructions-cancel-btn" onClick={handleCancelInstructions}>
+                Cancel
+              </button>
+              <button className="food-instructions-save-btn" onClick={handleSaveInstructions}>
+                Save
+              </button>
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
-      {/* show global footer inside overlay so footer is visible on item page */}
       <Footer
         onCartClick={() => navigate(getPathWithTable('/cart'))}
         onHomeClick={() => navigate(getPathWithTable('/menu'))}
         onProfileClick={() => navigate(getPathWithTable('/profile'))}
       />
-
     </div>
   );
 }
