@@ -1,11 +1,16 @@
 :root {
-  color-scheme: dark;
+  color-scheme: light;
+  --color-bg: #F1EFD8;
+  --color-surface: #F7F5E9;
+  --color-accent: #636E2C;
+  --color-accent-dark: #3F441C;
+  --color-text: #1C1B17;
 }
 
 body {
   margin: 0;
-  background: #121212;
-  color: #f8f8f8;
+  background: var(--color-bg);
+  color: var(--color-text);
 }
 
 * {
@@ -21,7 +26,11 @@ button {
   flex-direction: column;
   min-height: 100vh;
   min-height: 100dvh;
-  background: linear-gradient(180deg, #171717 0%, #1f1f1f 100%);
+  background: linear-gradient(
+    180deg,
+    #F7F5E9 0%,
+    #F1EFD8 100%
+  );
   overflow-y: auto;
   padding-bottom: calc(76px + env(safe-area-inset-bottom));
 }
@@ -31,8 +40,8 @@ button {
   align-items: center;
   gap: 12px;
   padding: 18px 16px;
-  background: #232323;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: #F1EFD8;
+  border-bottom: 1px solid rgba(63, 68, 28, 0.12);
 }
 
 .back-icon {
@@ -42,8 +51,8 @@ button {
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  background: #2f2f2f;
-  color: #ffb703;
+  background: rgba(63, 68, 28, 0.08);
+  color: #3F441C;
   cursor: pointer;
 }
 
@@ -51,7 +60,7 @@ button {
   margin: 0;
   font-size: 20px;
   font-weight: 800;
-  color: #ffffff;
+  color: #3F441C;
 }
 
 .profile-content {
@@ -68,9 +77,9 @@ button {
   gap: 14px;
   padding: 16px;
   border-radius: 24px;
-  background: linear-gradient(135deg, rgba(255, 183, 3, 0.2), rgba(255, 255, 255, 0.04));
-  border: 1px solid rgba(255, 183, 3, 0.22);
-  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.22);
+  background: linear-gradient(135deg, rgba(99, 110, 44, 0.16), rgba(247, 245, 233, 0.6));
+  border: 1px solid rgba(99, 110, 44, 0.22);
+  box-shadow: 0 12px 24px rgba(63, 68, 28, 0.1);
 }
 
 .profile-avatar {
@@ -81,8 +90,8 @@ button {
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  background: #ffb703;
-  color: #1e1e1e;
+  background: #636E2C;
+  color: #F7F5E9;
   font-size: 22px;
   font-weight: 900;
 }
@@ -101,7 +110,7 @@ button {
 
 .profile-eyebrow {
   margin: 0 0 2px;
-  color: #ffb703;
+  color: #636E2C;
   font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.18em;
@@ -111,7 +120,7 @@ button {
 .profile-card-copy h2 {
   margin: 0;
   font-size: 20px;
-  color: #ffffff;
+  color: #1C1B17;
 }
 
 .loyalty-pill {
@@ -120,8 +129,8 @@ button {
   gap: 4px;
   padding: 6px 10px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.08);
-  color: #f4f4f4;
+  background: rgba(63, 68, 28, 0.08);
+  color: #3F441C;
   font-size: 12px;
   font-weight: 800;
   white-space: nowrap;
@@ -129,7 +138,7 @@ button {
 
 .profile-meta {
   margin: 6px 0 10px;
-  color: #c8c8c8;
+  color: rgba(28, 27, 23, 0.6);
   font-size: 13px;
 }
 
@@ -143,21 +152,21 @@ button {
   flex: 1 1 90px;
   padding: 8px 10px;
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(247, 245, 233, 0.9);
+  border: 1px solid rgba(63, 68, 28, 0.1);
 }
 
 .stat-pill strong {
   display: block;
   font-size: 14px;
-  color: #ffffff;
+  color: #1C1B17;
 }
 
 .stat-pill span {
   display: block;
   margin-top: 2px;
   font-size: 11px;
-  color: #b8b8b8;
+  color: rgba(28, 27, 23, 0.55);
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }
@@ -170,9 +179,9 @@ button {
 
 .account-card {
   border-radius: 18px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: #232323;
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(63, 68, 28, 0.12);
+  background: #F7F5E9;
+  box-shadow: 0 10px 24px rgba(63, 68, 28, 0.08);
   overflow: hidden;
 }
 
@@ -196,13 +205,13 @@ button {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 183, 3, 0.14);
-  color: #ffb703;
+  background: rgba(99, 110, 44, 0.14);
+  color: #636E2C;
 }
 
 .logout-icon {
-  background: rgba(255, 95, 112, 0.14);
-  color: #ff5f70;
+  background: rgba(214, 69, 69, 0.14);
+  color: #B83A3A;
 }
 
 .account-card-copy {
@@ -213,17 +222,17 @@ button {
 .account-card-copy h3 {
   margin: 0 0 2px;
   font-size: 16px;
-  color: #ffffff;
+  color: #1C1B17;
 }
 
 .account-card-copy p {
   margin: 0;
   font-size: 12px;
-  color: #9a9a9a;
+  color: rgba(28, 27, 23, 0.55);
 }
 
 .chevron {
-  color: #8a8a8a;
+  color: rgba(63, 68, 28, 0.6);
   transition: transform 0.2s ease;
 }
 
@@ -235,10 +244,60 @@ button {
   padding: 0 12px 12px;
 }
 
+/* --- Scrollable, height-capped list containers ---
+   These keep the Orders / Favorites / Payment sections from ballooning the
+   whole page as more items (or long instructions/descriptions) are added.
+   Each section scrolls independently within its own card instead. */
+
 .section-body-list {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  max-height: 380px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 6px;
+  margin-right: -6px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(99, 110, 44, 0.45) transparent;
+}
+
+.section-body-list::-webkit-scrollbar {
+  width: 5px;
+}
+
+.section-body-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.section-body-list::-webkit-scrollbar-thumb {
+  background: rgba(99, 110, 44, 0.4);
+  border-radius: 10px;
+}
+
+.liked-list {
+  display: flex;
+  flex-direction: column;
+  max-height: 320px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 6px;
+  margin-right: -6px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(99, 110, 44, 0.45) transparent;
+}
+
+.liked-list::-webkit-scrollbar {
+  width: 5px;
+}
+
+.liked-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.liked-list::-webkit-scrollbar-thumb {
+  background: rgba(99, 110, 44, 0.4);
+  border-radius: 10px;
 }
 
 .empty-message {
@@ -246,15 +305,15 @@ button {
   padding: 14px;
   border-radius: 12px;
   text-align: center;
-  background: rgba(255, 255, 255, 0.04);
-  color: #9a9a9a;
+  background: rgba(63, 68, 28, 0.05);
+  color: rgba(28, 27, 23, 0.55);
 }
 
 .order-item {
   padding: 12px;
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(99, 110, 44, 0.05);
+  border: 1px solid rgba(63, 68, 28, 0.08);
 }
 
 .order-card-main {
@@ -269,7 +328,8 @@ button {
   height: 56px;
   border-radius: 12px;
   object-fit: cover;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(63, 68, 28, 0.1);
+  flex-shrink: 0;
 }
 
 .order-details {
@@ -285,13 +345,14 @@ button {
 
 .order-title {
   margin: 0;
-  color: #ffffff;
+  color: #1C1B17;
   font-size: 14px;
   line-height: 1.2;
   overflow: hidden;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
+  word-break: break-word;
 }
 
 .order-count-chip,
@@ -299,8 +360,8 @@ button {
   flex-shrink: 0;
   padding: 3px 7px;
   border-radius: 999px;
-  background: rgba(255, 183, 3, 0.14);
-  color: #ffb703;
+  background: rgba(99, 110, 44, 0.14);
+  color: #3F441C;
   font-size: 10px;
   font-weight: 800;
   text-transform: capitalize;
@@ -308,7 +369,7 @@ button {
 
 .order-timestamp {
   margin: 4px 0 0;
-  color: #9a9a9a;
+  color: rgba(28, 27, 23, 0.5);
   font-size: 11px;
 }
 
@@ -317,15 +378,18 @@ button {
   flex-wrap: wrap;
   gap: 6px;
   margin-top: 8px;
+  max-height: 58px;
+  overflow: hidden;
 }
 
 .order-pill-row span {
   padding: 4px 7px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.06);
-  color: #d2d2d2;
+  background: rgba(63, 68, 28, 0.07);
+  color: #3F441C;
   font-size: 11px;
   font-weight: 700;
+  white-space: nowrap;
 }
 
 .order-reorder-btn {
@@ -333,8 +397,8 @@ button {
   min-height: 36px;
   border: none;
   border-radius: 999px;
-  background: #ffb703;
-  color: #1e1e1e;
+  background: #636E2C;
+  color: #F7F5E9;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -343,11 +407,12 @@ button {
   font-size: 12px;
   font-weight: 800;
   cursor: pointer;
+  flex-shrink: 0;
 }
 
 .order-reorder-btn:disabled {
-  background: #555555;
-  color: #d0d0d0;
+  background: rgba(28, 27, 23, 0.15);
+  color: rgba(28, 27, 23, 0.4);
   cursor: not-allowed;
 }
 
@@ -364,14 +429,14 @@ button {
   margin-top: 8px;
   padding: 8px 10px;
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(63, 68, 28, 0.05);
 }
 
 .order-paid-summary {
   display: inline-flex;
   align-items: baseline;
   gap: 6px;
-  color: #d3d3d3;
+  color: rgba(28, 27, 23, 0.65);
 }
 
 .order-paid-summary span {
@@ -381,12 +446,12 @@ button {
 }
 
 .order-paid-summary strong {
-  color: #ffffff;
+  color: #1C1B17;
   font-size: 14px;
 }
 
 .order-menu-price {
-  color: #aaaeaf;
+  color: rgba(28, 27, 23, 0.5);
   font-size: 11px;
 }
 
@@ -396,20 +461,37 @@ button {
   margin: 8px 0 0;
   padding: 8px 10px;
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.05);
-  color: #cfcfcf;
+  background: rgba(63, 68, 28, 0.05);
+  color: rgba(28, 27, 23, 0.72);
   font-size: 12px;
   line-height: 1.4;
   overflow-wrap: anywhere;
 }
 
+/* Clamp long descriptions/instructions so a single verbose order doesn't
+   blow out the card height when the list already has many items. */
+.order-desc-zone {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.order-instructions-zone {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
 .order-instructions-zone strong {
-  color: #ffffff;
+  color: #1C1B17;
 }
 
 .order-unavailable {
-  color: #ff6b6b;
+  color: #B83A3A;
   font-weight: 800;
+  background: rgba(184, 58, 58, 0.08);
 }
 
 .liked-item {
@@ -418,7 +500,7 @@ button {
   justify-content: space-between;
   gap: 10px;
   padding: 10px 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid rgba(63, 68, 28, 0.1);
 }
 
 .liked-item:last-child {
@@ -430,6 +512,7 @@ button {
   align-items: center;
   gap: 10px;
   min-width: 0;
+  flex: 1;
 }
 
 .liked-image {
@@ -437,18 +520,28 @@ button {
   height: 48px;
   border-radius: 10px;
   object-fit: cover;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(63, 68, 28, 0.1);
+  flex-shrink: 0;
+}
+
+.liked-details {
+  min-width: 0;
 }
 
 .liked-details h4 {
   margin: 0 0 3px;
-  color: #ffffff;
+  color: #1C1B17;
   font-size: 14px;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  word-break: break-word;
 }
 
 .liked-price {
   margin: 0;
-  color: #ffb703;
+  color: #636E2C;
   font-size: 13px;
   font-weight: 700;
 }
@@ -457,14 +550,35 @@ button {
   border: none;
   border-radius: 20px;
   cursor: pointer;
-  background: rgba(255, 183, 3, 0.14);
-  color: #ffb703;
+  background: rgba(99, 110, 44, 0.14);
+  color: #636E2C;
+  flex-shrink: 0;
 }
 
 .payment-list {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  max-height: 260px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 6px;
+  margin-right: -6px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(99, 110, 44, 0.45) transparent;
+}
+
+.payment-list::-webkit-scrollbar {
+  width: 5px;
+}
+
+.payment-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.payment-list::-webkit-scrollbar-thumb {
+  background: rgba(99, 110, 44, 0.4);
+  border-radius: 10px;
 }
 
 .payment-item {
@@ -474,29 +588,30 @@ button {
   gap: 10px;
   padding: 10px 12px;
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(63, 68, 28, 0.05);
 }
 
 .payment-label {
   margin: 0 0 2px;
-  color: #ffffff;
+  color: #1C1B17;
   font-size: 14px;
   font-weight: 700;
 }
 
 .payment-detail {
   margin: 0;
-  color: #9a9a9a;
+  color: rgba(28, 27, 23, 0.55);
   font-size: 12px;
 }
 
 .payment-chip {
   padding: 4px 8px;
   border-radius: 999px;
-  background: rgba(255, 183, 3, 0.14);
-  color: #ffb703;
+  background: rgba(99, 110, 44, 0.14);
+  color: #3F441C;
   font-size: 11px;
   font-weight: 800;
+  flex-shrink: 0;
 }
 
 .logout-body {
@@ -507,7 +622,7 @@ button {
 
 .logout-body p {
   margin: 0;
-  color: #cfcfcf;
+  color: rgba(28, 27, 23, 0.7);
   font-size: 13px;
   line-height: 1.5;
 }
@@ -516,8 +631,8 @@ button {
   border: none;
   border-radius: 12px;
   padding: 10px 12px;
-  background: rgba(255, 95, 112, 0.14);
-  color: #ff5f70;
+  background: rgba(184, 58, 58, 0.14);
+  color: #B83A3A;
   font-weight: 800;
   cursor: pointer;
 }
@@ -525,7 +640,7 @@ button {
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.72);
+  background: rgba(28, 27, 23, 0.55);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -537,23 +652,24 @@ button {
   width: min(100%, 400px);
   padding: 18px;
   border-radius: 18px;
-  background: #232323;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  color: #ffffff;
+  background: #F7F5E9;
+  border: 1px solid rgba(63, 68, 28, 0.12);
+  color: #1C1B17;
 }
 
 .modal-content h3 {
   margin: 0 0 12px;
   font-size: 18px;
+  color: #1C1B17;
 }
 
 .modal-content textarea {
   width: 100%;
   padding: 10px 12px;
   border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: #2f2f2f;
-  color: #ffffff;
+  border: 1px solid rgba(63, 68, 28, 0.18);
+  background: #ffffff;
+  color: #1C1B17;
   resize: vertical;
 }
 
@@ -574,13 +690,13 @@ button {
 }
 
 .cancel-btn {
-  background: #333333;
-  color: #ffffff;
+  background: rgba(28, 27, 23, 0.08);
+  color: #1C1B17;
 }
 
 .save-btn {
-  background: #ffb703;
-  color: #1e1e1e;
+  background: #636E2C;
+  color: #F7F5E9;
 }
 
 .toast {
@@ -590,8 +706,8 @@ button {
   transform: translateX(-50%);
   padding: 10px 14px;
   border-radius: 999px;
-  background: #ffb703;
-  color: #1e1e1e;
+  background: #636E2C;
+  color: #F7F5E9;
   font-weight: 800;
   z-index: 1001;
 }
@@ -601,6 +717,18 @@ button {
     width: min(900px, 100%);
     margin: 0 auto;
     padding: 24px 20px calc(104px + env(safe-area-inset-bottom));
+  }
+
+  .section-body-list {
+    max-height: 460px;
+  }
+
+  .liked-list {
+    max-height: 400px;
+  }
+
+  .payment-list {
+    max-height: 320px;
   }
 }
 
@@ -634,5 +762,25 @@ button {
   .order-reorder-btn {
     min-width: 74px;
     padding: 0 8px;
+  }
+
+  /* Tighter caps on small phones so the section never dominates the screen,
+     while still leaving enough room to comfortably scroll a few cards. */
+  .section-body-list {
+    max-height: 300px;
+    gap: 8px;
+  }
+
+  .liked-list {
+    max-height: 260px;
+  }
+
+  .payment-list {
+    max-height: 200px;
+  }
+
+  .order-desc-zone,
+  .order-instructions-zone {
+    font-size: 11.5px;
   }
 }

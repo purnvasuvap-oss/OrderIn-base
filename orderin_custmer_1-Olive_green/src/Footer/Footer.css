@@ -7,7 +7,7 @@
   left: 0;
   right: 0;
   height: 50px;
-  background-color: #2A2A2A;
+  background-color: #E7E5D8;
   padding: 5px;
   border-top: 1px solid #333333;
 }
@@ -33,20 +33,20 @@
 }
 
 .icon-container.active {
-  background-color: #FFB703;
+  background-color: #636E2C;
   color: #1E1E1E;
   border-radius: 50%;
   box-shadow: 0 2px 4px rgba(255, 183, 3, 0.2);
 }
 
 .icon-container.active:hover {
-  background-color: #FFC230;
+  background-color: #3F441C;
 }
 
 .footer-icon {
   font-size: 20px;
   margin-bottom: 2px;
-  color: #888888;
+  color: #1E1E1E;
 }
 
 .footer-icon-wrap {
@@ -72,7 +72,7 @@
   border-radius: 999px;
   background: #E11D36;
   color: #FFFFFF !important;
-  border: 2px solid #2A2A2A;
+  border: 2px solid #E7E5D8;
   box-sizing: border-box;
   display: flex;
   align-items: center;

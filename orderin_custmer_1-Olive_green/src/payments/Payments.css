@@ -4,19 +4,19 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: #1E1E1E;
+  background-color: #F1EFD8;
   padding: 1rem;
 }
 
 .payments-card {
   width: 100%;
   max-width: 28rem;
-  background-color: #2A2A2A;
+  background-color: #F7F5E9;
   border-radius: 1rem;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 10px 15px -3px rgba(28, 27, 23, 0.12), 0 4px 6px -2px rgba(28, 27, 23, 0.08);
   padding: 1rem;
   position: relative;
-  border: 1px solid #333333;
+  border: 1px solid #E4E0C8;
 }
 
 @media (min-width: 640px) {
@@ -29,17 +29,17 @@
   position: absolute;
   top: 0.75rem;
   right: 0.75rem;
-  color: #AAAAAA;
+  color: #6B6A5D;
 }
 
 .close-button:hover {
-  color: #FFB703;
+  color: #636E2C;
 }
 
 .checkout-header {
   font-size: 1.25rem;
   font-weight: 600;
-  color: #FFFFFF;
+  color: #1C1B17;
   margin-bottom: 1rem;
 }
 
@@ -53,10 +53,10 @@
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  border: 1px solid #444444;
+  border: 1px solid #D6D2B4;
   border-radius: 0.75rem;
   padding: 0.75rem;
-  background-color: #333333;
+  background-color: #E4E0C8;
   margin-bottom: 1rem;
 }
 
@@ -72,7 +72,7 @@
 }
 
 .order-item-name {
-  color: #FFFFFF;
+  color: #1C1B17;
   font-weight: 500;
   font-size: 0.875rem;
 }
@@ -84,14 +84,14 @@
 }
 
 .order-item-price {
-  color: #FFB703;
+  color: #636E2C;
   font-size: 0.875rem;
   font-weight: 600;
   margin: 0.25rem 0;
 }
 
 .order-item-each {
-  color: #AAAAAA;
+  color: #6B6A5D;
   font-size: 0.75rem;
   margin: 0;
 }
@@ -105,17 +105,17 @@
 .qty-button {
   padding: 0.25rem;
   border-radius: 0.5rem;
-  background-color: #444444;
-  border: 1px solid #555555;
+  background-color: #D6D2B4;
+  border: 1px solid #C9C4A4;
 }
 
 .qty-button:hover {
-  background-color: #555555;
+  background-color: #C9C4A4;
 }
 
 .qty-value {
   padding: 0 0.5rem;
-  color: #FFFFFF;
+  color: #1C1B17;
   font-weight: 600;
 }
 
@@ -130,28 +130,28 @@
 
 .cooking-preferences-btn {
   width: 100%;
-  border: 1px solid #444444;
+  border: 1px solid #D6D2B4;
   border-radius: 0.75rem;
   padding: 0.5rem;
-  color: #CCCCCC;
+  color: #4A4940;
   font-size: 0.875rem;
-  background-color: #2A2A2A;
+  background-color: #F7F5E9;
   margin-bottom: 1rem;
 }
 
 .cooking-preferences-btn:hover {
-  background-color: #333333;
-  border-color: #FFB703;
+  background-color: #E4E0C8;
+  border-color: #636E2C;
 }
 
 .billing-breakdown {
-  border-top: 1px solid #d1d5db;
+  border-top: 1px solid #D6D2B4;
   padding-top: 0.75rem;
   margin-bottom: 1rem;
 }
 
 .billing-header {
-  color: #FFFFFF;
+  color: #1C1B17;
   font-weight: 600;
   margin-bottom: 0.5rem;
 }
@@ -160,7 +160,7 @@
   display: flex;
   justify-content: space-between;
   font-size: 0.875rem;
-  color: #CCCCCC;
+  color: #4A4940;
   margin-bottom: 0.25rem;
 }
 
@@ -169,7 +169,7 @@
   justify-content: space-between;
   font-size: 1.125rem;
   font-weight: 600;
-  color: #FFB703;
+  color: #636E2C;
   margin-top: 0.5rem;
 }
 
@@ -178,7 +178,7 @@
 }
 
 .payment-header {
-  color: #FFFFFF;
+  color: #1C1B17;
   font-weight: 600;
   margin-bottom: 0.5rem;
 }
@@ -194,7 +194,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  border: 1px solid #d1d5db;
+  border: 1px solid #D6D2B4;
   border-radius: 0.75rem;
   padding: 0.75rem;
   background-color: transparent;
@@ -250,7 +250,7 @@
 .payment-label {
   font-size: 0.875rem;
   font-weight: 500;
-  color: #CCCCCC;
+  color: #4A4940;
 }
 
 .place-order-btn {

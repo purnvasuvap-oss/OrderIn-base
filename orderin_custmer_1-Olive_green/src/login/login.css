@@ -29,14 +29,14 @@
 }
 
 h2 {
-  color: #FFB703;
+  color: #636E2C;
   margin-bottom: 20px;
   position: relative;
   z-index: 2;
 }
 
 .login-box {
-  background-color: rgba(42, 42, 42, 0.95);
+  background-color: rgba(241, 239, 216, 1.0);
   backdrop-filter: blur(10px);
   padding: 35px;
   border-radius: 20px;
@@ -46,7 +46,7 @@ h2 {
   flex-direction: column;
   gap: 15px;
   align-items: center;
-  border: 1.5px solid #FFB703;
+  border: 1.5px solid #636E2C;
   position: relative;
   z-index: 2;
 }
@@ -71,8 +71,8 @@ input {
   width: 87%;
   box-sizing: border-box;
   transition: all 0.3s ease;
-  background-color: #333333;
-  color: #FFFFFF;
+  background-color: #F1EFD8;
+  color: #1C1B17;
 }
 
 input:hover {
@@ -80,7 +80,7 @@ input:hover {
 }
 
 input:focus {
-  border-color: #FFB703;
+  border-color: #636E2C;
   box-shadow: 0 0 0 3px rgba(255, 183, 3, 0.1);
 }
 
@@ -96,13 +96,13 @@ input::placeholder {
   overflow: hidden;
   position: relative;
   transition: all 0.3s ease;
-  background-color: #333333;
+  background-color: #E7E5D8;
 }
 .input-wrapper:hover{
   border-color: #bbb;
 }
 .input-wrapper:focus-within {
-  border-color: #FFB703;
+  border-color: #636E2C;
   box-shadow: 0 0 0 3px rgba(137, 150, 0, 0.1);
 }
 .name-input {
@@ -112,6 +112,7 @@ input::placeholder {
   outline: none;      
   font-size: 16px;
   background: transparent;
+  margin-left:10px;
 }
 
 .name-icon-wrapper{
@@ -122,20 +123,24 @@ input::placeholder {
   display: flex;
   align-items: center;
   justify-content: center;
-  border-right: 1.5px solid #444444;
+  border-right: 1.5px solid none;
 }
-.name-input-icon{
+.name-input-wrapper{
   padding: 12px 10px;
   cursor: pointer;
   font-size: 20px;
   width: 40px;
   text-align: center;
-  border-right: 1.5px solid #252525;
-  color: #FFB703;
+  border-right: 1.5px solid none;
+  color: #636E2C;
   font-size: 22px;
-  color: #fff;
   border: none;
   transition: all 0.3s ease;
+}
+.input-wrapper svg{
+  color: #636E2C;
+  font-size: 22px;
+  margin-left: 10px;
 }
 
 .phone-input-container {
@@ -143,11 +148,11 @@ input::placeholder {
   align-items: center;
   border: 1.5px solid #444444;
   border-radius: 12px;
-  overflow: hidden;
+  overflow: visible;
   margin-bottom: 15px;
   position: relative;
   transition: all 0.3s ease;
-  background-color: #333333;
+  background-color: #E7E5D8;
 }
 
 .phone-input-container:hover {
@@ -155,7 +160,7 @@ input::placeholder {
 }
 
 .phone-input-container:focus-within {
-  border-color: #FFB703;
+  border-color: #636E2C;
   box-shadow: 0 0 0 3px rgba(255, 183, 3, 0.1);
 }
 
@@ -167,24 +172,25 @@ input::placeholder {
 
 .country-code-selector {
   padding: 12px 10px;
-  background-color: #333333;
+  background-color: #E7E5D8;
   cursor: pointer;
   font-size: 16px;
   min-width: 60px;
   text-align: center;
   border-right: 1.5px solid #444444;
+  border-radius: 12px;
   border: none;
   transition: all 0.3s ease;
-  color: #FFFFFF;
+  color: #1C1B17;
 }
 
 .country-code-selector:hover {
-  background-color: #444444;
+  background-color: #E7E5D8;
 }
 
 .country-code-selector:focus {
   outline: none;
-  background-color: #3A3A3A;
+  background-color: #E7E5D8;
 }
 
 .phone-input {
@@ -192,8 +198,9 @@ input::placeholder {
   border: none;
   padding: 12px 15px;
   font-size: 16px;
-  background-color: #333333;
-  color: #FFFFFF;
+  background-color: #E7E5D8;
+  border-radius: 12px;
+  color: #1C1B17;
 }
 
 .phone-input:focus {
@@ -201,28 +208,33 @@ input::placeholder {
 }
 
 .country-dropdown {
-  position: absolute;
-  background-color: #2A2A2A;
-  border: 1.5px solid #444444;
-  border-radius: 12px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
-  max-height: 200px;
-  overflow-y: auto;
-  z-index: 1000;
-  width: 70px;
-  top: calc(100% + 5px);
-  left: 0;
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+
+    width: 260px;
+    max-height: 250px;
+
+    background: #F1EFD8;
+    border: 1px solid #636E2C;
+    border-radius: 12px;
+
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0,0,0,.25);
+
+    z-index: 9999;
 }
+
 
 .search-input {
   width: 100%;
   padding: 10px;
   border: none;
-  border-bottom: 1px solid #444444;
+  border-bottom: 1px solid #676767;
   font-size: 16px;
   box-sizing: border-box;
   background-color: #2A2A2A;
-  color: #FFFFFF;
+  color: #1C1B17;
 }
 
 .dropdown-list {
@@ -233,12 +245,12 @@ input::placeholder {
 .dropdown-item {
   padding: 10px;
   cursor: pointer;
-  border-bottom: 1px solid #333333;
-  color: #FFFFFF;
+  border-bottom: 1px solid #F1EFD8;
+  color: #1C1B17;
 }
 
 .dropdown-item:hover {
-  background-color: #333333;
+  background-color: #F1EFD8;
 }
 
 button {
@@ -257,7 +269,7 @@ button:active {
 }
 
 .otp-btn {
-  background-color: #FFB703;
+  background-color: #636E2C;
   color: #1E1E1E;
   width: 87%;
   font-weight: 600;
@@ -276,8 +288,8 @@ button:active {
 }
 
 .login-btn {
-  background-color: #FFB703;
-  color: #1E1E1E;
+  background-color: #636E2C;
+  color: #F1EFD8;
   width: 87%;
   font-weight: 600;
 }
@@ -303,11 +315,11 @@ button:active {
 
   .login-box {
     width: 90%;
-    max-width: 320px;
+    max-width: 450px;
     padding: 20px;
     margin: 0 auto;
     flex-shrink: 0;
-    border: 1.5px solid #FFB703;
+    border: 1.5px solid #636E2C;
   }
 
   input {
@@ -315,10 +327,15 @@ button:active {
     -webkit-appearance: none;
     -webkit-border-radius: 0;
   }
-  
+  .login-btn {
+  background-color: #636E2C;
+  color: #F1EFD8;
+  width: 97%;
+  font-weight: 600;
+}
   input:focus {
     outline: none;
-    border-color: #FFB703;
+    border-color: #636E2C;
     box-shadow: 0 0 0 3px rgba(255, 183, 3, 0.1);
   }
   

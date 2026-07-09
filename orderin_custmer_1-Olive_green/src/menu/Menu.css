@@ -7,15 +7,15 @@
    keeps shadows readable.
    ========================================================================== */
 .menu-container {
-  --color-bg: #14151a;
-  --color-surface: #1f2026;
+  --color-bg: #F1EFD8;
+  --color-surface: #F7F5E9;
   --color-surface-elevated: #262832;
   --color-border: #303240;
-  --color-accent: #ffb703;
-  --color-accent-strong: #ffcb47;
+  --color-accent: #636E2C;
+  --color-accent-strong: #3F441C;
   --color-chili: #ff5a45;
   --color-veg: #3ddc84;
-  --color-text: #f5f3ee;
+  --color-text: #1C1B17;
   --color-text-muted: #9d9ea8;
   --color-text-faint: #6c6d78;
 
@@ -203,26 +203,29 @@
 /* ==========================================================================
    Category chips
    ========================================================================== */
-.chip-row {
+.selection-row {
   display: flex;
   gap: 10px;
-  padding: 0 20px 16px;
+  padding: 15px 20px 16px;
+  align-items: center;    
+  flex-wrap: nowrap;
   overflow-x: auto;
+  overflow-y: hidden; 
   scrollbar-width: none;
   max-width: 1800px;
-  margin: 10px 0; 
+  margin: 10px auto; 
   /* Or use margin: 10px auto; but add a min-height */
   min-height: 50px;
   width: 100%;
   /* align-items: center; */
 }
 
-.chip-row::-webkit-scrollbar { display: none; }
+.selection-row::-webkit-scrollbar { display: none; }
 
-.chip {
+.selection {
     appearance: none;
     -webkit-appearance: none;
-
+    flex: 0 0 auto;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -249,11 +252,11 @@
     flex-shrink: 0;
 }
 
-.chip:hover { border-color: var(--color-accent); color: var(--color-text); }
+.selection:hover { border-color: var(--color-accent); color: var(--color-text); }
 
-.chip.active {
+.selection.active {
   background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-accent-strong) 100%);
-  color: #1a1400;
+  color: #F7F5E9;
   border-color: transparent;
   box-shadow: 0 6px 16px rgba(255, 183, 3, 0.28);
 }
@@ -633,7 +636,7 @@
   border-radius: 15px;
   border: none;
   background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-accent-strong) 100%);
-  color: #1a1400;
+  color: #F7F5E9;
   font-family: var(--font-body);
   font-weight: 700;
   font-size: 0.85rem;
@@ -757,7 +760,7 @@
 @media (max-width: 480px) {
   .hero-bar { padding: 16px 16px 10px; }
   .hero-title { font-size: 1.3rem; }
-  .search-row, .chip-row, .menu-grid-section, .promotion-banner { padding-left: 16px; padding-right: 16px; }
+  .search-row, .selection-row, .menu-grid-section, .promotion-banner { padding-left: 16px; padding-right: 16px; }
   .food-card-media { height: 128px; }
   .filter-fab { right: 16px; bottom: 90px; padding: 11px 16px; }
   .filter-fab span { display: none; }

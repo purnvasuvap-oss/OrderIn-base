@@ -519,7 +519,7 @@ function Profile({ onBackClick, onCartClick }) {
 
                             <div className="order-details">
                               <div className="order-title-row">
-                                <h4 className="order-title">{order.item.name}</h4>
+                                <h4 className="order-title" title={order.item.name}>{order.item.name}</h4>
                                 {extraItems > 0 && <span className="order-count-chip">+{extraItems}</span>}
                               </div>
                               <p className="order-timestamp">{formatDate(order.timestamp)}</p>
@@ -560,11 +560,11 @@ function Profile({ onBackClick, onCartClick }) {
                           </div>
 
                           {order.item.description && (
-                            <p className="order-desc-zone">{order.item.description}</p>
+                            <p className="order-desc-zone" title={order.item.description}>{order.item.description}</p>
                           )}
 
                           {order.instructions && (
-                            <p className="order-instructions-zone">
+                            <p className="order-instructions-zone" title={order.instructions}>
                               <strong>Instructions:</strong> {order.instructions}
                             </p>
                           )}
@@ -597,20 +597,22 @@ function Profile({ onBackClick, onCartClick }) {
                 {likedItems.length === 0 ? (
                   <p className="empty-message">No liked items yet</p>
                 ) : (
-                  likedItems.map((item) => (
-                    <div key={item.name} className="liked-item">
-                      <div className="liked-info">
-                        <img src={item.image} alt={item.name} className="liked-image" onError={(e) => { console.warn('Image load failed', e.currentTarget.src, 'liked', item && (item.id || item.name)); e.currentTarget.src = getPlaceholder('No Image'); }} />
-                        <div className="liked-details">
-                          <h4>{item.name}</h4>
-                          <p className="liked-price">{formatPrice(item.price)}</p>
+                  <div className="liked-list">
+                    {likedItems.map((item) => (
+                      <div key={item.name} className="liked-item">
+                        <div className="liked-info">
+                          <img src={item.image} alt={item.name} className="liked-image" onError={(e) => { console.warn('Image load failed', e.currentTarget.src, 'liked', item && (item.id || item.name)); e.currentTarget.src = getPlaceholder('No Image'); }} />
+                          <div className="liked-details">
+                            <h4 title={item.name}>{item.name}</h4>
+                            <p className="liked-price">{formatPrice(item.price)}</p>
+                          </div>
                         </div>
+                        <button className="add-btn" onClick={() => handleLikedAddToCart(item)} title="Add to Cart" >
+                          <HiOutlineShoppingCart size={25} />
+                        </button>
                       </div>
-                      <button className="add-btn" onClick={() => handleLikedAddToCart(item)} title="Add to Cart" >
-                        <HiOutlineShoppingCart size={25}  />
-                      </button>
-                    </div>
-                  ))
+                    ))}
+                  </div>
                 )}
               </div>
             )}

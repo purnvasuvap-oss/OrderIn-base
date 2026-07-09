@@ -456,7 +456,7 @@ const Login = () => {
         <>
         <div className="input-wrapper">
   <div className="name-icon-wrapper">
-    <span className="name-input-icon">🙍‍♂️</span>
+    <FiUser />
   </div>
 
   <input

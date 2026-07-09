@@ -460,13 +460,13 @@ function Menu({ setIsLoading }) {
         </div>
       </div>
 
-      <div className="chip-row" role="tablist" aria-label="Menu categories">
+      <div className="selection-row" role="tablist" aria-label="Menu categories">
         {categories.map((category) => (
           <button
             key={category}
             role="tab"
             aria-selected={selectedCategory === category}
-            className={`chip ${selectedCategory === category ? "active" : ""}`}
+            className={`selection ${selectedCategory === category ? "active" : ""}`}
             onClick={() => handleCategorySelect(category)}
           >
             {category === "all" ? "All" : category.charAt(0).toUpperCase() + category.slice(1)}
