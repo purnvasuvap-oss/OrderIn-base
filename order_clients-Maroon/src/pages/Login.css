@@ -1,0 +1,1547 @@
+/* ===== Login Page Styles ===== */
+.login-page {
+  display: flex;
+  position: relative;
+  height: 100vh;
+  background-color: #ffffff;
+  overflow: hidden;
+  font-family: "Poppins", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  padding-left: clamp(30px, 3.5vw, 80px);
+  gap: clamp(20px, 2vw, 40px);
+}
+
+/* Ensure the app root does not introduce scrollbars */
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
+/* Allow scrolling on smaller screens */
+@media (max-width: 900px) {
+  html, body, #root {
+    height: auto;
+    overflow-y: auto;
+  }
+}
+
+/* Left Section - narrow branding column */
+.login-left {
+  width: clamp(260px, 20vw, 380px);
+  min-width: 260px;
+  background-color: #e53935;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  padding: clamp(24px, 3vw, 48px) clamp(18px, 2.5vw, 40px);
+  box-shadow: 0 clamp(2px, 0.5vw, 6px) clamp(12px, 1.5vw, 30px) rgba(0,0,0,0.08);
+  margin-left: 0;
+  flex-shrink: 0;
+  border-radius: clamp(8px, 1vw, 16px);
+}
+
+.brand-section {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  margin-top: clamp(2px, 0.8vw, 8px);
+  gap: clamp(2px, 0.5vw, 6px);
+}
+
+.login-orderin-logo {
+  width: clamp(130px, 13vw, 240px);
+  height: auto;
+  margin: 0;
+  display: block;
+  object-fit: contain;
+}
+
+.by-row {
+  display: flex;
+  align-items: center;
+  gap: clamp(3px, 0.8vw, 6px);
+  justify-content: center;
+  margin: 0;
+  width: 100%;
+  flex-wrap: wrap;
+  padding: 0 clamp(4px, 1vw, 8px);
+  min-width: 0;
+}
+
+.by-text {
+  font-size: clamp(10px, 1.6vw, 14px);
+  opacity: 0.95;
+  white-space: nowrap;
+}
+
+.company-name-text {
+  font-size: clamp(10px, 1.6vw, 14px);
+  font-weight: 500;
+  margin: 0;
+  word-break: break-word;
+  white-space: normal;
+  line-height: 1.2;
+}
+
+.company-name {
+  font-size: 16px;
+  font-weight: 400;
+  margin-top: 8px;
+}
+
+.illustration {
+  text-align: center;
+  margin-bottom: 6px;
+}
+
+.circle-outer {
+  width: clamp(140px, 26vw, 320px);
+  height: clamp(140px, 26vw, 320px);
+  background-color: #d9d9d9; /* outer circle color */
+  border-radius: 50%;
+  display: block;
+  position: relative; /* container for absolutely positioned inner circle and image */
+  margin: clamp(12px, 1.5vw, 20px) auto clamp(10px, 1.2vw, 16px);
+  box-shadow: 0 8px 30px rgba(0,0,0,0.08) inset;
+  overflow: hidden; /* clip children so they remain inside outer circle */
+}
+
+.circle-inner {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 84%;
+  height: 84%;
+  background-color: rgba(67,160,71,0.46); /* inner circle with 46% opacity */
+  border-radius: 50%;
+  z-index: 1;
+}
+
+.food-img {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 110%; /* slightly bigger so it sits over the inner circle */
+  height: auto;
+  max-height: 110%;
+  object-fit: contain;
+  display: block;
+  z-index: 2; /* sit above the inner circle but clipped by outer */
+}
+
+.tagline {
+  font-size: clamp(11px, 1.6vw, 16px);
+  line-height: 1.4;
+  margin-top: clamp(8px, 1vw, 14px);
+  color: #ffffff;
+  font-weight: 500;
+}
+
+.tagline-below-contact {
+  display: none;
+}
+
+/* Right Section - main content */
+.login-right {
+  flex: 1 1 auto;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(24px, 3vw, 48px) clamp(20px, 4vw, 80px);
+  z-index: 1;
+  min-width: 240px;
+  gap: clamp(12px, 1.5vw, 20px);
+}
+
+.login-header {
+  text-align: center;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(4px, 0.8vw, 8px);
+}
+.restaurant-name {
+  font-family: "Black Ops One", "Poppins", sans-serif;
+  font-size: clamp(28px, 4.5vw, 48px);
+  margin: 0;
+  color: #222;
+  font-weight: 800;
+}
+.welcome-text {
+  font-size: clamp(14px, 2vw, 18px);
+  color: #666;
+  margin: 0;
+  font-weight: 400;
+}
+
+.login-card {
+  background-color: #fff;
+  padding: clamp(24px, 3vw, 40px);
+  border-radius: clamp(12px, 1.5vw, 16px);
+  box-shadow: 0 clamp(4px, 0.8vw, 16px) clamp(12px, 2vw, 40px) rgba(16,24,40,0.1);
+  text-align: center;
+  width: 100%;
+  max-width: clamp(300px, 90vw, 420px);
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(8px, 1.2vw, 12px);
+}
+
+.login-card h3 {
+  font-size: clamp(22px, 3vw, 28px);
+  margin: 0;
+  color: #222;
+  font-weight: 700;
+}
+.login-card .sub {
+  color: #8f9aa6;
+  margin: 0;
+  font-size: clamp(12px, 1.5vw, 15px);
+  line-height: 1.4;
+}
+
+.login-form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(12px, 1.5vw, 16px);
+}
+
+.login-form input {
+  width: 100%;
+  padding: clamp(11px, 1.3vw, 14px) clamp(12px, 1.5vw, 16px);
+  border-radius: clamp(8px, 1vw, 10px);
+  border: 1px solid #dee2e6;
+  outline: none;
+  font-size: clamp(13px, 1.4vw, 15px);
+  color: #222;
+  box-sizing: border-box;
+  transition: all 0.3s ease;
+}
+
+.login-form input::placeholder {
+  color: #aaa;
+}
+
+.login-form input:focus {
+  border-color: #e53935;
+  box-shadow: 0 0 0 3px rgba(229,57,53,0.08);
+}
+
+.primary-cta {
+  width: 100%;
+  background-color: #e53935;
+  color: #fff;
+  border: none;
+  padding: clamp(11px, 1.3vw, 13px) 0;
+  min-height: clamp(40px, 4.5vw, 48px);
+  font-size: clamp(13px, 1.4vw, 15px);
+  border-radius: clamp(8px, 1vw, 10px);
+  cursor: pointer;
+  font-weight: 600;
+  box-sizing: border-box;
+  transition: all 0.3s ease;
+}
+
+.primary-cta:hover {
+  background-color: #d32f2f;
+  transform: translateY(-1px);
+  box-shadow: 0 clamp(2px, 0.5vw, 6px) clamp(8px, 1.5vw, 16px) rgba(229,57,53,0.2);
+}
+
+.primary-cta:active {
+  transform: translateY(0);
+}
+
+/* small utility for screen-reader-only labels */
+.sr-only { position:absolute !important; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+
+/* Contact text at bottom-right - overlaid on red blob */
+.contact-info {
+  position: fixed;
+  bottom: clamp(40px, 5vw, 80px);
+  right: clamp(20px, 3vw, 60px);
+  font-size: clamp(11px, 1.1vw, 13px);
+  color: #ffffff !important;
+  text-align: right;
+  line-height: 1.6;
+  max-width: clamp(200px, 20vw, 300px);
+  z-index: 9999 !important;
+  pointer-events: auto;
+  display: block !important;
+  visibility: visible !important;
+}
+
+.contact-info p {
+  margin: 0;
+  padding: 0;
+  color: #ffffff !important;
+}
+
+/* Decorative blob SVG (replaces old .red-vector) */
+.red-blob {
+  position: fixed;
+  right: 0; /* pin to the right edge */
+  bottom: 0; /* pin to the bottom edge */
+  /* smaller footprint than before so it doesn't dominate the layout */
+  width: clamp(420px, 46vw, 900px);
+  height: auto;
+  max-height: 65vh;
+  transform: none;
+  z-index: 1;
+  pointer-events: none;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  filter: drop-shadow(0 -4px 12px rgba(0,0,0,0.04));
+}
+
+.red-blob img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 100vh;
+  object-fit: cover;
+  pointer-events: none;
+}
+
+/* Keep legacy helpers (no-op when using image) */
+.red-blob .v1, .red-blob .v3 { display: none; }
+.red-blob .v2 { display: none; }
+
+/* Restore CSS-based rounded vector curve */
+.red-vector {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: clamp(760px, 76vw, 1500px);
+  height: auto;
+  max-height: 100vh;
+  z-index: 0;
+  pointer-events: none;
+  display: block;
+}
+.red-vector path { filter: drop-shadow(0 -6px 12px rgba(0,0,0,0.06)); }
+
+/* ===== NARROW DESKTOP (1024px and below) ===== */
+@media (max-width: 1024px) {
+  .login-left {
+    width: clamp(220px, 18vw, 340px);
+    padding: clamp(20px, 2vw, 40px);
+  }
+
+  .login-orderin-logo {
+    width: clamp(130px, 15vw, 240px);
+  }
+
+  .circle-outer {
+    width: clamp(120px, 28vw, 300px);
+    height: clamp(120px, 28vw, 300px);
+  }
+
+  .login-card {
+    width: clamp(260px, 80vw, 380px);
+  }
+
+  .login-right {
+    padding: clamp(16px, 2vw, 40px) clamp(14px, 3vw, 60px);
+  }
+}
+
+/* ===== MEDIUM DESKTOP (1100px and below) - Prevent overcompression ===== */
+@media (max-width: 1100px) {
+  .login-page {
+    gap: 0;
+  }
+
+  .login-left {
+    flex-shrink: 0;
+  }
+}
+
+/* ===== DESKTOP (901px and above) - Keep contact info on right ===== */
+@media (min-width: 901px) {
+  .contact-info {
+    position: fixed !important;
+    bottom: clamp(40px, 5vw, 80px) !important;
+    right: clamp(20px, 3vw, 60px) !important;
+    left: auto !important;
+    width: auto !important;
+    background-color: transparent !important;
+    text-align: right;
+    z-index: 9999 !important;
+    display: block !important;
+    visibility: visible !important;
+    color: #ffffff !important;
+  }
+
+  .contact-info p {
+    color: #ffffff !important;
+  }
+
+  .tagline-below-contact {
+    display: none;
+  }
+
+  .red-blob {
+    display: block;
+    z-index: 1;
+  }
+}
+
+@media (max-width: 900px) {
+  /* iPad Air and all tablets: 900px and below */
+  * {
+    box-sizing: border-box;
+  }
+
+  html, body, #root {
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+  }
+
+  .login-page { 
+    flex-direction: column; 
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+    gap: 0;
+    overflow: visible !important;
+    overflow-y: auto;
+    height: auto;
+    position: static !important;
+  }
+
+  .login-left { 
+    width: 100vw;
+    position: relative;
+    left: calc(-50vw + 50%);
+    margin: 0 !important;
+    padding: clamp(16px, 3vw, 32px) !important;
+    border-radius: 0;
+    flex: 0 0 auto;
+    box-sizing: border-box;
+  }
+
+  .login-right { 
+    width: 100%;
+    padding: clamp(20px, 3vw, 32px) clamp(16px, 3vw, 28px);
+    flex: 1;
+    margin: 0;
+    box-sizing: border-box;
+  }
+
+  .circle-outer { display: none; }
+  .food-img { display: none; }
+  .illustration .tagline { display: none; }
+  
+  .tagline-below-contact {
+    display: block;
+    margin-top: 8px;
+    font-size: clamp(11px, 1.5vw, 14px);
+    line-height: 16px;
+    color: #ffffff;
+    text-align: center;
+    font-weight: 500;
+  }
+
+  .contact-info { 
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100vw !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: clamp(10px, 1.5vw, 14px) clamp(14px, 2.5vw, 20px) !important;
+    text-align: center;
+    font-size: clamp(10px, 1.5vw, 12px);
+    color: #ffffff;
+    background-color: #e53935;
+    z-index: 100;
+    box-sizing: border-box;
+    line-height: 1.3;
+  }
+}
+
+/* ===== LANDSCAPE TABLET (769px - 900px) ===== */
+@media (min-width: 769px) and (max-width: 900px) {
+  html, body, #root {
+    height: auto;
+    overflow-y: auto;
+  }
+
+  .login-page {
+    flex-direction: column;
+    padding-left: 0;
+    height: auto;
+    overflow-y: auto;
+    padding-bottom: clamp(60px, 8vw, 80px);
+  }
+
+  .login-left {
+    width: 100%;
+    max-height: 35vh;
+    padding: clamp(16px, 2.5vw, 28px);
+    margin-left: 0;
+    flex: 0 0 auto;
+    overflow-y: auto;
+  }
+
+  .login-orderin-logo {
+    width: clamp(150px, 18vw, 220px);
+  }
+
+  .circle-outer {
+    width: clamp(120px, 28vw, 260px);
+    height: clamp(120px, 28vw, 260px);
+    display: none;
+  }
+
+  .food-img {
+    display: none;
+  }
+
+  .illustration .tagline {
+    display: none;
+  }
+
+  .login-right {
+    flex: 1;
+    padding: clamp(16px, 2.5vw, 28px) clamp(12px, 2.5vw, 24px) clamp(60px, 8vw, 80px) clamp(12px, 2.5vw, 24px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .restaurant-name {
+    font-size: clamp(24px, 3.5vw, 32px);
+  }
+
+  .welcome-text {
+    font-size: clamp(13px, 1.8vw, 16px);
+  }
+
+  .login-card {
+    width: clamp(260px, 85vw, 380px);
+    max-width: 90vw;
+    padding: clamp(16px, 2.5vw, 24px) clamp(14px, 2.5vw, 20px);
+  }
+
+  .login-card h3 {
+    font-size: clamp(16px, 2.3vw, 20px);
+  }
+
+  .login-form input {
+    padding: clamp(9px, 1.2vw, 12px);
+    font-size: clamp(11px, 1.3vw, 14px);
+  }
+
+  .primary-cta {
+    padding: clamp(8px, 1.2vw, 11px) 0;
+    font-size: clamp(11px, 1.3vw, 14px);
+    min-height: clamp(36px, 3.5vw, 40px);
+  }
+
+  .tagline-below-contact {
+    display: block;
+    margin-top: clamp(8px, 1.2vw, 10px);
+    font-size: clamp(10px, 1.2vw, 12px);
+    line-height: 1.3;
+    color: #ffffff;
+    text-align: center;
+    font-weight: 500;
+  }
+
+  .contact-info {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    margin: 0;
+    padding: clamp(10px, 1.3vw, 14px) clamp(12px, 2vw, 20px);
+    text-align: center;
+    font-size: clamp(9px, 1.2vw, 11px);
+    color: #ffffff;
+    background-color: #e53935;
+    z-index: 100;
+    box-sizing: border-box;
+    line-height: 1.3;
+  }
+
+  .red-blob {
+    display: none;
+  }
+
+  .red-vector {
+    display: none;
+  }
+}
+
+/* ===== TABLET RESPONSIVE (768px and below) ===== */
+@media (max-width: 768px) {
+  /* Inherits the 900px breakpoint styles, can add mobile-specific overrides here */
+  .login-left {
+    padding: clamp(16px, 3vw, 28px);
+    max-height: 32vh;
+    overflow-y: auto;
+  }
+
+  .login-right {
+    padding: clamp(16px, 2.5vw, 28px) clamp(12px, 2.5vw, 24px) clamp(60px, 8vw, 80px) clamp(12px, 2.5vw, 24px);
+  }
+}
+
+/* ===== MID-WIDTH SHORT MOBILE (e.g. Surface Duo 540x720) ===== */
+@media (min-width: 481px) and (max-width: 600px) and (max-height: 760px) {
+  html, body, #root {
+    height: auto;
+    overflow-y: auto;
+  }
+
+  .login-page {
+    height: 100vh;
+    overflow-y: auto;
+    flex-direction: column;
+    padding: 0;
+    padding-bottom: clamp(50px, 8vw, 60px);
+  }
+
+  .login-left {
+    max-height: 22vh;
+    flex: 0 0 auto;
+    padding: clamp(8px, 1.5vw, 12px);
+    justify-content: flex-start;
+    gap: clamp(2px, 0.5vw, 4px);
+  }
+
+  .login-orderin-logo {
+    width: clamp(120px, 16vw, 150px);
+    margin: 0 auto clamp(4px, 0.8vw, 8px);
+  }
+
+  .illustration {
+    transform: scale(0.85);
+    transform-origin: top center;
+    margin-bottom: -8px;
+    flex-shrink: 0;
+  }
+
+  .circle-outer {
+    width: clamp(100px, 18vw, 130px);
+    height: clamp(100px, 18vw, 130px);
+    margin: clamp(4px, 0.8vw, 8px) auto clamp(3px, 0.6vw, 6px);
+  }
+
+  .food-img {
+    width: clamp(95px, 17vw, 125px);
+    height: clamp(95px, 17vw, 125px);
+  }
+
+  .login-right {
+    flex: 1;
+    padding: clamp(12px, 2vw, 16px) clamp(10px, 1.5vw, 14px) clamp(50px, 8vw, 60px) clamp(10px, 1.5vw, 14px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    overflow: visible;
+  }
+
+  .login-header {
+    margin-bottom: clamp(8px, 1.2vw, 12px);
+  }
+
+  .restaurant-name {
+    font-size: clamp(20px, 4vw, 28px);
+    font-weight: 700;
+  }
+
+  .welcome-text {
+    font-size: clamp(12px, 2vw, 14px);
+    margin-top: clamp(2px, 0.4vw, 4px);
+  }
+
+  .login-card {
+    width: 100%;
+    max-width: clamp(250px, 85vw, 320px);
+    padding: clamp(12px, 2vw, 18px) clamp(12px, 2vw, 16px);
+  }
+
+  .login-card h3 {
+    font-size: clamp(16px, 3vw, 20px);
+    margin-bottom: clamp(4px, 0.6vw, 6px);
+  }
+
+  .login-card .sub {
+    margin-bottom: clamp(8px, 1.2vw, 10px);
+    font-size: clamp(11px, 1.8vw, 13px);
+  }
+
+  .login-form input {
+    padding: clamp(8px, 1.2vw, 10px);
+    margin-bottom: clamp(7px, 1.2vw, 10px);
+    font-size: clamp(12px, 1.8vw, 13px);
+  }
+
+  .primary-cta {
+    padding: clamp(7px, 1.2vw, 10px) 0;
+    min-height: clamp(36px, 7vw, 40px);
+    font-size: clamp(12px, 1.8vw, 13px);
+  }
+
+  .contact-info {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    margin: 0;
+    padding: clamp(8px, 1.2vw, 10px) clamp(10px, 2vw, 14px);
+    text-align: center;
+    font-size: clamp(9px, 1.5vw, 11px);
+    color: #ffffff;
+    background-color: #e53935;
+    z-index: 100;
+    box-sizing: border-box;
+    line-height: 1.2;
+  }
+
+  .by-text {
+    font-size: clamp(9px, 1.6vw, 11px);
+  }
+
+  .company-name-text {
+    font-size: clamp(9px, 1.6vw, 11px);
+  }
+
+  .tagline {
+    font-size: clamp(9px, 1.5vw, 10px);
+    line-height: 1.2;
+    margin-top: clamp(2px, 0.4vw, 4px);
+  }
+}
+
+/* ===== MOBILE RESPONSIVE (480px and below) ===== */
+@media (max-width: 480px) {
+  html, body, #root {
+    height: auto;
+    overflow-y: auto;
+  }
+
+  .login-page {
+    height: 100vh;
+    flex-direction: column;
+    padding: 0;
+    padding-bottom: clamp(70px, 12vw, 90px);
+    display: flex;
+    padding-left: 0;
+  }
+
+  .login-left {
+    width: 100%;
+    padding: clamp(12px, 2.5vw, 20px);
+    margin-left: 0;
+    order: -1;
+    flex: 0 0 auto;
+    max-height: 30vh;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+  }
+
+  .brand-section {
+    margin-top: 0;
+    flex-shrink: 0;
+  }
+
+  .login-orderin-logo {
+    width: clamp(120px, 18vw, 160px);
+    margin: 0 auto clamp(6px, 1vw, 10px);
+  }
+
+  .illustration {
+    flex-shrink: 0;
+  }
+
+  .circle-outer {
+    width: clamp(100px, 20vw, 150px);
+    height: clamp(100px, 20vw, 150px);
+    margin: clamp(8px, 1.5vw, 12px) auto clamp(6px, 1vw, 10px);
+  }
+
+  .food-img {
+    width: clamp(80px, 18vw, 120px);
+    height: clamp(80px, 18vw, 120px);
+  }
+
+  .tagline {
+    font-size: clamp(10px, 2vw, 12px);
+    line-height: 1.3;
+    margin-top: clamp(4px, 0.8vw, 8px);
+  }
+
+  .by-row {
+    gap: clamp(4px, 1vw, 6px);
+    margin-bottom: clamp(4px, 0.8vw, 6px);
+  }
+
+  .by-text {
+    font-size: clamp(10px, 1.8vw, 12px);
+  }
+
+  .company-name-text {
+    font-size: clamp(10px, 1.8vw, 12px);
+  }
+
+  .login-right {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: clamp(12px, 2vw, 20px) clamp(10px, 2vw, 16px) clamp(70px, 12vw, 100px) clamp(10px, 2vw, 16px);
+    overflow: visible;
+    gap: clamp(8px, 1.5vw, 12px);
+  }
+
+  .login-header {
+    text-align: center;
+    margin: 0;
+  }
+
+  .restaurant-name {
+    font-size: clamp(22px, 5vw, 28px);
+    margin: 0;
+    font-weight: 700;
+  }
+
+  .welcome-text {
+    font-size: clamp(12px, 2.5vw, 14px);
+    margin-top: clamp(4px, 0.8vw, 6px);
+    color: #666;
+  }
+
+  .login-card {
+    width: 100%;
+    max-width: clamp(260px, 90vw, 340px);
+    padding: clamp(16px, 2.5vw, 24px) clamp(14px, 2.5vw, 20px);
+    border-radius: clamp(8px, 2vw, 12px);
+    box-sizing: border-box;
+    box-shadow: 0 clamp(4px, 1vw, 8px) clamp(12px, 2.5vw, 24px) rgba(16,24,40,0.06);
+  }
+
+  .login-card h3 {
+    font-size: clamp(16px, 3.5vw, 20px);
+    margin: 0 0 clamp(3px, 0.6vw, 6px) 0;
+    font-weight: 700;
+  }
+
+  .login-card .sub {
+    font-size: clamp(11px, 2vw, 13px);
+    margin-bottom: clamp(10px, 1.5vw, 14px);
+    color: #8f9aa6;
+  }
+
+  .login-form input {
+    width: 100%;
+    padding: clamp(9px, 1.5vw, 12px);
+    border-radius: clamp(6px, 1.5vw, 8px);
+    border: 1px solid #e6e9ee;
+    margin-bottom: clamp(9px, 1.5vw, 12px);
+    font-size: clamp(13px, 2vw, 14px);
+    box-sizing: border-box;
+    color: #222;
+  }
+
+  .login-form input:focus {
+    border-color: #e53935;
+    box-shadow: 0 0 0 2px rgba(229,57,53,0.05);
+  }
+
+  .primary-cta {
+    width: 100%;
+    padding: clamp(9px, 1.5vw, 12px) 0;
+    font-size: clamp(12px, 2vw, 14px);
+    border-radius: clamp(6px, 1.5vw, 8px);
+    min-height: clamp(38px, 9vw, 44px);
+    background-color: #e53935;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+  }
+
+  .primary-cta:hover {
+    background-color: #d32f2f;
+  }
+
+  .contact-info {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+    padding: clamp(10px, 1.5vw, 12px) clamp(12px, 2vw, 16px);
+    text-align: center;
+    font-size: clamp(9px, 1.6vw, 10px);
+    color: #ffffff;
+    background-color: #e53935;
+    z-index: 100;
+    box-sizing: border-box;
+    line-height: 1.3;
+    top: auto;
+    border-radius: 0;
+  }
+
+  .red-vector {
+    display: none;
+  }
+
+  .red-blob {
+    display: none;
+  }
+
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="number"] {
+    font-size: clamp(13px, 2vw, 14px) !important;
+  }
+}
+
+/* ===== SMALL-HEIGHT MOBILE (e.g. iPhone SE 375x667) ===== */
+@media (max-width: 380px) and (max-height: 700px) {
+  .login-left {
+    max-height: 28vh;
+    padding: clamp(8px, 1.5vw, 12px);
+    flex-shrink: 0;
+  }
+
+  .brand-section {
+    margin-top: 0;
+  }
+
+  .login-orderin-logo {
+    width: clamp(100px, 15vw, 130px);
+    margin: 0 auto clamp(4px, 0.8vw, 8px);
+  }
+
+  .circle-outer {
+    width: clamp(80px, 18vw, 110px);
+    height: clamp(80px, 18vw, 110px);
+    margin: clamp(6px, 1vw, 10px) auto clamp(4px, 0.8vw, 8px);
+  }
+
+  .food-img {
+    width: clamp(70px, 16vw, 100px);
+    height: clamp(70px, 16vw, 100px);
+  }
+
+  .tagline {
+    font-size: clamp(9px, 1.8vw, 11px);
+    line-height: 1.2;
+    margin-top: clamp(2px, 0.5vw, 4px);
+  }
+
+  .by-text {
+    font-size: clamp(9px, 1.6vw, 11px);
+  }
+
+  .company-name-text {
+    font-size: clamp(9px, 1.6vw, 11px);
+  }
+
+  .login-header {
+    margin-bottom: clamp(8px, 1.5vw, 12px);
+    margin-top: 0;
+  }
+
+  .restaurant-name {
+    font-size: clamp(20px, 4.5vw, 28px);
+    font-weight: 700;
+  }
+
+  .welcome-text {
+    font-size: clamp(11px, 2vw, 13px);
+    margin-top: clamp(2px, 0.5vw, 4px);
+  }
+
+  .login-card {
+    width: 100%;
+    max-width: clamp(250px, 85vw, 320px);
+    padding: clamp(14px, 2vw, 20px) clamp(12px, 2vw, 16px);
+  }
+
+  .login-card h3 {
+    font-size: clamp(15px, 3vw, 18px);
+    margin-bottom: clamp(3px, 0.5vw, 4px);
+  }
+
+  .login-card .sub {
+    font-size: clamp(10px, 1.8vw, 12px);
+    margin-bottom: clamp(8px, 1.2vw, 10px);
+  }
+
+  .login-form input {
+    padding: clamp(8px, 1.2vw, 10px);
+    margin-bottom: clamp(8px, 1.2vw, 10px);
+    font-size: clamp(12px, 1.8vw, 13px);
+  }
+
+  .primary-cta {
+    min-height: clamp(36px, 8vw, 40px);
+    font-size: clamp(11px, 1.8vw, 12px);
+    padding: clamp(6px, 1vw, 8px) 0;
+  }
+
+  .contact-info {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    margin: 0;
+    padding: clamp(8px, 1.5vw, 10px) clamp(12px, 2vw, 16px);
+    text-align: center;
+    font-size: clamp(9px, 1.6vw, 10px);
+    color: #ffffff;
+    background-color: #e53935;
+    z-index: 100;
+    box-sizing: border-box;
+    line-height: 1.2;
+  }
+
+  .login-right {
+    padding: clamp(12px, 1.5vw, 16px) clamp(10px, 1.5vw, 14px) clamp(60px, 10vw, 80px) clamp(10px, 1.5vw, 14px);
+  }
+}
+
+/* ===== VERY SMALL PHONES (360px and below) ===== */
+@media (max-width: 360px) {
+  .login-page {
+    height: 100vh;
+    padding-left: 0;
+  }
+
+  .login-left {
+    max-height: 26vh;
+    padding: clamp(8px, 1.2vw, 10px);
+    flex-shrink: 0;
+  }
+
+  .login-orderin-logo {
+    width: clamp(90px, 14vw, 120px);
+    margin: 0 auto clamp(3px, 0.6vw, 6px);
+  }
+
+  .circle-outer {
+    width: clamp(70px, 16vw, 95px);
+    height: clamp(70px, 16vw, 95px);
+    margin: clamp(4px, 0.8vw, 8px) auto clamp(3px, 0.6vw, 6px);
+  }
+
+  .food-img {
+    width: clamp(60px, 14vw, 85px);
+    height: clamp(60px, 14vw, 85px);
+  }
+
+  .restaurant-name {
+    font-size: clamp(18px, 4vw, 22px);
+    font-weight: 700;
+  }
+
+  .welcome-text {
+    font-size: clamp(10px, 1.8vw, 12px);
+    margin-top: clamp(2px, 0.4vw, 3px);
+  }
+
+  .login-right {
+    flex: 1;
+    padding: clamp(10px, 1.2vw, 12px) clamp(8px, 1.2vw, 10px) clamp(55px, 10vw, 70px) clamp(8px, 1.2vw, 10px);
+    gap: clamp(6px, 1vw, 10px);
+  }
+
+  .login-card {
+    width: 100%;
+    max-width: clamp(240px, 85vw, 300px);
+    padding: clamp(12px, 1.8vw, 16px) clamp(10px, 1.5vw, 14px);
+  }
+
+  .login-card h3 {
+    font-size: clamp(14px, 2.8vw, 16px);
+    margin-bottom: clamp(2px, 0.4vw, 3px);
+  }
+
+  .login-card .sub {
+    font-size: clamp(9px, 1.6vw, 11px);
+    margin-bottom: clamp(8px, 1.2vw, 10px);
+  }
+
+  .login-form input {
+    padding: clamp(7px, 1vw, 9px);
+    margin-bottom: clamp(7px, 1vw, 9px);
+    font-size: clamp(11px, 1.6vw, 12px);
+  }
+
+  .primary-cta {
+    min-height: clamp(34px, 7vw, 38px);
+    font-size: clamp(10px, 1.6vw, 12px);
+    padding: clamp(5px, 0.8vw, 7px) 0;
+  }
+
+  .contact-info {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    margin: 0;
+    padding: clamp(6px, 1.2vw, 8px) clamp(10px, 1.5vw, 12px);
+    text-align: center;
+    font-size: clamp(8px, 1.4vw, 9px);
+    color: #ffffff;
+    background-color: #e53935;
+    z-index: 100;
+    box-sizing: border-box;
+    line-height: 1.2;
+  }
+
+  .tagline {
+    font-size: clamp(8px, 1.5vw, 10px);
+    line-height: 1.2;
+    margin-top: clamp(2px, 0.4vw, 3px);
+  }
+
+  .by-text {
+    font-size: clamp(8px, 1.4vw, 9px);
+  }
+
+  .company-name-text {
+    font-size: clamp(8px, 1.4vw, 9px);
+    white-space: normal;
+  }
+}
+
+/* ===== FORCE FULL-WIDTH ON TABLETS & MOBILE ===== */
+@media (max-width: 768px) {
+  .login-page {
+    width: 100% !important;
+    padding: 0 !important;
+    padding-bottom: clamp(60px, 8vw, 80px) !important;
+    margin: 0 !important;
+    gap: 0 !important;
+    overflow-x: hidden !important;
+    box-sizing: border-box !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  .login-left {
+    width: 100% !important;
+    position: relative !important;
+    left: calc(-50vw + 50%) !important;
+    right: calc(-50vw + 50%) !important;
+    width: 100vw !important;
+    margin: 0 !important;
+    padding: clamp(16px, 3vw, 28px) !important;
+    box-sizing: border-box !important;
+    border-radius: 0 !important;
+    flex: 0 0 auto !important;
+  }
+
+  .login-right {
+    width: 100% !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
+    flex: 1 !important;
+  }
+
+  .contact-info {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: calc(100% + 0px) !important;
+    margin: 0 !important;
+    padding: clamp(10px, 1.5vw, 12px) clamp(12px, 2vw, 16px) !important;
+    box-sizing: border-box !important;
+    z-index: 100 !important;
+  }
+
+  html, body {
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-sizing: border-box !important;
+    overflow-x: hidden !important;
+  }
+
+  #root {
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-sizing: border-box !important;
+    overflow-x: hidden !important;
+  }
+}
+/* ===== SUB-LOGIN PAGES (Menu, Finance, Inventory) ===== */
+
+/* Desktop base styles */
+.sub-login {
+  display: flex;
+  position: relative;
+  height: 100vh;
+  background-color: #ffffff;
+  overflow: hidden;
+  font-family: "Poppins", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  padding-left: clamp(30px, 3.5vw, 80px);
+  gap: clamp(20px, 2vw, 40px);
+}
+
+.sub-login-left {
+  width: clamp(260px, 20vw, 380px);
+  min-width: 260px;
+  background-color: #e53935;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  padding: clamp(24px, 3vw, 48px) clamp(18px, 2.5vw, 40px);
+  box-shadow: 0 clamp(2px, 0.5vw, 6px) clamp(12px, 1.5vw, 30px) rgba(0,0,0,0.08);
+  margin-left: 0;
+  flex-shrink: 0;
+  border-radius: clamp(8px, 1vw, 16px);
+}
+
+.sub-brand-section {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  margin-top: clamp(2px, 0.8vw, 8px);
+  gap: clamp(2px, 0.5vw, 6px);
+  min-width: 0;
+}
+
+.sub-orderin-logo {
+  width: clamp(130px, 13vw, 240px);
+  height: auto;
+  margin: 0;
+  display: block;
+  object-fit: contain;
+}
+
+.sub-by-row {
+  display: flex;
+  align-items: center;
+  gap: clamp(3px, 0.8vw, 6px);
+  justify-content: center;
+  margin: 0;
+  width: 100%;
+  flex-wrap: wrap;
+  padding: 0 clamp(4px, 1vw, 8px);
+  min-width: 0;
+}
+
+.sub-by-text {
+  font-size: clamp(10px, 1.6vw, 14px);
+  opacity: 0.95;
+  white-space: nowrap;
+}
+
+.sub-company-name-text {
+  font-size: clamp(10px, 1.6vw, 14px);
+  font-weight: 500;
+  margin: 0;
+  word-break: break-word;
+  white-space: normal;
+  line-height: 1.2;
+}
+
+.sub-illustration {
+  text-align: center;
+  margin-bottom: 6px;
+}
+
+.sub-circle-outer {
+  width: clamp(140px, 26vw, 320px);
+  height: clamp(140px, 26vw, 320px);
+  background-color: #d9d9d9;
+  border-radius: 50%;
+  display: block;
+  position: relative;
+  margin: clamp(12px, 1.5vw, 20px) auto clamp(10px, 1.2vw, 16px);
+  box-shadow: 0 8px 30px rgba(0,0,0,0.08) inset;
+  overflow: hidden;
+}
+
+.sub-circle-inner {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 95%;
+  height: 95%;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.3);
+}
+
+.sub-food-img {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 60%;
+  height: 60%;
+  object-fit: contain;
+}
+
+.sub-tagline {
+  font-size: clamp(10px, 1.2vw, 14px);
+  color: white;
+  text-align: center;
+  line-height: 1.4;
+  margin: 2px 0 0 0;
+  font-weight: 500;
+}
+
+.sub-login-right {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(20px, 2.5vw, 40px) clamp(16px, 3vw, 60px);
+  position: relative;
+  z-index: 2;
+}
+
+.sub-login-header {
+  text-align: center;
+  margin: 0 0 clamp(12px, 1.5vw, 24px) 0;
+}
+
+.sub-restaurant-name {
+  font-size: clamp(28px, 4.5vw, 48px);
+  margin: 0;
+  font-weight: 700;
+  color: #222;
+}
+
+.sub-welcome-text {
+  font-size: clamp(12px, 1.8vw, 16px);
+  margin-top: clamp(4px, 0.8vw, 8px);
+  color: #666;
+}
+
+.sub-login-card {
+  background: white;
+  border-radius: clamp(8px, 1vw, 16px);
+  max-width: clamp(300px, 90vw, 420px);
+  padding: clamp(24px, 3vw, 40px);
+  box-shadow: 0 clamp(4px, 0.8vw, 8px) clamp(12px, 2vw, 24px) rgba(16,24,40,0.06);
+}
+
+.sub-login-card h3 {
+  font-size: clamp(18px, 2.5vw, 24px);
+  margin: 0 0 clamp(8px, 1vw, 12px) 0;
+  font-weight: 700;
+  color: #222;
+}
+
+.sub-login-card .sub {
+  font-size: clamp(11px, 1.4vw, 14px);
+  margin-bottom: clamp(12px, 1.5vw, 16px);
+  color: #8f9aa6;
+}
+
+.sub-login-form {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(12px, 1.5vw, 16px);
+}
+
+.sub-login-form input {
+  width: 100%;
+  padding: clamp(11px, 1.3vw, 14px);
+  border-radius: clamp(6px, 0.8vw, 12px);
+  border: 1px solid #e6e9ee;
+  font-size: clamp(13px, 1.4vw, 15px);
+  box-sizing: border-box;
+  color: #222;
+  font-family: "Poppins", system-ui, -apple-system, "Segoe UI";
+}
+
+.sub-login-form input:focus {
+  border-color: #e53935;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(229,57,53,0.05);
+}
+
+.sub-primary-cta {
+  min-height: clamp(40px, 4.5vw, 48px);
+  padding: clamp(11px, 1.3vw, 13px) 0;
+  background-color: #e53935;
+  color: #fff;
+  border: none;
+  border-radius: clamp(6px, 0.8vw, 12px);
+  font-size: clamp(13px, 1.4vw, 15px);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.sub-primary-cta:hover {
+  background-color: #d32f2f;
+  transform: translateY(-2px);
+}
+
+.sub-primary-cta:active {
+  transform: translateY(0);
+}
+
+.sub-contact-info {
+  position: absolute;
+  bottom: clamp(14px, 1.8vw, 24px);
+  right: clamp(16px, 2vw, 36px);
+  font-size: clamp(11px, 1.1vw, 13px);
+  color: #ffffff;
+  text-align: right;
+  line-height: 1.5;
+  max-width: clamp(200px, 18vw, 280px);
+}
+
+.sub-tagline-below-contact {
+  display: none;
+}
+
+.sub-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0,0,0,0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* Tablet and Mobile Responsive */
+@media (max-width: 900px) {
+  /* Tablets and iPads: 900px and below */
+  * {
+    box-sizing: border-box;
+  }
+
+  html, body, #root {
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+  }
+
+  .sub-login { 
+    flex-direction: column; 
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+    gap: 0;
+    overflow: visible !important;
+    overflow-y: auto;
+    height: auto;
+    position: static !important;
+  }
+
+  .sub-login-left { 
+    width: 100vw;
+    position: relative;
+    left: calc(-50vw + 50%);
+    margin: 0 !important;
+    padding: clamp(16px, 3vw, 32px) !important;
+    border-radius: 0;
+    flex: 0 0 auto;
+    box-sizing: border-box;
+  }
+
+  .sub-login-right { 
+    width: 100%;
+    padding: clamp(20px, 3vw, 32px) clamp(16px, 3vw, 28px);
+    flex: 1;
+    margin: 0;
+    box-sizing: border-box;
+    gap: 0;
+    position: relative;
+    z-index: 1;
+  }
+
+  .sub-circle-outer { display: none; }
+  .sub-food-img { display: none; }
+  .sub-illustration .sub-tagline { display: none; }
+  
+  .sub-tagline-below-contact {
+    display: block !important;
+    margin-top: 8px;
+    font-size: clamp(11px, 1.5vw, 14px);
+    line-height: 16px;
+    color: #ffffff;
+    text-align: center;
+    font-weight: 500;
+  }
+
+  .sub-contact-info { 
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100vw !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: clamp(10px, 1.5vw, 14px) clamp(14px, 2.5vw, 20px) !important;
+    text-align: center;
+    font-size: clamp(10px, 1.5vw, 12px);
+    color: #ffffff;
+    background-color: #e53935;
+    z-index: 100;
+    box-sizing: border-box;
+    line-height: 1.3;
+  }
+}
+
+@media (max-width: 768px) {
+  .sub-login-left {
+    padding: clamp(16px, 3vw, 28px);
+    max-height: 32vh;
+    overflow-y: auto;
+  }
+
+  .sub-login-right {
+    padding: clamp(16px, 2.5vw, 28px) clamp(12px, 2.5vw, 24px) clamp(60px, 8vw, 80px) clamp(12px, 2.5vw, 24px);
+  }
+
+  .sub-login-card {
+    width: 100%;
+    max-width: clamp(280px, 90vw, 420px);
+    margin: 0 auto;
+  }
+}
