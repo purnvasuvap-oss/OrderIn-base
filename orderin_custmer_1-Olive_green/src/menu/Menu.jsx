@@ -31,7 +31,7 @@ const withTimeout = (promise, ms) => {
 
 const loadActivePromotions = async () => {
   try {
-    const snap = await getDocs(collection(db, "Restaurant", "orderin_restaurant_2", "promotions"));
+    const snap = await getDocs(collection(db, "Restaurant", "orderin_restaurant_3", "promotions"));
     const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
     const now = Date.now();
     return list.filter((p) => {
@@ -142,7 +142,7 @@ function Menu({ setIsLoading }) {
     let alive = true;
     (async () => {
       try {
-        const snap = await getDoc(doc(db, "Restaurant", "orderin_restaurant_2"));
+        const snap = await getDoc(doc(db, "Restaurant", "orderin_restaurant_3"));
         if (alive && snap.exists() && snap.data().name) {
           setRestaurantName(snap.data().name);
         }
@@ -170,7 +170,7 @@ function Menu({ setIsLoading }) {
     const fetchMenu = async () => {
       try {
         setIsLoading(true);
-        const snap = await withTimeout(getDocs(collection(db, "Restaurant", "orderin_restaurant_2", "menu")), 8000);
+        const snap = await withTimeout(getDocs(collection(db, "Restaurant", "orderin_restaurant_3", "menu")), 8000);
         const data = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
         if (!alive) return;
         setFetchedProducts(data);

@@ -31,7 +31,7 @@ export const deleteUnpaidOrders = async (phoneNumber) => {
       return 0;
     }
 
-    const customerRef = doc(db, "Restaurant", "orderin_restaurant_2", "customers", phoneNumber);
+    const customerRef = doc(db, "Restaurant", "orderin_restaurant_3", "customers", phoneNumber);
     const customerSnap = await getDoc(customerRef);
 
     if (!customerSnap.exists()) {
@@ -80,7 +80,7 @@ export const deleteUnpaidOrderById = async (phoneNumber, orderId) => {
       return false;
     }
 
-    const customerRef = doc(db, "Restaurant", "orderin_restaurant_2", "customers", phoneNumber);
+    const customerRef = doc(db, "Restaurant", "orderin_restaurant_3", "customers", phoneNumber);
     const customerSnap = await getDoc(customerRef);
 
     if (!customerSnap.exists()) {

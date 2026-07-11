@@ -91,7 +91,7 @@ function ManualOrderModal({ isOpen, onClose, menuItems, onOrderCreated }) {
       const customerRef = doc(
         db,
         "Restaurant",
-        "orderin_restaurant_1",
+        "orderin_restaurant_3",
         "customers",
         phoneNumber,
       );
@@ -377,7 +377,7 @@ function Orders() {
         const menuRef = collection(
           db,
           "Restaurant",
-          "orderin_restaurant_1",
+          "orderin_restaurant_3",
           "menu",
         );
         const menuSnapshot = await getDocs(menuRef);

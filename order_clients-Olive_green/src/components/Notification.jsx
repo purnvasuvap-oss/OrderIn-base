@@ -18,7 +18,7 @@ const Notification = ({ onClose }) => {
       setLoadingFeedbacks(true);
       try {
         console.log('🔍 Fetching feedbacks from Firestore...');
-        const customersRef = collection(db, 'Restaurant', 'orderin_restaurant_1', 'customers');
+        const customersRef = collection(db, 'Restaurant', 'orderin_restaurant_3', 'customers');
         const snapshot = await getDocs(customersRef);
 
         console.log('📊 Total customer documents:', snapshot.docs.length);

@@ -47,7 +47,7 @@ export const getAndIncrementDailyCounter = async (date = new Date()) => {
     const counterRef = doc(
       db,
       "Restaurant",
-      "orderin_restaurant_2",
+      "orderin_restaurant_3",
       "dailyOrderCounters",
       dateKey
     );
@@ -132,7 +132,7 @@ export const resetDailyCounter = async (date = new Date()) => {
     const counterRef = doc(
       db,
       "Restaurant",
-      "orderin_restaurant_2",
+      "orderin_restaurant_3",
       "dailyOrderCounters",
       dateKey
     );

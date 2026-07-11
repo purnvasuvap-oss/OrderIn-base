@@ -18,9 +18,9 @@ body {
 }
 
 :root {
-  --primary-red: #e53935;
+  --primary-Olive: #636E2C;
 
-  --secondary-green: #43a047;
+  --secondary-green: #3F441C;
 
   --bg-light-neutral: #f5f7fa;
 
@@ -51,7 +51,7 @@ body {
   box-sizing: border-box;
 
   /* background image should reference the public/images folder */
-  background-image: url("/images/Vectors.png");
+  background-image: url("./landingpage/Vector.svg");
 
   background-size: contain;
 
@@ -156,8 +156,8 @@ body {
 
 .btn-back {
   background: #fff;
-  border: 2px solid #f17b7b;
-  color: #d24b4b;
+  border: 2px solid #3F441C;
+  color: #636E2C;
   padding: 8px 14px;
   border-radius: 8px;
   font-weight: 600;
@@ -169,11 +169,11 @@ body {
 }
 
 .btn-back:hover {
-  background-color: rgba(229, 57, 53, 0.05);
+  background-color: rgba(53, 229, 91, 0.05);
 }
 
 .btn-primary {
-  background-color: var(--primary-red);
+  background-color: var(--primary-Olive);
 
   color: var(--surface-white);
 
@@ -193,7 +193,7 @@ body {
 }
 
 .btn-primary:hover {
-  background-color: #c62828;
+  background-color: #3F441C;
 }
 
 .menu-save-btn {
@@ -221,7 +221,7 @@ body {
   margin: 8px 0 14px;
   padding: 12px 14px;
   border: 1px solid rgba(229, 57, 53, 0.18);
-  border-left: 4px solid var(--primary-red);
+  border-left: 4px solid var(--primary-Olive);
   border-radius: 10px;
   background: #fff7f2;
   color: var(--text-primary);
@@ -231,7 +231,7 @@ body {
 .menu-edit-notice strong {
   display: block;
   margin-bottom: 3px;
-  color: var(--primary-red);
+  color: var(--primary-Olive);
   font-size: 14px;
   font-weight: 800;
 }
@@ -264,7 +264,7 @@ body {
 .menu-editor-kicker {
   display: block;
   margin-bottom: 4px;
-  color: var(--primary-red);
+  color: var(--primary-Olive);
   font-size: 12px;
   font-weight: 800;
   letter-spacing: 0;
@@ -326,7 +326,7 @@ body {
 }
 
 .menu-editor-control:focus {
-  border-color: var(--primary-red);
+  border-color: var(--primary-Olive);
   box-shadow: 0 0 0 3px rgba(229, 57, 53, 0.1);
 }
 
@@ -403,7 +403,7 @@ body {
   height: 28px;
   border: 0;
   border-radius: 999px;
-  background: var(--secondary-green);
+  background: green;
   cursor: pointer;
   transition: background 0.2s ease;
 }
@@ -421,7 +421,7 @@ body {
 }
 
 .menu-type-switch.is-nonveg {
-  background: var(--primary-red);
+  background: red;
 }
 
 .menu-type-switch.is-nonveg span {
@@ -511,10 +511,10 @@ body {
   width: fit-content;
   min-height: 38px;
   padding: 8px 14px;
-  border: 1px dashed rgba(229, 57, 53, 0.55);
+  border: 1px dashed rgba(53, 229, 147, 0.55);
   border-radius: 9px;
   background: rgba(229, 57, 53, 0.06);
-  color: var(--primary-red);
+  color: var(--primary-Olive);
   font-size: 13px;
   font-weight: 900;
   cursor: pointer;
@@ -550,7 +550,7 @@ body {
 }
 
 .btn-category-active {
-  background-color: var(--primary-red);
+  background-color: var(--primary-Olive);
 
   color: var(--surface-white);
 
@@ -582,7 +582,7 @@ body {
 .menu-table tbody tr.menu-row-editing,
 .menu-table tbody tr.menu-row-editing:hover {
   background: #fff8f2;
-  box-shadow: inset 4px 0 0 var(--primary-red);
+  box-shadow: inset 4px 0 0 var(--primary-Olive);
 }
 
 .menu-row-editing td {
@@ -612,7 +612,7 @@ body {
 }
 
 .menu-edit-field:focus {
-  border-color: var(--primary-red);
+  border-color: var(--primary-Olive);
   box-shadow: 0 0 0 3px rgba(229, 57, 53, 0.1);
 }
 
@@ -638,7 +638,7 @@ body {
   border: 1px dashed rgba(229, 57, 53, 0.5);
   border-radius: 8px;
   background: rgba(229, 57, 53, 0.06);
-  color: var(--primary-red);
+  color: var(--primary-Olive);
   font-size: 12px;
   font-weight: 800;
   cursor: pointer;
@@ -695,7 +695,7 @@ body {
 
 .menu-action-toast--delete {
   border-color: rgba(229, 57, 53, 0.2);
-  border-left-color: var(--primary-red);
+  border-left-color: var(--primary-Olive);
 }
 
 .menu-action-toast strong {

@@ -393,7 +393,7 @@ export const CartProvider = ({ children, tableNo = '1' }) => {
         if (!user || !user.phone) return;
         const phoneNumber = user.phone;
 
-        const customerRef = doc(db, "Restaurant", "orderin_restaurant_2", "customers", phoneNumber);
+        const customerRef = doc(db, "Restaurant", "orderin_restaurant_3", "customers", phoneNumber);
         const customerSnap = await getDoc(customerRef);
 
         const data = customerSnap.exists() ? customerSnap.data() : {};

@@ -4,7 +4,7 @@ import { db } from '../firebase';
 
 export const NotificationContext = createContext();
 
-const RESTAURANT_ID = "orderin_restaurant_1";
+const RESTAURANT_ID = "orderin_restaurant_3";
 
 const toDate = (value) => {
   if (!value) return new Date();

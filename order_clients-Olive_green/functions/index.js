@@ -43,6 +43,9 @@ const ROUTE_LINKED_ACCOUNTS = {
     accountId: 'acc_SjLoWPi1B6Ybxr',
     name: 'OrderIn-1',
   },
+  // orderin_restaurant_3:{
+
+  // }
 };
 
 const setCorsHeaders = (res) => {

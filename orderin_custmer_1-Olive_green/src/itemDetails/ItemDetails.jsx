@@ -118,7 +118,7 @@ function ItemDetails() {
         if (!stored) return;
         const u = JSON.parse(stored);
         if (!u || !u.phone) return;
-        const customerRef = doc(db, 'Restaurant', 'orderin_restaurant_2', 'customers', u.phone);
+        const customerRef = doc(db, 'Restaurant', 'orderin_restaurant_3', 'customers', u.phone);
         const snap = await getDoc(customerRef);
         if (!mounted) return;
         if (!snap.exists()) {
@@ -142,7 +142,7 @@ function ItemDetails() {
     if (!item && id) {
       const fetchItem = async () => {
         try {
-          const querySnapshot = await getDocs(collection(db, "Restaurant", "orderin_restaurant_2", "menu"));
+          const querySnapshot = await getDocs(collection(db, "Restaurant", "orderin_restaurant_3", "menu"));
           const productsData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
           const foundItem = productsData.find(product => product.name.replace(/\s+/g, '-').toLowerCase() === id);
           if (foundItem) {
@@ -272,7 +272,7 @@ function ItemDetails() {
         return;
       }
 
-      const customerRef = doc(db, 'Restaurant', 'orderin_restaurant_2', 'customers', u.phone);
+      const customerRef = doc(db, 'Restaurant', 'orderin_restaurant_3', 'customers', u.phone);
       const snap = await getDoc(customerRef);
       const existing = snap.exists() ? (Array.isArray(snap.data().likedItems) ? snap.data().likedItems : []) : [];
 

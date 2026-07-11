@@ -30,7 +30,7 @@ function Cart({ onBackClick }) {
     const u = JSON.parse(stored);
     if (!u || !u.phone) return;
 
-    const customerRef = doc(db, "Restaurant", "orderin_restaurant_2", "customers", u.phone);
+    const customerRef = doc(db, "Restaurant", "orderin_restaurant_3", "customers", u.phone);
     unsub = onSnapshot(customerRef, (snap) => {
       if (!snap.exists()) {
         setOrderHistory([]);

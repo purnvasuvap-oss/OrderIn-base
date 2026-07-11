@@ -64,7 +64,7 @@ function App() {
   useEffect(() => {
     const fetchInventory = async () => {
       try {
-        const inventoryCollection = collection(db, "Restaurant", "orderin_restaurant_1", "inventory");
+        const inventoryCollection = collection(db, "Restaurant", "orderin_restaurant_3", "inventory");
         const inventorySnapshot = await getDocs(inventoryCollection);
         const items = inventorySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         setData(items);
@@ -604,7 +604,7 @@ function App() {
                   alert("Please select or enter a storage location."); return;
                 }
 
-                const inventoryCollection = collection(db, "Restaurant", "orderin_restaurant_1", "inventory");
+                const inventoryCollection = collection(db, "Restaurant", "orderin_restaurant_3", "inventory");
                 const itemDocRef = doc(inventoryCollection, itemNameValue);
 
                 try {
@@ -783,7 +783,7 @@ function App() {
                 if (!selectedAlertCategory || !selectedAlertItem || !alertLowThreshold || !alertVeryLowThreshold) {
                   alert("Please complete all fields."); return;
                 }
-                const inventoryCollection = collection(db, "Restaurant", "orderin_restaurant_1", "inventory");
+                const inventoryCollection = collection(db, "Restaurant", "orderin_restaurant_3", "inventory");
                 const itemDocRef = doc(inventoryCollection, selectedAlertItem);
                 try {
                   const existingSnapshot = await getDocs(inventoryCollection);
