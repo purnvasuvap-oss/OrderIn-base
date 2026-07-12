@@ -2,23 +2,23 @@
 
 /* ============ TOKENS ============ */
 .itemdetails-overlay {
-  --bg-base: #F1EFD8;
-  --surface: #F7F5E9;
-  --surface-raised: #EDEAD3;
-  --accent: #636E2C;
-  --accent-strong: #3F441C;
-  --accent-soft: rgba(99, 110, 44, 0.14);
-  --accent-on-glass: #ADC178;
-  --stamp: #A63D33;
-  --text-primary: #1C1B17;
-  --text-muted: #6B6154;
-  --text-faint: #8F8577;
-  --text-on-glass: #F7F5E9;
-  --divider: rgba(63, 68, 28, 0.12);
+  --bg-base: #3F0B11;
+  --surface: #261013;
+  --surface-raised: #33161A;
+  --accent: #F2BB46;
+  --accent-strong: #B5823F;
+  --accent-soft: rgba(242, 187, 70, 0.14);
+  --accent-on-glass: #F2BB46;
+  --stamp: #B5823F;
+  --text-primary: #F5DFBB;
+  --text-muted: #B39A76;
+  --text-faint: #8C7960;
+  --text-on-glass: #F5DFBB;
+  --divider: rgba(181, 130, 63, 0.12);
   --veg: #6FA97A;
   --nonveg: #B85450;
-  --glass-bg: rgba(28, 27, 23, 0.55);
-  --glass-bg-strong: rgba(28, 27, 23, 0.8);
+  --glass-bg: rgba(63, 11, 17, 0.55);
+  --glass-bg-strong: rgba(63, 11, 17, 0.8);
 
   position: fixed;
   top: 0;
@@ -46,10 +46,6 @@
 }
 
 /* ============ HERO ============ */
-/* The hero sits directly over food photography, so its controls stay as
-   translucent dark "glass" chips with light icons/text for legibility
-   regardless of what's in the photo — the content card below switches
-   fully to the site's cream palette. */
 .hero-section {
   position: relative;
   width: 100%;
@@ -70,10 +66,10 @@
   inset: 0;
   background: linear-gradient(
     180deg,
-    rgba(28, 27, 23, 0.45) 0%,
-    rgba(28, 27, 23, 0.02) 28%,
-    rgba(28, 27, 23, 0.05) 55%,
-    rgba(247, 245, 233, 0.96) 100%
+    rgba(63, 11, 17, 0.45) 0%,
+    rgba(63, 11, 17, 0.02) 28%,
+    rgba(63, 11, 17, 0.05) 55%,
+    rgba(38, 16, 19, 0.96) 100%
   );
   pointer-events: none;
 }
@@ -98,7 +94,7 @@
   width: 38px;
   height: 38px;
   border-radius: 50%;
-  border: 1px solid rgba(247, 245, 233, 0.25);
+  border: 1px solid rgba(245, 223, 187, 0.25);
   background: var(--glass-bg);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
@@ -140,7 +136,7 @@
   align-items: center;
   gap: 6px;
   border: 1px solid var(--divider);
-  box-shadow: 0 8px 20px rgba(63, 68, 28, 0.25);
+  box-shadow: 0 8px 20px rgba(181, 130, 63, 0.25);
 }
 
 .hero-info-row {
@@ -159,7 +155,7 @@
   background: var(--glass-bg);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
-  border: 1px solid rgba(247, 245, 233, 0.2);
+  border: 1px solid rgba(245, 223, 187, 0.2);
   color: var(--text-on-glass);
   font-size: 12.5px;
   font-weight: 600;
@@ -173,7 +169,7 @@
 }
 
 .pill-muted {
-  color: rgba(247, 245, 233, 0.7);
+  color: rgba(245, 223, 187, 0.7);
   font-weight: 400;
 }
 
@@ -184,7 +180,7 @@
   border-radius: 26px 26px 0 0;
   margin-top: -26px;
   z-index: 4;
-  box-shadow: 0 -12px 32px rgba(63, 68, 28, 0.15);
+  box-shadow: 0 -12px 32px rgba(181, 130, 63, 0.15);
   padding-bottom: 190px;
 }
 
@@ -196,14 +192,14 @@
   height: 74px;
   border-radius: 50%;
   background: var(--stamp);
-  border: 2px dashed rgba(247, 245, 233, 0.6);
+  border: 2px dashed rgba(245, 223, 187, 0.6);
   color: var(--text-on-glass);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   transform: rotate(-9deg);
-  box-shadow: 0 10px 24px rgba(166, 61, 51, 0.4);
+  box-shadow: 0 10px 24px rgba(181, 130, 63, 0.4);
   z-index: 6;
   text-align: center;
   line-height: 1.1;
@@ -298,7 +294,7 @@
   font-weight: 500;
   color: var(--text-primary);
   background: var(--accent-soft);
-  border: 1px solid rgba(99, 110, 44, 0.3);
+  border: 1px solid rgba(242, 187, 70, 0.3);
   padding: 6px 12px;
   border-radius: 20px;
 }
@@ -368,13 +364,13 @@
 }
 
 .option-chip:hover {
-  border-color: rgba(99, 110, 44, 0.4);
+  border-color: rgba(242, 187, 70, 0.4);
 }
 
 .option-chip.active {
   background: var(--accent);
   border-color: var(--accent);
-  color: #F7F5E9;
+  color: #3F0B11;
   font-weight: 600;
 }
 
@@ -395,7 +391,7 @@
 }
 
 .qty-btn {
-  background: #ffffff;
+  background: #33161A;
   border: 1px solid var(--divider);
   border-radius: 50%;
   width: 44px;
@@ -428,8 +424,6 @@
 }
 
 /* ============ STICKY BOTTOM BAR ============ */
-/* Kept as a dark glass bar (matches the hero) since it floats over the
-   page and needs to stay legible over whatever content scrolls beneath it. */
 .bottom-bar {
   position: fixed;
   left: 12px;
@@ -438,14 +432,14 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: rgba(28, 27, 23, 0.92);
+  background: rgba(63, 11, 17, 0.92);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
   padding: 14px 16px;
   border-radius: 18px;
-  box-shadow: 0 14px 34px rgba(28, 27, 23, 0.45);
+  box-shadow: 0 14px 34px rgba(63, 11, 17, 0.45);
   z-index: 60;
-  border: 1px solid rgba(247, 245, 233, 0.08);
+  border: 1px solid rgba(245, 223, 187, 0.08);
   max-width: calc(100vw - 24px);
 }
 
@@ -454,7 +448,7 @@
   font-weight: 500;
   letter-spacing: 0.4px;
   text-transform: uppercase;
-  color: rgba(247, 245, 233, 0.55);
+  color: rgba(245, 223, 187, 0.55);
   margin: 0;
 }
 
@@ -468,7 +462,7 @@
 
 .add-to-cart-btn {
   background: var(--accent);
-  color: #F7F5E9;
+  color: #3F0B11;
   border: none;
   border-radius: 14px;
   padding: 13px 22px;
@@ -479,11 +473,11 @@
   gap: 8px;
   cursor: pointer;
   transition: background-color 0.18s ease, transform 0.12s ease, box-shadow 0.18s ease;
-  box-shadow: 0 8px 22px rgba(99, 110, 44, 0.35);
+  box-shadow: 0 8px 22px rgba(242, 187, 70, 0.35);
 }
 
 .add-to-cart-btn:hover {
-  background: #7C8A38;
+  background: #B5823F;
   transform: translateY(-1px);
 }
 
@@ -499,7 +493,7 @@
 }
 
 .add-to-cart-btn.needs-update {
-  background: linear-gradient(135deg, var(--accent) 0%, #7C8A38 100%);
+  background: linear-gradient(135deg, var(--accent) 0%, #B5823F 100%);
 }
 
 /* ============ FOOD INSTRUCTIONS MODAL ============ */
@@ -508,7 +502,7 @@
   inset: 0;
   width: 100%;
   height: 100%;
-  background: rgba(28, 27, 23, 0.6);
+  background: rgba(63, 11, 17, 0.6);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -524,7 +518,7 @@
   max-width: 400px;
   text-align: left;
   border: 1px solid var(--divider);
-  box-shadow: 0 24px 60px rgba(28, 27, 23, 0.3);
+  box-shadow: 0 24px 60px rgba(63, 11, 17, 0.3);
 }
 
 .food-instructions-modal-content h3 {
@@ -542,7 +536,7 @@
   margin-bottom: 20px;
   border: 1px solid var(--divider);
   border-radius: 12px;
-  background: #ffffff;
+  background: #33161A;
   color: var(--text-primary);
   font-size: 14px;
   font-family: 'Inter', sans-serif;
@@ -585,7 +579,7 @@
 
 .food-instructions-save-btn {
   background: var(--accent);
-  color: #F7F5E9;
+  color: #3F0B11;
   border: none;
   padding: 11px 24px;
   border-radius: 12px;
@@ -596,7 +590,7 @@
 }
 
 .food-instructions-save-btn:hover {
-  background: #7C8A38;
+  background: #B5823F;
 }
 
 /* ============ STATES ============ */
@@ -606,8 +600,8 @@
   align-items: center;
   justify-content: center;
   height: 100vh;
-  background: #F1EFD8;
-  color: #6B6154;
+  background: #3F0B11;
+  color: #B39A76;
   font-family: 'Inter', sans-serif;
   font-size: 14px;
 }

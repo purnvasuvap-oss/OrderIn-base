@@ -1,13 +1,14 @@
 /* ===== Dark App Palette Updated ===== */
 :root {
-  --bg-main: #F1EFD8;
-  --bg-card: #F7F5E9;
-  --primary: #636E2C;
-  --border: #E4E0C8;
-  --hover-bg: #E4E0C8;
-  --text-main: #1C1B17;
-  --text-muted: #6B6A5D;
-  --accent: #636E2C;
+  --bg-main: #3F0B11;
+  --bg-card: #261013;
+  --primary: #F2BB46;
+  --border: #33161A;
+  --hover-bg: #33161A;
+  --text-main: #F5DFBB;
+  --text-muted: #B39A76;
+  --accent: #F2BB46;
+  --accent-dark: #B5823F;
 }
 
 .orderin-about-container {
@@ -28,7 +29,7 @@
 }
 
 .back-button-top {
-  background: linear-gradient(135deg, #E4E0C8, #F7F5E9);
+  background: linear-gradient(135deg, #33161A, #261013);
   border: 2px solid var(--primary);
   color: var(--primary);
   padding: 10px 16px;
@@ -41,9 +42,9 @@
 }
 
 .back-button-top:hover {
-  background: linear-gradient(135deg, #D6D2B4, #E4E0C8);
+  background: linear-gradient(135deg, #4A2429, #33161A);
   transform: translateX(-3px);
-  box-shadow: 0 4px 12px rgba(99, 110, 44, 0.15);
+  box-shadow: 0 4px 12px rgba(242, 187, 70, 0.15);
 }
 
 a, div, h1, h2, h3, header, section, img {
@@ -57,7 +58,7 @@ img {
 
 /* ===== Header ===== */
 .orderin-header {
-  background: linear-gradient(135deg, #E6F3F2, var(--primary));
+  background: linear-gradient(135deg, var(--bg-card), var(--primary));
   padding: 20px;
   text-align: center;
   border-bottom: 4px solid var(--border);
@@ -153,18 +154,18 @@ img {
 .service-card {
   padding: 25px;
   border-radius: 14px;
-  background: #E4E0C8;
-  border: 1px solid #D6D2B4;
+  background: #33161A;
+  border: 1px solid #4A2429;
   box-shadow: 0 2px 8px rgba(28, 27, 23, 0.1);
   font-weight: 600;
   transition: all 0.3s ease;
-  color: #1C1B17;
+  color: #F5DFBB;
 }
 
 .service-card:hover {
   transform: translateY(-10px) scale(1.04);
-  background: #E4E0C8;
-  box-shadow: inset 0 0 20px rgba(99, 110, 44, 0.1), inset 0 0 40px rgba(99, 110, 44, 0.06);
+  background: #33161A;
+  box-shadow: inset 0 0 20px rgba(242, 187, 70, 0.1), inset 0 0 40px rgba(242, 187, 70, 0.06);
 }
 
 .service-card.with-image {
@@ -208,7 +209,7 @@ img {
 }
 
 .contact-link:hover {
-  color: #a78b3d;
+  color: var(--accent-dark);
 }
 
 /* ===== Explore Container ===== */
@@ -230,7 +231,7 @@ img {
 }
 
 .explore-subtext {
-  color: #7A796C;
+  color: #B39A76;
   font-size: 0.85rem;
   font-style: italic;
 }
@@ -266,16 +267,16 @@ img {
 
 /* ===== Footer ===== */
 .orderin-footer {
-  background: #F7F5E9;
-  color: #1C1B17;
+  background: #261013;
+  color: #F5DFBB;
   text-align: center;
   padding: 20px;
-  border-top: 3px solid #D6D2B4;
+  border-top: 3px solid #4A2429;
 }
 
 .orderin-footer p {
   margin: 0;
-  color: #1C1B17;
+  color: #F5DFBB;
 }
 
 /* ========= MOBILE RESPONSIVE ========= */

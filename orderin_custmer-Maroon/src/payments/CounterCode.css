@@ -1,6 +1,6 @@
 /* Desktop-first styles */
 .counter-code-container {
-  background-color: #1E1E1E;
+  background-color: #3F0B11;
   width: 100%;
   min-height: 100vh;
   display: flex;
@@ -18,7 +18,7 @@
   align-self: flex-start;
   width: 100%;
   display: none;
-  color: #FFFFFF;
+  color: #F5DFBB;
 }
 
 .order-details {
@@ -27,11 +27,11 @@
   justify-content: center;
   margin-bottom: 20px;
   padding-bottom: 15px;
-  border-bottom: 1px solid #333333;
+  border-bottom: 1px solid #33161A;
 }
 
 .order-number {
-  color: #FFFFFF;
+  color: #F5DFBB;
   font-weight: bold;
   font-size: 1.2rem;
   text-align: center;
@@ -46,7 +46,7 @@
 }
 
 .code-entry-box {
-  background: #2A2A2A;
+  background: #261013;
   padding: 30px 30px;
   border-radius: 15px;
   text-align: center;
@@ -58,12 +58,12 @@
   display: flex;
   flex-direction: column;
   gap: 0;
-  border: 1px solid #333333;
+  border: 1px solid #33161A;
 }
 
 .code-entry-box h3 {
-  background-color: #FFB703;
-  color: #1E1E1E;
+  background-color: #F2BB46;
+  color: #3F0B11;
   padding: 20px;
   border-radius: 10px;
   font-weight: 600;
@@ -84,15 +84,15 @@
   text-align: center;
   font-size: 2rem;
   border: none;
-  border-bottom: 4px solid #FFB703;
+  border-bottom: 4px solid #F2BB46;
   background: transparent;
   outline: none;
-  color: #FFFFFF;
+  color: #F5DFBB;
 }
 
 .instruction-text {
   margin-top: 10px;
-  color: #AAAAAA;
+  color: #B39A76;
   font-weight: 500;
   font-size: 1.1rem;
 }
@@ -110,14 +110,14 @@
 }
 
 .verify-button {
-  background-color: #FFB703;
-  color: #1E1E1E;
+  background-color: #F2BB46;
+  color: #3F0B11;
 }
 
 .back-button {
-  background-color: #444444;
-  color: #FFFFFF;
-  border: 1px solid #555555;
+  background-color: #4A2429;
+  color: #F5DFBB;
+  border: 1px solid #5A2E33;
 }
 
 /* Mobile styles */
@@ -167,7 +167,7 @@
     width: 40px;
     height: 40px;
     font-size: 1.2rem;
-    border-bottom: 3px solid #000;
+    border-bottom: 3px solid #33161A;
   }
 
   .instruction-text {
@@ -187,8 +187,8 @@
   min-height: 100dvh;
   width: 100%;
   box-sizing: border-box;
-  background: linear-gradient(180deg, #1E1E1E 0%, #242424 100%);
-  color: #FFFFFF;
+  background: linear-gradient(180deg, #3F0B11 0%, #261013 100%);
+  color: #F5DFBB;
   display: flex;
   flex-direction: column;
   align-items: stretch;
@@ -202,8 +202,8 @@
   min-height: 72px;
   padding: 14px 28px;
   box-sizing: border-box;
-  background: #2A2A2A;
-  border-bottom: 1px solid #333333;
+  background: #261013;
+  border-bottom: 1px solid #33161A;
   display: flex;
   align-items: center;
   gap: 14px;
@@ -212,10 +212,10 @@
 .counter-back-icon {
   width: 42px;
   height: 42px;
-  border: 1px solid #444444;
+  border: 1px solid #4A2429;
   border-radius: 50%;
-  background: #333333;
-  color: #FFFFFF;
+  background: #33161A;
+  color: #F5DFBB;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -224,13 +224,13 @@
 }
 
 .counter-back-icon:hover {
-  background: #3A3A3A;
-  color: #FFB703;
+  background: #3A1B20;
+  color: #F2BB46;
 }
 
 .counter-code-header h1 {
   margin: 0;
-  color: #FFFFFF;
+  color: #F5DFBB;
   font-size: 1.35rem;
   font-weight: 850;
   letter-spacing: 0;
@@ -250,9 +250,9 @@
   width: min(100%, 460px);
   box-sizing: border-box;
   padding: 26px;
-  border: 1px solid #3A3A3A;
+  border: 1px solid #3A1B20;
   border-radius: 12px;
-  background: #2A2A2A;
+  background: #261013;
   box-shadow: 0 18px 44px rgba(0, 0, 0, 0.34);
   text-align: center;
   display: flex;
@@ -270,9 +270,9 @@
   height: 64px;
   margin: 0 auto;
   border-radius: 50%;
-  background: rgba(255, 183, 3, 0.12);
-  color: #FFB703;
-  border: 1px solid rgba(255, 183, 3, 0.3);
+  background: rgba(242, 187, 70, 0.12);
+  color: #F2BB46;
+  border: 1px solid rgba(242, 187, 70, 0.3);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -287,7 +287,7 @@
 
 .counter-eyebrow {
   margin: 0;
-  color: #FFB703;
+  color: #F2BB46;
   font-size: 0.78rem;
   font-weight: 900;
   text-transform: uppercase;
@@ -295,7 +295,7 @@
 
 .counter-copy h2 {
   margin: 0;
-  color: #FFFFFF;
+  color: #F5DFBB;
   font-size: 1.65rem;
   line-height: 1.18;
   font-weight: 850;
@@ -305,7 +305,7 @@
 .counter-copy p:not(.counter-eyebrow) {
   margin: 0;
   max-width: 340px;
-  color: #CCCCCC;
+  color: #D9C29E;
   font-size: 0.95rem;
   line-height: 1.5;
 }
@@ -315,9 +315,9 @@
   align-items: center;
   gap: 12px;
   padding: 12px;
-  border: 1px solid #3E3E3E;
+  border: 1px solid #4A2429;
   border-radius: 10px;
-  background: #333333;
+  background: #33161A;
   text-align: left;
 }
 
@@ -325,8 +325,8 @@
   width: 42px;
   height: 42px;
   border-radius: 10px;
-  background: rgba(255, 183, 3, 0.12);
-  color: #FFB703;
+  background: rgba(242, 187, 70, 0.12);
+  color: #F2BB46;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -339,7 +339,7 @@
 }
 
 .counter-order-summary span {
-  color: #AAAAAA;
+  color: #B39A76;
   font-size: 0.78rem;
   font-weight: 800;
   text-transform: uppercase;
@@ -347,7 +347,7 @@
 
 .counter-order-summary strong {
   margin-top: 2px;
-  color: #FFFFFF;
+  color: #F5DFBB;
   font-size: 0.98rem;
   font-weight: 850;
   overflow-wrap: anywhere;
@@ -366,26 +366,26 @@
   aspect-ratio: 1;
   min-width: 0;
   box-sizing: border-box;
-  border: 1px solid #444444;
+  border: 1px solid #4A2429;
   border-radius: 12px;
-  background: #333333;
-  color: #FFFFFF;
+  background: #33161A;
+  color: #F5DFBB;
   text-align: center;
   font-size: 1.8rem;
   font-weight: 850;
   outline: none;
-  box-shadow: inset 0 -3px 0 rgba(255, 183, 3, 0.36);
+  box-shadow: inset 0 -3px 0 rgba(242, 187, 70, 0.36);
 }
 
 .digit-inputs input:focus {
-  border-color: #FFB703;
-  background: #363636;
-  box-shadow: 0 0 0 4px rgba(255, 183, 3, 0.13), inset 0 -3px 0 #FFB703;
+  border-color: #F2BB46;
+  background: #3A1B20;
+  box-shadow: 0 0 0 4px rgba(242, 187, 70, 0.13), inset 0 -3px 0 #F2BB46;
 }
 
 .instruction-text {
   margin: -2px 0 0;
-  color: #AAAAAA;
+  color: #B39A76;
   font-size: 0.9rem;
   line-height: 1.45;
 }
@@ -410,24 +410,24 @@
 }
 
 .verify-button {
-  background: #FFB703;
-  color: #1E1E1E;
-  box-shadow: 0 12px 22px rgba(255, 183, 3, 0.2);
+  background: #F2BB46;
+  color: #3F0B11;
+  box-shadow: 0 12px 22px rgba(242, 187, 70, 0.2);
 }
 
 .verify-button:hover {
-  background: #FFC230;
+  background: #B5823F;
 }
 
 .counter-back-button {
-  background: #333333;
-  color: #FFFFFF;
-  border: 1px solid #444444;
+  background: #33161A;
+  color: #F5DFBB;
+  border: 1px solid #4A2429;
 }
 
 .counter-back-button:hover {
-  background: #3A3A3A;
-  border-color: #555555;
+  background: #3A1B20;
+  border-color: #5A2E33;
 }
 
 @media (max-width: 520px) {

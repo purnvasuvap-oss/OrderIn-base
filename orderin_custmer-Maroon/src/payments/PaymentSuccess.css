@@ -3,17 +3,17 @@
   justify-content: center;
   align-items: center;
   height: 100vh;
-  background-color: #1E1E1E;
+  background-color: #3F0B11;
 }
 
 .success-card {
-  background: #2A2A2A;
+  background: #261013;
   padding: 40px 30px;
   border-radius: 12px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
   text-align: center;
   width: 320px;
-  border: 1px solid #333333;
+  border: 1px solid #33161A;
 }
 
 .success-icon {
@@ -26,25 +26,25 @@
 .success-icon svg {
   width: 45px;
   height: 45px;
-  color: #FFB703;
+  color: #F2BB46;
 }
 
 h2 {
   font-size: 1.4rem;
   font-weight: 700;
-  color: #FFFFFF;
+  color: #F5DFBB;
   margin-bottom: 6px;
 }
 
 .order-id {
   font-weight: 600;
-  color: #AAAAAA;
+  color: #B39A76;
   margin-bottom: 25px;
 }
 
 .view-bill-btn {
-  background-color: #FFB703;
-  color: #1E1E1E;
+  background-color: #F2BB46;
+  color: #3F0B11;
   border: none;
   padding: 10px 0;
   border-radius: 6px;
@@ -56,12 +56,12 @@ h2 {
 }
 
 .view-bill-btn:hover {
-  background-color: #FFC230;
+  background-color: #B5823F;
 }
 
 .back-home-btn {
   background: transparent;
-  color: #00a693;
+  color: #B39A76;
   border: none;
   margin-top: 12px;
   font-size: 0.95rem;
@@ -71,5 +71,5 @@ h2 {
 }
 
 .back-home-btn:hover {
-  color: #007d70;
+  color: #F2BB46;
 }

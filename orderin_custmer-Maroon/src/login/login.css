@@ -24,19 +24,19 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(135deg, rgba(30, 30, 30, 0.75) 0%, rgba(42, 42, 42, 0.85) 50%, rgba(30, 30, 30, 0.75) 100%);
+  background:  linear-gradient(135deg, rgba(19, 0, 2, 0.75) 0%, rgba(27, 3, 6, 0.85) 50%, rgba(63, 11, 17, 0.937) 100%);;
   z-index: 1;
 }
 
 h2 {
-  color: #636E2C;
+  color: #F2BB46;
   margin-bottom: 20px;
   position: relative;
   z-index: 2;
 }
 
 .login-box {
-  background-color: rgba(241, 239, 216, 1.0);
+  background-color: #261013;
   backdrop-filter: blur(10px);
   padding: 35px;
   border-radius: 20px;
@@ -46,7 +46,7 @@ h2 {
   flex-direction: column;
   gap: 15px;
   align-items: center;
-  border: 1.5px solid #636E2C;
+  border: 1.5px solid #F2BB46;
   position: relative;
   z-index: 2;
 }
@@ -80,7 +80,7 @@ input:hover {
 }
 
 input:focus {
-  border-color: #636E2C;
+  border-color: #F2BB46;
   box-shadow: 0 0 0 3px rgba(255, 183, 3, 0.1);
 }
 
@@ -102,7 +102,7 @@ input::placeholder {
   border-color: #bbb;
 }
 .input-wrapper:focus-within {
-  border-color: #636E2C;
+  border-color: #F2BB46;
   box-shadow: 0 0 0 3px rgba(137, 150, 0, 0.1);
 }
 .name-input {
@@ -132,13 +132,13 @@ input::placeholder {
   width: 40px;
   text-align: center;
   border-right: 1.5px solid none;
-  color: #636E2C;
+  color: #F2BB46;
   font-size: 22px;
   border: none;
   transition: all 0.3s ease;
 }
 .input-wrapper svg{
-  color: #636E2C;
+  color: #F2BB46;
   font-size: 22px;
   margin-left: 10px;
 }
@@ -160,7 +160,7 @@ input::placeholder {
 }
 
 .phone-input-container:focus-within {
-  border-color: #636E2C;
+  border-color: #F2BB46;
   box-shadow: 0 0 0 3px rgba(255, 183, 3, 0.1);
 }
 
@@ -216,7 +216,7 @@ input::placeholder {
     max-height: 250px;
 
     background: #F1EFD8;
-    border: 1px solid #636E2C;
+    border: 1px solid #F2BB46;
     border-radius: 12px;
 
     overflow: hidden;
@@ -269,7 +269,7 @@ button:active {
 }
 
 .otp-btn {
-  background-color: #636E2C;
+  background-color: #F2BB46;
   color: #1E1E1E;
   width: 87%;
   font-weight: 600;
@@ -288,7 +288,7 @@ button:active {
 }
 
 .login-btn {
-  background-color: #636E2C;
+  background-color: #F2BB46;
   color: #F1EFD8;
   width: 87%;
   font-weight: 600;
@@ -319,7 +319,7 @@ button:active {
     padding: 20px;
     margin: 0 auto;
     flex-shrink: 0;
-    border: 1.5px solid #636E2C;
+    border: 1.5px solid #F2BB46;
   }
 
   input {
@@ -328,14 +328,14 @@ button:active {
     -webkit-border-radius: 0;
   }
   .login-btn {
-  background-color: #636E2C;
+  background-color: #F2BB46;
   color: #F1EFD8;
   width: 97%;
   font-weight: 600;
 }
   input:focus {
     outline: none;
-    border-color: #636E2C;
+    border-color: #F2BB46;
     box-shadow: 0 0 0 3px rgba(255, 183, 3, 0.1);
   }
   
