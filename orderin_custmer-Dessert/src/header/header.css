@@ -1,0 +1,132 @@
+@import url('https://fonts.googleapis.com/css2?family=Yesteryear&family=Inter:wght@400;500;600;700&display=swap');
+
+.header-bar {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+  min-height: 60px;
+  height: 60px;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0 14px;
+  gap: 12px;
+  background: linear-gradient(
+    180deg,
+    #341400 0%,
+    #351600 100%
+  );
+  border-bottom: 1px solid rgba(43, 22, 14, 0.15);
+  box-shadow: 0 3px 12px rgba(43, 22, 14, 0.12);
+}
+
+.orderin-logo-header {
+  width: 82px;
+  filter: drop-shadow(0 2px 4px rgba(255, 255, 107, 0.427));
+  transition: .3s;
+}
+
+.orderin-logo-header:hover {
+  transform: scale(1.03);
+}
+
+.table-number {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  max-width: calc(100% - 170px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: center;
+  pointer-events: none;
+  z-index: 1;
+  font-family: "Yesteryear", cursive;
+  font-size: 26px;
+  font-weight: 400;
+  color: #d9a544;
+  margin-right: 0;
+}
+
+.menu-icon {
+  flex: 0 0 auto;
+  margin-right: 0;
+  position: relative;
+  z-index: 2;
+  cursor: pointer;
+  color: #d9a544;
+}
+
+.side-menu {
+  position: fixed;
+  top: 60px;
+  right: -300px;
+  width: 300px;
+  height: calc(100vh - 60px);
+  background-color: #2b160e;
+  box-shadow: -2px 0 8px rgba(20, 10, 4, 0.35);
+  transition: right 0.3s ease;
+  z-index: 1000;
+  border-left: 1px solid rgba(217, 165, 68, 0.2);
+}
+
+.side-menu.open {
+  right: 0;
+}
+
+.side-menu-content {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  color: #f5e7c6;
+}
+
+.menu-item {
+  padding: 15px;
+  border-bottom: 1px solid rgba(217, 165, 68, 0.18);
+  cursor: pointer;
+  color: #f5e7c6;
+  font-family: "Inter", "Segoe UI", sans-serif;
+  font-size: 16px;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.menu-item:hover {
+  background-color: rgba(217, 165, 68, 0.12);
+  color: #d9a544;
+}
+
+.menu-item:last-child {
+  border-bottom: none;
+}
+
+.logout-item {
+  color: #d97a5a !important;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.logout-item:hover {
+  background-color: rgba(217, 122, 90, 0.14);
+  color: #d97a5a !important;
+}
+
+@media (max-width: 380px) {
+  .header-bar {
+    padding: 0 10px;
+  }
+
+  .orderin-logo-header {
+    width: 70px;
+  }
+
+  .table-number {
+    max-width: calc(100% - 142px);
+    font-size: 21px;
+  }
+}
