@@ -7,7 +7,7 @@
   left: 0;
   right: 0;
   height: 50px;
-  background-color: #E7E5D8;
+  background-color: #3C1A14;
   padding: 5px;
   border-top: 1px solid #333333;
 }
@@ -27,28 +27,30 @@
 
 .icon-container:hover {
   transform: scale(1.05);
-  background-color: #333333;
+  background-color: #f2e06b;
   border-radius: 50%;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 .icon-container.active {
-  background-color: #636E2C;
-  color: #1E1E1E;
+  background-color: #f6f037;
+  color: #f2e06b;
   border-radius: 50%;
   box-shadow: 0 2px 4px rgba(255, 183, 3, 0.2);
 }
 
 .icon-container.active:hover {
-  background-color: #3F441C;
+  background-color: #f2e06b;
 }
 
 .footer-icon {
   font-size: 20px;
   margin-bottom: 2px;
-  color: #1E1E1E;
+  color: #D49E7C;
 }
-
+.footer-icon .active span{
+  color: #000000;
+}
 .footer-icon-wrap {
   position: relative;
   display: inline-flex;
@@ -91,11 +93,11 @@
 .icon-container span {
   font-size: 10px;
   font-weight: 500;
-  color: #888888;
+  color: #f2e06b;
 }
 
 .icon-container.active span {
-  color: #1E1E1E;
+  color: #000000;
 }
 
 .icon-container.active .cart-count-badge {

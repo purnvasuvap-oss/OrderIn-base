@@ -1,16 +1,19 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap');
+
 :root {
-  color-scheme: light;
-  --color-bg: #F1EFD8;
-  --color-surface: #F7F5E9;
-  --color-accent: #636E2C;
-  --color-accent-dark: #3F441C;
-  --color-text: #1C1B17;
+  color-scheme: dark;
+  --color-bg: #2b160e;
+  --color-surface: #2b160e;
+  --color-accent: #d9a544;
+  --color-accent-dark: #b67f2a;
+  --color-text: #f5e7c6;
 }
 
 body {
   margin: 0;
-  background: var(--color-bg);
-  color: var(--color-text);
+  font-family: "Inter", "Segoe UI", sans-serif;
+  background: #1b0d08;
+  color: #f5e7c6;
 }
 
 * {
@@ -26,13 +29,16 @@ button {
   flex-direction: column;
   min-height: 100vh;
   min-height: 100dvh;
-  background: linear-gradient(
-    180deg,
-    #F7F5E9 0%,
-    #F1EFD8 100%
-  );
+  color: #f5e7c6;
   overflow-y: auto;
   padding-bottom: calc(76px + env(safe-area-inset-bottom));
+  background-color: #3c2213;
+  background-image:
+    radial-gradient(ellipse 70% 40% at 15% 8%, rgba(245, 231, 198, 0.08) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 35% at 90% 15%, rgba(27, 13, 8, 0.55) 0%, transparent 65%),
+    radial-gradient(ellipse 80% 50% at 30% 60%, rgba(27, 13, 8, 0.5) 0%, transparent 70%),
+    radial-gradient(ellipse 70% 45% at 85% 85%, rgba(245, 231, 198, 0.05) 0%, transparent 65%),
+    linear-gradient(180deg, #3c2213 0%, #1b0d08 100%);
 }
 
 .profile-header {
@@ -40,8 +46,8 @@ button {
   align-items: center;
   gap: 12px;
   padding: 18px 16px;
-  background: #F1EFD8;
-  border-bottom: 1px solid rgba(63, 68, 28, 0.12);
+  background: transparent;
+  border-bottom: 1px solid rgba(217, 165, 68, 0.16);
 }
 
 .back-icon {
@@ -51,16 +57,24 @@ button {
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  background: rgba(63, 68, 28, 0.08);
-  color: #3F441C;
+  background: rgba(43, 22, 14, 0.7);
+  border: 1px solid rgba(217, 165, 68, 0.3);
+  color: #f5e7c6;
   cursor: pointer;
+  transition: border-color 0.2s ease, transform 0.15s ease;
+}
+
+.back-icon:hover {
+  border-color: #d9a544;
+  transform: translateY(-1px);
 }
 
 .profile-title {
   margin: 0;
+  font-family: "Poppins", sans-serif;
   font-size: 20px;
   font-weight: 800;
-  color: #3F441C;
+  color: #f5e7c6;
 }
 
 .profile-content {
@@ -77,9 +91,9 @@ button {
   gap: 14px;
   padding: 16px;
   border-radius: 24px;
-  background: linear-gradient(135deg, rgba(99, 110, 44, 0.16), rgba(247, 245, 233, 0.6));
-  border: 1px solid rgba(99, 110, 44, 0.22);
-  box-shadow: 0 12px 24px rgba(63, 68, 28, 0.1);
+  background: linear-gradient(135deg, #4a2a18 0%, #2b160e 100%);
+  border: 1px solid rgba(217, 165, 68, 0.28);
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.45);
 }
 
 .profile-avatar {
@@ -90,10 +104,12 @@ button {
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  background: #636E2C;
-  color: #F7F5E9;
+  background: linear-gradient(135deg, #ffd8a2 0%, #d9a544 55%, #b67f2a 100%);
+  color: #3c2213;
+  font-family: "Poppins", sans-serif;
   font-size: 22px;
   font-weight: 900;
+  box-shadow: 0 8px 18px rgba(217, 165, 68, 0.4);
 }
 
 .profile-card-copy {
@@ -110,7 +126,7 @@ button {
 
 .profile-eyebrow {
   margin: 0 0 2px;
-  color: #636E2C;
+  color: #d9a544;
   font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.18em;
@@ -119,8 +135,9 @@ button {
 
 .profile-card-copy h2 {
   margin: 0;
+  font-family: "Poppins", sans-serif;
   font-size: 20px;
-  color: #1C1B17;
+  color: #f5e7c6;
 }
 
 .loyalty-pill {
@@ -129,8 +146,9 @@ button {
   gap: 4px;
   padding: 6px 10px;
   border-radius: 999px;
-  background: rgba(63, 68, 28, 0.08);
-  color: #3F441C;
+  background: rgba(217, 165, 68, 0.16);
+  border: 1px solid rgba(217, 165, 68, 0.35);
+  color: #f1d18f;
   font-size: 12px;
   font-weight: 800;
   white-space: nowrap;
@@ -138,7 +156,7 @@ button {
 
 .profile-meta {
   margin: 6px 0 10px;
-  color: rgba(28, 27, 23, 0.6);
+  color: rgba(245, 231, 198, 0.6);
   font-size: 13px;
 }
 
@@ -152,21 +170,22 @@ button {
   flex: 1 1 90px;
   padding: 8px 10px;
   border-radius: 14px;
-  background: rgba(247, 245, 233, 0.9);
-  border: 1px solid rgba(63, 68, 28, 0.1);
+  background: rgba(43, 22, 14, 0.55);
+  border: 1px solid rgba(217, 165, 68, 0.22);
 }
 
 .stat-pill strong {
   display: block;
+  font-family: "Poppins", sans-serif;
   font-size: 14px;
-  color: #1C1B17;
+  color: #d9a544;
 }
 
 .stat-pill span {
   display: block;
   margin-top: 2px;
   font-size: 11px;
-  color: rgba(28, 27, 23, 0.55);
+  color: rgba(245, 231, 198, 0.55);
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }
@@ -179,9 +198,9 @@ button {
 
 .account-card {
   border-radius: 18px;
-  border: 1px solid rgba(63, 68, 28, 0.12);
-  background: #F7F5E9;
-  box-shadow: 0 10px 24px rgba(63, 68, 28, 0.08);
+  border: 1px solid rgba(217, 165, 68, 0.2);
+  background: #2b160e;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.4);
   overflow: hidden;
 }
 
@@ -205,13 +224,13 @@ button {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(99, 110, 44, 0.14);
-  color: #636E2C;
+  background: rgba(217, 165, 68, 0.16);
+  color: #d9a544;
 }
 
 .logout-icon {
-  background: rgba(214, 69, 69, 0.14);
-  color: #B83A3A;
+  background: rgba(201, 96, 63, 0.16);
+  color: #e08a68;
 }
 
 .account-card-copy {
@@ -221,23 +240,26 @@ button {
 
 .account-card-copy h3 {
   margin: 0 0 2px;
+  font-family: "Poppins", sans-serif;
   font-size: 16px;
-  color: #1C1B17;
+  font-weight: 700;
+  color: #f5e7c6;
 }
 
 .account-card-copy p {
   margin: 0;
   font-size: 12px;
-  color: rgba(28, 27, 23, 0.55);
+  color: rgba(245, 231, 198, 0.55);
 }
 
 .chevron {
-  color: rgba(63, 68, 28, 0.6);
+  color: rgba(217, 165, 68, 0.6);
   transition: transform 0.2s ease;
 }
 
 .chevron.expanded {
   transform: rotate(180deg);
+  color: #d9a544;
 }
 
 .account-section-body {
@@ -259,7 +281,7 @@ button {
   padding-right: 6px;
   margin-right: -6px;
   scrollbar-width: thin;
-  scrollbar-color: rgba(99, 110, 44, 0.45) transparent;
+  scrollbar-color: rgba(217, 165, 68, 0.4) transparent;
 }
 
 .section-body-list::-webkit-scrollbar {
@@ -271,7 +293,7 @@ button {
 }
 
 .section-body-list::-webkit-scrollbar-thumb {
-  background: rgba(99, 110, 44, 0.4);
+  background: rgba(217, 165, 68, 0.4);
   border-radius: 10px;
 }
 
@@ -284,7 +306,7 @@ button {
   padding-right: 6px;
   margin-right: -6px;
   scrollbar-width: thin;
-  scrollbar-color: rgba(99, 110, 44, 0.45) transparent;
+  scrollbar-color: rgba(217, 165, 68, 0.4) transparent;
 }
 
 .liked-list::-webkit-scrollbar {
@@ -296,7 +318,7 @@ button {
 }
 
 .liked-list::-webkit-scrollbar-thumb {
-  background: rgba(99, 110, 44, 0.4);
+  background: rgba(217, 165, 68, 0.4);
   border-radius: 10px;
 }
 
@@ -305,15 +327,15 @@ button {
   padding: 14px;
   border-radius: 12px;
   text-align: center;
-  background: rgba(63, 68, 28, 0.05);
-  color: rgba(28, 27, 23, 0.55);
+  background: rgba(217, 165, 68, 0.06);
+  color: rgba(245, 231, 198, 0.55);
 }
 
 .order-item {
   padding: 12px;
   border-radius: 14px;
-  background: rgba(99, 110, 44, 0.05);
-  border: 1px solid rgba(63, 68, 28, 0.08);
+  background: rgba(217, 165, 68, 0.05);
+  border: 1px solid rgba(217, 165, 68, 0.14);
 }
 
 .order-card-main {
@@ -328,7 +350,7 @@ button {
   height: 56px;
   border-radius: 12px;
   object-fit: cover;
-  border: 1px solid rgba(63, 68, 28, 0.1);
+  border: 1px solid rgba(217, 165, 68, 0.2);
   flex-shrink: 0;
 }
 
@@ -345,7 +367,7 @@ button {
 
 .order-title {
   margin: 0;
-  color: #1C1B17;
+  color: #f5e7c6;
   font-size: 14px;
   line-height: 1.2;
   overflow: hidden;
@@ -360,8 +382,8 @@ button {
   flex-shrink: 0;
   padding: 3px 7px;
   border-radius: 999px;
-  background: rgba(99, 110, 44, 0.14);
-  color: #3F441C;
+  background: rgba(217, 165, 68, 0.16);
+  color: #f1d18f;
   font-size: 10px;
   font-weight: 800;
   text-transform: capitalize;
@@ -369,7 +391,7 @@ button {
 
 .order-timestamp {
   margin: 4px 0 0;
-  color: rgba(28, 27, 23, 0.5);
+  color: rgba(245, 231, 198, 0.5);
   font-size: 11px;
 }
 
@@ -385,8 +407,8 @@ button {
 .order-pill-row span {
   padding: 4px 7px;
   border-radius: 999px;
-  background: rgba(63, 68, 28, 0.07);
-  color: #3F441C;
+  background: rgba(217, 165, 68, 0.1);
+  color: #f1d18f;
   font-size: 11px;
   font-weight: 700;
   white-space: nowrap;
@@ -397,8 +419,8 @@ button {
   min-height: 36px;
   border: none;
   border-radius: 999px;
-  background: #636E2C;
-  color: #F7F5E9;
+  background: linear-gradient(135deg, #d9a544 0%, #b67f2a 100%);
+  color: #3c2213;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -411,14 +433,14 @@ button {
 }
 
 .order-reorder-btn:disabled {
-  background: rgba(28, 27, 23, 0.15);
-  color: rgba(28, 27, 23, 0.4);
+  background: rgba(245, 231, 198, 0.12);
+  color: rgba(245, 231, 198, 0.4);
   cursor: not-allowed;
 }
 
 .order-reorder-btn.added {
-  background: #4caf50;
-  color: #ffffff;
+  background: #8faa66;
+  color: #12241a;
 }
 
 .order-card-footer {
@@ -429,14 +451,14 @@ button {
   margin-top: 8px;
   padding: 8px 10px;
   border-radius: 12px;
-  background: rgba(63, 68, 28, 0.05);
+  background: rgba(217, 165, 68, 0.05);
 }
 
 .order-paid-summary {
   display: inline-flex;
   align-items: baseline;
   gap: 6px;
-  color: rgba(28, 27, 23, 0.65);
+  color: rgba(245, 231, 198, 0.65);
 }
 
 .order-paid-summary span {
@@ -446,12 +468,12 @@ button {
 }
 
 .order-paid-summary strong {
-  color: #1C1B17;
+  color: #f5e7c6;
   font-size: 14px;
 }
 
 .order-menu-price {
-  color: rgba(28, 27, 23, 0.5);
+  color: rgba(245, 231, 198, 0.5);
   font-size: 11px;
 }
 
@@ -461,8 +483,8 @@ button {
   margin: 8px 0 0;
   padding: 8px 10px;
   border-radius: 10px;
-  background: rgba(63, 68, 28, 0.05);
-  color: rgba(28, 27, 23, 0.72);
+  background: rgba(217, 165, 68, 0.05);
+  color: rgba(245, 231, 198, 0.72);
   font-size: 12px;
   line-height: 1.4;
   overflow-wrap: anywhere;
@@ -485,13 +507,13 @@ button {
 }
 
 .order-instructions-zone strong {
-  color: #1C1B17;
+  color: #f5e7c6;
 }
 
 .order-unavailable {
-  color: #B83A3A;
+  color: #e08a68;
   font-weight: 800;
-  background: rgba(184, 58, 58, 0.08);
+  background: rgba(201, 96, 63, 0.1);
 }
 
 .liked-item {
@@ -500,7 +522,7 @@ button {
   justify-content: space-between;
   gap: 10px;
   padding: 10px 0;
-  border-bottom: 1px solid rgba(63, 68, 28, 0.1);
+  border-bottom: 1px solid rgba(217, 165, 68, 0.14);
 }
 
 .liked-item:last-child {
@@ -520,7 +542,7 @@ button {
   height: 48px;
   border-radius: 10px;
   object-fit: cover;
-  border: 1px solid rgba(63, 68, 28, 0.1);
+  border: 1px solid rgba(217, 165, 68, 0.2);
   flex-shrink: 0;
 }
 
@@ -530,7 +552,7 @@ button {
 
 .liked-details h4 {
   margin: 0 0 3px;
-  color: #1C1B17;
+  color: #f5e7c6;
   font-size: 14px;
   overflow: hidden;
   display: -webkit-box;
@@ -541,7 +563,7 @@ button {
 
 .liked-price {
   margin: 0;
-  color: #636E2C;
+  color: #d9a544;
   font-size: 13px;
   font-weight: 700;
 }
@@ -550,8 +572,8 @@ button {
   border: none;
   border-radius: 20px;
   cursor: pointer;
-  background: rgba(99, 110, 44, 0.14);
-  color: #636E2C;
+  background: rgba(217, 165, 68, 0.16);
+  color: #d9a544;
   flex-shrink: 0;
 }
 
@@ -565,7 +587,7 @@ button {
   padding-right: 6px;
   margin-right: -6px;
   scrollbar-width: thin;
-  scrollbar-color: rgba(99, 110, 44, 0.45) transparent;
+  scrollbar-color: rgba(217, 165, 68, 0.4) transparent;
 }
 
 .payment-list::-webkit-scrollbar {
@@ -577,7 +599,7 @@ button {
 }
 
 .payment-list::-webkit-scrollbar-thumb {
-  background: rgba(99, 110, 44, 0.4);
+  background: rgba(217, 165, 68, 0.4);
   border-radius: 10px;
 }
 
@@ -588,27 +610,27 @@ button {
   gap: 10px;
   padding: 10px 12px;
   border-radius: 12px;
-  background: rgba(63, 68, 28, 0.05);
+  background: rgba(217, 165, 68, 0.05);
 }
 
 .payment-label {
   margin: 0 0 2px;
-  color: #1C1B17;
+  color: #f5e7c6;
   font-size: 14px;
   font-weight: 700;
 }
 
 .payment-detail {
   margin: 0;
-  color: rgba(28, 27, 23, 0.55);
+  color: rgba(245, 231, 198, 0.55);
   font-size: 12px;
 }
 
 .payment-chip {
   padding: 4px 8px;
   border-radius: 999px;
-  background: rgba(99, 110, 44, 0.14);
-  color: #3F441C;
+  background: rgba(217, 165, 68, 0.16);
+  color: #f1d18f;
   font-size: 11px;
   font-weight: 800;
   flex-shrink: 0;
@@ -622,7 +644,7 @@ button {
 
 .logout-body p {
   margin: 0;
-  color: rgba(28, 27, 23, 0.7);
+  color: rgba(245, 231, 198, 0.7);
   font-size: 13px;
   line-height: 1.5;
 }
@@ -631,8 +653,8 @@ button {
   border: none;
   border-radius: 12px;
   padding: 10px 12px;
-  background: rgba(184, 58, 58, 0.14);
-  color: #B83A3A;
+  background: rgba(201, 96, 63, 0.16);
+  color: #e08a68;
   font-weight: 800;
   cursor: pointer;
 }
@@ -640,7 +662,7 @@ button {
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(28, 27, 23, 0.55);
+  background: rgba(15, 8, 5, 0.65);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -652,25 +674,32 @@ button {
   width: min(100%, 400px);
   padding: 18px;
   border-radius: 18px;
-  background: #F7F5E9;
-  border: 1px solid rgba(63, 68, 28, 0.12);
-  color: #1C1B17;
+  background: #2b160e;
+  border: 1px solid rgba(217, 165, 68, 0.24);
+  color: #f5e7c6;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
 }
 
 .modal-content h3 {
   margin: 0 0 12px;
+  font-family: "Poppins", sans-serif;
   font-size: 18px;
-  color: #1C1B17;
+  color: #f5e7c6;
 }
 
 .modal-content textarea {
   width: 100%;
   padding: 10px 12px;
   border-radius: 10px;
-  border: 1px solid rgba(63, 68, 28, 0.18);
-  background: #ffffff;
-  color: #1C1B17;
+  border: 1px solid rgba(217, 165, 68, 0.28);
+  background: #1b0d08;
+  color: #f5e7c6;
   resize: vertical;
+}
+
+.modal-content textarea:focus {
+  outline: none;
+  border-color: #d9a544;
 }
 
 .modal-buttons {
@@ -690,13 +719,13 @@ button {
 }
 
 .cancel-btn {
-  background: rgba(28, 27, 23, 0.08);
-  color: #1C1B17;
+  background: rgba(245, 231, 198, 0.1);
+  color: #f5e7c6;
 }
 
 .save-btn {
-  background: #636E2C;
-  color: #F7F5E9;
+  background: linear-gradient(135deg, #d9a544 0%, #b67f2a 100%);
+  color: #3c2213;
 }
 
 .toast {
@@ -706,10 +735,11 @@ button {
   transform: translateX(-50%);
   padding: 10px 14px;
   border-radius: 999px;
-  background: #636E2C;
-  color: #F7F5E9;
+  background: linear-gradient(135deg, #d9a544 0%, #b67f2a 100%);
+  color: #3c2213;
   font-weight: 800;
   z-index: 1001;
+  box-shadow: 0 10px 24px rgba(217, 165, 68, 0.4);
 }
 
 @media (min-width: 700px) {

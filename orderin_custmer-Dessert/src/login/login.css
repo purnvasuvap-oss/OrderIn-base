@@ -24,29 +24,29 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(135deg, rgba(30, 30, 30, 0.75) 0%, rgba(42, 42, 42, 0.85) 50%, rgba(30, 30, 30, 0.75) 100%);
+  background: linear-gradient(135deg, rgba(20, 12, 8, 0.75) 0%, rgba(30, 18, 12, 0.85) 50%, rgba(20, 12, 8, 0.75) 100%);
   z-index: 1;
 }
 
 h2 {
-  color: #636E2C;
+  color: #D9A66C;
   margin-bottom: 20px;
   position: relative;
   z-index: 2;
 }
 
 .login-box {
-  background-color: rgba(241, 239, 216, 1.0);
+  background: linear-gradient(160deg, rgba(64, 42, 28, 0.92) 0%, rgba(45, 28, 18, 0.94) 100%);
   backdrop-filter: blur(10px);
   padding: 35px;
   border-radius: 20px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 0 20px rgba(255, 183, 3, 0.15);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6), 0 0 20px rgba(217, 166, 108, 0.15);
   width: 320px;
   display: flex;
   flex-direction: column;
   gap: 15px;
   align-items: center;
-  border: 1.5px solid #636E2C;
+  border: 1.5px solid rgba(217, 166, 108, 0.45);
   position: relative;
   z-index: 2;
 }
@@ -55,55 +55,55 @@ h2 {
   width: 180px;
   height: auto;
   margin-bottom: 10px;
-  filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.4)) drop-shadow(0 0 12px rgba(255, 255, 255, 0.25)) drop-shadow(0 0 18px rgba(255, 255, 255, 0.12));
+  filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.5)) drop-shadow(0 0 12px rgba(255, 255, 255, 0.3)) drop-shadow(0 0 18px rgba(255, 255, 255, 0.15));
   transition: filter 0.3s ease;
 }
 
 .orderin-logo:hover {
-  filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.6)) drop-shadow(0 0 16px rgba(255, 255, 255, 0.4)) drop-shadow(0 0 24px rgba(255, 255, 255, 0.2));
+  filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.65)) drop-shadow(0 0 16px rgba(255, 255, 255, 0.45)) drop-shadow(0 0 24px rgba(255, 255, 255, 0.25));
 }
 
 input {
   padding: 12px 15px;
-  border: 1.5px solid #444444;
+  border: 1.5px solid rgba(217, 166, 108, 0.3);
   border-radius: 12px;
   font-size: 16px;
   width: 87%;
   box-sizing: border-box;
   transition: all 0.3s ease;
-  background-color: #F1EFD8;
-  color: #1C1B17;
+  background-color: rgba(74, 50, 34, 0.55);
+  color: #F1E4D4;
 }
 
 input:hover {
-  border-color: #555555;
+  border-color: rgba(217, 166, 108, 0.5);
 }
 
 input:focus {
-  border-color: #636E2C;
-  box-shadow: 0 0 0 3px rgba(255, 183, 3, 0.1);
+  border-color: #D9A66C;
+  box-shadow: 0 0 0 3px rgba(217, 166, 108, 0.15);
 }
 
 input::placeholder {
-  color: #888888;
+  color: #C9B29B;
 }
 
 .input-wrapper{
   display: flex;
   align-items: center;
-  border: 1.5px solid #444444;
+  border: 1.5px solid rgba(217, 166, 108, 0.3);
   border-radius: 12px;
   overflow: hidden;
   position: relative;
   transition: all 0.3s ease;
-  background-color: #E7E5D8;
+  background-color: rgba(74, 50, 34, 0.55);
 }
 .input-wrapper:hover{
-  border-color: #bbb;
+  border-color: rgba(217, 166, 108, 0.5);
 }
 .input-wrapper:focus-within {
-  border-color: #636E2C;
-  box-shadow: 0 0 0 3px rgba(137, 150, 0, 0.1);
+  border-color: #D9A66C;
+  box-shadow: 0 0 0 3px rgba(217, 166, 108, 0.15);
 }
 .name-input {
   flex: 1;
@@ -113,6 +113,7 @@ input::placeholder {
   font-size: 16px;
   background: transparent;
   margin-left:10px;
+  color: #F1E4D4;
 }
 
 .name-icon-wrapper{
@@ -132,13 +133,13 @@ input::placeholder {
   width: 40px;
   text-align: center;
   border-right: 1.5px solid none;
-  color: #636E2C;
+  color: #D9A66C;
   font-size: 22px;
   border: none;
   transition: all 0.3s ease;
 }
 .input-wrapper svg{
-  color: #636E2C;
+  color: #D9A66C;
   font-size: 22px;
   margin-left: 10px;
 }
@@ -146,22 +147,22 @@ input::placeholder {
 .phone-input-container {
   display: flex;
   align-items: center;
-  border: 1.5px solid #444444;
+  border: 1.5px solid rgba(217, 166, 108, 0.3);
   border-radius: 12px;
   overflow: visible;
   margin-bottom: 15px;
   position: relative;
   transition: all 0.3s ease;
-  background-color: #E7E5D8;
+  background-color: rgba(74, 50, 34, 0.55);
 }
 
 .phone-input-container:hover {
-  border-color: #555555;
+  border-color: rgba(217, 166, 108, 0.5);
 }
 
 .phone-input-container:focus-within {
-  border-color: #636E2C;
-  box-shadow: 0 0 0 3px rgba(255, 183, 3, 0.1);
+  border-color: #D9A66C;
+  box-shadow: 0 0 0 3px rgba(217, 166, 108, 0.15);
 }
 
 .country-code-wrapper {
@@ -172,25 +173,26 @@ input::placeholder {
 
 .country-code-selector {
   padding: 12px 10px;
-  background-color: #E7E5D8;
+  background-color: transparent;
   cursor: pointer;
   font-size: 16px;
   min-width: 60px;
   text-align: center;
-  border-right: 1.5px solid #444444;
+  border-right: 1.5px solid rgba(217, 166, 108, 0.3);
   border-radius: 12px;
   border: none;
   transition: all 0.3s ease;
-  color: #1C1B17;
+  color: #D9A66C;
+  font-weight: 600;
 }
 
 .country-code-selector:hover {
-  background-color: #E7E5D8;
+  background-color: rgba(217, 166, 108, 0.08);
 }
 
 .country-code-selector:focus {
   outline: none;
-  background-color: #E7E5D8;
+  background-color: rgba(217, 166, 108, 0.08);
 }
 
 .phone-input {
@@ -198,9 +200,9 @@ input::placeholder {
   border: none;
   padding: 12px 15px;
   font-size: 16px;
-  background-color: #E7E5D8;
+  background-color: transparent;
   border-radius: 12px;
-  color: #1C1B17;
+  color: #F1E4D4;
 }
 
 .phone-input:focus {
@@ -215,12 +217,12 @@ input::placeholder {
     width: 260px;
     max-height: 250px;
 
-    background: #F1EFD8;
-    border: 1px solid #636E2C;
+    background: #3D2A1C;
+    border: 1px solid #D9A66C;
     border-radius: 12px;
 
     overflow: hidden;
-    box-shadow: 0 10px 30px rgba(0,0,0,.25);
+    box-shadow: 0 10px 30px rgba(0,0,0,.4);
 
     z-index: 9999;
 }
@@ -230,11 +232,11 @@ input::placeholder {
   width: 100%;
   padding: 10px;
   border: none;
-  border-bottom: 1px solid #676767;
+  border-bottom: 1px solid rgba(217, 166, 108, 0.3);
   font-size: 16px;
   box-sizing: border-box;
-  background-color: #2A2A2A;
-  color: #1C1B17;
+  background-color: #2A1D15;
+  color: #F1E4D4;
 }
 
 .dropdown-list {
@@ -245,12 +247,12 @@ input::placeholder {
 .dropdown-item {
   padding: 10px;
   cursor: pointer;
-  border-bottom: 1px solid #F1EFD8;
-  color: #1C1B17;
+  border-bottom: 1px solid rgba(217, 166, 108, 0.15);
+  color: #F1E4D4;
 }
 
 .dropdown-item:hover {
-  background-color: #F1EFD8;
+  background-color: rgba(217, 166, 108, 0.15);
 }
 
 button {
@@ -269,38 +271,38 @@ button:active {
 }
 
 .otp-btn {
-  background-color: #636E2C;
-  color: #1E1E1E;
+  background: linear-gradient(135deg, #E3B583 0%, #D19A63 100%);
+  color: #3D2A1C;
   width: 87%;
   font-weight: 600;
 }
 
 .otp-btn:hover {
-  background-color: #FFC230;
-  box-shadow: 0 4px 12px rgba(255, 183, 3, 0.3);
+  background: linear-gradient(135deg, #EDC79A 0%, #DBA871 100%);
+  box-shadow: 0 4px 12px rgba(217, 166, 108, 0.3);
 }
 
 .otp-btn:disabled {
-  background-color: #666666;
+  background: #666666;
   cursor: not-allowed;
   box-shadow: none;
   color: #AAAAAA;
 }
 
 .login-btn {
-  background-color: #636E2C;
-  color: #F1EFD8;
+  background: linear-gradient(135deg, #E3B583 0%, #D19A63 100%);
+  color: #3D2A1C;
   width: 87%;
   font-weight: 600;
 }
 
 .login-btn:hover {
-  background-color: #FFC230;
-  box-shadow: 0 4px 12px rgba(255, 183, 3, 0.3);
+  background: linear-gradient(135deg, #EDC79A 0%, #DBA871 100%);
+  box-shadow: 0 4px 12px rgba(217, 166, 108, 0.3);
 }
 
 .login-btn:disabled {
-  background-color: #666666;
+  background: #666666;
   cursor: not-allowed;
   box-shadow: none;
   color: #AAAAAA;
@@ -319,7 +321,7 @@ button:active {
     padding: 20px;
     margin: 0 auto;
     flex-shrink: 0;
-    border: 1.5px solid #636E2C;
+    border: 1.5px solid rgba(217, 166, 108, 0.45);
   }
 
   input {
@@ -328,15 +330,15 @@ button:active {
     -webkit-border-radius: 0;
   }
   .login-btn {
-  background-color: #636E2C;
-  color: #F1EFD8;
+  background: linear-gradient(135deg, #E3B583 0%, #D19A63 100%);
+  color: #3D2A1C;
   width: 97%;
   font-weight: 600;
 }
   input:focus {
     outline: none;
-    border-color: #636E2C;
-    box-shadow: 0 0 0 3px rgba(255, 183, 3, 0.1);
+    border-color: #D9A66C;
+    box-shadow: 0 0 0 3px rgba(217, 166, 108, 0.15);
   }
   
   .login-container {

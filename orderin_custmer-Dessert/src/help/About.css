@@ -1,11 +1,22 @@
-.about-root {
-  font-family: 'Segoe UI', 'Helvetica Neue', sans-serif;
-  line-height: 1.6;
-  color: #1C1B17;
-  background-color: #F1EFD8;
-  overflow-x: hidden;
-}
+/* ===== ABOUT PAGE COLOR PALETTE ===== */
 
+.about-root{
+  --about-bg: #3F0B11;
+  --about-surface: #261013;
+  --about-surface-soft: #341417;
+  --about-ink: #F5DFBB;
+  --about-muted: rgba(245,223,187,.82);
+  --about-subtle: rgba(245,223,187,.65);
+
+  --about-border: rgba(242,187,70,.18);
+
+  --about-accent: #F2BB46;
+  --about-accent-dark: #B5823F;
+  --about-accent-soft: rgba(242,187,70,.12);
+
+  background: var(--about-bg);
+  color: var(--about-ink);
+}
 /* Top bar with back button (visible at page start) */
 .about-topbar {
   position: sticky;
@@ -16,26 +27,26 @@
   padding: 12px 16px;
   background: linear-gradient(135deg, #F7F5E9 0%, #E4E0C8 100%);
   box-shadow: 0 4px 16px rgba(28, 27, 23, 0.12);
-  border-bottom: 2px solid #636E2C;
+  border-bottom: 2px solid #F2BB46;
   backdrop-filter: blur(10px);
 }
 
 .btn-top-back {
   background: rgba(99, 110, 44, 0.1);
-  border: 2px solid #636E2C;
+  border: 2px solid #F2BB46;
   padding: 10px 16px;
   border-radius: 8px;
   cursor: pointer;
   font-weight: 600;
-  color: #636E2C;
+  color: var(--about-ink);
   transition: all 0.3s ease;
   font-size: 0.95rem;
   letter-spacing: 0.5px;
 }
 
 .btn-top-back:hover {
-  background: #636E2C;
-  color: #F1EFD8;
+  background: --about-accent;
+  color: --about-bg;
   transform: translateY(-2px);
   box-shadow: 0 8px 20px rgba(99, 110, 44, 0.3);
 }
@@ -83,7 +94,7 @@
   font-weight: 700;
   letter-spacing: 2px;
   text-transform: uppercase;
-  background: linear-gradient(135deg, #636E2C 0%, #3F441C 100%);
+  background: linear-gradient(135deg, --about-accent 0%, --about-accent-dark 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -98,7 +109,7 @@
 }
 
 .menu-section {
-  background: linear-gradient(135deg, #F1EFD8 0%, #F7F5E9 100%);
+  background: linear-gradient(135deg, --about-bg 0%, #F7F5E9 100%);
   padding: 50px 16px;
   border-top: 1px solid #E4E0C8;
 }
@@ -107,7 +118,7 @@
   font-size: 2.2rem;
   margin-bottom: 24px;
   animation: slideIn 1s ease-in-out;
-  color: #636E2C;
+  color: --about-accent;
   text-align: center;
   font-weight: 700;
   letter-spacing: 1px;
@@ -124,7 +135,7 @@
   transform: translateX(-50%);
   width: 60px;
   height: 3px;
-  background: linear-gradient(90deg, transparent, #636E2C, transparent);
+  background: linear-gradient(90deg, transparent, --about-accent, transparent);
   border-radius: 3px;
 }
 
@@ -138,8 +149,8 @@
 }
 
 .branch-card {
-  background: linear-gradient(145deg, #F7F5E9 0%, #F1EFD8 100%);
-  border: 1px solid #636E2C;
+  background: linear-gradient(145deg, #F7F5E9 0%, --about-bg 100%);
+  border: 1px solid --about-accent;
   border-radius: 14px;
   width: 320px;
   overflow: hidden;
@@ -155,14 +166,14 @@
   left: 0;
   right: 0;
   height: 3px;
-  background: linear-gradient(90deg, transparent, #636E2C, transparent);
+  background: linear-gradient(90deg, transparent, --about-accent, transparent);
   opacity: 0;
   transition: opacity 0.4s ease;
   z-index: 2;
 }
 
 .branch-card:hover {
-  border-color: #3F441C;
+  border-color: --about-accent-dark;
   box-shadow: 0 12px 48px rgba(99, 110, 44, 0.25), inset 0 1px 0 rgba(28, 27, 23, 0.1);
   transform: translateY(-8px);
 }
@@ -192,7 +203,7 @@
 .branch-content h3 {
   margin: 0 0 8px;
   font-size: 1.3rem;
-  color: #636E2C;
+  color: --about-accent;
   font-weight: 700;
   letter-spacing: 0.5px;
 }
@@ -224,7 +235,7 @@
   background-attachment: scroll;
   border-radius: 50%;
   animation: rotatePlate 6s linear infinite;
-  border: 5px solid #636E2C;
+  border: 5px solid --about-accent;
   box-shadow: 0 0 50px rgba(99, 110, 44, 0.6), 0 0 100px rgba(99, 110, 44, 0.4), inset 0 0 40px rgba(28, 27, 23, 0.6);
   filter: brightness(1.2) contrast(1.4) saturate(1.3) sepia(0.2);
 }
@@ -241,13 +252,13 @@
   height: 160px;
   background: radial-gradient(circle, rgba(28, 27, 23, 0.8) 0%, rgba(28, 27, 23, 0.9) 100%);
   border-radius: 50%;
-  border: 3px solid #636E2C;
+  border: 3px solid --about-accent;
   box-shadow: inset 0 0 30px rgba(99, 110, 44, 0.2);
 }
 
 .rotating-plate-text p {
   margin: 0;
-  color: #636E2C;
+  color: --about-accent;
   font-size: 1.1rem;
   font-weight: 700;
   letter-spacing: 1px;
@@ -295,7 +306,7 @@
   font-weight: 700;
   letter-spacing: 1px;
   text-transform: uppercase;
-  color: #636E2C;
+  color: --about-accent;
   text-shadow: 0 2px 8px rgba(28, 27, 23, 0.5);
 }
 
@@ -325,8 +336,8 @@
 }
 
 .employee-card {
-  background: linear-gradient(145deg, #F7F5E9 0%, #F1EFD8 100%);
-  border: 1px solid #636E2C;
+  background: linear-gradient(145deg, #F7F5E9 0%, --about-bg 100%);
+  border: 1px solid --about-accent;
   border-radius: 10px;
   overflow: hidden;
   text-align: center;
@@ -336,7 +347,7 @@
 
 .employee-card:hover {
   transform: translateY(-6px) scale(1.05);
-  border-color: #3F441C;
+  border-color: --about-accent-dark;
   box-shadow: 0 12px 36px rgba(99, 110, 44, 0.35);
 }
 
@@ -359,7 +370,7 @@
 .employee-info h4 {
   margin: 0 0 6px;
   font-size: 0.95rem;
-  color: #636E2C;
+  color: --about-accent;
   font-weight: 700;
 }
 
@@ -371,7 +382,7 @@
 
 .employees-section {
   padding: 40px 16px;
-  background: linear-gradient(135deg, #F1EFD8 0%, #F7F5E9 100%);
+  background: linear-gradient(135deg, --about-bg 0%, #F7F5E9 100%);
 }
 
 .employees-grid {
@@ -383,8 +394,8 @@
 }
 
 .employees-section .employee-card {
-  background: linear-gradient(145deg, #F7F5E9 0%, #F1EFD8 100%);
-  border: 1px solid #636E2C;
+  background: linear-gradient(145deg, #F7F5E9 0%, --about-bg 100%);
+  border: 1px solid --about-accent;
   border-radius: 10px;
   overflow: hidden;
   box-shadow: 0 8px 24px rgba(99, 110, 44, 0.2);
@@ -395,7 +406,7 @@
 }
 
 .employees-section .employee-card:hover {
-  border-color: #3F441C;
+  border-color: --about-accent-dark;
   transform: translateY(-6px) scale(1.05);
   box-shadow: 0 12px 36px rgba(99, 110, 44, 0.35);
 }
@@ -421,7 +432,7 @@
 .employees-section .employee-info h4 {
   margin: 0 0 6px;
   font-size: 0.95rem;
-  color: #636E2C;
+  color: --about-accent;
   font-weight: 700;
 }
 
@@ -432,7 +443,7 @@
 }
 
 .about-section {
-  background: linear-gradient(135deg, #F1EFD8 0%, #F7F5E9 100%);
+  background: linear-gradient(135deg, --about-bg 0%, #F7F5E9 100%);
   padding: 50px 20px;
   text-align: center;
   border-top: 1px solid #E4E0C8;
@@ -441,7 +452,7 @@
 .about-section h2 {
   font-size: 2.2rem;
   margin-bottom: 20px;
-  color: #636E2C;
+  color: --about-accent;
   font-weight: 700;
   letter-spacing: 1px;
   text-transform: uppercase;
@@ -457,7 +468,7 @@
   transform: translateX(-50%);
   width: 60px;
   height: 3px;
-  background: linear-gradient(90deg, transparent, #636E2C, transparent);
+  background: linear-gradient(90deg, transparent, --about-accent, transparent);
   border-radius: 3px;
 }
 
@@ -475,8 +486,8 @@
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #636E2C 0%, #3F441C 100%);
-  color: #F1EFD8;
+  background: linear-gradient(135deg, --about-accent 0%, --about-accent-dark 100%);
+  color: --about-bg;
   border: none;
   padding: 14px 32px;
   border-radius: 8px;
@@ -499,12 +510,12 @@
 }
 
 .footer {
-  background: linear-gradient(135deg, #F1EFD8 0%, #F7F5E9 100%);
+  background: linear-gradient(135deg, --about-bg 0%, #F7F5E9 100%);
   color: #6B6A5D;
   text-align: center;
   padding: 20px 16px;
   margin-top: 0;
-  border-top: 2px solid #636E2C;
+  border-top: 2px solid --about-accent;
   font-size: 0.9rem;
   letter-spacing: 0.5px;
 }
@@ -542,14 +553,14 @@
 
 /* Cleaner dark-mode About Restaurant layout */
 .about-root {
-  --about-bg: #F1EFD8;
+  --about-bg: --about-bg;
   --about-surface: #F7F5E9;
   --about-surface-soft: #E4E0C8;
   --about-ink: #1C1B17;
   --about-muted: #4A4940;
   --about-subtle: #6B6A5D;
   --about-border: #E4E0C8;
-  --about-accent: #636E2C;
+  --about-accent: --about-accent;
   --about-accent-soft: rgba(99, 110, 44, 0.12);
 
   min-height: 100vh;
@@ -826,7 +837,7 @@
 }
 
 .about-branch-phone:hover {
-  color: #3F441C;
+  color: --about-accent-dark;
 }
 
 .about-team-grid {
@@ -882,7 +893,7 @@
   border: none;
   border-radius: 8px;
   background: var(--about-accent);
-  color: #F1EFD8;
+  color: --about-bg;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -894,7 +905,7 @@
 }
 
 .about-primary-action:hover {
-  background: #3F441C;
+  background: --about-accent-dark;
 }
 
 .about-footer {

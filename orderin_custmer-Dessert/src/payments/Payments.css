@@ -1,22 +1,40 @@
 /* Payments.css */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap');
+
 .payments-container {
   min-height: 100vh;
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: #F1EFD8;
+  background-color: #1b0d08;
   padding: 1rem;
+  font-family: "Inter", "Segoe UI", sans-serif;
 }
 
 .payments-card {
   width: 100%;
   max-width: 28rem;
-  background-color: #F7F5E9;
-  border-radius: 1rem;
-  box-shadow: 0 10px 15px -3px rgba(28, 27, 23, 0.12), 0 4px 6px -2px rgba(28, 27, 23, 0.08);
+  background-color: #2b160e;
+  background-image:
+    radial-gradient(ellipse 70% 40% at 15% 0%, rgba(245, 231, 198, 0.06) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 35% at 90% 100%, rgba(27, 13, 8, 0.5) 0%, transparent 65%);
+  border-radius: 1.4rem;
+  box-shadow: 0 20px 46px rgba(0, 0, 0, 0.55);
   padding: 1rem;
   position: relative;
-  border: 1px solid #E4E0C8;
+  border: 1px solid rgba(217, 165, 68, 0.24);
+}
+
+.payments-card::before {
+  content: "";
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(217, 165, 68, 0.35);
 }
 
 @media (min-width: 640px) {
@@ -27,20 +45,34 @@
 
 .close-button {
   position: absolute;
-  top: 0.75rem;
-  right: 0.75rem;
-  color: #6B6A5D;
+  top: 0.9rem;
+  right: 0.9rem;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(43, 22, 14, 0.7);
+  border: 1px solid rgba(217, 165, 68, 0.3);
+  color: #f5e7c6;
+  cursor: pointer;
+  transition: border-color 0.2s ease, color 0.2s ease;
 }
 
 .close-button:hover {
-  color: #636E2C;
+  color: #d9a544;
+  border-color: #d9a544;
 }
 
 .checkout-header {
+  font-family: "Poppins", sans-serif;
   font-size: 1.25rem;
-  font-weight: 600;
-  color: #1C1B17;
-  margin-bottom: 1rem;
+  font-weight: 700;
+  color: #f5e7c6;
+  text-align: center;
+  letter-spacing: 0.02em;
+  margin: 0.4rem 0 1.2rem;
 }
 
 @media (min-width: 640px) {
@@ -53,10 +85,10 @@
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  border: 1px solid #D6D2B4;
-  border-radius: 0.75rem;
+  border: 1px solid rgba(217, 165, 68, 0.2);
+  border-radius: 0.9rem;
   padding: 0.75rem;
-  background-color: #E4E0C8;
+  background-color: rgba(217, 165, 68, 0.05);
   margin-bottom: 1rem;
 }
 
@@ -64,7 +96,8 @@
   width: 4rem;
   height: 4rem;
   object-fit: cover;
-  border-radius: 0.5rem;
+  border-radius: 0.6rem;
+  border: 1px solid rgba(217, 165, 68, 0.22);
 }
 
 .order-item-details {
@@ -72,8 +105,8 @@
 }
 
 .order-item-name {
-  color: #1C1B17;
-  font-weight: 500;
+  color: #f5e7c6;
+  font-weight: 600;
   font-size: 0.875rem;
 }
 
@@ -84,14 +117,14 @@
 }
 
 .order-item-price {
-  color: #636E2C;
+  color: #d9a544;
   font-size: 0.875rem;
-  font-weight: 600;
+  font-weight: 700;
   margin: 0.25rem 0;
 }
 
 .order-item-each {
-  color: #6B6A5D;
+  color: rgba(245, 231, 198, 0.55);
   font-size: 0.75rem;
   margin: 0;
 }
@@ -105,54 +138,74 @@
 .qty-button {
   padding: 0.25rem;
   border-radius: 0.5rem;
-  background-color: #D6D2B4;
-  border: 1px solid #C9C4A4;
+  background-color: #3a2013;
+  border: 1px solid rgba(217, 165, 68, 0.32);
+  color: #d9a544;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: border-color 0.15s ease;
 }
 
 .qty-button:hover {
-  background-color: #C9C4A4;
+  background-color: #4a2a18;
+  border-color: #d9a544;
 }
 
 .qty-value {
   padding: 0 0.5rem;
-  color: #1C1B17;
-  font-weight: 600;
+  color: #f5e7c6;
+  font-weight: 700;
 }
 
 .remove-button {
-  padding: 0.25rem;
-  color: #ef4444;
+  padding: 0.4rem;
+  border-radius: 50%;
+  background-color: rgba(201, 96, 63, 0.16);
+  border: 1px solid rgba(201, 96, 63, 0.35);
+  color: #e08a68;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
 }
 
 .remove-button:hover {
-  color: #dc2626;
+  background-color: rgba(201, 96, 63, 0.28);
+  color: #f0a888;
 }
 
 .cooking-preferences-btn {
   width: 100%;
-  border: 1px solid #D6D2B4;
-  border-radius: 0.75rem;
-  padding: 0.5rem;
-  color: #4A4940;
+  border: 1px solid rgba(217, 165, 68, 0.35);
+  border-radius: 999px;
+  padding: 0.55rem;
+  color: #f1d18f;
   font-size: 0.875rem;
-  background-color: #F7F5E9;
+  font-weight: 600;
+  background-color: rgba(217, 165, 68, 0.12);
   margin-bottom: 1rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
 }
 
 .cooking-preferences-btn:hover {
-  background-color: #E4E0C8;
-  border-color: #636E2C;
+  background-color: rgba(217, 165, 68, 0.2);
+  border-color: #d9a544;
 }
 
 .billing-breakdown {
-  border-top: 1px solid #D6D2B4;
+  border-top: 1px solid rgba(217, 165, 68, 0.18);
   padding-top: 0.75rem;
   margin-bottom: 1rem;
 }
 
 .billing-header {
-  color: #1C1B17;
-  font-weight: 600;
+  color: #f5e7c6;
+  font-family: "Poppins", sans-serif;
+  font-weight: 700;
   margin-bottom: 0.5rem;
 }
 
@@ -160,7 +213,7 @@
   display: flex;
   justify-content: space-between;
   font-size: 0.875rem;
-  color: #4A4940;
+  color: rgba(245, 231, 198, 0.62);
   margin-bottom: 0.25rem;
 }
 
@@ -168,8 +221,8 @@
   display: flex;
   justify-content: space-between;
   font-size: 1.125rem;
-  font-weight: 600;
-  color: #636E2C;
+  font-weight: 700;
+  color: #d9a544;
   margin-top: 0.5rem;
 }
 
@@ -178,8 +231,9 @@
 }
 
 .payment-header {
-  color: #1C1B17;
-  font-weight: 600;
+  color: #f5e7c6;
+  font-family: "Poppins", sans-serif;
+  font-weight: 700;
   margin-bottom: 0.5rem;
 }
 
@@ -194,78 +248,89 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  border: 1px solid #D6D2B4;
-  border-radius: 0.75rem;
+  border: 1px solid rgba(217, 165, 68, 0.22);
+  border-radius: 0.9rem;
   padding: 0.75rem;
-  background-color: transparent;
+  background-color: rgba(43, 22, 14, 0.5);
+  cursor: pointer;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
 }
 
 .payment-option:hover {
-  background-color: #f0fdf4;
+  background-color: rgba(16, 185, 129, 0.1);
+  border-color: rgba(16, 185, 129, 0.4);
 }
 
 .payment-option:nth-child(2):hover {
-  background-color: #eff6ff;
+  background-color: rgba(59, 130, 246, 0.1);
+  border-color: rgba(59, 130, 246, 0.4);
 }
 
 .payment-option:nth-child(3):hover {
-  background-color: #fefce8;
+  background-color: rgba(217, 165, 68, 0.14);
+  border-color: rgba(217, 165, 68, 0.5);
 }
 
 .payment-option.selected {
-  border-color: #059669;
-  background-color: #f0fdf4;
+  border-color: #34d399;
+  background-color: rgba(16, 185, 129, 0.14);
+  box-shadow: 0 0 0 1px rgba(52, 211, 153, 0.3);
 }
 
 .payment-option.selected:nth-child(2) {
-  border-color: #2563eb;
-  background-color: #eff6ff;
+  border-color: #60a5fa;
+  background-color: rgba(59, 130, 246, 0.14);
+  box-shadow: 0 0 0 1px rgba(96, 165, 250, 0.3);
 }
 
 .payment-option.selected:nth-child(3) {
-  border-color: #d97706;
-  background-color: #fefce8;
+  border-color: #d9a544;
+  background-color: rgba(217, 165, 68, 0.18);
+  box-shadow: 0 0 0 1px rgba(217, 165, 68, 0.35);
 }
 
 .payment-icon-upi {
-  color: #059669;
+  color: #34d399;
   margin-bottom: 0.25rem;
 }
 
 .payment-icon-card {
-  color: #2563eb;
+  color: #60a5fa;
   margin-bottom: 0.25rem;
 }
 
 .payment-icon-cash {
-  color: #d97706;
+  color: #e8b04f;
   margin-bottom: 0.25rem;
 }
 
 .payment-icon-online {
-  color: #10b981;
+  color: #34d399;
   margin-bottom: 0.25rem;
 }
 
 .payment-label {
   font-size: 0.875rem;
-  font-weight: 500;
-  color: #4A4940;
+  font-weight: 600;
+  color: #f5e7c6;
 }
 
 .place-order-btn {
   width: 100%;
-  background-color: #059669;
-  color: white;
+  background: linear-gradient(135deg, #ffd8a2 0%, #d9a544 55%, #b67f2a 100%);
+  color: #3c2213;
   border: none;
-  border-radius: 0.75rem;
-  padding: 0.75rem;
+  border-radius: 0.9rem;
+  padding: 0.85rem;
   font-size: 1rem;
-  font-weight: 600;
+  font-weight: 800;
   margin-top: 1rem;
   cursor: pointer;
+  box-shadow: 0 12px 26px rgba(217, 165, 68, 0.4);
+  transition: filter 0.18s ease, transform 0.12s ease;
 }
 
 .place-order-btn:hover {
-  background-color: #047857;
+  filter: brightness(1.05);
+  transform: translateY(-1px);
 }
