@@ -4,8 +4,8 @@
 .dashboard-banner{
   background:
   linear-gradient(
-    rgba(255,255,255,.85),
-    rgba(255,255,255,.85)
+    rgba(39, 0, 0, 0.85),
+    rgba(84, 0, 0, 0.85)
   ),
   url("https://images.unsplash.com/photo-1517248135467-4c7edcad34c4");
 
@@ -23,12 +23,12 @@
   margin-bottom:10px;
 }
 .dashboard-banner p{
-  color: #636E2C;
+  color: #F2BB46;
   font:bold 18px "Poppins",sans-serif;
 }
 .dashboard-wrapper{
   min-height:90vh;
-  background:#f6f5f3;
+  background:#3F0B11;
   padding:20px;
   background-image: url("./landingpage/Vector.svg");
 
@@ -54,7 +54,7 @@
   margin: 0;
 }
 .date-card {
-  background: #636E2C;
+  background: #F2BB46;
   padding: 12px 18px;
   border-radius: 12px;
   display: flex;
@@ -90,7 +90,7 @@
 }
 
 .stat-card {
-  background: #fff;
+  background:#261013;
   border-radius: 12px;
   padding: 14px 18px;
   display: flex;
@@ -137,19 +137,19 @@
 /* KPI Colors */
 
 .revenue {
-  border-bottom: 4px solid #636E2C;
+  border-bottom: 4px solid #F2BB46;
 }
 
 .revenue h2 {
-  color: #636E2C;
+  color: #F2BB46;
 }
 
 .orders {
-  border-bottom: 4px solid #3F441C;
+  border-bottom: 4px solid #FBC02D;
 }
 
 .orders h2 {
-  color: #3F441C;
+  color: #FBC02D;
 }
 
 .customers {
@@ -161,11 +161,11 @@
 }
 
 .tables {
-  border-bottom: 4px solid #3F441C;
+  border-bottom: 4px solid #FBC02D;
 }
 
 .tables h2 {
-  color: #3F441C;
+  color: #FBC02D;
 }
 
 /* ===================================
@@ -183,7 +183,7 @@
   position:relative;
   overflow:hidden;
 
-  background:white;
+  background:#261013;
   border-radius:16px;
   padding:24px;
 
@@ -264,7 +264,7 @@
 
 .module-top p{
   margin-top:10px;
-  color:#555;
+  color: #F2BB46;
   line-height:1.7;
   font-size:14px;
 }
@@ -302,19 +302,19 @@
 }
 
 .menu-module::after{
-  background:#fdeaea;
+  background: #B5823F;
 }
 
 .finance-module::after{
-  background:#e8f7e8;
+  background:#B5823F;
 }
 
 .orders-module::after{
-  background:#fff5db;
+  background:#B5823F;
 }
 
 .inventory-module::after{
-  background:#e8f7e8;
+  background:#B5823F;
 }
 
 /* ===================================
@@ -322,7 +322,7 @@
 =================================== */
 
 .dashboard-footer{
-  background:#fff;
+  background:#261013;
 
   border-radius:10px;
 
@@ -332,7 +332,7 @@
   align-items:center;
   gap:30px;
 
-  color:#666;
+  color:#B5823F;
   font-size:14px;
 
   box-shadow:0 2px 8px rgba(0,0,0,.04);

@@ -1119,6 +1119,7 @@ const MenuPage = () => {
             type="text"
             placeholder="Search dish name..."
             value={searchTerm}
+            className="search-input"
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>

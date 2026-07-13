@@ -5,20 +5,30 @@
 */
 
 :root {
-  --client-red: #636E2C;
-  --client-red-dark: #3F441C;
-  --client-green: #43a047;
-  --client-yellow: #f7c23b;
-  --client-page: #fff7f0;
-  --client-page-soft: #fceee6;
-  --client-panel: #ffffff;
-  --client-text: #212121;
-  --client-muted: #616161;
-  --client-line: #e0e0e0;
+  /* Target palette for order_clients-Maroon */
+  --client-bg: #3F0B11;          /* Background */
+  --client-surface: #261013;    /* Surface */
+  --client-accent: #F2BB46;     /* Accent */
+  --client-accent-dark: #B5823F;/* Accent Dark */
+  --client-text: #F5DFBB;       /* Text */
+
+  /* Backward-compatible aliases used throughout existing CSS */
+  --client-red: var(--client-accent);
+  --client-red-dark: var(--client-accent-dark);
+  --client-green: var(--client-accent);
+  --client-yellow: var(--client-accent);
+
+  --client-page: var(--client-bg);
+  --client-page-soft: #2d0f15;
+  --client-panel: var(--client-surface);
+  --client-muted: rgba(245, 223, 187, 0.75);
+  --client-line: rgba(245, 223, 187, 0.18);
+
   --client-radius: 8px;
   --client-header-height: 84px;
-  --client-shadow: 0 10px 26px rgba(80, 45, 30, 0.1);
+  --client-shadow: 0 10px 26px rgba(0, 0, 0, 0.35);
 }
+
 
 html,
 body,
@@ -30,8 +40,9 @@ body,
 
 body {
   color: var(--client-text);
-  background: linear-gradient(180deg, #fffefb 0%, var(--client-page) 68%, var(--client-page-soft) 100%);
+  background: linear-gradient(180deg, var(--client-bg) 0%, var(--client-bg) 68%, var(--client-page-soft) 100%);
 }
+
 
 * {
   box-sizing: border-box;
@@ -67,7 +78,7 @@ img {
   height: auto !important;
   margin: 0 !important;
   padding: 10px clamp(14px, 3vw, 30px) !important;
-  background: rgba(255, 255, 255, 0.96);
+  background: #261013;
   border-bottom: 1px solid rgba(229, 57, 53, 0.12);
   box-shadow: 0 8px 20px rgba(80, 45, 30, 0.08);
 }
@@ -424,7 +435,7 @@ img {
   overflow: hidden !important;
   border: 1px solid rgba(224, 224, 224, 0.85);
   border-radius: var(--client-radius);
-  background: rgba(255, 255, 255, 0.94);
+  background: #3F0B11;
   box-shadow: var(--client-shadow);
 }
 
@@ -721,8 +732,9 @@ img {
   padding: clamp(18px, 3vw, 44px) !important;
   overflow: hidden !important;
   background:
-    radial-gradient(circle at 90% 92%, rgba(229, 57, 53, 0.08) 0, rgba(229, 57, 53, 0.08) 28%, transparent 29%),
-    linear-gradient(135deg, #fffefb 0%, #fff7f0 58%, #fceee6 100%) !important;
+  radial-gradient(circle at 92% 12%, rgba(242, 187, 70, 0.08) 0 18%, transparent 19%),  /* Accent #F2BB46 glow */
+  radial-gradient(circle at 8% 92%, rgba(181, 130, 63, 0.08) 0 16%, transparent 17%),   /* Accent Dark #B5823F glow */
+  linear-gradient(135deg, #3F0B11 0%, #2E1013 56%, #261013 100%) !important;           /* Background to Surface gradient */
 }
 
 .sub-login-left,
@@ -811,7 +823,7 @@ img {
 
 .sub-restaurant-name {
   margin: 0 !important;
-  color: #2b2b2b !important;
+  color: #F2BB46 !important;
   font-size: clamp(30px, 4vw, 46px) !important;
   line-height: 1.08 !important;
   letter-spacing: 0 !important;
@@ -819,7 +831,7 @@ img {
 
 .sub-welcome-text {
   margin: 8px 0 0 !important;
-  color: #666666 !important;
+  color: #F2BB46 !important;
   font-size: clamp(14px, 1.6vw, 18px) !important;
 }
 
@@ -829,20 +841,20 @@ img {
   text-align: left !important;
   border: 1px solid rgba(229, 57, 53, 0.1);
   border-radius: var(--client-radius) !important;
-  background: rgba(255, 255, 255, 0.96) !important;
+  background: #261013 !important;
   box-shadow: 0 18px 44px rgba(80, 45, 30, 0.12) !important;
 }
 
 .sub-login-card h3 {
   margin: 0 !important;
-  color: #222222 !important;
+  color: #F2BB46 !important;
   font-size: clamp(22px, 2.3vw, 28px) !important;
   line-height: 1.15 !important;
 }
 
 .sub-login-card .sub {
   margin: 6px 0 22px !important;
-  color: #777777 !important;
+  color: #F2BB46 !important;
   font-size: 14px !important;
   line-height: 1.45 !important;
 }
@@ -906,7 +918,7 @@ img {
   max-width: 420px !important;
   margin: 18px auto 0 !important;
   padding: 0 !important;
-  color: #555555 !important;
+  color: #2E1013 !important;
   text-align: center !important;
   line-height: 1.55 !important;
   background: transparent !important;
@@ -1043,7 +1055,7 @@ img {
     max-width: 420px !important;
     margin: 16px auto 0 !important;
     padding: 0 !important;
-    color: #555555 !important;
+    color: #2E1013 !important;
     text-align: center !important;
     background: transparent !important;
   }
@@ -1467,10 +1479,10 @@ img {
   padding: clamp(18px, 3vw, 44px) !important;
   overflow-x: hidden !important;
   overflow-y: hidden !important;
-  background:
-    radial-gradient(circle at 92% 12%, rgba(229, 57, 53, 0.1) 0 18%, transparent 19%),
-    radial-gradient(circle at 8% 92%, rgba(67, 160, 71, 0.1) 0 16%, transparent 17%),
-    linear-gradient(135deg, #fffdf8 0%, #fff7f0 56%, #fceee6 100%) !important;
+ background: 
+  radial-gradient(circle at 92% 12%, rgba(242, 187, 70, 0.08) 0 18%, transparent 19%),  /* Accent #F2BB46 glow */
+  radial-gradient(circle at 8% 92%, rgba(181, 130, 63, 0.08) 0 16%, transparent 17%),   /* Accent Dark #B5823F glow */
+  linear-gradient(135deg, #3F0B11 0%, #2E1013 56%, #261013 100%) !important;           /* Background to Surface gradient */
 }
 
 .sub-login.login-redesign::before {
@@ -1511,9 +1523,13 @@ img {
   border: 1px solid rgba(255, 255, 255, 0.16);
   border-radius: 18px !important;
   color: #ffffff;
-  background:
-    linear-gradient(155deg, rgba(99, 110, 44, 0.96) 0%, rgba(63, 68, 28, 0.98) 54%, rgba(40, 43, 18, 0.96) 100%),
-    url("/images/backgroun-image.jpg") center / cover no-repeat !important;
+  background: linear-gradient(
+  155deg, 
+  rgba(63, 11, 17, 0.96) 0%,     /* Background #3F0B11 with 96% opacity */
+  rgba(38, 16, 19, 0.98) 54%,    /* Surface #261013 with 98% opacity */
+  rgba(25, 10, 12, 0.96) 100%    /* A deeper shadow variant for contrast */
+), 
+url(/images/backgroun-image.jpg) center / cover no-repeat !important;
   box-shadow: 0 22px 56px rgba(139, 39, 28, 0.22);
 }
 
@@ -1544,7 +1560,7 @@ img {
   padding: 14px 16px;
   border: 1px solid rgba(255, 255, 255, 0.22);
   border-radius: 16px;
-  background: rgba(255, 255, 255, 0.94);
+  background: rgba(255, 233, 69, 0.94);
   box-shadow: 0 14px 34px rgba(80, 25, 16, 0.18);
 }
 
@@ -1564,7 +1580,7 @@ img {
 
 .login-redesign .sub-by-text,
 .login-redesign .sub-company-name-text {
-  color: rgba(255, 255, 255, 0.92) !important;
+  color: rgba(252, 222, 52, 0.92) !important;
   font-size: clamp(11px, 1vw, 14px) !important;
   line-height: 1.35 !important;
 }
@@ -1659,7 +1675,7 @@ img {
 
 .login-redesign .sub-restaurant-name {
   margin: 0 !important;
-  color: #26211f !important;
+  color: #F2BB46 !important;
   font-size: clamp(34px, 4vw, 54px) !important;
   font-weight: 800 !important;
   line-height: 1.02 !important;
@@ -1668,7 +1684,7 @@ img {
 
 .login-redesign .sub-welcome-text {
   margin: 10px 0 0 !important;
-  color: #6d625e !important;
+  color: #F2BB46 !important;
   font-size: clamp(15px, 1.5vw, 18px) !important;
   line-height: 1.45;
 }
@@ -1679,7 +1695,7 @@ img {
   padding: clamp(24px, 3vw, 36px) !important;
   border: 1px solid rgba(229, 57, 53, 0.12);
   border-radius: 18px !important;
-  background: rgba(255, 255, 255, 0.94) !important;
+  background: #2d0f15 !important;
   box-shadow: 0 24px 56px rgba(90, 48, 32, 0.13) !important;
   text-align: left !important;
   backdrop-filter: blur(12px);
@@ -1695,7 +1711,7 @@ img {
 
 .login-redesign .sub-login-card h3 {
   margin: 0 !important;
-  color: #241f1d !important;
+  color: #F2BB46 !important;
   font-size: clamp(24px, 2.5vw, 32px) !important;
   font-weight: 800 !important;
   line-height: 1.1 !important;
@@ -1723,7 +1739,7 @@ img {
 
 .login-redesign .login-status-pill.is-active {
   color: #1b5e20;
-  background: rgba(67, 160, 71, 0.14);
+  background: rgb(67, 160, 72);
 }
 
 .login-redesign .login-status-pill.is-limited,
@@ -1750,7 +1766,7 @@ img {
 }
 
 .login-redesign .sub-field-label {
-  color: #443b37;
+  color: #F2BB46 !important;
   font-size: 13px;
   font-weight: 800;
 }
@@ -1763,7 +1779,7 @@ img {
   border: 1px solid #e2d5cd !important;
   border-radius: 12px !important;
   outline: none;
-  background: #fffaf7 !important;
+  background: #261013 !important;
   color: #241f1d !important;
   font-size: 15px !important;
   transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
@@ -1854,7 +1870,7 @@ img {
   padding: 14px 16px !important;
   border: 1px solid rgba(229, 57, 53, 0.1);
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.58) !important;
+  background: #2E1013 !important;
   color: #5c514d !important;
   text-align: left !important;
   box-shadow: 0 12px 28px rgba(90, 48, 32, 0.07);
@@ -1871,7 +1887,7 @@ img {
 
 .login-redesign .login-support-card p {
   margin: 0;
-  color: inherit !important;
+  color: #F2BB46 !important;
   font-size: 13px;
   line-height: 1.45;
   text-align: right;

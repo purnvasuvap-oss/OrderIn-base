@@ -1,11 +1,12 @@
 /* Define the colors used in the design */
 :root {
-  --primary-red: #636E2C;
-  --surface-white: #FFFFFF;
-  --bg-light-neutral: #F5F7FA;
-  --text-primary: #212121;
-  --text-secondary: #616161;
-  --border-light-gray: #E0E0E0;
+  --primary-red: #F2BB46;      /* Accent */
+  --surface-white: #261013;    /* Surface */
+  --bg-light-neutral: #3F0B11; /* Background */
+  --text-primary: #F5DFBB;     /* Text */
+  --text-secondary: rgba(245, 223, 187, 0.72);
+  --border-light-gray: rgba(245, 223, 187, 0.18);
+  --accent-dark: #B5823F;
 }
 
 .promotions-page-container {
@@ -22,7 +23,7 @@
   max-width: 1200px;
   margin: 0 auto;
   padding: 40px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
   position: relative;
   overflow-y: visible;
   overflow-x: hidden;
@@ -128,6 +129,7 @@
   font-size: 14px;
   box-sizing: border-box;
   background-color: var(--bg-light-neutral);
+  color: var(--text-primary);
 }
 
 .promotions-textarea-caption {
@@ -146,6 +148,7 @@
   font-size: 14px;
   box-sizing: border-box;
   background-color: var(--bg-light-neutral);
+  color: var(--text-primary);
 }
 
 .promotions-submit-btn {
@@ -157,7 +160,7 @@
   border-radius: 8px;
   cursor: pointer;
   font-size: 16px;
-  font-weight: 500;
+  font-weight: 600;
   margin-top: 30px;
 }
 
@@ -199,14 +202,15 @@
 .promotion-card {
   background-color: var(--surface-white);
   border-radius: 12px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.35);
   overflow: hidden;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
+  border: 1px solid var(--border-light-gray);
 }
 
 .promotion-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.45);
 }
 
 .promotion-image-container {
@@ -225,9 +229,9 @@
   position: absolute;
   top: 10px;
   right: 10px;
-  background-color: #e53935;
-  color: var(--surface-white);
-  border: 2px solid #ffffff;
+  background-color: #b5342b; /* kept distinct as a destructive/danger action, warmed to sit in the maroon theme */
+  color: var(--text-primary);
+  border: 2px solid var(--text-primary);
   border-radius: 50%;
   width: 36px;
   height: 36px;
@@ -238,13 +242,13 @@
   font-size: 16px;
   transition: background-color 0.2s ease;
   z-index: 5;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
 }
 
 .promotion-delete-btn svg {
   width: 16px;
   height: 16px;
-  color: #fff;
+  color: var(--text-primary);
   display: block;
   pointer-events: none;
 }
@@ -257,12 +261,12 @@
 .promotion-delete-fallback {
   font-size: 14px;
   line-height: 1;
-  color: #fff;
+  color: var(--text-primary);
   pointer-events: none;
 }
 
 .promotion-delete-btn:hover {
-  background-color: #c62828;
+  background-color: #8c2921;
 }
 
 .promotion-details {
@@ -292,13 +296,14 @@
 }
 
 .status-active {
-  color: #4CAF50;
+  color: var(--primary-red);
   font-weight: 600;
 }
 
 .status-inactive {
-  color: #F44336;
+  color: var(--accent-dark);
   font-weight: 600;
+  opacity: 0.75;
 }
 
 /* ===== TABLET LARGE (e.g. iPad Pro 1024x1366) ===== */

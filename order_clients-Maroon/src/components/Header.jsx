@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 // using image icons instead of lucide icons
+import { FaRegBell,FaSignOutAlt} from 'react-icons/fa'; 
+import { FiLogOut } from 'react-icons/fi';
 import "./Header.css";
 import Notification from "./Notification";
 
@@ -44,10 +46,10 @@ export default function Header() {
 
         <div className="header-right">
           <button className="icon-btn" onClick={handleNotificationClick}>
-            <img src="/images/Notification.svg" alt="notifications" className="icon-img" />
+            <FaRegBell size={24} alt="notifications" color="#F2BB46"className="icon-img"/>
           </button>
           <button className="icon-btn" onClick={handleLogout}>
-            <img src="/images/Export.svg" alt="logout" className="icon-img" />
+            <FaSignOutAlt size={34} color="#F2BB46" alt="log out" classname="icon-img" />
           </button>
         </div>
       </header>

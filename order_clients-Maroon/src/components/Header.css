@@ -1,6 +1,6 @@
 .header{
   height:140px;
-  background-color: white;
+  background-color: #261013;
   margin-top: 0;
   position: relative;
   display: flex;
@@ -23,7 +23,7 @@
 
 /* center block - flexbox positioned */
 .header-center{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;pointer-events:none;padding: 0 20px}
-.restaurant-name{margin:0;padding:0;font-size:52px;font-weight:700;color:#e53935;letter-spacing:1.8px;pointer-events:auto;font-family:'Castoro',serif;text-shadow:0 2px 8px rgba(229,57,53,0.25);text-transform:uppercase;font-style:normal}
+.restaurant-name{margin:0;padding:0;font-size:52px;font-weight:700;color:#F2BB46;letter-spacing:1.8px;pointer-events:auto;font-family:'Castoro',serif;text-shadow:0 2px 8px rgba(242,187,70,0.25);text-transform:uppercase;font-style:normal}
 
 /* right block pinned to right corner */
 .header-right{
@@ -160,7 +160,7 @@
 }
 
 .notification-content {
-  background: white;
+  background: #261013;
   padding: 0;
   border-radius: 14px;
   width: 500px;
@@ -170,7 +170,7 @@
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
 }
 
 .close-btn {
@@ -181,7 +181,7 @@
   border: none;
   font-size: 28px;
   cursor: pointer;
-  color: #6b7280;
+  color: rgba(245, 223, 187, 0.6);
   width: 32px;
   height: 32px;
   display: flex;
@@ -192,42 +192,42 @@
 }
 
 .close-btn:hover {
-  color: #1f2937;
-  background: #f3f4f6;
+  color: #F5DFBB;
+  background: #3F0B11;
   border-radius: 6px;
 }
 
 .tab-bar {
   display: flex;
   gap: 0;
-  background: white;
-  border-bottom: 1px solid #e5e7eb;
+  background: #261013;
+  border-bottom: 1px solid rgba(181, 130, 63, 0.3);
   padding: 0;
 }
 
 .tab-button {
   flex: 1;
   padding: 14px 16px;
-  background: white;
+  background: #261013;
   border: none;
   cursor: pointer;
   font-size: 0.95rem;
   font-weight: 600;
-  color: #6b7280;
+  color: rgba(245, 223, 187, 0.6);
   transition: all 0.3s ease;
   position: relative;
   border-bottom: 2px solid transparent;
 }
 
 .tab-button:hover {
-  color: #1f2937;
-  background: #f9fafb;
+  color: #F5DFBB;
+  background: #3F0B11;
 }
 
 .tab-button.active {
-  color: #2563eb;
-  border-bottom-color: #2563eb;
-  background: #eff6ff;
+  color: #F2BB46;
+  border-bottom-color: #F2BB46;
+  background: rgba(242, 187, 70, 0.1);
 }
 
 .tab-content {
