@@ -1,0 +1,26 @@
+<svg width="96" height="96" viewBox="0 0 96 96" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="brassIdle" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#d9b46a"/>
+      <stop offset="45%" stop-color="#b5823f"/>
+      <stop offset="100%" stop-color="#7a5321"/>
+    </linearGradient>
+    <linearGradient id="brassIdleHi" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#f0d9a0" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="#f0d9a0" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="48" cy="80" rx="26" ry="4" fill="#000" opacity="0.35"/>
+  <!-- barrel -->
+  <rect x="22" y="34" width="46" height="26" rx="13" fill="url(#brassIdle)"/>
+  <rect x="22" y="34" width="46" height="12" rx="6" fill="url(#brassIdleHi)"/>
+  <!-- mouthpiece -->
+  <path d="M14 42 L26 38 L26 56 L14 52 Q10 47 14 42 Z" fill="url(#brassIdle)"/>
+  <!-- ring -->
+  <circle cx="76" cy="47" r="9" fill="none" stroke="url(#brassIdle)" stroke-width="4"/>
+  <!-- grille holes -->
+  <circle cx="52" cy="47" r="2.4" fill="#3a2708"/>
+  <circle cx="59" cy="47" r="2.4" fill="#3a2708"/>
+  <!-- barrel seam -->
+  <rect x="40" y="34" width="2.2" height="26" fill="#3a2708" opacity="0.5"/>
+</svg>
