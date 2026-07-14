@@ -1,13 +1,13 @@
 :root{
   color-scheme: dark;
-  --color-bg: #3F0B11;
-  --color-surface: #261013;
+  --color-bg: #12171e;
+  --color-surface: #1c2128;
   --color-accent: #F2BB46;
   --color-accent-dark: #B5823F;
-  --color-text: #F5DFBB;
-  --color-text-muted: rgba(245, 223, 187, 0.75);
-  --color-border: rgba(245, 223, 187, 0.15);
-  --color-surface-soft: rgba(245, 223, 187, 0.06);
+  --color-text: #F5E9CF;
+  --color-text-muted: rgba(245, 233, 207, 0.75);
+  --color-border: rgba(245, 233, 207, 0.15);
+  --color-surface-soft: rgba(245, 233, 207, 0.06);
   --color-danger: #B83A3A;
 }
 
@@ -46,7 +46,7 @@ button {
   gap: 12px;
   padding: 20px 20px 16px;
   background: var(--color-surface);
-  border-bottom: 1px solid rgba(245, 223, 187, 0.12);
+  border-bottom: 1px solid rgba(245, 233, 207, 0.12);
 }
 
 .back-icon {
@@ -59,7 +59,7 @@ button {
   justify-content: center;
   cursor: pointer;
   color: var(--color-bg);
-  border: 1px solid rgba(245, 223, 187, 0.3);
+  border: 1px solid rgba(245, 233, 207, 0.3);
 }
 
 .cart-eyebrow {
@@ -86,7 +86,7 @@ button {
 
 .tab-item {
   font-size: 15px;
-  color: rgba(245, 223, 187, 0.5);
+  color: rgba(245, 233, 207, 0.5);
   cursor: pointer;
   position: relative;
   padding-bottom: 10px;
@@ -110,7 +110,7 @@ button {
 
 .divider {
   height: 1px;
-  background: rgba(245, 223, 187, 0.12);
+  background: rgba(245, 233, 207, 0.12);
 }
 
 .empty-cart {
@@ -127,8 +127,8 @@ button {
   width: 95px;
   height: 95px;
   border-radius: 50%;
-  background: rgba(38, 16, 19, 0.6);
-  border: 1px solid rgba(245, 223, 187, 0.15);
+  background: rgba(28, 33, 40, 0.6);
+  border: 1px solid rgba(245, 233, 207, 0.15);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -194,12 +194,12 @@ button {
   padding: 28px;
   border-radius: 20px;
   background: var(--color-surface);
-  border: 1px solid rgba(245, 223, 187, 0.12);
+  border: 1px solid rgba(245, 233, 207, 0.12);
   text-align: center;
 }
 
 .empty-text {
-  color: rgba(245, 223, 187, 0.6);
+  color: rgba(245, 233, 207, 0.6);
   font-size: 18px;
   margin-bottom: 16px;
 }
@@ -231,7 +231,7 @@ button {
   background: linear-gradient(
     135deg,
     rgba(242, 187, 70, 0.16),
-    rgba(38, 16, 19, 0.35)
+    rgba(28, 33, 40, 0.35)
   );
   border: 1px solid rgba(242, 187, 70, 0.26);
 }
@@ -254,14 +254,14 @@ button {
 .status-banner p {
   margin: 0;
   font-size: 13px;
-  color: rgba(245, 223, 187, 0.65);
+  color: rgba(245, 233, 207, 0.65);
 }
 
 .status-pill {
   white-space: nowrap;
   padding: 8px 10px;
   border-radius: 999px;
-  background: rgba(245, 223, 187, 0.08);
+  background: rgba(245, 233, 207, 0.08);
   color: var(--color-text);
   font-weight: 700;
 }
@@ -278,8 +278,8 @@ button {
   gap: 14px;
   padding: 14px;
   border-radius: 18px;
-  background: rgba(38, 16, 19, 0.9);
-  border: 1px solid rgba(245, 223, 187, 0.12);
+  background: rgba(28, 33, 40, 0.9);
+  border: 1px solid rgba(245, 233, 207, 0.12);
   box-shadow: 0 12px 28px rgba(0, 0, 0, 0.22);
 }
 
@@ -293,8 +293,8 @@ button {
   object-fit: cover;
   border-radius: 14px;
   display: block;
-  background: rgba(245, 223, 187, 0.06);
-  border: 1px solid rgba(245, 223, 187, 0.12);
+  background: rgba(245, 233, 207, 0.06);
+  border: 1px solid rgba(245, 233, 207, 0.12);
 }
 
 .cart-item-details {
@@ -354,7 +354,7 @@ button {
 }
 
 .price-meta {
-  color: rgba(245, 223, 187, 0.5);
+  color: rgba(245, 233, 207, 0.5);
   font-size: 12px;
   font-weight: 700;
 }
@@ -369,7 +369,7 @@ button {
 }
 
 .cart-item-subtotal span {
-  color: rgba(245, 223, 187, 0.55);
+  color: rgba(245, 233, 207, 0.55);
   font-size: 11px;
   font-weight: 800;
   text-transform: uppercase;
@@ -395,8 +395,8 @@ button {
   gap: 8px;
   padding: 4px;
   border-radius: 999px;
-  background: rgba(245, 223, 187, 0.06);
-  border: 1px solid rgba(245, 223, 187, 0.12);
+  background: rgba(245, 233, 207, 0.06);
+  border: 1px solid rgba(245, 233, 207, 0.12);
 }
 
 .qty-btn {
@@ -408,9 +408,9 @@ button {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  background: rgba(245, 223, 187, 0.95);
+  background: rgba(245, 233, 207, 0.95);
   color: #1a0e11;
-  border: 1px solid rgba(245, 223, 187, 0.12);
+  border: 1px solid rgba(245, 233, 207, 0.12);
 }
 
 .qty-value {
@@ -454,7 +454,7 @@ button {
 
 .instructions-section {
   padding-top: 8px;
-  border-top: 1px solid rgba(245, 223, 187, 0.12);
+  border-top: 1px solid rgba(245, 233, 207, 0.12);
 }
 
 .instructions-display {
@@ -467,13 +467,13 @@ button {
   align-items: center;
   padding: 7px 10px;
   border-radius: 999px;
-  background: rgba(245, 223, 187, 0.06);
-  color: rgba(245, 223, 187, 0.75);
+  background: rgba(245, 233, 207, 0.06);
+  color: rgba(245, 233, 207, 0.75);
   font-size: 12px;
 }
 
 .notes-placeholder {
-  color: rgba(245, 223, 187, 0.45);
+  color: rgba(245, 233, 207, 0.45);
 }
 
 .edit-instructions {
@@ -487,8 +487,8 @@ button {
   padding: 10px 12px;
   border-radius: 10px;
   resize: vertical;
-  border: 1px solid rgba(245, 223, 187, 0.18);
-  background: rgba(245, 223, 187, 0.95);
+  border: 1px solid rgba(245, 233, 207, 0.18);
+  background: rgba(245, 233, 207, 0.95);
   color: #1a0e11;
 }
 
@@ -517,15 +517,15 @@ button {
 }
 
 .edit-buttons button:last-child {
-  background: rgba(245, 223, 187, 0.06);
+  background: rgba(245, 233, 207, 0.06);
   color: var(--color-text);
 }
 
 .summary-card {
   padding: 16px;
   border-radius: 18px;
-  background: rgba(38, 16, 19, 0.9);
-  border: 1px solid rgba(245, 223, 187, 0.12);
+  background: rgba(28, 33, 40, 0.9);
+  border: 1px solid rgba(245, 233, 207, 0.12);
   box-shadow: 0 12px 28px rgba(0, 0, 0, 0.22);
 }
 
@@ -537,7 +537,7 @@ button {
 
 .summary-heading p {
   margin: 0 0 12px;
-  color: rgba(245, 223, 187, 0.5);
+  color: rgba(245, 233, 207, 0.5);
   font-size: 13px;
 }
 
@@ -551,7 +551,7 @@ button {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  color: rgba(245, 223, 187, 0.75);
+  color: rgba(245, 233, 207, 0.75);
 }
 
 .summary-row strong {
@@ -565,7 +565,7 @@ button {
 
 .summary-divider {
   height: 1px;
-  background: rgba(245, 223, 187, 0.12);
+  background: rgba(245, 233, 207, 0.12);
   margin: 4px 0;
 }
 
@@ -610,8 +610,8 @@ button {
 .order-track-item {
   padding: 14px;
   border-radius: 16px;
-  background: rgba(38, 16, 19, 0.9);
-  border: 1px solid rgba(245, 223, 187, 0.12);
+  background: rgba(28, 33, 40, 0.9);
+  border: 1px solid rgba(245, 233, 207, 0.12);
 }
 
 .track-status {
@@ -654,13 +654,13 @@ button {
 
 .status-details .status-text {
   margin: 0 0 4px;
-  color: rgba(245, 223, 187, 0.65);
+  color: rgba(245, 233, 207, 0.65);
   font-size: 14px;
 }
 
 .status-details .timestamp {
   margin: 0;
-  color: rgba(245, 223, 187, 0.5);
+  color: rgba(245, 233, 207, 0.5);
   font-size: 12px;
 }
 
@@ -718,3 +718,66 @@ button {
     max-width: 100%;
   }
 }
+
+/* =====================================================================
+   STADIUM THEME OVERRIDE — Cart / Checkout
+   ===================================================================== */
+.cart-container {
+  background-image:
+    radial-gradient(ellipse 60% 30% at 50% 0%, rgba(242, 187, 70, 0.08), transparent 60%);
+}
+
+.cart-header { border-bottom: 1px solid rgba(255,255,255,0.06); }
+.cart-title { font-family: var(--st-font-display); letter-spacing: 0.03em; }
+
+.cart-tabs { background: rgba(0,0,0,0.3); border: 1px solid #2f3540; border-radius: 999px; }
+.tab-item.active {
+  background: linear-gradient(180deg, var(--color-accent) 0%, var(--color-accent-dark) 100%);
+  color: #241705;
+  box-shadow: 0 3px 0 #7a5321, 0 6px 14px rgba(0,0,0,0.4);
+}
+
+.status-banner {
+  background: linear-gradient(155deg, #262c34 0%, #1c2128 60%, #14181e 100%);
+  border: 1px solid #3a4048;
+}
+
+.cart-item {
+  background: linear-gradient(155deg, #23282f 0%, #1a1f26 100%);
+  border: 1px solid #333941;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.35);
+}
+
+.qty-btn {
+  background: linear-gradient(180deg, #2a3038, #1c2128);
+  border: 1px solid #3c434d;
+  color: var(--color-accent);
+}
+
+.summary-card {
+  background: linear-gradient(155deg, #262c34 0%, #1c2128 55%, #14181e 100%);
+  border: 1px solid #3a4048;
+  box-shadow: 0 10px 26px rgba(0,0,0,0.5);
+  position: relative;
+}
+.summary-card::before,
+.summary-card::after {
+  content: "";
+  position: absolute;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  top: 8px;
+  background: radial-gradient(circle at 35% 30%, #9a9ba0, #55565a 60%, #222 100%);
+}
+.summary-card::before { left: 8px; }
+.summary-card::after { right: 8px; }
+
+.checkout-btn {
+  background: linear-gradient(180deg, var(--color-accent) 0%, var(--color-accent-dark) 100%) !important;
+  color: #241705 !important;
+  box-shadow: 0 3px 0 #7a5321, 0 10px 22px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.5) !important;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 800 !important;
+}
+.checkout-btn:active { transform: translateY(2px); }

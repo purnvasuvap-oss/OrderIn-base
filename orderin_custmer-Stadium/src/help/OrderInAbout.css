@@ -1,12 +1,12 @@
 /* ===== Dark App Palette Updated ===== */
 :root {
-  --bg-main: #3F0B11;
-  --bg-card: #261013;
+  --bg-main: #12171e;
+  --bg-card: #1c2128;
   --primary: #F2BB46;
-  --border: #33161A;
-  --hover-bg: #33161A;
-  --text-main: #F5DFBB;
-  --text-muted: #B39A76;
+  --border: #2a3038;
+  --hover-bg: #2a3038;
+  --text-main: #F5E9CF;
+  --text-muted: #b9b0a0;
   --accent: #F2BB46;
   --accent-dark: #B5823F;
 }
@@ -29,7 +29,7 @@
 }
 
 .back-button-top {
-  background: linear-gradient(135deg, #33161A, #261013);
+  background: linear-gradient(135deg, #2a3038, #1c2128);
   border: 2px solid var(--primary);
   color: var(--primary);
   padding: 10px 16px;
@@ -42,7 +42,7 @@
 }
 
 .back-button-top:hover {
-  background: linear-gradient(135deg, #4A2429, #33161A);
+  background: linear-gradient(135deg, #3c434d, #2a3038);
   transform: translateX(-3px);
   box-shadow: 0 4px 12px rgba(242, 187, 70, 0.15);
 }
@@ -62,20 +62,20 @@ img {
   padding: 20px;
   text-align: center;
   border-bottom: 4px solid var(--border);
-  box-shadow: 0 6px 18px rgba(28, 27, 23, 0.08);
+  box-shadow: 0 6px 18px rgba(10, 12, 15, 0.08);
 }
 
 .logo {
   max-width: 180px;
-  filter: drop-shadow(0 10px 20px rgba(28, 27, 23, 0.35))
-    drop-shadow(0 4px 8px rgba(28, 27, 23, 0.25));
+  filter: drop-shadow(0 10px 20px rgba(10, 12, 15, 0.35))
+    drop-shadow(0 4px 8px rgba(10, 12, 15, 0.25));
 }
 
 .logo:hover {
   transform: translateY(-2px) scale(1.03);
-  filter: drop-shadow(0 12px 24px rgba(28, 27, 23, 0.4))
-    drop-shadow(0 6px 12px rgba(28, 27, 23, 0.3))
-    drop-shadow(0 2px 4px rgba(28, 27, 23, 0.2));
+  filter: drop-shadow(0 12px 24px rgba(10, 12, 15, 0.4))
+    drop-shadow(0 6px 12px rgba(10, 12, 15, 0.3))
+    drop-shadow(0 2px 4px rgba(10, 12, 15, 0.2));
 }
 
 .by-text {
@@ -89,12 +89,12 @@ img {
   background-color: #497c7c;
   padding: 8px 20px;
   border-radius: 16px;
-  filter: drop-shadow(0 3px 6px rgba(28, 27, 23, 0.1));
+  filter: drop-shadow(0 3px 6px rgba(10, 12, 15, 0.1));
 }
 
 .Clogo2 {
   max-height: 50px;
-  filter: drop-shadow(0 3px 6px rgba(28, 27, 23, 0.1));
+  filter: drop-shadow(0 3px 6px rgba(10, 12, 15, 0.1));
 }
 
 /* ===== Main Content ===== */
@@ -111,11 +111,11 @@ img {
   background: var(--bg-card);
   border-radius: 16px;
   border: 2px solid var(--border);
-  box-shadow: 0 8px 28px rgba(28, 27, 23, 0.08);
+  box-shadow: 0 8px 28px rgba(10, 12, 15, 0.08);
 }
 
 .orderin-section:hover {
-  box-shadow: 0 14px 38px rgba(28, 27, 23, 0.12);
+  box-shadow: 0 14px 38px rgba(10, 12, 15, 0.12);
 }
 
 .section-header {
@@ -154,17 +154,17 @@ img {
 .service-card {
   padding: 25px;
   border-radius: 14px;
-  background: #33161A;
-  border: 1px solid #4A2429;
-  box-shadow: 0 2px 8px rgba(28, 27, 23, 0.1);
+  background: #2a3038;
+  border: 1px solid #3c434d;
+  box-shadow: 0 2px 8px rgba(10, 12, 15, 0.1);
   font-weight: 600;
   transition: all 0.3s ease;
-  color: #F5DFBB;
+  color: #F5E9CF;
 }
 
 .service-card:hover {
   transform: translateY(-10px) scale(1.04);
-  background: #33161A;
+  background: #2a3038;
   box-shadow: inset 0 0 20px rgba(242, 187, 70, 0.1), inset 0 0 40px rgba(242, 187, 70, 0.06);
 }
 
@@ -180,7 +180,7 @@ img {
   border-radius: 8px;
   background: #fff;
   padding: 4px;
-  box-shadow: 0 6px 14px rgba(28, 27, 23, 0.08);
+  box-shadow: 0 6px 14px rgba(10, 12, 15, 0.08);
 }
 
 .service-content {
@@ -231,7 +231,7 @@ img {
 }
 
 .explore-subtext {
-  color: #B39A76;
+  color: #b9b0a0;
   font-size: 0.85rem;
   font-style: italic;
 }
@@ -267,16 +267,16 @@ img {
 
 /* ===== Footer ===== */
 .orderin-footer {
-  background: #261013;
-  color: #F5DFBB;
+  background: #1c2128;
+  color: #F5E9CF;
   text-align: center;
   padding: 20px;
-  border-top: 3px solid #4A2429;
+  border-top: 3px solid #3c434d;
 }
 
 .orderin-footer p {
   margin: 0;
-  color: #F5DFBB;
+  color: #F5E9CF;
 }
 
 /* ========= MOBILE RESPONSIVE ========= */
@@ -342,11 +342,24 @@ img {
     background-color: #497c7c;
     padding: 8px 10px;
     border-radius: 16px;
-    filter: drop-shadow(0 3px 6px rgba(28, 27, 23, 0.1));
+    filter: drop-shadow(0 3px 6px rgba(10, 12, 15, 0.1));
   }
 
   .back-button-top {
     font-size: 0.8rem;
     padding: 6px 10px;
   }
+}
+/* =====================================================================
+   STADIUM THEME OVERRIDE — OrderIn About
+   ===================================================================== */
+:root {
+  --bg-main: #12171e;
+  --bg-card: #1c2128;
+  --border: #3c434d;
+  --hover-bg: #2a3038;
+}
+.service-card {
+  background: linear-gradient(155deg, #262c34 0%, #1c2128 55%, #14181e 100%);
+  border: 1px solid #3a4048;
 }

@@ -4,19 +4,19 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: #3F0B11;
+  background-color: #12171e;
   padding: 1rem;
 }
 
 .payments-card {
   width: 100%;
   max-width: 28rem;
-  background-color: #261013;
+  background-color: #1c2128;
   border-radius: 1rem;
-  box-shadow: 0 10px 15px -3px rgba(28, 27, 23, 0.12), 0 4px 6px -2px rgba(28, 27, 23, 0.08);
+  box-shadow: 0 10px 15px -3px rgba(10, 12, 15, 0.12), 0 4px 6px -2px rgba(10, 12, 15, 0.08);
   padding: 1rem;
   position: relative;
-  border: 1px solid #33161A;
+  border: 1px solid #2a3038;
 }
 
 @media (min-width: 640px) {
@@ -29,7 +29,7 @@
   position: absolute;
   top: 0.75rem;
   right: 0.75rem;
-  color: #B39A76;
+  color: #b9b0a0;
 }
 
 .close-button:hover {
@@ -39,7 +39,7 @@
 .checkout-header {
   font-size: 1.25rem;
   font-weight: 600;
-  color: #F5DFBB;
+  color: #F5E9CF;
   margin-bottom: 1rem;
 }
 
@@ -53,10 +53,10 @@
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  border: 1px solid #4A2429;
+  border: 1px solid #3c434d;
   border-radius: 0.75rem;
   padding: 0.75rem;
-  background-color: #33161A;
+  background-color: #2a3038;
   margin-bottom: 1rem;
 }
 
@@ -72,7 +72,7 @@
 }
 
 .order-item-name {
-  color: #F5DFBB;
+  color: #F5E9CF;
   font-weight: 500;
   font-size: 0.875rem;
 }
@@ -91,7 +91,7 @@
 }
 
 .order-item-each {
-  color: #B39A76;
+  color: #b9b0a0;
   font-size: 0.75rem;
   margin: 0;
 }
@@ -105,17 +105,17 @@
 .qty-button {
   padding: 0.25rem;
   border-radius: 0.5rem;
-  background-color: #4A2429;
-  border: 1px solid #4A2429;
+  background-color: #3c434d;
+  border: 1px solid #3c434d;
 }
 
 .qty-button:hover {
-  background-color: #4A2429;
+  background-color: #3c434d;
 }
 
 .qty-value {
   padding: 0 0.5rem;
-  color: #F5DFBB;
+  color: #F5E9CF;
   font-weight: 600;
 }
 
@@ -130,28 +130,28 @@
 
 .cooking-preferences-btn {
   width: 100%;
-  border: 1px solid #4A2429;
+  border: 1px solid #3c434d;
   border-radius: 0.75rem;
   padding: 0.5rem;
   color: #D9C29E;
   font-size: 0.875rem;
-  background-color: #261013;
+  background-color: #1c2128;
   margin-bottom: 1rem;
 }
 
 .cooking-preferences-btn:hover {
-  background-color: #33161A;
+  background-color: #2a3038;
   border-color: #F2BB46;
 }
 
 .billing-breakdown {
-  border-top: 1px solid #4A2429;
+  border-top: 1px solid #3c434d;
   padding-top: 0.75rem;
   margin-bottom: 1rem;
 }
 
 .billing-header {
-  color: #F5DFBB;
+  color: #F5E9CF;
   font-weight: 600;
   margin-bottom: 0.5rem;
 }
@@ -178,7 +178,7 @@
 }
 
 .payment-header {
-  color: #F5DFBB;
+  color: #F5E9CF;
   font-weight: 600;
   margin-bottom: 0.5rem;
 }
@@ -194,7 +194,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  border: 1px solid #4A2429;
+  border: 1px solid #3c434d;
   border-radius: 0.75rem;
   padding: 0.75rem;
   background-color: transparent;
@@ -268,4 +268,47 @@
 
 .place-order-btn:hover {
   background-color: #047857;
+}
+/* =====================================================================
+   STADIUM THEME OVERRIDE — Checkout / Payment Method
+   ===================================================================== */
+.payments-container {
+  background-image:
+    radial-gradient(ellipse 60% 30% at 50% 0%, rgba(242, 187, 70, 0.08), transparent 60%);
+}
+
+.payments-card {
+  background: linear-gradient(155deg, #262c34 0%, #1c2128 55%, #14181e 100%) !important;
+  border: 1px solid #3a4048 !important;
+  box-shadow: 0 10px 26px rgba(0,0,0,0.5);
+}
+
+.order-item {
+  background: rgba(0,0,0,0.2);
+  border: 1px solid #2f3540;
+}
+
+.billing-breakdown {
+  background: linear-gradient(180deg, #0d1116, #151b22);
+  border: 1px solid #34393f;
+  box-shadow: inset 0 2px 6px rgba(0,0,0,0.5);
+}
+
+.payment-option {
+  background: linear-gradient(155deg, #23282f, #1a1f26);
+  border: 1px solid #333941;
+}
+.payment-option.selected {
+  border-color: #F2BB46 !important;
+  box-shadow: 0 0 0 2px rgba(242,187,70,0.25);
+}
+
+.place-order-btn {
+  background: linear-gradient(180deg, #ffe08a 0%, #F2BB46 45%, #b5823f 100%) !important;
+  color: #241705 !important;
+  box-shadow: 0 3px 0 #7a5321, 0 10px 22px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.6) !important;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 800 !important;
+  border: none !important;
 }

@@ -7,17 +7,17 @@
    keeps shadows readable.
    ========================================================================== */
 .menu-container {
-  --color-bg: #3F0B11;
-  --color-surface: #261013;
-  --color-surface-elevated: #261013;
-  --color-border: rgba(245, 223, 187, 0.15);
+  --color-bg: #12171e;
+  --color-surface: #1c2128;
+  --color-surface-elevated: #1c2128;
+  --color-border: rgba(245, 233, 207, 0.15);
   --color-accent: #F2BB46;
   --color-accent-strong: #B5823F;
   --color-chili: #ff5a45;
   --color-veg: #3ddc84;
-  --color-text: #F5DFBB;
-  --color-text-muted: rgba(245, 223, 187, 0.75);
-  --color-text-faint: rgba(245, 223, 187, 0.55);
+  --color-text: #F5E9CF;
+  --color-text-muted: rgba(245, 233, 207, 0.75);
+  --color-text-faint: rgba(245, 233, 207, 0.55);
 
   --radius-lg: 22px;
   --radius-md: 18px;
@@ -25,7 +25,7 @@
 
   --shadow-card: 0 8px 24px rgba(0, 0, 0, 0.35);
   --shadow-elevated: 0 14px 36px rgba(0, 0, 0, 0.45);
-  --shadow-fab: 0 10px 28px rgba(255, 183, 3, 0.35);
+  --shadow-fab: 0 10px 28px rgba(242, 187, 70, 0.35);
 
   --font-display: "Poppins", "Segoe UI", sans-serif;
   --font-body: "Inter", "Segoe UI", sans-serif;
@@ -154,7 +154,7 @@
 }
 .search-bar:focus-within {
   border-color: var(--color-accent);
-  box-shadow: 0 0 0 3px rgba(255, 183, 3, 0.15), var(--shadow-card);
+  box-shadow: 0 0 0 3px rgba(242, 187, 70, 0.15), var(--shadow-card);
 }
 
 .search-icon { color: var(--color-text-muted); flex-shrink: 0; }
@@ -258,7 +258,7 @@
   background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-accent-strong) 100%);
   color: #F7F5E9;
   border-color: transparent;
-  box-shadow: 0 6px 16px rgba(255, 183, 3, 0.28);
+  box-shadow: 0 6px 16px rgba(242, 187, 70, 0.28);
 }
 
 /* ==========================================================================
@@ -284,7 +284,7 @@
   position: relative;
   overflow: hidden;
   box-shadow: var(--shadow-elevated);
-  border: 1px solid rgba(255, 183, 3, 0.25);
+  border: 1px solid rgba(242, 187, 70, 0.25);
 }
 
 .promotion-content::before {
@@ -387,8 +387,8 @@
   margin: 16px 0 12px;
   padding: 12px 16px;
   border-radius: var(--radius-md);
-  background: linear-gradient(135deg, rgba(255, 183, 3, 0.14) 0%, rgba(255, 255, 255, 0.04) 60%);
-  border: 1px solid rgba(255, 183, 3, 0.2);
+  background: linear-gradient(135deg, rgba(242, 187, 70, 0.14) 0%, rgba(255, 255, 255, 0.04) 60%);
+  border: 1px solid rgba(242, 187, 70, 0.2);
   position: relative;
   overflow: hidden;
 }
@@ -444,7 +444,7 @@
 .food-card:hover {
   transform: translateY(-4px);
   box-shadow: var(--shadow-elevated);
-  border-color: rgba(255, 183, 3, 0.4);
+  border-color: rgba(242, 187, 70, 0.4);
 }
 
 .food-card.unavailable {
@@ -553,7 +553,7 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  box-shadow: 0 6px 14px rgba(255, 183, 3, 0.4);
+  box-shadow: 0 6px 14px rgba(242, 187, 70, 0.4);
   z-index: 2;
   transition: transform 0.15s ease;
 }
@@ -764,4 +764,149 @@
   .food-card-media { height: 128px; }
   .filter-fab { right: 16px; bottom: 90px; padding: 11px 16px; }
   .filter-fab span { display: none; }
+}
+/* =====================================================================
+   STADIUM THEME OVERRIDE — Menu
+   ===================================================================== */
+.menu-container {
+  background-image:
+    radial-gradient(ellipse 60% 30% at 10% 0%, rgba(242, 187, 70, 0.08), transparent 60%),
+    radial-gradient(ellipse 60% 30% at 90% 0%, rgba(242, 187, 70, 0.08), transparent 60%);
+}
+
+.hero-bar {
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.hero-title { font-family: var(--st-font-display); letter-spacing: 0.03em; }
+
+.table-chip {
+  background: rgba(0,0,0,0.35);
+  border: 1px solid rgba(242,187,70,0.4);
+  color: var(--color-accent);
+  box-shadow: inset 0 1px 4px rgba(0,0,0,0.5);
+}
+
+.search-bar {
+  background: linear-gradient(180deg, #14181f, #1b2028);
+  border: 1px solid #34393f;
+  box-shadow: inset 0 2px 6px rgba(0,0,0,0.6);
+}
+.search-bar:focus-within {
+  border-color: var(--color-accent);
+  box-shadow: inset 0 2px 6px rgba(0,0,0,0.6), 0 0 0 3px rgba(242,187,70,0.2);
+}
+
+.category-section-header {
+  position: relative;
+}
+.category-section-header::after {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; bottom: -6px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(242,187,70,0.4), transparent);
+}
+
+.food-card {
+  background: linear-gradient(155deg, #262c34 0%, #1c2128 55%, #14181e 100%);
+  border: 1px solid #3a4048;
+  box-shadow: 0 8px 22px rgba(0,0,0,0.45);
+  position: relative;
+}
+.food-card::before,
+.food-card::after {
+  content: "";
+  position: absolute;
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  top: 7px;
+  background: radial-gradient(circle at 35% 30%, #9a9ba0, #55565a 60%, #222 100%);
+  z-index: 3;
+}
+.food-card::before { left: 7px; }
+.food-card::after { right: 7px; }
+.food-card:hover {
+  border-color: rgba(242, 187, 70, 0.5);
+  box-shadow: 0 14px 30px rgba(0,0,0,0.55), 0 0 0 1px rgba(242,187,70,0.2);
+}
+
+.quick-add-btn {
+  background: linear-gradient(180deg, var(--color-accent) 0%, var(--color-accent-strong) 100%);
+  box-shadow: 0 3px 0 #7a5321, 0 8px 16px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.5);
+}
+
+.filter-fab {
+  background: linear-gradient(180deg, var(--color-accent) 0%, var(--color-accent-strong) 100%);
+  box-shadow: 0 3px 0 #7a5321, 0 10px 22px rgba(0,0,0,0.45);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.promotion-banner {
+  border: 1px solid rgba(242, 187, 70, 0.3) !important;
+}
+
+.filter-sheet {
+  background: linear-gradient(155deg, var(--color-surface) 0%, #14181e 100%);
+  border-top: 1px solid #3a4048;
+}
+.filter-sheet-handle { background: #4a5058; }
+.btn-apply { box-shadow: 0 3px 0 #7a5321, 0 8px 16px rgba(0,0,0,0.4); }
+
+
+/* =====================================================================
+   STADIUM ICON PASS — Menu
+   Icons now referenced as real files under src/stadium-icons/ (sibling
+   folder to src/menu/), same pattern as the category banner below.
+   ===================================================================== */
+
+/* "All" chip gets the referee whistle; every other category chip gets
+   a small film-reel glyph since category names are dynamic data and
+   can't be text-matched from pure CSS. */
+.selection-row {
+  gap: 10px;
+}
+.selection {
+  padding-left: 34px !important;
+  position: relative;
+}
+.selection::before {
+  content: "";
+  position: absolute;
+  left: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 18px;
+  height: 18px;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  background-image: url('../stadium-icons/icon-filmreel-idle.svg');
+  opacity: 0.85;
+}
+.selection:first-child::before {
+  background-image: url('../stadium-icons/icon-whistle-active.svg');
+  width: 20px;
+  height: 20px;
+}
+.selection.active::before {
+  filter: drop-shadow(0 0 3px rgba(242, 187, 70, 0.6));
+  opacity: 1;
+}
+
+/* Riveted steel category header banner — real texture instead of the
+   flat gradient + pseudo-rivet approximation. Border-image keeps the
+   end-cap rivets crisp no matter how wide the card grid is. */
+.category-section-header {
+  border-image-source: url('../stadium-icons/banner-steel-plate.svg');
+  border-image-slice: 20 60 20 60 fill;
+  border-image-width: 18px 40px;
+  border-image-repeat: stretch;
+  border-style: solid;
+  background: none !important;
+  padding-left: 24px !important;
+  padding-right: 24px !important;
+}
+.category-section-header::before {
+  display: none;
 }

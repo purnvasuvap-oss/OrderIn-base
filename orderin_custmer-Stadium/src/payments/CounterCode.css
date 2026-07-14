@@ -1,6 +1,6 @@
 /* Desktop-first styles */
 .counter-code-container {
-  background-color: #3F0B11;
+  background-color: #12171e;
   width: 100%;
   min-height: 100vh;
   display: flex;
@@ -18,7 +18,7 @@
   align-self: flex-start;
   width: 100%;
   display: none;
-  color: #F5DFBB;
+  color: #F5E9CF;
 }
 
 .order-details {
@@ -27,11 +27,11 @@
   justify-content: center;
   margin-bottom: 20px;
   padding-bottom: 15px;
-  border-bottom: 1px solid #33161A;
+  border-bottom: 1px solid #2a3038;
 }
 
 .order-number {
-  color: #F5DFBB;
+  color: #F5E9CF;
   font-weight: bold;
   font-size: 1.2rem;
   text-align: center;
@@ -46,7 +46,7 @@
 }
 
 .code-entry-box {
-  background: #261013;
+  background: #1c2128;
   padding: 30px 30px;
   border-radius: 15px;
   text-align: center;
@@ -58,12 +58,12 @@
   display: flex;
   flex-direction: column;
   gap: 0;
-  border: 1px solid #33161A;
+  border: 1px solid #2a3038;
 }
 
 .code-entry-box h3 {
   background-color: #F2BB46;
-  color: #3F0B11;
+  color: #12171e;
   padding: 20px;
   border-radius: 10px;
   font-weight: 600;
@@ -87,12 +87,12 @@
   border-bottom: 4px solid #F2BB46;
   background: transparent;
   outline: none;
-  color: #F5DFBB;
+  color: #F5E9CF;
 }
 
 .instruction-text {
   margin-top: 10px;
-  color: #B39A76;
+  color: #b9b0a0;
   font-weight: 500;
   font-size: 1.1rem;
 }
@@ -111,12 +111,12 @@
 
 .verify-button {
   background-color: #F2BB46;
-  color: #3F0B11;
+  color: #12171e;
 }
 
 .back-button {
-  background-color: #4A2429;
-  color: #F5DFBB;
+  background-color: #3c434d;
+  color: #F5E9CF;
   border: 1px solid #5A2E33;
 }
 
@@ -167,7 +167,7 @@
     width: 40px;
     height: 40px;
     font-size: 1.2rem;
-    border-bottom: 3px solid #33161A;
+    border-bottom: 3px solid #2a3038;
   }
 
   .instruction-text {
@@ -187,8 +187,8 @@
   min-height: 100dvh;
   width: 100%;
   box-sizing: border-box;
-  background: linear-gradient(180deg, #3F0B11 0%, #261013 100%);
-  color: #F5DFBB;
+  background: linear-gradient(180deg, #12171e 0%, #1c2128 100%);
+  color: #F5E9CF;
   display: flex;
   flex-direction: column;
   align-items: stretch;
@@ -202,8 +202,8 @@
   min-height: 72px;
   padding: 14px 28px;
   box-sizing: border-box;
-  background: #261013;
-  border-bottom: 1px solid #33161A;
+  background: #1c2128;
+  border-bottom: 1px solid #2a3038;
   display: flex;
   align-items: center;
   gap: 14px;
@@ -212,10 +212,10 @@
 .counter-back-icon {
   width: 42px;
   height: 42px;
-  border: 1px solid #4A2429;
+  border: 1px solid #3c434d;
   border-radius: 50%;
-  background: #33161A;
-  color: #F5DFBB;
+  background: #2a3038;
+  color: #F5E9CF;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -230,7 +230,7 @@
 
 .counter-code-header h1 {
   margin: 0;
-  color: #F5DFBB;
+  color: #F5E9CF;
   font-size: 1.35rem;
   font-weight: 850;
   letter-spacing: 0;
@@ -252,7 +252,7 @@
   padding: 26px;
   border: 1px solid #3A1B20;
   border-radius: 12px;
-  background: #261013;
+  background: #1c2128;
   box-shadow: 0 18px 44px rgba(0, 0, 0, 0.34);
   text-align: center;
   display: flex;
@@ -295,7 +295,7 @@
 
 .counter-copy h2 {
   margin: 0;
-  color: #F5DFBB;
+  color: #F5E9CF;
   font-size: 1.65rem;
   line-height: 1.18;
   font-weight: 850;
@@ -315,9 +315,9 @@
   align-items: center;
   gap: 12px;
   padding: 12px;
-  border: 1px solid #4A2429;
+  border: 1px solid #3c434d;
   border-radius: 10px;
-  background: #33161A;
+  background: #2a3038;
   text-align: left;
 }
 
@@ -339,7 +339,7 @@
 }
 
 .counter-order-summary span {
-  color: #B39A76;
+  color: #b9b0a0;
   font-size: 0.78rem;
   font-weight: 800;
   text-transform: uppercase;
@@ -347,7 +347,7 @@
 
 .counter-order-summary strong {
   margin-top: 2px;
-  color: #F5DFBB;
+  color: #F5E9CF;
   font-size: 0.98rem;
   font-weight: 850;
   overflow-wrap: anywhere;
@@ -366,10 +366,10 @@
   aspect-ratio: 1;
   min-width: 0;
   box-sizing: border-box;
-  border: 1px solid #4A2429;
+  border: 1px solid #3c434d;
   border-radius: 12px;
-  background: #33161A;
-  color: #F5DFBB;
+  background: #2a3038;
+  color: #F5E9CF;
   text-align: center;
   font-size: 1.8rem;
   font-weight: 850;
@@ -385,7 +385,7 @@
 
 .instruction-text {
   margin: -2px 0 0;
-  color: #B39A76;
+  color: #b9b0a0;
   font-size: 0.9rem;
   line-height: 1.45;
 }
@@ -411,7 +411,7 @@
 
 .verify-button {
   background: #F2BB46;
-  color: #3F0B11;
+  color: #12171e;
   box-shadow: 0 12px 22px rgba(242, 187, 70, 0.2);
 }
 
@@ -420,9 +420,9 @@
 }
 
 .counter-back-button {
-  background: #33161A;
-  color: #F5DFBB;
-  border: 1px solid #4A2429;
+  background: #2a3038;
+  color: #F5E9CF;
+  border: 1px solid #3c434d;
 }
 
 .counter-back-button:hover {
@@ -493,4 +493,54 @@
   .digit-inputs {
     gap: 7px;
   }
+}
+/* =====================================================================
+   STADIUM THEME OVERRIDE — Counter Payment Code
+   ===================================================================== */
+.counter-code-container {
+  background-image:
+    radial-gradient(ellipse 60% 30% at 50% 0%, rgba(242, 187, 70, 0.08), transparent 60%);
+}
+
+.code-entry-box {
+  background: linear-gradient(155deg, #262c34 0%, #1c2128 55%, #14181e 100%) !important;
+  border: 1px solid #3a4048 !important;
+  box-shadow: 0 10px 26px rgba(0,0,0,0.5);
+}
+
+.counter-code-badge {
+  background: rgba(0,0,0,0.35);
+  border: 1px solid rgba(242,187,70,0.4);
+  color: var(--st-gold-2, #F2BB46);
+}
+
+.counter-order-summary {
+  background: linear-gradient(180deg, #0d1116, #151b22);
+  border: 1px solid #34393f;
+  box-shadow: inset 0 2px 6px rgba(0,0,0,0.65);
+}
+
+.digit-inputs input {
+  width: 54px;
+  height: 64px;
+  background: linear-gradient(180deg, #0d1116, #151b22);
+  border: 1px solid #34393f;
+  border-bottom: 3px solid #F2BB46;
+  border-radius: 8px;
+  box-shadow: inset 0 2px 6px rgba(0,0,0,0.65);
+  font-family: var(--st-font-display, inherit);
+}
+.digit-inputs input:focus {
+  border-color: #F2BB46;
+  box-shadow: inset 0 2px 6px rgba(0,0,0,0.65), 0 0 0 3px rgba(242,187,70,0.25);
+}
+
+.verify-button {
+  background: linear-gradient(180deg, #ffe08a 0%, #F2BB46 45%, #b5823f 100%) !important;
+  color: #241705 !important;
+  box-shadow: 0 3px 0 #7a5321, 0 8px 18px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.6) !important;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 800 !important;
+  border: none !important;
 }

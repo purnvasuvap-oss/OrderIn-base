@@ -1,9 +1,9 @@
 :root{
-  --or-background:#3F0B11;
-  --or-surface:#261013;
+  --or-background:#12171e;
+  --or-surface:#1c2128;
   --or-accent:#F2BB46;
   --or-accent-dark:#B5823F;
-  --or-text:#F5DFBB;
+  --or-text:#F5E9CF;
 }
 
 .header-bar {
@@ -20,11 +20,11 @@
   gap: 12px;
   background: linear-gradient(
     180deg,
-    #261013 0%,
-    #3F0B11 100%
+    #1c2128 0%,
+    #12171e 100%
   );
-  border-bottom: 1px solid rgba(245, 223, 187, 0.15);
-  box-shadow: 0 3px 12px rgba(63, 11, 17, 0.35);
+  border-bottom: 1px solid rgba(245, 233, 207, 0.15);
+  box-shadow: 0 3px 12px rgba(18, 23, 30, 0.35);
 }
 
 .orderin-logo-header {
@@ -70,7 +70,7 @@
   right: -300px;
   width: 300px;
   height: calc(100vh - 60px);
-  background-color: #261013;
+  background-color: #1c2128;
   box-shadow: -2px 0 8px rgba(63, 68, 28, 0.2);
   transition: right 0.3s ease;
   z-index: 1000;
@@ -86,14 +86,14 @@
   display: flex;
   flex-direction: column;
   gap: 20px;
-  color: #F5DFBB;
+  color: #F5E9CF;
 }
 
 .menu-item {
   padding: 15px;
   border-bottom: 1px solid rgba(243, 252, 186, 0.347);
   cursor: pointer;
-  color: #F5DFBB;
+  color: #F5E9CF;
   font-size: 16px;
   transition: background-color 0.2s ease;
 }
@@ -130,5 +130,84 @@
   .table-number {
     max-width: calc(100% - 142px);
     font-size: 17px;
+  }
+}
+/* =====================================================================
+   STADIUM THEME OVERRIDE — Header (scoreboard bar)
+   ===================================================================== */
+.header-bar {
+  background: linear-gradient(180deg, #1a2028 0%, #10141a 100%);
+  border-bottom: 1px solid #33383f;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.55);
+  position: relative;
+}
+.header-bar::after {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; bottom: -1px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(242,187,70,0.55), transparent);
+}
+
+.table-number {
+  color: var(--st-gold-2);
+  font-family: var(--st-font-display);
+  letter-spacing: 0.05em;
+  background: rgba(0,0,0,0.35);
+  border: 1px solid rgba(242,187,70,0.35);
+  border-radius: 999px;
+  padding: 3px 14px;
+  box-shadow: inset 0 1px 4px rgba(0,0,0,0.5);
+}
+
+.menu-icon { color: var(--st-gold-2); }
+
+.side-menu {
+  background: linear-gradient(155deg, var(--st-metal-1), var(--st-metal-3));
+  border-left: 1px solid var(--st-metal-edge);
+  box-shadow: -6px 0 24px rgba(0,0,0,0.55);
+}
+.side-menu-content { color: var(--st-text); }
+
+.menu-item {
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  color: var(--st-text);
+  border-radius: 8px;
+}
+.menu-item:hover { background-color: rgba(242, 187, 70, 0.1); }
+
+.logout-item { color: #ff6b5e !important; }
+.logout-item:hover { background-color: rgba(255, 107, 94, 0.12); }
+
+
+
+/* =====================================================================
+   STADIUM ICON PASS — Header (clapperboard table badge)
+   ===================================================================== */
+.table-number {
+  background-image: url(../stadium-icons/badge-clapperboard-table.svg);
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 110px 50px;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  width: 58px;
+  height: 46px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 6px;
+  box-sizing: border-box;
+  color: #F5E9CF;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+@media (max-width: 380px) {
+  .table-number {
+    width: 88px;
+    height: 40px;
+    font-size: 12px;
   }
 }

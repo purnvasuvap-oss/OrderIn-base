@@ -29,7 +29,7 @@
 
 .payment-back-button:hover {
   background: #333333;
-  box-shadow: 0 4px 12px rgba(255, 183, 3, 0.1);
+  box-shadow: 0 4px 12px rgba(242, 187, 70, 0.1);
 }
 
 .payment-back-button:active {
@@ -68,4 +68,14 @@
     top: 15px;
     left: 15px;
   }
+}
+
+/* =====================================================================
+   STADIUM THEME OVERRIDE — Online Payment
+   ===================================================================== */
+.online-payment-container { background-color: #12171e; }
+.payment-back-button {
+  background: linear-gradient(180deg, #2a3038, #1c2128);
+  border: 1px solid #3c434d;
+  color: #F2BB46;
 }
