@@ -424,8 +424,8 @@ input::placeholder { color: var(--st-text-muted) !important; }
 
 .login-btn,
 .otp-btn {
-  background: linear-gradient(180deg, var(--st-gold-1) 0%, var(--st-gold-2) 45%, var(--st-gold-3) 100%) !important;
-  color: #241705 !important;
+  background: #4a4f56 !important;
+  color: #ffa425 !important;
   border: 1px solid var(--st-gold-4);
   border-radius: 999px !important;
   text-transform: uppercase;
@@ -436,7 +436,7 @@ input::placeholder { color: var(--st-text-muted) !important; }
 .login-btn:hover,
 .otp-btn:hover {
   filter: brightness(1.06);
-  background: linear-gradient(180deg, var(--st-gold-1) 0%, var(--st-gold-2) 45%, var(--st-gold-3) 100%) !important;
+  background: #ffa425 !important;
   box-shadow: 0 3px 0 var(--st-gold-4), 0 10px 22px rgba(0,0,0,0.5) !important;
 }
 .login-btn:active { transform: translateY(2px); }

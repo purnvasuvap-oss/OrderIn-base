@@ -79,6 +79,7 @@
 
 .side-menu.open {
   right: 0;
+  background-color: #1c2128;
 }
 
 .side-menu-content {

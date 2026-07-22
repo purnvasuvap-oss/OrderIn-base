@@ -8,6 +8,8 @@ import './header.css';
 function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const sideMenuRef = useRef(null);
+  const menuButtonRef = useRef(null);
+  const wrapperRef = useRef(null);
   const { currentTableNo } = useCart();
 
   const toggleMenu = () => {
@@ -38,28 +40,29 @@ function Header() {
     navigate('/login');
   };
 
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (sideMenuRef.current && !sideMenuRef.current.contains(event.target)) {
-        setIsMenuOpen(false);
-      }
-    };
-
-    if (isMenuOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
+useEffect(() => {
+  const handleClickOutside = (event) => {
+    if (
+      wrapperRef.current &&
+      !wrapperRef.current.contains(event.target)
+    ) {
+      setIsMenuOpen(false);
     }
+  };
 
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [isMenuOpen]);
+  document.addEventListener("mousedown", handleClickOutside);
+
+  return () => {
+    document.removeEventListener("mousedown", handleClickOutside);
+  };
+}, []);
 
   return (
      <>
        <div className="header-bar">
          <img src="/OrderIn.png" alt="OrderIn" className="orderin-logo-header" />
          <div className="table-number">Table {currentTableNo}</div>
-         <svg className="menu-icon" onClick={toggleMenu} width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+         <svg className="menu-icon"  ref={menuButtonRef}  onClick={() => setIsMenuOpen(prev => !prev)} width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
            <path d="M3 12H21M3 6H21M3 18H21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
          </svg>
        </div>
