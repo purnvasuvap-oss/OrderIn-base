@@ -13,6 +13,7 @@ import Payments from './payments/Payments';
 import PaymentSuccess from './payments/PaymentSuccess';
 import CounterCode from './payments/CounterCode';
 import OnlinePayment from './payments/OnlinePayment';
+import AwaitingConfirmation from './payments/AwaitingConfirmation';
 import Loading from './Loading';
 import ProtectedRoute from './components/ProtectedRoute';
 import { useGlobalBackButton } from './hooks/useGlobalBackButton';
@@ -38,6 +39,7 @@ import { useGlobalBackButton } from './hooks/useGlobalBackButton';
  * - /online-payment → Back button: Go to Payments (payment flow - Online payment only)
  * - /counter-code → Back button: Go to Payments (payment flow)
  * - /payment-success → Back button: Go to Menu
+ * - /awaiting-confirmation → Back button: Go to Menu
  * 
  * KEY DECISIONS:
  * 1. Payment flow pages keep normal back to allow navigation within flow
@@ -46,133 +48,35 @@ import { useGlobalBackButton } from './hooks/useGlobalBackButton';
  * 4. Global back button handler enforces rules across the app
  */
 function AppContent({ isLoading, setIsLoading }) {
-  // Enable strict global back button handler
   useGlobalBackButton();
 
   return (
     <div className="App">
       <Loading isLoading={isLoading} />
       <Routes>
-        {/* ===== PUBLIC ROUTES (No Auth Required) ===== */}
-        
-        {/* Login - Gateway to app */}
+        {/* ===== PUBLIC ROUTES ===== */}
         <Route path="/" element={<Login setIsLoading={setIsLoading} />} />
 
-        {/* ===== PROTECTED ROUTES (Auth Required) ===== */}
+        {/* ===== PROTECTED ROUTES ===== */}
+        <Route path="/menu" element={<ProtectedRoute><Menu setIsLoading={setIsLoading} /></ProtectedRoute>} />
+        <Route path="/help" element={<ProtectedRoute><Help setIsLoading={setIsLoading} /></ProtectedRoute>} />
+        <Route path="/about" element={<ProtectedRoute><About setIsLoading={setIsLoading} /></ProtectedRoute>} />
+        <Route path="/about-orderin" element={<ProtectedRoute><OrderInAbout setIsLoading={setIsLoading} /></ProtectedRoute>} />
+        <Route path="/item/:slug" element={<ProtectedRoute><ItemDetails setIsLoading={setIsLoading} /></ProtectedRoute>} />
+        <Route path="/profile" element={<ProtectedRoute><Profile setIsLoading={setIsLoading} /></ProtectedRoute>} />
+
+        {/* ===== PAYMENT FLOW ROUTES ===== */}
+        <Route path="/cart" element={<ProtectedRoute><Cart setIsLoading={setIsLoading} /></ProtectedRoute>} />
+        <Route path="/bill" element={<ProtectedRoute><Bill setIsLoading={setIsLoading} /></ProtectedRoute>} />
+        <Route path="/payments" element={<ProtectedRoute><Payments setIsLoading={setIsLoading} /></ProtectedRoute>} />
+        <Route path="/payment-success" element={<ProtectedRoute><PaymentSuccess setIsLoading={setIsLoading} /></ProtectedRoute>} />
+        <Route path="/counter-code" element={<ProtectedRoute><CounterCode setIsLoading={setIsLoading} /></ProtectedRoute>} />
+        <Route path="/online-payment" element={<ProtectedRoute><OnlinePayment setIsLoading={setIsLoading} /></ProtectedRoute>} />
         
-        {/* Main Navigation Routes */}
-        <Route
-          path="/menu"
-          element={
-            <ProtectedRoute>
-              <Menu setIsLoading={setIsLoading} />
-            </ProtectedRoute>
-          }
-        />
+        {/* ===== AWAITING CONFIRMATION ROUTE ===== */}
+        <Route path="/awaiting-confirmation" element={<ProtectedRoute><AwaitingConfirmation setIsLoading={setIsLoading} /></ProtectedRoute>} />
 
-        {/* Info & Help Routes */}
-        <Route
-          path="/help"
-          element={
-            <ProtectedRoute>
-              <Help setIsLoading={setIsLoading} />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/about"
-          element={
-            <ProtectedRoute>
-              <About setIsLoading={setIsLoading} />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/about-orderin"
-          element={
-            <ProtectedRoute>
-              <OrderInAbout setIsLoading={setIsLoading} />
-            </ProtectedRoute>
-          }
-        />
-
-        {/* Item & Details Routes */}
-        <Route
-          path="/item/:slug"
-          element={
-            <ProtectedRoute>
-              <ItemDetails setIsLoading={setIsLoading} />
-            </ProtectedRoute>
-          }
-        />
-
-        {/* User Account Routes */}
-        <Route
-          path="/profile"
-          element={
-            <ProtectedRoute>
-              <Profile setIsLoading={setIsLoading} />
-            </ProtectedRoute>
-          }
-        />
-
-        {/* ===== PAYMENT FLOW ROUTES (Sequential: Cart → Bill → Payments → Counter Code → Success) ===== */}
-        
-        <Route
-          path="/cart"
-          element={
-            <ProtectedRoute>
-              <Cart setIsLoading={setIsLoading} />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/bill"
-          element={
-            <ProtectedRoute>
-              <Bill setIsLoading={setIsLoading} />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/payments"
-          element={
-            <ProtectedRoute>
-              <Payments setIsLoading={setIsLoading} />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/payment-success"
-          element={
-            <ProtectedRoute>
-              <PaymentSuccess setIsLoading={setIsLoading} />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/counter-code"
-          element={
-            <ProtectedRoute>
-              <CounterCode setIsLoading={setIsLoading} />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/online-payment"
-          element={
-            <ProtectedRoute>
-              <OnlinePayment setIsLoading={setIsLoading} />
-            </ProtectedRoute>
-          }
-        />
-
-        {/* ===== CATCH-ALL (404 Redirect) ===== */}
+        {/* ===== CATCH-ALL ===== */}
         <Route path="*" element={<Navigate to="/menu" replace />} />
       </Routes>
     </div>

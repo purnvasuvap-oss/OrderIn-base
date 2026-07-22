@@ -307,12 +307,12 @@ function ManualOrderModal({ isOpen, onClose, menuItems, onOrderCreated }) {
   );
 }
 
-function StatusPill({ status, onStatusChange, orderId, isLoading }) {
+function StatusPill({ status, onStatusChange, orderId, isLoading, order }) {
   const [isEditing, setIsEditing] = useState(false);
   const cls = `status ${status.toLowerCase().replace(/\s+/g, "-")}`;
 
   const handleClick = () => {
-    if (!isLoading) {
+    if (!isLoading && (status === "Confirmed" || status === "Preparing" || status === "Ready")) {
       setIsEditing(true);
     }
   };
@@ -327,6 +327,38 @@ function StatusPill({ status, onStatusChange, orderId, isLoading }) {
     setIsEditing(false);
   };
 
+  // For Pending or Rejected orders, show Accept/Reject buttons instead
+  if (status === "Pending" && !isEditing) {
+    return (
+      <div style={{ display: "flex", gap: "4px", flexDirection: "column" }}>
+        <button
+          className="status accept-btn"
+          onClick={() => onStatusChange(orderId, "Confirmed")}
+          disabled={isLoading}
+          style={{ cursor: isLoading ? "not-allowed" : "pointer", background: "#15803d", color: "#fff", border: "none", padding: "4px 8px", borderRadius: "4px", fontSize: "11px", fontWeight: 600 }}
+        >
+          {isLoading ? "..." : "Accept"}
+        </button>
+        <button
+          className="status reject-btn"
+          onClick={() => onStatusChange(orderId, "Rejected")}
+          disabled={isLoading}
+          style={{ cursor: isLoading ? "not-allowed" : "pointer", background: "#dc2626", color: "#fff", border: "none", padding: "4px 8px", borderRadius: "4px", fontSize: "11px", fontWeight: 600 }}
+        >
+          {isLoading ? "..." : "Reject"}
+        </button>
+      </div>
+    );
+  }
+
+  if (status === "Rejected") {
+    return (
+      <div className={cls} style={{ color: "#dc2626", fontWeight: 600 }}>
+        Rejected
+      </div>
+    );
+  }
+
   if (isEditing) {
     return (
       <select
@@ -337,7 +369,7 @@ function StatusPill({ status, onStatusChange, orderId, isLoading }) {
         className={cls}
         disabled={isLoading}
       >
-        <option value="Pending">Pending</option>
+        <option value="Confirmed">Confirmed</option>
         <option value="Preparing">Preparing</option>
         <option value="Ready">Ready</option>
         <option value="Delivered">Delivered</option>
@@ -350,7 +382,7 @@ function StatusPill({ status, onStatusChange, orderId, isLoading }) {
       className={cls}
       onClick={handleClick}
       style={{
-        cursor: isLoading ? "not-allowed" : "pointer",
+        cursor: isLoading ? "not-allowed" : (status === "Confirmed" || status === "Preparing" || status === "Ready") ? "pointer" : "default",
         opacity: isLoading ? 0.6 : 1,
       }}
     >
@@ -404,13 +436,13 @@ function Orders() {
         `=== ORDERS COMPONENT (realtime): Received ${fetchedOrders.length} orders ===`,
       );
       console.log(`Orders data (realtime):`, fetchedOrders);
-      // Display orders that have paymentStatus === 'paid' OR manual orders
+      // Display orders: paid, manual, AND unpaid (pending restaurant confirmation)
       const displayOrders = fetchedOrders.filter((o) => {
         const status = String(o.paymentStatus || "").toLowerCase();
-        return status === "paid" || status === "manual";
+        return status === "paid" || status === "manual" || status === "unpaid" || status === "unknown";
       });
       console.log(
-        `Filtered to paid and manual orders: ${displayOrders.length}`,
+        `Filtered to display orders (paid/manual/unpaid): ${displayOrders.length}`,
       );
       setOrders(displayOrders);
       setError(null);

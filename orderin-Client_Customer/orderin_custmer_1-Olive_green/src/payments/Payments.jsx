@@ -23,20 +23,15 @@ function Payments({ onBackClick }) {
 
   // Fallback onBackClick: navigate back and clean up unpaid orders from Firestore
   const handleBackClick = async () => {
-    // Step 1: Delete unpaid orders from Firestore BEFORE navigating back
     try {
       const user = JSON.parse(localStorage.getItem("user"));
       if (user && user.phone) {
-        // Delete all unpaid orders for this user
-        // This is called when user navigates BACK from Payments page
         await safeDeleteUnpaidOrders(user.phone);
       }
     } catch (err) {
       console.error('Error during order cleanup on back navigation:', err);
-      // Continue navigation anyway - don't let cleanup errors block back button
     }
 
-    // Step 2: Clear session storage
     sessionStorage.removeItem('pendingOrderId');
     sessionStorage.removeItem('pendingOrderForFirestore');
     sessionStorage.removeItem('pendingVerificationCode');
@@ -45,7 +40,6 @@ function Payments({ onBackClick }) {
     localStorage.removeItem('orderin_onlinepayment_orderId');
     localStorage.removeItem('pendingVerificationCode');
 
-    // Step 3: Navigate back
     if (onBackClick) {
       onBackClick();
     } else {
@@ -102,22 +96,19 @@ function Payments({ onBackClick }) {
       return;
     }
 
-    // --- Firestore order saving logic with human-readable order ID ---
-    let order; // declared here so it's available after the try/catch
+    let order;
     let orderSaveError = null;
-    let phoneNumber = null; // Declare phoneNumber here so it's accessible throughout the function
+    let phoneNumber = null;
     
     try {
       setIsSaving(true);
-      // Get user info from localStorage
       const user = JSON.parse(localStorage.getItem("user"));
       const tableNumber = localStorage.getItem("tableNumber") || "1";
       if (!user || !user.phone) {
         throw new Error("User not logged in or phone number missing");
       }
-      phoneNumber = user.phone; // Assign to the outer variable
+      phoneNumber = user.phone;
 
-      // Firestore path: Restaurant/orderin_restaurant_3/customers/<phoneNumber>
       const customerRef = doc(db, "Restaurant", "orderin_restaurant_3", "customers", phoneNumber);
       const customerSnap = await getDoc(customerRef);
       let pastOrders = [];
@@ -126,8 +117,6 @@ function Payments({ onBackClick }) {
         pastOrders = Array.isArray(data.pastOrders) ? data.pastOrders : [];
       }
 
-      // Generate human-readable order ID (format: ORD-DDMMYY<sequence>)
-      // This is now the PRIMARY order ID stored in the database
       let orderId = null;
       try {
         orderId = await generateDisplayOrderId();
@@ -137,14 +126,12 @@ function Payments({ onBackClick }) {
         console.log('Generated order ID:', orderId);
       } catch (displayIdErr) {
         console.warn('Failed to generate order ID, creating fallback:', displayIdErr);
-        // Fallback: use a simple timestamp-based ID if counter generation fails
         const now = new Date();
         const timestamp = now.getTime();
         orderId = `ORD-${timestamp}`;
         console.log('Using fallback order ID:', orderId);
       }
 
-      // Ensure orderId is defined before proceeding
       if (!orderId) {
         throw new Error('Failed to generate order ID: orderId is undefined');
       }
@@ -154,28 +141,23 @@ function Payments({ onBackClick }) {
       
       console.log('Calculated - Subtotal:', calculatedBilling.subtotal, 'Tax:', calculatedBilling.taxes, 'Total:', calculatedBilling.total);
 
-      // Place the order with the human-readable ID
       order = placeOrder(selectedPayment);
       console.log('Order created from placeOrder():', order);
-      // Override the order id in the in-memory order object (orderHistory stores the same object reference)
       if (!order) {
         throw new Error('placeOrder() returned null or undefined');
       }
       order.id = orderId;
       
-      // Override with exact calculated values to ensure consistency
       order.subtotal = calculatedBilling.subtotal;
       order.taxes = calculatedBilling.taxes;
       order.total = calculatedBilling.total;
       console.log('Order updated with calculated values - Subtotal:', order.subtotal, 'Taxes:', order.taxes, 'Total:', order.total);
 
-      // Generate verification code for cash/card orders (4 random digits)
       let verificationCode = null;
       if (selectedPayment === 'Cash' || selectedPayment === 'Card') {
         verificationCode = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
       }
 
-      // Persist verification code locally so the UI/verification page can use the same code
       try {
         if (verificationCode) {
           sessionStorage.setItem('pendingVerificationCode', verificationCode);
@@ -191,7 +173,6 @@ function Payments({ onBackClick }) {
 
       const orderTimestamp = createOrderTimestamp();
 
-      // Prepare order object for Firestore (no images/media)
       const orderForFirestore = {
         id: orderId,
         items: order.items.map(({ name, price, quantity, instructions, specifications }) => ({
@@ -211,7 +192,7 @@ function Payments({ onBackClick }) {
         createdAtMs: orderTimestamp.createdAtMs,
         paymentStatus: 'unpaid',
         verificationCode: verificationCode,
-        OnlinePayMethod: ""  // Empty string initially, will be updated to UPI/CARD/NET BANKING/WALLET from embedded payment page
+        OnlinePayMethod: ""
       };
 
       console.log('Order object before saving to Firestore:', orderForFirestore);
@@ -225,14 +206,11 @@ function Payments({ onBackClick }) {
       sessionStorage.setItem('pendingOrderForFirestore', JSON.stringify(pendingOrderBackup));
       localStorage.setItem('pendingOrderForFirestore', JSON.stringify(pendingOrderBackup));
 
-      // Save to Firestore immediately with 'unpaid' status
-      // It will be deleted if user goes back, or updated to 'paid' after verification
       pastOrders.push(orderForFirestore);
       console.log('Past orders array before Firestore save:', pastOrders);
       await setDoc(customerRef, { pastOrders, lastOrderAt: serverTimestamp() }, { merge: true });
       console.log('Order saved to Firestore successfully');
       
-      // Save temporary order state to localStorage for refresh recovery
       const billing = {
         subtotal: calculatedBilling.subtotal,
         taxes: calculatedBilling.taxes,
@@ -245,12 +223,10 @@ function Payments({ onBackClick }) {
     } catch (err) {
       console.error("Error during order processing:", err);
       orderSaveError = err;
-      // Don't show alert yet - check if order was actually saved and has an ID
     } finally {
       setIsSaving(false);
     }
 
-    // Only show error alert if order creation completely failed
     if (orderSaveError && (!order || !order.id)) {
       console.warn("Order save failed - showing error to user:", orderSaveError.message);
       alert("Error saving order to backend: " + orderSaveError.message);
@@ -258,90 +234,46 @@ function Payments({ onBackClick }) {
     }
 
     if (!order) {
-      // If order wasn't created (e.g., save failed), stop further actions
       return;
     }
 
-    if (selectedPayment === 'Online') {
-      console.log('Online payment selected, order id:', order.id);
-      // Fetch restaurant information from Firestore
-      const fetchRestaurantData = async () => {
-        try {
-          const restaurantRef = doc(db, "Restaurant", "orderin_restaurant_3");
-          const restaurantSnap = await getDoc(restaurantRef);
-          
-          if (restaurantSnap.exists()) {
-            const restaurantData = restaurantSnap.data();
-            console.log('Restaurant data fetched:', restaurantData);
-            
-            // Prepare payment data with restaurant info
-            const paymentData = {
-              orderId: order.id,
-              subtotal: order.subtotal,
-              taxes: order.taxes,
-              total: order.total,
-              taxRate: TAX_RATE, // 0.05 rupees per rupee (5 paise per rupee)
-              useProvidedTax: true, // Tell embedded page: don't recalculate, use this tax value
-              restaurantId: 'orderin_restaurant_3',
-              restaurantName: restaurantData.Restaurant_name || 'Restaurant',
-              ifscCode: restaurantData.IFSC || '',
-              accountNumber: restaurantData.account || '',
-              paymentMethod: selectedPayment,
-              customerPhone: phoneNumber,
-              timestamp: new Date().toISOString()
-            };
-            
-            console.log('Payment data being sent:', paymentData);
-            
-            // Store all payment data for the embedded page
-            sessionStorage.setItem('pendingOrderId', order.id);
-            localStorage.setItem('orderin_onlinepayment_orderId', order.id);
-            sessionStorage.setItem('paymentData', JSON.stringify(paymentData));
-            localStorage.setItem('orderin_paymentData', JSON.stringify(paymentData));
-            
-            console.log('Payment data stored:', paymentData);
-            console.log('About to navigate to /online-payment');
-            
-            // Small delay to ensure storage is committed before navigation
-            setTimeout(() => {
-              console.log('Navigating now...');
-              navigate(getPathWithTable('/online-payment'));
-            }, 100);
-          } else {
-            console.error('Restaurant document not found');
-            alert('Error: Restaurant information not found. Please try again.');
-          }
-        } catch (err) {
-          console.error('Error fetching restaurant data:', err);
-          alert('Error: Could not fetch restaurant information: ' + err.message);
-        }
-      };
-      
-      fetchRestaurantData();
-    } else {
-      // For Card or Cash, store the order ID temporarily and go to counter code page
-      // The counter code page will verify the code and then mark payment successful
-      sessionStorage.setItem('pendingOrderId', order.id);
-      // Also persist counter-code page state to localStorage for refresh recovery
-      localStorage.setItem('orderin_countercode_orderId', order.id);
-      localStorage.setItem('orderin_countercode_paymentMethod', selectedPayment);
-      navigate(getPathWithTable('/counter-code'));
-    }
+    // Store pending order ID and payment method for use after restaurant confirmation
+    sessionStorage.setItem('pendingOrderId', order.id);
+    localStorage.setItem('orderin_countercode_orderId', order.id);
+    localStorage.setItem('orderin_countercode_paymentMethod', selectedPayment);
+
+    // Store payment data for later use
+    const paymentData = {
+      orderId: order.id,
+      subtotal: order.subtotal,
+      taxes: order.taxes,
+      total: order.total,
+      taxRate: TAX_RATE,
+      useProvidedTax: true,
+      restaurantId: 'orderin_restaurant_3',
+      paymentMethod: selectedPayment,
+      customerPhone: phoneNumber
+    };
+    sessionStorage.setItem('paymentData', JSON.stringify(paymentData));
+    localStorage.setItem('orderin_paymentData', JSON.stringify(paymentData));
+
+    // NEW FLOW: Redirect to AwaitingConfirmation page
+    // Restaurant staff must accept/reject the order before payment proceeds
+    setTimeout(() => {
+      navigate(getPathWithTable('/awaiting-confirmation'));
+    }, 100);
   };
 
   return (
     <div className="payments-container">
       <Loading isLoading={isSaving} />
       <div className="payments-card">
-        {/* Close Button */}
         <button className="close-button" onClick={handleBackClick}>
           <X size={22} />
         </button>
 
-        {/* Header */}
         <h2 className="checkout-header">Checkout</h2>
 
-        {/* Order Items */}
         {cartItems.map((item, index) => (
           <div key={index} className="order-item">
             <img
@@ -377,10 +309,9 @@ function Payments({ onBackClick }) {
                 <Trash2 size={16} />
               </button>
             </div>
-          </div>
+            </div>
         ))}
 
-        {/* Billing Breakdown */}
         <div className="billing-breakdown">
           <h4 className="billing-header">Billing Breakdown</h4>
           <div className="billing-row">
@@ -396,8 +327,6 @@ function Payments({ onBackClick }) {
             <span>₹{displayedBilling.total.toFixed(2)}</span>
           </div>
         </div>
-
-        {/* Payment Method */}
         <div className="payment-methods">
           <h4 className="payment-header">Payment Method</h4>
           <div className="payment-grid">
@@ -423,14 +352,12 @@ function Payments({ onBackClick }) {
               <span className="payment-label">Cash</span>
             </button>
           </div>
-        </div>
-
-        {/* Place Order Button */}
+</div>
         <button className="place-order-btn" onClick={handlePlaceOrder}>
           Place Order
         </button>
       </div>
-    </div>
+      </div>
   );
 }
 
