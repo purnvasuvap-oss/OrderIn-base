@@ -1,0 +1,96 @@
+.SalesTrends-panel {
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+}
+
+.SalesTrends-panel h3 { margin: 0 0 4px 0; color: #636E2C; }
+.SalesTrends-subtitle { margin: 0 0 20px 0; color: #6b7280; font-size: 13px; max-width: 620px; }
+.SalesTrends-loading { color: #999; font-size: 13px; }
+
+.SalesTrends-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  height: 180px;
+  padding: 0 4px 8px;
+  border-bottom: 1px solid #eee;
+  margin-bottom: 8px;
+}
+
+.SalesTrends-bar-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  height: 100%;
+}
+
+.SalesTrends-bar-track {
+  flex: 1;
+  width: 100%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.SalesTrends-bar {
+  width: 60%;
+  min-width: 18px;
+  background: #636E2C;
+  border-radius: 6px 6px 0 0;
+  transition: height 0.3s ease;
+}
+
+.SalesTrends-delta {
+  font-size: 11px;
+  font-weight: 700;
+  margin-top: 6px;
+}
+.SalesTrends-delta.up { color: #15803d; }
+.SalesTrends-delta.down { color: #dc2626; }
+
+.SalesTrends-day-label { font-size: 12px; color: #666; margin-top: 2px; }
+
+.SalesTrends-vegsplit { margin: 20px 0; }
+.SalesTrends-veg-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+  font-size: 12px;
+}
+.SalesTrends-veg-day { width: 34px; color: #666; }
+.SalesTrends-veg-bar {
+  flex: 1;
+  height: 10px;
+  border-radius: 6px;
+  overflow: hidden;
+  display: flex;
+  background: #f1f1f1;
+}
+.SalesTrends-veg-seg.veg { background: #4caf50; }
+.SalesTrends-veg-seg.nonveg { background: #e07a5f; }
+.SalesTrends-veg-pct { display: flex; align-items: center; gap: 3px; color: #4caf50; width: 46px; }
+.SalesTrends-veg-pct.nonveg { color: #e07a5f; }
+
+.SalesTrends-insights-title { margin: 20px 0 10px 0; color: #444; }
+
+.SalesTrends-insight-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 13px;
+  padding: 8px 10px;
+  border: 1px solid #f0f0f0;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  color: #333;
+}
+
+@media (max-width: 640px) {
+  .SalesTrends-chart { height: 140px; }
+  .SalesTrends-veg-pct { display: none; }
+}
