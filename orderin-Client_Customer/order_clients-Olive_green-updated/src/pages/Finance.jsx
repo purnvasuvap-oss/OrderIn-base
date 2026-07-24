@@ -7,6 +7,7 @@ import { formatTime, subscribeAllCustomerOrders, subscribeOnlineCustomerOrders }
 import BillModal from "../components/BillModal";
 import SalesTrendsPanel from "../components/SalesTrends/SalesTrendsPanel";
 import OrderAnalyticsPanel from "../components/OrderAnalytics/OrderAnalyticsPanel";
+import CustomerLoyaltyPanel from "../components/CustomerLoyalty/CustomerLoyaltyPanel";
 
 function App() {
   const navigate = useNavigate();
@@ -257,7 +258,7 @@ function App() {
 
   const earningsData = calculateEarnings();
   // Updated tabs: removed DAILY TRANSIT, added ORDER ANALYTICS
-  const financeTabs = ["ACCOUNTS", "EARNINGS CALCULATION", "LEDGER", "SALES TRENDS", "ORDER ANALYTICS"];
+  const financeTabs = ["ACCOUNTS", "EARNINGS CALCULATION", "LEDGER", "SALES TRENDS", "ORDER ANALYTICS", "CUSTOMER LOYALTY"];
 
   const getOrderTimeValue = (order) => {
     try {
@@ -804,6 +805,12 @@ function App() {
       {activeTab === "ORDER ANALYTICS" && (
         <div className="fin-orders-container">
           <OrderAnalyticsPanel />
+        </div>
+      )}
+
+      {activeTab === "CUSTOMER LOYALTY" && (
+        <div className="fin-orders-container">
+          <CustomerLoyaltyPanel />
         </div>
       )}
 

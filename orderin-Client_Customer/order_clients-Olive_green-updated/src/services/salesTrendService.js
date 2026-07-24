@@ -6,6 +6,10 @@ import { parseOrderTimestamp } from "../utils/orderDateTime";
 const RESTAURANT_ID = "orderin_restaurant_3";
 
 export const WEEKDAY_LABELS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+export const MONTH_LABELS = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December",
+];
 
 /** Flatten every customer's pastOrders into a single array of normalized orders. 
  *  Fix #31: Added date filter (last 90 days) to avoid massive Firestore reads.
@@ -55,8 +59,19 @@ export const fetchMenuTypeMap = async () => {
 };
 
 /**
+ * Rank a bucket's dishCounts/dishRevenue into its top N sold items.
+ */
+export const getTopItemsForBucket = (bucket, n = 5) => {
+  if (!bucket || !bucket.dishCounts) return [];
+  return Object.entries(bucket.dishCounts)
+    .map(([name, qty]) => ({ name, qty, revenue: bucket.dishRevenue?.[name] || 0 }))
+    .sort((a, b) => b.qty - a.qty)
+    .slice(0, n);
+};
+
+/**
  * Build day-of-week aggregates: revenue, order count, veg/non-veg split,
- * and per-dish quantities per weekday.
+ * and per-dish quantities/revenue per weekday.
  */
 export const buildWeekdayTrends = (orders, menuTypeMap = {}) => {
   const weekday = WEEKDAY_LABELS.map((label, idx) => ({
@@ -67,6 +82,7 @@ export const buildWeekdayTrends = (orders, menuTypeMap = {}) => {
     vegQty: 0,
     nonVegQty: 0,
     dishCounts: {},
+    dishRevenue: {},
   }));
 
   orders.forEach((order) => {
@@ -81,10 +97,51 @@ export const buildWeekdayTrends = (orders, menuTypeMap = {}) => {
       else if (type === "Veg") bucket.vegQty += it.quantity;
 
       bucket.dishCounts[it.name] = (bucket.dishCounts[it.name] || 0) + it.quantity;
+      bucket.dishRevenue[it.name] = (bucket.dishRevenue[it.name] || 0) + it.total;
     });
   });
 
+  weekday.forEach((bucket) => { bucket.topItems = getTopItemsForBucket(bucket); });
+
   return weekday;
+};
+
+/**
+ * Build month-of-year aggregates (Jan-Dec, aggregated across all years present
+ * in the fetched order history): revenue, order count, veg/non-veg split,
+ * and per-dish quantities/revenue per month.
+ */
+export const buildMonthlyTrends = (orders, menuTypeMap = {}) => {
+  const monthly = MONTH_LABELS.map((label, idx) => ({
+    day: idx,
+    label,
+    orderCount: 0,
+    revenue: 0,
+    vegQty: 0,
+    nonVegQty: 0,
+    dishCounts: {},
+    dishRevenue: {},
+  }));
+
+  orders.forEach((order) => {
+    const month = order.timestamp.getMonth();
+    const bucket = monthly[month];
+    bucket.orderCount += 1;
+    bucket.revenue += order.total;
+
+    order.items.forEach((it) => {
+      const type = menuTypeMap[it.name.toLowerCase()] || null;
+      if (type === "Non-Veg") bucket.nonVegQty += it.quantity;
+      else if (type === "Veg") bucket.vegQty += it.quantity;
+
+      bucket.dishCounts[it.name] = (bucket.dishCounts[it.name] || 0) + it.quantity;
+      bucket.dishRevenue[it.name] = (bucket.dishRevenue[it.name] || 0) + it.total;
+    });
+  });
+
+  monthly.forEach((bucket) => { bucket.topItems = getTopItemsForBucket(bucket); });
+
+  return monthly;
 };
 
 /**

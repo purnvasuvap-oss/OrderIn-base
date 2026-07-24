@@ -29,11 +29,13 @@
 }
 
 .SalesTrends-bar-track {
+  position: relative;
   flex: 1;
   width: 100%;
   display: flex;
   align-items: flex-end;
   justify-content: center;
+  cursor: pointer;
 }
 
 .SalesTrends-bar {
@@ -93,4 +95,67 @@
 @media (max-width: 640px) {
   .SalesTrends-chart { height: 140px; }
   .SalesTrends-veg-pct { display: none; }
+}
+
+/* === Days/Months toggle === */
+.SalesTrends-toggle {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 16px;
+  border-radius: 20px;
+  border: 1.5px solid #636E2C;
+  background: #fff;
+  color: #636E2C;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  margin-bottom: 16px;
+  transition: 0.2s;
+}
+.SalesTrends-toggle:hover {
+  background: #636E2C;
+  color: #fff;
+}
+
+/* === Monthly chart mode === */
+.SalesTrends-monthly .SalesTrends-bar-col {
+  min-width: 0;
+}
+.SalesTrends-monthly .SalesTrends-bar {
+  min-width: 10px;
+}
+
+/* === Top-5-items hover/click overlay === */
+.SalesTrends-overlay {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-bottom: 8px;
+  background: #1f2937;
+  color: #fff;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  white-space: nowrap;
+  z-index: 10;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  text-align: left;
+}
+.SalesTrends-overlay strong {
+  display: block;
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+.SalesTrends-overlay ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.SalesTrends-overlay span {
+  color: #d1d5db;
+  font-style: italic;
 }

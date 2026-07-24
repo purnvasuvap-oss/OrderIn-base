@@ -230,3 +230,83 @@ export const logInventoryChange = async (itemName, changeType, quantity, batchId
   }
 };
 
+/**
+ * Fetch the full add/take action history for an item, newest first,
+ * including whatever batch/expiry details were recorded with each action.
+ */
+export const getItemActionHistory = async (itemName) => {
+  try {
+    const actionsRef = collection(db, RESTAURANT_PATH, "inventory", itemName, "actions");
+    const q = query(actionsRef, orderBy("timestamp", "desc"));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map((doc) => ({ firestoreId: doc.id, ...doc.data() }));
+  } catch (error) {
+    console.error("Error fetching item action history:", error);
+    return [];
+  }
+};
+
+/**
+ * Consume stock from a specific set of user-selected batches only
+ * (as opposed to consumeFromBatches, which auto-picks batches via FIFO/expiry).
+ * Within the selected subset, still prioritizes soonest-expiry then oldest-arrival.
+ */
+export const consumeFromSpecificBatches = async (itemName, batchIds, quantity) => {
+  try {
+    const allBatches = await getItemBatches(itemName);
+    const selected = allBatches
+      .filter((b) => batchIds.includes(b.firestoreId))
+      .sort((a, b) => {
+        if (a.expiryDate && b.expiryDate) {
+          return a.expiryDate.toDate().getTime() - b.expiryDate.toDate().getTime();
+        }
+        if (a.expiryDate) return -1;
+        if (b.expiryDate) return 1;
+        return a.addedAt.toDate().getTime() - b.addedAt.toDate().getTime();
+      });
+
+    let remainingToConsume = quantity;
+    const consumptionLog = [];
+
+    for (const batch of selected) {
+      if (remainingToConsume <= 0) break;
+
+      const consumeFromThis = Math.min(batch.remainingQty, remainingToConsume);
+      const newRemaining = batch.remainingQty - consumeFromThis;
+      const newStatus = newRemaining <= 0 ? "consumed" : "active";
+      const now = Timestamp.now();
+
+      const batchDocRef = doc(db, RESTAURANT_PATH, "inventory", itemName, "batches", batch.firestoreId);
+      await updateDoc(batchDocRef, {
+        remainingQty: newRemaining,
+        status: newStatus,
+        updatedAt: now,
+        consumedAt: now,
+      });
+
+      consumptionLog.push({
+        batchId: batch.batchId,
+        firestoreId: batch.firestoreId,
+        consumedQty: consumeFromThis,
+        remainingQty: newRemaining,
+      });
+
+      remainingToConsume -= consumeFromThis;
+    }
+
+    if (remainingToConsume > 0) {
+      console.warn(`consumeFromSpecificBatches: could only fulfill ${quantity - remainingToConsume} of ${quantity} from the selected batches`);
+    }
+
+    return {
+      fulfilled: remainingToConsume <= 0,
+      consumed: quantity - remainingToConsume,
+      remaining: remainingToConsume,
+      consumptionLog,
+    };
+  } catch (error) {
+    console.error("Error consuming from specific batches:", error);
+    throw error;
+  }
+};
+

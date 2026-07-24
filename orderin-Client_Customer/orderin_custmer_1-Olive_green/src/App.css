@@ -1,5 +1,5 @@
 .App{
-    background-color: #1E1E1E;
+    background-color: #F1EFD8;
     background-size: cover;
     background-position: center;
     height: 100vh;
@@ -13,6 +13,6 @@
         max-width: 480px;
         margin: 0 auto;
         box-shadow: 0 0 10px rgba(0,0,0,0.3);
-        background-color: #1E1E1E;
+        background-color: #F1EFD8;
     }
 }

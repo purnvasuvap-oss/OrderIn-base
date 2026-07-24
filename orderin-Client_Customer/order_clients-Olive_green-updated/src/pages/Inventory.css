@@ -1333,3 +1333,115 @@
 @media (max-width: 640px) {
   .Inventory-redzone-banner, .Inventory-tabs { margin-left: 12px; margin-right: 12px; }
 }
+
+/* === Expiry Date field (Add Stock) === */
+.Inventory-expiry-field input {
+  width: 100%;
+}
+
+/* === Batch selector (Take Out) === */
+.Inventory-batch-selector {
+  border: 1.8px solid #ccc;
+  border-radius: 10px;
+  max-height: 180px;
+  overflow-y: auto;
+  padding: 8px 10px;
+  background: #fff;
+}
+.Inventory-batch-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 4px;
+  font-size: 13px;
+  color: #333;
+  cursor: pointer;
+}
+.Inventory-batch-option + .Inventory-batch-option {
+  border-top: 1px solid #f0f0f0;
+}
+.Inventory-batch-selectall {
+  font-weight: 700;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 8px;
+  margin-bottom: 4px;
+}
+.Inventory-batch-empty {
+  font-size: 13px;
+  color: #888;
+  font-style: italic;
+  margin: 0;
+}
+
+/* === Actions column button === */
+.Inventory-btn-actions-cell {
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  background: #fff;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  color: #3F441C;
+  white-space: nowrap;
+}
+.Inventory-btn-actions-cell:hover {
+  background: #f3f4f6;
+  border-color: #636E2C;
+}
+
+/* === Actions History modal (centered, scrollable) === */
+.Inventory-actions-modal {
+  background-color: #f9fafc;
+  width: 640px;
+  max-width: 90vw;
+  max-height: 80vh;
+  border-radius: 16px;
+  padding: 20px;
+  border: 2px solid #000;
+  box-shadow: 0 4px 25px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+}
+.Inventory-actions-modal-content {
+  margin-top: 16px;
+  overflow-y: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.Inventory-actions-entry {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1.4fr 1.6fr;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 8px;
+  border-bottom: 1px solid #eee;
+  font-size: 13px;
+  color: #333;
+}
+.Inventory-actions-entry-type {
+  font-weight: 700;
+  color: #3F441C;
+}
+
+/* === Set Alerts labels === */
+.Inventory-alert-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #444;
+  display: block;
+  margin-bottom: -4px;
+}
+
+@media (max-width: 640px) {
+  .Inventory-actions-modal {
+    width: 95%;
+    padding: 14px;
+  }
+  .Inventory-actions-entry {
+    grid-template-columns: 1fr 1fr;
+    row-gap: 4px;
+  }
+}

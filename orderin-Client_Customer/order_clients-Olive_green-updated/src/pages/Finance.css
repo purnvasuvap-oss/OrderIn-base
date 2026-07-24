@@ -1183,3 +1183,118 @@ td {
     min-width: 900px;
   }
 }
+
+/* === Customer Loyalty tab === */
+.fin-loyalty-section {
+  padding: 24px;
+}
+
+.fin-loyalty-section h3 {
+  margin: 0 0 4px 0;
+  color: #111827;
+}
+
+.fin-loyalty-subtitle {
+  margin: 0 0 20px 0;
+  color: #6b7280;
+  font-size: 13px;
+}
+
+.fin-loyalty-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.fin-loyalty-table thead {
+  background: #f8fafc;
+}
+
+.fin-loyalty-table th {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #475569;
+  padding: 14px 16px;
+  text-align: left;
+}
+
+.fin-loyalty-table td {
+  padding: 14px 16px;
+  border-bottom: 1px solid #eef2f7;
+  font-size: 13px;
+  color: #111827;
+}
+
+.fin-loyalty-rank {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  font-weight: 800;
+  font-size: 13px;
+}
+
+.fin-loyalty-rank.gold {
+  background: #fef3c7;
+  color: #b45309;
+  box-shadow: 0 0 0 2px #f59e0b inset;
+}
+
+.fin-loyalty-rank.silver {
+  background: #f1f5f9;
+  color: #475569;
+  box-shadow: 0 0 0 2px #94a3b8 inset;
+}
+
+.fin-loyalty-rank.bronze {
+  background: #ffedd5;
+  color: #9a3412;
+  box-shadow: 0 0 0 2px #c2703d inset;
+}
+
+.fin-loyalty-rank.default {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+/* === Sales Trends toggle + overlay (Finance-page-level styling to match SalesTrendsPanel) === */
+.fin-sales-toggle {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 16px;
+  border-radius: 20px;
+  border: 1.5px solid #636E2C;
+  background: #fff;
+  color: #636E2C;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  margin-bottom: 16px;
+}
+
+.fin-sales-toggle:hover {
+  background: #636E2C;
+  color: #fff;
+}
+
+.fin-sales-overlay {
+  position: absolute;
+  bottom: 100%;
+  background: #1f2937;
+  color: #fff;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  white-space: nowrap;
+  z-index: 10;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+@media (max-width: 768px) {
+  .fin-loyalty-table {
+    min-width: 720px;
+  }
+}

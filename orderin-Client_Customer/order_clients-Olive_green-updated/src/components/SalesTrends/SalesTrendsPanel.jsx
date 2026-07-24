@@ -5,14 +5,18 @@ import {
   fetchAllOrdersFlat,
   fetchMenuTypeMap,
   buildWeekdayTrends,
+  buildMonthlyTrends,
   buildDishInsights,
 } from "../../services/salesTrendService";
 
 const SalesTrendsPanel = () => {
   const [loading, setLoading] = useState(true);
   const [weekday, setWeekday] = useState([]);
+  const [monthly, setMonthly] = useState([]);
   const [insights, setInsights] = useState([]);
   const [error, setError] = useState(null);
+  const [viewMode, setViewMode] = useState("days"); // "days" | "months"
+  const [hoveredBucket, setHoveredBucket] = useState(null);
 
   useEffect(() => {
     (async () => {
@@ -20,6 +24,7 @@ const SalesTrendsPanel = () => {
         const [orders, typeMap] = await Promise.all([fetchAllOrdersFlat(), fetchMenuTypeMap()]);
         const trends = buildWeekdayTrends(orders, typeMap);
         setWeekday(trends);
+        setMonthly(buildMonthlyTrends(orders, typeMap));
         setInsights(buildDishInsights(trends));
       } catch (err) {
         console.error("SalesTrendsPanel load error:", err);
@@ -30,10 +35,12 @@ const SalesTrendsPanel = () => {
     })();
   }, []);
 
-  const maxRevenue = useMemo(() => Math.max(1, ...weekday.map((w) => w.revenue)), [weekday]);
+  const activeBuckets = viewMode === "days" ? weekday : monthly;
+
+  const maxRevenue = useMemo(() => Math.max(1, ...activeBuckets.map((w) => w.revenue)), [activeBuckets]);
   const avgRevenue = useMemo(
-    () => (weekday.length ? weekday.reduce((s, w) => s + w.revenue, 0) / weekday.length : 0),
-    [weekday]
+    () => (activeBuckets.length ? activeBuckets.reduce((s, w) => s + w.revenue, 0) / activeBuckets.length : 0),
+    [activeBuckets]
   );
 
   if (loading) return <div className="SalesTrends-panel"><p className="SalesTrends-loading">Crunching order history...</p></div>;
@@ -41,20 +48,46 @@ const SalesTrendsPanel = () => {
 
   return (
     <div className="SalesTrends-panel">
-      <h3>Day-of-Week Sales Trends</h3>
+      <h3>{viewMode === "days" ? "Day-of-Week Sales Trends" : "Month-of-Year Sales Trends"}</h3>
       <p className="SalesTrends-subtitle">
-        Revenue by weekday, compared against your weekly average — so you can order raw materials with real demand
-        in mind instead of a flat daily quantity.
+        Revenue by {viewMode === "days" ? "weekday" : "month"}, compared against your average — so you can order raw
+        materials with real demand in mind instead of a flat quantity.
       </p>
 
-      <div className="SalesTrends-chart">
-        {weekday.map((w) => {
+      <button
+        className="SalesTrends-toggle"
+        onClick={() => { setViewMode((v) => (v === "days" ? "months" : "days")); setHoveredBucket(null); }}
+      >
+        Days ↔ Months
+      </button>
+
+      <div className={`SalesTrends-chart ${viewMode === "months" ? "SalesTrends-monthly" : ""}`}>
+        {activeBuckets.map((w) => {
           const heightPct = Math.max(4, (w.revenue / maxRevenue) * 100);
           const deltaPct = avgRevenue ? Math.round(((w.revenue - avgRevenue) / avgRevenue) * 100) : 0;
           return (
             <div className="SalesTrends-bar-col" key={w.day}>
-              <div className="SalesTrends-bar-track">
-                <div className="SalesTrends-bar" style={{ height: `${heightPct}%` }} title={`₹${Math.round(w.revenue)}`} />
+              <div
+                className="SalesTrends-bar-track"
+                onMouseEnter={() => setHoveredBucket(w.day)}
+                onMouseLeave={() => setHoveredBucket(null)}
+                onClick={() => setHoveredBucket((prev) => (prev === w.day ? null : w.day))}
+              >
+                <div className="SalesTrends-bar" style={{ height: `${heightPct}%` }} />
+                {hoveredBucket === w.day && (
+                  <div className="SalesTrends-overlay">
+                    <strong>{w.label}</strong>
+                    {w.topItems && w.topItems.length > 0 ? (
+                      <ul>
+                        {w.topItems.map((ti) => (
+                          <li key={ti.name}>{ti.name} — {ti.qty} sold (₹{Math.round(ti.revenue)})</li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <span>No sales recorded</span>
+                    )}
+                  </div>
+                )}
               </div>
               <span className={`SalesTrends-delta ${deltaPct >= 0 ? "up" : "down"}`}>
                 {deltaPct >= 0 ? "+" : ""}
@@ -67,7 +100,7 @@ const SalesTrendsPanel = () => {
       </div>
 
       <div className="SalesTrends-vegsplit">
-        {weekday.map((w) => {
+        {activeBuckets.map((w) => {
           const total = w.vegQty + w.nonVegQty || 1;
           const vegPct = Math.round((w.vegQty / total) * 100);
           return (

@@ -13,6 +13,14 @@ import { withRotIndex, ROT_BANDS } from "../utils/rotIndex";
 import RotBadge from "../components/RotIndex/RotBadge";
 import IllusionPricingModal from "../components/RotIndex/IllusionPricingModal";
 import AuditInboxPanel from "../components/AuditInbox/AuditInboxPanel";
+import {
+  addInventoryBatch,
+  getItemBatches,
+  consumeFromSpecificBatches,
+  getItemActionHistory,
+  recordInventoryAction,
+  getAllBatchesWithExpiry,
+} from "../services/inventoryBatchService";
 
 
 function App() {
@@ -64,7 +72,21 @@ function App() {
   // Rot Index (predictive expiry) fields for the stock-update form
   const [arrivalDate, setArrivalDate] = useState("");
   const [shelfLifeDays, setShelfLifeDays] = useState("");
+  const [expiryDate, setExpiryDate] = useState("");
   const [illusionModalItem, setIllusionModalItem] = useState(null);
+
+  // Batch tracking for the Rot Index (item name -> active batches with expiry)
+  const [batchesByItem, setBatchesByItem] = useState({});
+
+  // Take Out: batch multi-select
+  const [takeOutBatches, setTakeOutBatches] = useState([]);
+  const [selectedBatchIds, setSelectedBatchIds] = useState([]);
+  const [loadingTakeOutBatches, setLoadingTakeOutBatches] = useState(false);
+
+  // Actions history modal
+  const [historyModalItem, setHistoryModalItem] = useState(null);
+  const [itemActionHistory, setItemActionHistory] = useState([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
 
   // Tabs: "inventory" | "audit"
   const [activeTab, setActiveTab] = useState("inventory");
@@ -73,11 +95,25 @@ function App() {
   const lowCount = data.filter(item => item.status === "Low").length;
   const veryLowCount = data.filter(item => item.status === "Very Low").length;
 
-  const rotData = useMemo(() => withRotIndex(data), [data]);
+  const rotData = useMemo(() => withRotIndex(data, batchesByItem), [data, batchesByItem]);
   const redZoneItems = useMemo(
     () => rotData.filter(item => item.rotBand === ROT_BANDS.RED),
     [rotData]
   );
+
+  const loadBatchesByItem = async () => {
+    try {
+      const allBatches = await getAllBatchesWithExpiry();
+      const grouped = {};
+      allBatches.forEach(batch => {
+        if (!grouped[batch.itemName]) grouped[batch.itemName] = [];
+        grouped[batch.itemName].push(batch);
+      });
+      setBatchesByItem(grouped);
+    } catch (error) {
+      console.error("Error loading batches for Rot Index:", error);
+    }
+  };
 
   useEffect(() => {
     const fetchInventory = async () => {
@@ -109,6 +145,8 @@ function App() {
         });
         allActions.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
         setActivities(allActions.slice(0, 2));
+
+        loadBatchesByItem();
       } catch (error) {
         console.error("Error fetching inventory:", error);
       } finally {
@@ -133,6 +171,23 @@ function App() {
     setAlertLowThreshold(String(item.thresholdLow ?? 0));
     setAlertVeryLowThreshold(String(item.thresholdVeryLow ?? 0));
   }, [selectedItem, data]);
+
+  useEffect(() => {
+    if (selectedAction !== "take" || !selectedItem) {
+      setTakeOutBatches([]);
+      setSelectedBatchIds([]);
+      return;
+    }
+    setLoadingTakeOutBatches(true);
+    getItemBatches(selectedItem)
+      .then(batches => {
+        const active = batches.filter(b => b.status === "active" && b.remainingQty > 0);
+        setTakeOutBatches(active);
+        setSelectedBatchIds([]);
+      })
+      .catch(error => console.error("Error loading batches for take out:", error))
+      .finally(() => setLoadingTakeOutBatches(false));
+  }, [selectedAction, selectedItem]);
 
   useEffect(() => {
     if (!selectedAlertCategory) { setAlertItems([]); return; }
@@ -181,6 +236,9 @@ function App() {
     setNewLocationName("");
     setArrivalDate("");
     setShelfLifeDays("");
+    setExpiryDate("");
+    setTakeOutBatches([]);
+    setSelectedBatchIds([]);
   };
 
   const handleCloseModal = () => {
@@ -276,6 +334,50 @@ function App() {
     });
     allActions.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
     setActivities(allActions.slice(0, 2));
+    loadBatchesByItem();
+  };
+
+  const openHistoryModal = async (item) => {
+    setHistoryModalItem(item);
+    setLoadingHistory(true);
+    try {
+      const history = await getItemActionHistory(item.name);
+      setItemActionHistory(history);
+    } catch (error) {
+      console.error("Error loading item action history:", error);
+      setItemActionHistory([]);
+    } finally {
+      setLoadingHistory(false);
+    }
+  };
+
+  const closeHistoryModal = () => {
+    setHistoryModalItem(null);
+    setItemActionHistory([]);
+  };
+
+  const writeAddBatchAndAction = async (itemNameValue, qty, unitValue, locationOfStorage) => {
+    try {
+      const batchArrivalDate = arrivalDate || new Date().toISOString().split("T")[0];
+      const createdBatch = await addInventoryBatch(itemNameValue, {
+        quantity: qty,
+        unit: unitValue,
+        arrivalDate: batchArrivalDate,
+        expiryDate: expiryDate || null,
+        shelfLifeDays: shelfLifeDays ? parseFloat(shelfLifeDays) : 0,
+        locationOfStorage,
+      });
+      await recordInventoryAction(itemNameValue, "add", {
+        quantity: qty,
+        unit: unitValue,
+        batchId: createdBatch.batchId,
+        expiryDate: expiryDate ? Timestamp.fromDate(new Date(expiryDate)) : null,
+        arrivalDate: Timestamp.fromDate(new Date(batchArrivalDate)),
+        locationOfStorage,
+      });
+    } catch (error) {
+      console.error("Non-fatal: batch/history tracking failed for add stock", error);
+    }
   };
 
   return (
@@ -436,6 +538,7 @@ function App() {
                 <th>Storage Location</th>
                 <th>Item Status</th>
                 <th>Rot Index</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -448,11 +551,12 @@ function App() {
                     <td>{item.locationOfStorage}</td>
                     <td>{getStatusIcon(item.status)}</td>
                     <td><RotBadge rotIndex={item.rotIndex} rotBand={item.rotBand} /></td>
+                    <td><button className="Inventory-btn-actions-cell" onClick={() => openHistoryModal(item)}>Actions</button></td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan={6} style={{ textAlign: "center", padding: "24px", color: "#888" }}>
+                  <td colSpan={7} style={{ textAlign: "center", padding: "24px", color: "#888" }}>
                     No items match the current filters.
                   </td>
                 </tr>
@@ -672,8 +776,53 @@ function App() {
                         />
                       </div>
                     </div>
+                    <div className="Inventory-form-group Inventory-expiry-field">
+                      <label htmlFor="stock-expiry-date">Expiry Date</label>
+                      <input
+                        id="stock-expiry-date"
+                        name="stockExpiryDate"
+                        type="date"
+                        value={expiryDate}
+                        onChange={(e) => setExpiryDate(e.target.value)}
+                      />
+                    </div>
                   </>
                 )
+              )}
+
+              {!isNewCategory && selectedAction === "take" && (
+                <div className="Inventory-form-group">
+                  <label>Batches to Take From</label>
+                  {loadingTakeOutBatches ? (
+                    <p className="Inventory-batch-empty">Loading batches...</p>
+                  ) : takeOutBatches.length === 0 ? (
+                    <p className="Inventory-batch-empty">No tracked batches for this item — stock will be deducted from total quantity only.</p>
+                  ) : (
+                    <div className="Inventory-batch-selector">
+                      <label className="Inventory-batch-option Inventory-batch-selectall">
+                        <input
+                          type="checkbox"
+                          checked={selectedBatchIds.length === takeOutBatches.length}
+                          onChange={(e) => setSelectedBatchIds(e.target.checked ? takeOutBatches.map(b => b.firestoreId) : [])}
+                        />
+                        <span>Select All</span>
+                      </label>
+                      {takeOutBatches.map(b => (
+                        <label key={b.firestoreId} className="Inventory-batch-option">
+                          <input
+                            type="checkbox"
+                            checked={selectedBatchIds.includes(b.firestoreId)}
+                            onChange={(e) => {
+                              if (e.target.checked) setSelectedBatchIds(prev => [...prev, b.firestoreId]);
+                              else setSelectedBatchIds(prev => prev.filter(id => id !== b.firestoreId));
+                            }}
+                          />
+                          <span>{b.remainingQty} {b.unit} — Expires {b.expiryDate ? b.expiryDate.toDate().toLocaleDateString('en-GB') : "N/A"}</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
               )}
 
               <div className="Inventory-btn-group">
@@ -710,6 +859,9 @@ function App() {
                     if (!existingItem) { alert("Item not found."); return; }
                     const currentQty = parseFloat(existingItem.quantity.split(' ')[0]);
                     if (qty > currentQty) { alert("Not enough stock available."); return; }
+                    if (takeOutBatches.length > 0 && selectedBatchIds.length === 0) {
+                      alert("Please select at least one batch to take stock from."); return;
+                    }
                     const newQty = currentQty - qty;
                     const newStatus = updateStatusBasedOnQuantity(newQty, existingItem.thresholdLow, existingItem.thresholdVeryLow);
                     await updateDoc(itemDocRef, {
@@ -719,6 +871,27 @@ function App() {
                     });
                     logActivity(itemNameValue, itemCategoryValue, "taken from", existingItem.locationOfStorage);
 
+                    try {
+                      if (selectedBatchIds.length > 0) {
+                        const consumeResult = await consumeFromSpecificBatches(itemNameValue, selectedBatchIds, qty);
+                        await recordInventoryAction(itemNameValue, "take", {
+                          quantity: qty,
+                          unit: existingItem.unit,
+                          batchIds: selectedBatchIds,
+                          consumptionLog: consumeResult.consumptionLog,
+                          locationOfStorage: existingItem.locationOfStorage,
+                        });
+                      } else {
+                        await recordInventoryAction(itemNameValue, "take", {
+                          quantity: qty,
+                          unit: existingItem.unit,
+                          locationOfStorage: existingItem.locationOfStorage,
+                        });
+                      }
+                    } catch (batchErr) {
+                      console.error("Non-fatal: batch/history tracking failed for take out", batchErr);
+                    }
+
                   } else if (selectedAction === "add") {
                     const existingSnapshot = await getDocs(inventoryCollection);
                     const existingItem = existingSnapshot.docs.find(d => d.id === itemNameValue)?.data();
@@ -726,6 +899,8 @@ function App() {
                     const rotFields = {};
                     if (arrivalDate) rotFields.arrivalDate = Timestamp.fromDate(new Date(arrivalDate));
                     if (shelfLifeDays) rotFields.shelfLifeDays = parseFloat(shelfLifeDays);
+
+                    const unitValue = unit === "Custom" ? customUnit : unit;
 
                     if (existingItem) {
                       const currentQty = parseFloat(existingItem.quantity.split(' ')[0]);
@@ -738,12 +913,13 @@ function App() {
                         ...rotFields
                       });
                       logActivity(itemNameValue, itemCategoryValue, "added to", existingItem.locationOfStorage);
+                      await writeAddBatchAndAction(itemNameValue, qty, existingItem.unit, existingItem.locationOfStorage);
                     } else {
                       if (!locationValue) { alert("Please enter storage location for new item."); return; }
                       const newItem = {
                         name: itemNameValue, itemCategory: itemCategoryValue,
-                        quantity: `${qty} ${unit === "Custom" ? customUnit : unit}`,
-                        unit: unit === "Custom" ? customUnit : unit,
+                        quantity: `${qty} ${unitValue}`,
+                        unit: unitValue,
                         status: updateStatusBasedOnQuantity(qty, 0, 0),
                         thresholdLow: 0, thresholdVeryLow: 0,
                         locationOfStorage: locationValue,
@@ -753,6 +929,7 @@ function App() {
                       };
                       await setDoc(itemDocRef, newItem);
                       logActivity(itemNameValue, itemCategoryValue, "added to", locationValue);
+                      await writeAddBatchAndAction(itemNameValue, qty, unitValue, locationValue);
                     }
                   }
 
@@ -807,6 +984,7 @@ function App() {
                 </select>
               </div>
 
+              <label className="Inventory-alert-label" htmlFor="alert-low-qty">Low</label>
               <div className="Inventory-quantity-field">
                 <input
                   id="alert-low-qty"
@@ -844,6 +1022,7 @@ function App() {
                 )}
               </div>
 
+              <label className="Inventory-alert-label" htmlFor="alert-verylow-qty">Very Low</label>
               <div className="Inventory-quantity-field">
                 <input
                   id="alert-verylow-qty"
@@ -909,6 +1088,34 @@ function App() {
                 setShowAlertsModal(false);
                 resetAlertForm();
               }}>Set Alerts</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Actions History Modal ── */}
+      {historyModalItem && (
+        <div className="Inventory-modal-overlay" onClick={closeHistoryModal}>
+          <div className="Inventory-actions-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="Inventory-modal-header">
+              <h3>History — {historyModalItem.name}</h3>
+              <button className="Inventory-modal-close" onClick={closeHistoryModal}><X size={20} /></button>
+            </div>
+            <div className="Inventory-actions-modal-content">
+              {loadingHistory ? (
+                <p>Loading...</p>
+              ) : itemActionHistory.length === 0 ? (
+                <p>No recorded history for this item yet.</p>
+              ) : (
+                itemActionHistory.map(h => (
+                  <div key={h.firestoreId} className="Inventory-actions-entry">
+                    <span className="Inventory-actions-entry-type">{h.type === "add" ? "Added" : "Taken Out"}</span>
+                    <span>{h.quantity} {h.unit}</span>
+                    <span>Expiry: {h.expiryDate ? h.expiryDate.toDate().toLocaleDateString('en-GB') : "—"}</span>
+                    <span>{h.timestamp?.toDate ? h.timestamp.toDate().toLocaleString('en-GB') : "—"}</span>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>

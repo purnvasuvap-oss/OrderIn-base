@@ -4,7 +4,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: #1E1E1E;
+  background-color: #F1EFD8;
   position: relative;
 }
 
@@ -13,8 +13,8 @@
   top: 20px;
   left: 20px;
   z-index: 1000;
-  background: #2A2A2A;
-  border: 1px solid #333333;
+  background: #F7F5E9;
+  border: 1px solid #E4E0C8;
   border-radius: 50%;
   width: 50px;
   height: 50px;
@@ -22,14 +22,14 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 2px 8px rgba(28, 27, 23, 0.15);
   transition: all 0.2s ease;
-  color: #FFB703;
+  color: #636E2C;
 }
 
 .payment-back-button:hover {
-  background: #333333;
-  box-shadow: 0 4px 12px rgba(255, 183, 3, 0.1);
+  background: #E4E0C8;
+  box-shadow: 0 4px 12px rgba(99, 110, 44, 0.15);
 }
 
 .payment-back-button:active {

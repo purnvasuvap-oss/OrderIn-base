@@ -56,6 +56,52 @@ export const computeRotIndex = (item, now = new Date()) => {
   };
 };
 
+/**
+ * Compute the Rot Index score from a single batch (arrivalDate/expiryDate/shelfLifeDays),
+ * rather than the item's flat fields. If shelfLifeDays wasn't recorded on the batch but an
+ * expiryDate was, derive an effective shelf life from arrival -> expiry.
+ */
+export const computeRotIndexFromBatch = (batch, now = new Date()) => {
+  if (!batch) return null;
+  const arrival = toDate(batch.arrivalDate);
+  if (!arrival) return null;
+
+  let shelfLife = Number(batch.shelfLifeDays);
+  if (!shelfLife || shelfLife <= 0) {
+    const expiry = toDate(batch.expiryDate);
+    if (expiry) shelfLife = daysSince(arrival, expiry);
+  }
+  if (!shelfLife || shelfLife <= 0) return null;
+
+  const elapsed = daysSince(arrival, now);
+  const score = (elapsed / shelfLife) * 100;
+  return {
+    score: Math.round(score * 10) / 10,
+    daysElapsed: Math.round(elapsed * 10) / 10,
+    shelfLifeDays: shelfLife,
+    daysRemaining: Math.round((shelfLife - elapsed) * 10) / 10,
+  };
+};
+
+/**
+ * Pick the batch that should drive the Rot Index: soonest expiry first,
+ * falling back to oldest arrival (FIFO) for batches without an expiry date.
+ */
+const pickNearestExpiryBatch = (batches) => {
+  if (!batches || batches.length === 0) return null;
+  return [...batches].sort((a, b) => {
+    const aExpiry = toDate(a.expiryDate);
+    const bExpiry = toDate(b.expiryDate);
+    if (aExpiry && bExpiry) return aExpiry.getTime() - bExpiry.getTime();
+    if (aExpiry) return -1;
+    if (bExpiry) return 1;
+    const aArrival = toDate(a.arrivalDate);
+    const bArrival = toDate(b.arrivalDate);
+    if (aArrival && bArrival) return aArrival.getTime() - bArrival.getTime();
+    return 0;
+  })[0];
+};
+
 export const bandForScore = (score) => {
   if (score === null || score === undefined || Number.isNaN(score)) return ROT_BANDS.UNKNOWN;
   if (score > 75) return ROT_BANDS.RED;
@@ -78,10 +124,19 @@ export const bandMeta = (band) => {
 
 /**
  * Attach rotIndex + rotBand to every item in a list.
+ *
+ * When batchesByItem[item.name] has active batches, the score is computed from
+ * whichever active batch is nearest to expiry (more accurate than the item's flat
+ * arrivalDate/shelfLifeDays, which only ever reflects the most recently added stock).
+ * Items with no tracked batches yet (legacy items) fall back to the flat-field calc.
  */
-export const withRotIndex = (items, now = new Date()) => {
+export const withRotIndex = (items, batchesByItem = {}, now = new Date()) => {
   return (items || []).map((item) => {
-    const rot = computeRotIndex(item, now);
+    const activeBatches = (batchesByItem[item.name] || []).filter(
+      (b) => b.status === "active" && b.remainingQty > 0
+    );
+    const nearestBatch = pickNearestExpiryBatch(activeBatches);
+    const rot = nearestBatch ? computeRotIndexFromBatch(nearestBatch, now) : computeRotIndex(item, now);
     return {
       ...item,
       rotIndex: rot,

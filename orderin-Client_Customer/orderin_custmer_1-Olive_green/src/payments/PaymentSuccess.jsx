@@ -112,7 +112,7 @@ function PaymentSuccess() {
             fill="none"
             viewBox="0 0 24 24"
             strokeWidth={2}
-            stroke="#00a693"
+            stroke="#636E2C"
             className="success-svg"
           >
             <path
@@ -151,7 +151,7 @@ function PaymentSuccess() {
                   style={{ cursor: 'pointer', width: 32, height: 32, marginRight: 6 }}
                   viewBox="0 0 24 24"
                 >
-                  <path d="M12 .587l3.668 7.431 8.2 1.192-5.934 5.787 1.4 8.168L12 18.896l-7.334 3.87 1.4-8.168L.132 9.21l8.2-1.192z" fill={rating >= star ? '#00a693' : 'none'} stroke="#00a693" />
+                  <path d="M12 .587l3.668 7.431 8.2 1.192-5.934 5.787 1.4 8.168L12 18.896l-7.334 3.87 1.4-8.168L.132 9.21l8.2-1.192z" fill={rating >= star ? '#636E2C' : 'none'} stroke="#636E2C" />
                 </svg>
               ))}
             </div>

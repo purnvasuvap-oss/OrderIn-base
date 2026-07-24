@@ -439,6 +439,103 @@ body {
   grid-column: span 2;
 }
 
+/* --- Customizations / Specializations builder --- */
+.menu-customizations-field {
+  grid-column: 1 / -1;
+}
+
+.menu-customizations-builder {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.menu-customizations-empty {
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px dashed var(--border-light-gray);
+  border-radius: 10px;
+  background: #ffffff;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.menu-customization-group {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.menu-customization-label,
+.menu-customization-options {
+  min-height: 40px;
+}
+
+.menu-customization-remove {
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--border-light-gray);
+  border-radius: 8px;
+  background: #ffffff;
+  color: var(--secondary-green);
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.menu-customization-remove:hover {
+  background: #fdeceb;
+  border-color: #e7a6a0;
+}
+
+.menu-customization-add {
+  align-self: flex-start;
+  padding: 8px 14px;
+  border: 1px dashed var(--primary-Olive);
+  border-radius: 9px;
+  background: rgba(99, 110, 44, 0.06);
+  color: var(--primary-Olive);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.menu-customization-add:hover {
+  background: rgba(99, 110, 44, 0.12);
+}
+
+.menu-customizations-badge {
+  display: inline-block;
+  max-width: 220px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: rgba(99, 110, 44, 0.1);
+  color: var(--secondary-green);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: middle;
+}
+
+.menu-customizations-badge--none {
+  background: #f1f1f1;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+@media (max-width: 640px) {
+  .menu-customization-group {
+    grid-template-columns: 1fr;
+  }
+
+  .menu-customization-remove {
+    justify-self: flex-end;
+  }
+}
+
 .menu-editor-toggle-row {
   display: flex;
   align-items: center;
