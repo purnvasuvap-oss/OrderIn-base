@@ -338,7 +338,13 @@ export const CartProvider = ({ children, tableNo = '1' }) => {
     clearCartFromLocalStorage();
   };
 
-  const placeOrder = (paymentMethod) => {
+  const placeOrder = (paymentMethod, orderData = null) => {
+    // If orderData is provided (from Cart.jsx checkout), use it directly
+    if (orderData) {
+      setOrderHistory(prev => [...prev, { ...orderData, paymentMethod }]);
+      return orderData;
+    }
+
     const subtotal = cartItems.reduce((sum, item) => {
       const num = parseFloat(String(item.price || '').replace(/[^0-9.\-]/g, '')) || 0;
       return sum + (num * item.quantity);

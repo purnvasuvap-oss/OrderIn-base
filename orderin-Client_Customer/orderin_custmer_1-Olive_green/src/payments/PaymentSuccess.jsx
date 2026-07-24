@@ -25,7 +25,9 @@ function PaymentSuccess() {
   useEffect(() => {
     const fetchLatestOrderFromBackend = async () => {
       const getFallbackOrderId = () => {
-        const savedOrderId = localStorage.getItem('orderin_countercode_orderId') || localStorage.getItem('orderin_orderId');
+        const savedOrderId = localStorage.getItem('orderin_countercode_orderId') || localStorage.getItem('orderin_onlinepayment_orderId') || localStorage.getItem('orderin_orderId');
+        // Fix #10: orderin_onlinepayment_orderId is now checked alongside other keys
+        // Fix #1: Using Firestore backend as primary source, orderHistory as secondary fallback
         let fallbackOrderId = orderHistory[orderHistory.length - 1]?.id;
         if (!fallbackOrderId) {
           try {

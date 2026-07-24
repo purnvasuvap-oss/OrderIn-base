@@ -8,7 +8,8 @@ export const subscribeDashboardOrders = (callback) => {
 
       return (
         status === "paid" ||
-        status === "manual"
+        status === "manual" ||
+        status === "unpaid"
       );
     });
 

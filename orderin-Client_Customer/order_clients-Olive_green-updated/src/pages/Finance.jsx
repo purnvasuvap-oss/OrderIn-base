@@ -244,7 +244,7 @@ function App() {
       let paymentType = (order.paymentType || 'upi').toLowerCase();
       if (paymentType === 'online') paymentType = 'upi';
       if (!breakdown.byPaymentType[paymentType]) paymentType = 'upi';
-      const earnings = Number(order.subtotal) || 0;
+      const earnings = Number(order.totalCost) || Number(order.total) || (Number(order.subtotal) + Number(order.tax)) || 0;
       const tax = Number(order.tax) || 0;
       breakdown.totalEarnings += earnings;
       breakdown.totalTax += tax;

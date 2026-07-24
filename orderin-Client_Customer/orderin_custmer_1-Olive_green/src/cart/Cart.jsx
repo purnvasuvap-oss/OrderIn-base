@@ -4,21 +4,24 @@ import Footer from "../Footer/Footer";
 import { useCart } from "../context/CartContext";
 import { useNavigate } from "react-router-dom";
 import { useTableNumber } from "../hooks/useTableNumber";
-import { doc, onSnapshot } from "firebase/firestore";
+import { doc, getDoc, setDoc, onSnapshot, serverTimestamp } from "firebase/firestore";
 import { db } from "../firebaseConfig";
 import "./Cart.css";
 import { getPlaceholder } from "../utils/placeholder";
 import resolveImageUrl from "../utils/storageResolver";
-import { parseOrderTimestamp } from "../utils/orderDateTime";
+import { parseOrderTimestamp, createOrderTimestamp } from "../utils/orderDateTime";
+import { generateDisplayOrderId } from "../utils/displayOrderIdGenerator";
+import Loading from "../Loading";
 import { HiOutlineShoppingCart } from "react-icons/hi2";
 function Cart({ onBackClick }) {
   const [activeTab, setActiveTab] = useState("Current Order");
-  const { cartItems, updateQuantity, updateInstructions, removeFromCart, getTotalPrice } = useCart();
+  const { cartItems, updateQuantity, updateInstructions, removeFromCart, getTotalPrice, placeOrder, saveOrderTempState } = useCart();
   const [orderHistory, setOrderHistory] = useState([]);
   const deliveredTimers = useRef({});
   const [editingInstructions, setEditingInstructions] = useState(null);
   const [tempInstructions, setTempInstructions] = useState("");
   const [resolvedImages, setResolvedImages] = useState({});
+  const [isSavingCart, setIsSavingCart] = useState(false);
   const navigate = useNavigate();
   const { getPathWithTable } = useTableNumber();
 
@@ -39,8 +42,14 @@ function Cart({ onBackClick }) {
 
       const data = snap.data();
       const arr = Array.isArray(data.pastOrders) ? data.pastOrders : [];
+      // Filter out rejected/cancelled/declined orders
+      const rejectedStatuses = new Set(["rejected", "cancelled", "canceled", "declined"]);
+      const filteredArr = arr.filter((order) => {
+        const status = (order.status || order.paymentStatus || "").toLowerCase().trim();
+        return !rejectedStatuses.has(status);
+      });
       const now = Date.now();
-      const mapped = arr
+      const mapped = filteredArr
         .map((order, idx) => {
           let status = (order.status || "Pending").toLowerCase();
           let displayStatus = "Pending";
@@ -186,8 +195,118 @@ function Cart({ onBackClick }) {
     setTempInstructions("");
   };
 
-  const handleCheckout = () => {
-    navigate(getPathWithTable("/payments"));
+  const handleCheckout = async () => {
+    if (cartItems.length === 0) {
+      alert("Your cart is empty");
+      return;
+    }
+
+    setIsSavingCart(true);
+    let orderId = null;
+
+    try {
+      const user = JSON.parse(localStorage.getItem("user"));
+      const tableNumber = localStorage.getItem("tableNumber") || "1";
+      if (!user || !user.phone) {
+        throw new Error("User not logged in or phone number missing");
+      }
+      const phoneNumber = user.phone;
+
+      const customerRef = doc(db, "Restaurant", "orderin_restaurant_3", "customers", phoneNumber);
+      const customerSnap = await getDoc(customerRef);
+      let pastOrders = [];
+      if (customerSnap.exists()) {
+        const data = customerSnap.data();
+        pastOrders = Array.isArray(data.pastOrders) ? data.pastOrders : [];
+      }
+
+      // Generate order ID
+      try {
+        orderId = await generateDisplayOrderId();
+        if (!orderId) {
+          throw new Error("generateDisplayOrderId returned empty value");
+        }
+        console.log("Generated order ID:", orderId);
+      } catch (displayIdErr) {
+        console.warn("Failed to generate order ID, creating fallback:", displayIdErr);
+        orderId = `ORD-${Date.now()}`;
+      }
+
+      if (!orderId) {
+        throw new Error("Failed to generate order ID");
+      }
+
+      const calculatedSubtotal = parseFloat(getTotalPrice()) || 0;
+      const orderTimestamp = createOrderTimestamp();
+
+      // Calculate default tax (5% GST) at order creation for accurate admin display (Fix #2)
+      const defaultTax = calculatedSubtotal * 0.05;
+      const totalWithTax = calculatedSubtotal + defaultTax;
+
+      // Create order object without payment method
+      const orderForFirestore = {
+        id: orderId,
+        items: cartItems.map(({ name, price, quantity, instructions, specifications }) => ({
+          name,
+          price,
+          quantity,
+          instructions: instructions || "",
+        })),
+        subtotal: calculatedSubtotal,
+        taxes: defaultTax, // Fix #2: Calculate default 5% tax at creation instead of 0
+        total: totalWithTax,
+        paymentMethod: "", // No payment method yet — will be set after confirmation
+        status: "Pending",
+        tableNo: tableNumber,
+        time: orderTimestamp.time,
+        createdAt: orderTimestamp.createdAt,
+        createdAtMs: orderTimestamp.createdAtMs,
+        paymentStatus: "unpaid",
+        verificationCode: null,
+        OnlinePayMethod: "",
+        // Mark this as awaiting restaurant confirmation
+        awaitingConfirmation: true,
+      };
+
+      console.log("Sending order to restaurant for confirmation:", orderForFirestore);
+
+      // Save to Firestore
+      pastOrders.push(orderForFirestore);
+      await setDoc(customerRef, { pastOrders, lastOrderAt: serverTimestamp() }, { merge: true });
+      console.log("Order saved to Firestore — awaiting restaurant confirmation");
+
+      // Store pending order ID for AwaitingConfirmation page
+      sessionStorage.setItem("pendingOrderId", orderId);
+      localStorage.setItem("orderin_awaiting_orderId", orderId);
+      
+      // Store a backup for recovery
+      const pendingOrderBackup = {
+        phoneNumber,
+        restaurantId: "orderin_restaurant_3",
+        order: orderForFirestore,
+      };
+      sessionStorage.setItem("pendingOrderForFirestore", JSON.stringify(pendingOrderBackup));
+      localStorage.setItem("pendingOrderForFirestore", JSON.stringify(pendingOrderBackup));
+
+      // Save temp state for recovery on page refresh — Fix #2: Use defaultTax for accuracy
+      const billing = {
+        subtotal: calculatedSubtotal,
+        taxes: defaultTax,
+        total: totalWithTax,
+      };
+      saveOrderTempState(orderId, cartItems, billing, "unpaid");
+
+      // Fix #4: Keep isSavingCart=true until navigation completes to prevent duplicate orders
+      // Use replace:true to prevent going back to checkout state
+      setTimeout(() => {
+        navigate(getPathWithTable("/awaiting-confirmation"), { replace: true });
+        setTimeout(() => setIsSavingCart(false), 100);
+      }, 100);
+    } catch (err) {
+      setIsSavingCart(false);
+      console.error("Error sending order to restaurant:", err);
+      alert("Failed to send order: " + err.message);
+    }
   };
 
   const parsePrice = (price) => parseFloat(String(price || "").replace(/[^0-9.\-]/g, "")) || 0;
@@ -212,6 +331,7 @@ function Cart({ onBackClick }) {
 
   return (
     <div className="cart-container">
+      <Loading isLoading={isSavingCart} />
       <header className="cart-header">
         <div className="back-icon" onClick={() => { if (onBackClick) onBackClick(); else navigate(getPathWithTable("/menu")); }}>
           <ChevronLeft size={20} />

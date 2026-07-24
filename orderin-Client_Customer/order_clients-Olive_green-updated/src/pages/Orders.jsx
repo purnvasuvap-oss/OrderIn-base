@@ -77,6 +77,13 @@ function ManualOrderModal({ isOpen, onClose, menuItems, onOrderCreated }) {
         setError("Phone number is required");
         return;
       }
+      // Issue #27 / TH-3: phone number previously accepted any string
+      // (letters, wrong length, etc.), creating customer docs that
+      // couldn't be found later by phone-based login.
+      if (!/^\d{10}$/.test(phoneNumber.trim())) {
+        setError("Phone number must be exactly 10 digits");
+        return;
+      }
       if (!tableNumber.trim()) {
         setError("Table number is required");
         return;
@@ -88,6 +95,7 @@ function ManualOrderModal({ isOpen, onClose, menuItems, onOrderCreated }) {
 
       setIsSubmitting(true);
 
+      // Store manual order in customers collection (same as regular orders)
       const customerRef = doc(
         db,
         "Restaurant",
@@ -96,9 +104,11 @@ function ManualOrderModal({ isOpen, onClose, menuItems, onOrderCreated }) {
         phoneNumber,
       );
 
+      // Get existing customer data or create new
       const customerSnap = await getDoc(customerRef);
       const customerData = customerSnap.exists() ? customerSnap.data() : {};
 
+      // Calculate order totals
       let subtotal = 0;
       selectedItems.forEach((item) => {
         const itemPrice =
@@ -109,10 +119,12 @@ function ManualOrderModal({ isOpen, onClose, menuItems, onOrderCreated }) {
       const tax = subtotal > 0 ? Math.ceil(subtotal / 100) : 0;
       const totalCost = subtotal + tax;
 
-      // Generate a verification code
-      const verificationCode = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
-
+      // Add manual order to pastOrders array
+      // Issue #17 / TB-13: manual orders previously had no `id` field, so the
+      // admin table fell back to `ORD-{phone}-{index}`, which shifts if
+      // orders are ever reordered/removed. Generate a stable id up front.
       const newOrder = {
+        id: `MANUAL-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
         username: customerName,
         phoneNumber: phoneNumber,
         tableNo: parseInt(tableNumber),
@@ -126,7 +138,6 @@ function ManualOrderModal({ isOpen, onClose, menuItems, onOrderCreated }) {
         tax: tax,
         totalCost: totalCost,
         amount: totalCost,
-        verificationCode: verificationCode,
       };
 
       const pastOrders = Array.isArray(customerData.pastOrders)
@@ -328,8 +339,11 @@ function StatusPill({ status, onStatusChange, orderId, isLoading, order }) {
     setIsEditing(false);
   };
 
-  // For Pending or Rejected orders, show a confirm/accept button instead
-  if (status === "Pending" && !isEditing) {
+  // For Pending or Rejected orders, show Accept/Reject buttons instead
+  // Skip manual orders — they don't need confirmation (Issue #11)
+  const isManualOrder = order && (order.paymentStatus === "manual" || order.paymentType === "Manual");
+
+  if (status === "Pending" && !isEditing && !isManualOrder) {
     return (
       <div style={{ display: "flex", gap: "4px", flexDirection: "column" }}>
         <button
@@ -402,7 +416,8 @@ function Orders() {
   const [updatingOrderId, setUpdatingOrderId] = useState(null);
   const [showManualOrderModal, setShowManualOrderModal] = useState(false);
   const [menuItems, setMenuItems] = useState([]);
-  const [itemListOrder, setItemListOrder] = useState(null);
+  // Order currently shown in the "Items List" overlay (null = closed)
+  const [itemsListOrder, setItemsListOrder] = useState(null);
 
   // Fetch menu items on mount
   useEffect(() => {
@@ -429,19 +444,26 @@ function Orders() {
 
   // Fetch orders on component mount
   useEffect(() => {
+    // Use real-time subscription so status changes update automatically in background
     console.log("=== ORDERS COMPONENT: Subscribing to orders (real-time) ===");
     setLoading(true);
     const unsubscribe = subscribeTodaysOrders((fetchedOrders) => {
       console.log(
         `=== ORDERS COMPONENT (realtime): Received ${fetchedOrders.length} orders ===`,
       );
-      // Show orders that have paymentStatus === 'paid' OR manual OR pending (for confirmation)
+      console.log(`Orders data (realtime):`, fetchedOrders);
+      // Display orders: paid, manual, AND unpaid (pending restaurant confirmation)
+      // Exclude rejected/cancelled orders so they don't clutter the view
+      const rejectedStatuses = new Set(["rejected", "cancelled", "canceled", "declined"]);
       const displayOrders = fetchedOrders.filter((o) => {
         const status = String(o.paymentStatus || "").toLowerCase();
-        return status === "paid" || status === "manual" || status === "unpaid";
+        const orderStatus = String(o.status || "").toLowerCase().trim();
+        // Skip rejected/cancelled orders
+        if (rejectedStatuses.has(orderStatus)) return false;
+        return status === "paid" || status === "manual" || status === "unpaid" || status === "unknown";
       });
       console.log(
-        `Filtered to display orders: ${displayOrders.length}`,
+        `Filtered to display orders (paid/manual/unpaid): ${displayOrders.length}`,
       );
       setOrders(displayOrders);
       setError(null);
@@ -457,14 +479,15 @@ function Orders() {
     try {
       setUpdatingOrderId(orderId);
 
+      // Find the order to get phoneNumber and orderIndex
       const order = orders.find((o) => o.id === orderId);
       if (!order) {
         setError("Order not found");
         return;
       }
 
-      // Update in Firebase
-      await updateOrderStatus(order.phoneNumber, order.orderIndex, newStatus);
+      // Update in Firebase — use order.id to find correct order instead of fragile orderIndex
+      await updateOrderStatus(order.phoneNumber, order.id, newStatus);
 
       // Update local state
       setOrders((prevOrders) =>
@@ -490,7 +513,7 @@ function Orders() {
       filtered = orders.filter((o) => o.status === "Delivered");
     } else if (filter === "active") {
       filtered = orders
-        .filter((o) => o.status !== "Delivered" && o.status !== "Rejected")
+        .filter((o) => o.status !== "Delivered")
         .slice()
         .reverse();
     }
@@ -501,6 +524,7 @@ function Orders() {
             if (typeof item === "string") {
               return item.toLowerCase().includes(searchTerm.toLowerCase());
             } else if (typeof item === "object" && item !== null) {
+              // Search in name and instructions fields if present
               const nameMatch =
                 item.name &&
                 item.name.toLowerCase().includes(searchTerm.toLowerCase());
@@ -522,6 +546,7 @@ function Orders() {
 
   return (
     <div className="app">
+
       <div className="content">
         <aside className="left-stats">
           <div className="back-button-container">
@@ -662,7 +687,7 @@ function Orders() {
             </div>
           ) : (
             <>
-    {/* DESKTOP TABLE VIEW */}
+    {/* DESKTOP TABLE VIEW (Visible on larger screens) */}
     <div className={`orders-table desktop-only-view ${filter === "completed" ? "completed-view" : ""} ${filter === "active" ? "active-view" : ""}`}>
       <div className="table-header">
         <div>Order ID</div>
@@ -670,10 +695,10 @@ function Orders() {
         <div>Phone</div>
         <div>Table</div>
         <div>Items</div>
+        <div>Specs</div>
+        <div>Code</div>
         <div>Status</div>
-        <div>Verification</div>
         <div>Time</div>
-        <div>Actions</div>
       </div>
 
       {filteredOrders.map((o, orderIdx) => (
@@ -686,17 +711,28 @@ function Orders() {
           <div className="col table">Table {o.tableNumber}</div>
           <div className="col items">
             <div className="items-directory">
-              {o.items && Array.isArray(o.items) && o.items.slice(0, 2).map((item, i) => (
+              {o.items && Array.isArray(o.items) && o.items.map((item, i) => (
                 <div key={i} className="item-row">
                   <span className="item-name">
                     {item.quantity ? `${item.quantity}x ` : ""}{item.name}
                   </span>
                 </div>
               ))}
-              {o.items && o.items.length > 2 && (
-                <span className="item-more">+{o.items.length - 2} more</span>
-              )}
             </div>
+            <button
+              className="items-list-btn"
+              onClick={() => setItemsListOrder(o)}
+            >
+              Items List
+            </button>
+          </div>
+          <div className="col specs">
+            {o.items && Array.isArray(o.items)
+              ? o.items.map((item) => item.instructions || "").filter(Boolean).join(", ") || "-"
+              : "-"}
+          </div>
+          <div className="col verification-code">
+            {o.verificationCode && o.verificationCode !== "-" ? o.verificationCode : "-"}
           </div>
           <div className="col status-cell">
             <StatusPill
@@ -707,28 +743,12 @@ function Orders() {
               order={o}
             />
           </div>
-          <div className="col verification">
-            {o.verificationCode && o.verificationCode !== "-" ? (
-              <span className="verification-code-badge">{o.verificationCode}</span>
-            ) : (
-              <span className="verification-na">—</span>
-            )}
-          </div>
           <div className="col time">{formatTime(o.timestamp)}</div>
-          <div className="col actions">
-            <button
-              className="items-list-btn"
-              onClick={() => setItemListOrder(o)}
-              title="View aggregated items list"
-            >
-              📋 Items
-            </button>
-          </div>
         </div>
       ))}
     </div>
 
-    {/* MOBILE RESPONSIVE CARD VIEW */}
+    {/* MOBILE RESPONSIVE CARD VIEW (Visible on smaller screens) */}
     <div className="orders-cards-container mobile-only-view">
       {filteredOrders.map((o, orderIdx) => (
         <div key={"card-" + o.id + "-" + orderIdx} className="order-mobile-card">
@@ -742,7 +762,7 @@ function Orders() {
               <strong>{o.username}</strong>
               <span className="mobile-sub">Table {o.tableNumber} • {o.phoneNumber}</span>
               {o.verificationCode && o.verificationCode !== "-" && (
-                <span className="mobile-verification">Code: {o.verificationCode}</span>
+                <span className="mobile-code">Code: {o.verificationCode}</span>
               )}
             </div>
             <div className="mobile-status-wrapper">
@@ -766,13 +786,14 @@ function Orders() {
                 )}
               </div>
             ))}
-            <button
-              className="mobile-items-list-btn"
-              onClick={() => setItemListOrder(o)}
-            >
-              📋 View All Items
-            </button>
           </div>
+
+          <button
+            className="items-list-btn mobile-items-list-btn"
+            onClick={() => setItemsListOrder(o)}
+          >
+            Items List
+          </button>
         </div>
       ))}
     </div>
@@ -788,10 +809,10 @@ function Orders() {
         onOrderCreated={() => setShowManualOrderModal(false)}
       />
 
-      {itemListOrder && (
+      {itemsListOrder && (
         <OrderItemListModal
-          order={itemListOrder}
-          onClose={() => setItemListOrder(null)}
+          order={itemsListOrder}
+          onClose={() => setItemsListOrder(null)}
         />
       )}
 
@@ -800,4 +821,3 @@ function Orders() {
 }
 
 export default Orders;
-

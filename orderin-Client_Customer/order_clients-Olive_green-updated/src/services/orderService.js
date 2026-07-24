@@ -822,8 +822,10 @@ export const subscribeOnlineCustomerOrders = (onUpdate) => {
 /**
  * Update order status in Firebase
  * Updates the status field in pastOrders array for a specific customer
+ * Fix #6: Uses order.id to find order instead of fragile orderIndex
+ * Fix #3: Clears awaitingConfirmation when status is updated
  */
-export const updateOrderStatus = async (phoneNumber, orderIndex, newStatus, restaurantId = RESTAURANT_ID) => {
+export const updateOrderStatus = async (phoneNumber, orderIdOrIndex, newStatus, restaurantId = RESTAURANT_ID) => {
   try {
     const customerRef = doc(
       db,
@@ -842,9 +844,22 @@ export const updateOrderStatus = async (phoneNumber, orderIndex, newStatus, rest
     const customerData = customerSnap.data();
     const pastOrders = [...(customerData.pastOrders || [])];
 
+    // Try to find order by ID first (robust), fall back to index (legacy)
+    const idsMatch = (a, b) => String(a) === String(b);
+    let foundIndex = pastOrders.findIndex(o => idsMatch(o.id, orderIdOrIndex));
+    
+    // If not found by ID, try using as index (for backward compatibility)
+    if (foundIndex === -1) {
+      foundIndex = Number(orderIdOrIndex);
+    }
+
     // Update the status of the specific order
-    if (pastOrders[orderIndex]) {
-      pastOrders[orderIndex].status = newStatus;
+    if (foundIndex >= 0 && pastOrders[foundIndex]) {
+      pastOrders[foundIndex].status = newStatus;
+      // Clear awaitingConfirmation flag when order is confirmed or rejected (Fix #3)
+      if (newStatus === "Confirmed" || newStatus === "Rejected" || newStatus === "Cancelled") {
+        pastOrders[foundIndex].awaitingConfirmation = false;
+      }
 
       // Update the document
       await updateDoc(customerRef, {

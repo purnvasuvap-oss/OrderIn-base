@@ -2,42 +2,69 @@
 import React, { useState, useEffect } from "react";
 import { Minus, Plus, Trash2, X, CreditCard, Wallet, Banknote } from "lucide-react";
 import { useCart } from "../context/CartContext";
-import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db } from "../firebaseConfig";
 import { useNavigate } from "react-router-dom";
 import { useTableNumber } from "../hooks/useTableNumber";
 import Loading from "../Loading";
-import { generateDisplayOrderId } from "../utils/displayOrderIdGenerator";
 import { safeDeleteUnpaidOrders } from "../utils/orderCleanupUtils";
 import { getPlaceholder } from "../utils/placeholder";
 import resolveImageUrl from "../utils/storageResolver";
-import { createOrderTimestamp } from "../utils/orderDateTime";
 import { calculateBilling, TAX_RATE } from "../utils/billing";
 import "./Payments.css";
 
 function Payments({ onBackClick }) {
-  const { cartItems, updateQuantity, removeFromCart, getTotalPrice, placeOrder, markPaymentSuccessful, saveOrderTempState, clearOrderTempState } = useCart();
+  const { cartItems, updateQuantity, removeFromCart, getTotalPrice, markPaymentSuccessful, saveOrderTempState, clearOrderTempState } = useCart();
   const [selectedPayment, setSelectedPayment] = useState(null);
+  const [confirmedOrderData, setConfirmedOrderData] = useState(null);
+  const [confirmedOrderId, setConfirmedOrderId] = useState(null);
   const navigate = useNavigate();
   const { getPathWithTable } = useTableNumber();
+
+  // On mount, load confirmed order data from storage (set by AwaitingConfirmation)
+  useEffect(() => {
+    const orderId = sessionStorage.getItem("confirmedOrderId") || localStorage.getItem("orderin_confirmed_orderid");
+    const orderDataStr = sessionStorage.getItem("confirmedOrderData") || localStorage.getItem("orderin_confirmed_orderdata");
+    
+    if (orderId && orderDataStr) {
+      try {
+        const parsedData = JSON.parse(orderDataStr);
+        setConfirmedOrderId(orderId);
+        setConfirmedOrderData(parsedData);
+        console.log("Payments: loaded confirmed order:", orderId, parsedData);
+      } catch (e) {
+        console.warn("Payments: error parsing confirmed order data", e);
+      }
+    } else {
+      console.warn("Payments: no confirmed order found. Redirecting to menu.");
+      // If no confirmed order, redirect back
+      setTimeout(() => navigate(getPathWithTable("/menu")), 100);
+    }
+  }, []);
 
   // Fallback onBackClick: navigate back and clean up unpaid orders from Firestore
   const handleBackClick = async () => {
     try {
       const user = JSON.parse(localStorage.getItem("user"));
-      if (user && user.phone) {
-        await safeDeleteUnpaidOrders(user.phone);
+      if (user && user.phone && confirmedOrderId) {
+        // Fix #16: Pass specific confirmedOrderId to only delete the current pending order
+        await safeDeleteUnpaidOrders(user.phone, confirmedOrderId);
       }
     } catch (err) {
       console.error('Error during order cleanup on back navigation:', err);
     }
 
+    // Clear payment-related storage
     sessionStorage.removeItem('pendingOrderId');
     sessionStorage.removeItem('pendingOrderForFirestore');
     sessionStorage.removeItem('pendingVerificationCode');
+    sessionStorage.removeItem('confirmedOrderId');
+    sessionStorage.removeItem('confirmedOrderData');
     localStorage.removeItem('orderin_countercode_orderId');
     localStorage.removeItem('orderin_countercode_paymentMethod');
     localStorage.removeItem('orderin_onlinepayment_orderId');
+    localStorage.removeItem('orderin_confirmed_orderid');
+    localStorage.removeItem('orderin_confirmed_orderdata');
     localStorage.removeItem('pendingVerificationCode');
 
     if (onBackClick) {
@@ -83,6 +110,8 @@ function Payments({ onBackClick }) {
     if (cartItems && cartItems.length) resolve();
     return () => { cancelled = true; };
   }, [cartItems]);
+  
+  // Use the cart items data for display and calculate billing
   const subtotal = parseFloat(getTotalPrice());
   const displayedBilling = calculateBilling(subtotal, selectedPayment);
 
@@ -95,64 +124,23 @@ function Payments({ onBackClick }) {
       alert("Please select a payment method");
       return;
     }
+    
+    if (!confirmedOrderId) {
+      alert("No confirmed order to process payment for");
+      return;
+    }
 
-    let order;
-    let orderSaveError = null;
+    setIsSaving(true);
     let phoneNumber = null;
     
     try {
-      setIsSaving(true);
       const user = JSON.parse(localStorage.getItem("user"));
-      const tableNumber = localStorage.getItem("tableNumber") || "1";
       if (!user || !user.phone) {
         throw new Error("User not logged in or phone number missing");
       }
       phoneNumber = user.phone;
 
-      const customerRef = doc(db, "Restaurant", "orderin_restaurant_3", "customers", phoneNumber);
-      const customerSnap = await getDoc(customerRef);
-      let pastOrders = [];
-      if (customerSnap.exists()) {
-        const data = customerSnap.data();
-        pastOrders = Array.isArray(data.pastOrders) ? data.pastOrders : [];
-      }
-
-      let orderId = null;
-      try {
-        orderId = await generateDisplayOrderId();
-        if (!orderId) {
-          throw new Error('generateDisplayOrderId returned empty value');
-        }
-        console.log('Generated order ID:', orderId);
-      } catch (displayIdErr) {
-        console.warn('Failed to generate order ID, creating fallback:', displayIdErr);
-        const now = new Date();
-        const timestamp = now.getTime();
-        orderId = `ORD-${timestamp}`;
-        console.log('Using fallback order ID:', orderId);
-      }
-
-      if (!orderId) {
-        throw new Error('Failed to generate order ID: orderId is undefined');
-      }
-
-      const calculatedSubtotal = parseFloat(getTotalPrice());
-      const calculatedBilling = calculateBilling(calculatedSubtotal, selectedPayment);
-      
-      console.log('Calculated - Subtotal:', calculatedBilling.subtotal, 'Tax:', calculatedBilling.taxes, 'Total:', calculatedBilling.total);
-
-      order = placeOrder(selectedPayment);
-      console.log('Order created from placeOrder():', order);
-      if (!order) {
-        throw new Error('placeOrder() returned null or undefined');
-      }
-      order.id = orderId;
-      
-      order.subtotal = calculatedBilling.subtotal;
-      order.taxes = calculatedBilling.taxes;
-      order.total = calculatedBilling.total;
-      console.log('Order updated with calculated values - Subtotal:', order.subtotal, 'Taxes:', order.taxes, 'Total:', order.total);
-
+      // Generate verification code for Cash/Card payments
       let verificationCode = null;
       if (selectedPayment === 'Cash' || selectedPayment === 'Card') {
         verificationCode = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
@@ -162,7 +150,6 @@ function Payments({ onBackClick }) {
         if (verificationCode) {
           sessionStorage.setItem('pendingVerificationCode', verificationCode);
           localStorage.setItem('pendingVerificationCode', verificationCode);
-          console.log('Payments: generated verificationCode saved to sessionStorage/localStorage=', verificationCode);
         } else {
           sessionStorage.removeItem('pendingVerificationCode');
           localStorage.removeItem('pendingVerificationCode');
@@ -171,97 +158,82 @@ function Payments({ onBackClick }) {
         console.warn('Payments: could not persist pendingVerificationCode', err);
       }
 
-      const orderTimestamp = createOrderTimestamp();
+      // Calculate billing with selected payment method
+      const calculatedSubtotal = parseFloat(getTotalPrice()) || 0;
+      const calculatedBilling = calculateBilling(calculatedSubtotal, selectedPayment);
 
-      const orderForFirestore = {
-        id: orderId,
-        items: order.items.map(({ name, price, quantity, instructions, specifications }) => ({
-          name,
-          price,
-          quantity,
-          instructions: instructions || "",
-        })),
-        subtotal: order.subtotal,
-        taxes: order.taxes,
-        total: order.total,
-        paymentMethod: order.paymentMethod,
-        status: order.status,
-        tableNo: tableNumber,
-        time: orderTimestamp.time,
-        createdAt: orderTimestamp.createdAt,
-        createdAtMs: orderTimestamp.createdAtMs,
-        paymentStatus: 'unpaid',
-        verificationCode: verificationCode,
-        OnlinePayMethod: ""
-      };
-
-      console.log('Order object before saving to Firestore:', orderForFirestore);
-      console.log('OnlinePayMethod value:', orderForFirestore.OnlinePayMethod);
-
-      const pendingOrderBackup = {
-        phoneNumber,
-        restaurantId: 'orderin_restaurant_3',
-        order: orderForFirestore,
-      };
-      sessionStorage.setItem('pendingOrderForFirestore', JSON.stringify(pendingOrderBackup));
-      localStorage.setItem('pendingOrderForFirestore', JSON.stringify(pendingOrderBackup));
-
-      pastOrders.push(orderForFirestore);
-      console.log('Past orders array before Firestore save:', pastOrders);
-      await setDoc(customerRef, { pastOrders, lastOrderAt: serverTimestamp() }, { merge: true });
-      console.log('Order saved to Firestore successfully');
+      // Update the confirmed order in Firestore with payment method and billing
+      const customerRef = doc(db, "Restaurant", "orderin_restaurant_3", "customers", phoneNumber);
+      const customerSnap = await getDoc(customerRef);
       
+      if (customerSnap.exists()) {
+        const data = customerSnap.data();
+        const pastOrders = Array.isArray(data.pastOrders) ? data.pastOrders : [];
+        
+        const idsMatch = (left, right) => String(left) === String(right);
+        const updatedOrders = pastOrders.map(order => {
+          if (!idsMatch(order.id, confirmedOrderId)) return order;
+          // Update the order with payment method and billing
+          return {
+            ...order,
+            paymentMethod: selectedPayment,
+            subtotal: calculatedBilling.subtotal,
+            taxes: calculatedBilling.taxes,
+            total: calculatedBilling.total,
+            verificationCode: verificationCode || null,
+            awaitingConfirmation: false,
+          };
+        });
+        
+        await setDoc(customerRef, { pastOrders: updatedOrders }, { merge: true });
+        console.log("Payments: Updated confirmed order with payment method:", selectedPayment);
+      }
+
+      // Store payment data for use on payment pages
+      const paymentData = {
+        orderId: confirmedOrderId,
+        subtotal: calculatedBilling.subtotal,
+        taxes: calculatedBilling.taxes,
+        total: calculatedBilling.total,
+        taxRate: TAX_RATE,
+        useProvidedTax: true,
+        restaurantId: 'orderin_restaurant_3',
+        paymentMethod: selectedPayment,
+        customerPhone: phoneNumber
+      };
+      sessionStorage.setItem('paymentData', JSON.stringify(paymentData));
+      localStorage.setItem('orderin_paymentData', JSON.stringify(paymentData));
+
+      // Store pending order IDs for payment pages
+      sessionStorage.setItem('pendingOrderId', confirmedOrderId);
+      localStorage.setItem('orderin_countercode_orderId', confirmedOrderId);
+      localStorage.setItem('orderin_countercode_paymentMethod', selectedPayment);
+      localStorage.setItem('orderin_onlinepayment_orderId', confirmedOrderId); // Fix #10: store for online payment fallback
+
+      // Also save temp state for page refresh recovery
       const billing = {
         subtotal: calculatedBilling.subtotal,
         taxes: calculatedBilling.taxes,
         total: calculatedBilling.total
       };
-      saveOrderTempState(orderId, cartItems, billing, 'unpaid');
-      
-      console.log("Order saved to Firestore with id:", orderId, "Status: unpaid");
-      console.log("Saved billing:", billing);
-    } catch (err) {
-      console.error("Error during order processing:", err);
-      orderSaveError = err;
-    } finally {
+      saveOrderTempState(confirmedOrderId, cartItems, billing, 'unpaid');
+
+      // Navigate to the appropriate payment flow
       setIsSaving(false);
+      setTimeout(() => {
+        if (selectedPayment === 'Online') {
+          navigate(getPathWithTable('/online-payment'));
+        } else {
+          // For Cash/Card, go to counter code verification
+          navigate(getPathWithTable('/counter-code'));
+        }
+      }, 100);
+      
+    } catch (err) {
+      setIsSaving(false);
+      console.error("Error processing payment method selection:", err);
+      alert("Error processing payment: " + err.message);
     }
-
-    if (orderSaveError && (!order || !order.id)) {
-      console.warn("Order save failed - showing error to user:", orderSaveError.message);
-      alert("Error saving order to backend: " + orderSaveError.message);
-      return;
-    }
-
-    if (!order) {
-      return;
-    }
-
-    // Store pending order ID and payment method for use after restaurant confirmation
-    sessionStorage.setItem('pendingOrderId', order.id);
-    localStorage.setItem('orderin_countercode_orderId', order.id);
-    localStorage.setItem('orderin_countercode_paymentMethod', selectedPayment);
-
-    // Store payment data for later use
-    const paymentData = {
-      orderId: order.id,
-      subtotal: order.subtotal,
-      taxes: order.taxes,
-      total: order.total,
-      taxRate: TAX_RATE,
-      useProvidedTax: true,
-      restaurantId: 'orderin_restaurant_3',
-      paymentMethod: selectedPayment,
-      customerPhone: phoneNumber
-    };
-    sessionStorage.setItem('paymentData', JSON.stringify(paymentData));
-    localStorage.setItem('orderin_paymentData', JSON.stringify(paymentData));
-
-    // NEW FLOW: Redirect to AwaitingConfirmation page
-    // Restaurant staff must accept/reject the order before payment proceeds
-    setTimeout(() => {
-      navigate(getPathWithTable('/awaiting-confirmation'));
-    }, 100);
   };
 
   return (

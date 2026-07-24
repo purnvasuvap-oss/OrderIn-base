@@ -309,17 +309,20 @@ button {
   color: rgba(28, 27, 23, 0.55);
 }
 
+/* ===== ORDER CARD LAYOUT ===== */
+
 .order-item {
-  padding: 12px;
+  padding: 14px 16px;
   border-radius: 14px;
   background: rgba(99, 110, 44, 0.05);
   border: 1px solid rgba(63, 68, 28, 0.08);
 }
 
+/* 2-column grid: image on left, details on right, reorder button spans full width on row 2 */
 .order-card-main {
   display: grid;
-  grid-template-columns: 56px minmax(0, 1fr) auto;
-  gap: 10px;
+  grid-template-columns: 56px 1fr;
+  gap: 10px 12px;
   align-items: start;
 }
 
@@ -329,11 +332,16 @@ button {
   border-radius: 12px;
   object-fit: cover;
   border: 1px solid rgba(63, 68, 28, 0.1);
-  flex-shrink: 0;
+  grid-column: 1;
+  grid-row: 1;
 }
 
 .order-details {
-  min-width: 0;
+  grid-column: 2;
+  grid-row: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
 .order-title-row {
@@ -378,8 +386,6 @@ button {
   flex-wrap: wrap;
   gap: 6px;
   margin-top: 8px;
-  max-height: 58px;
-  overflow: hidden;
 }
 
 .order-pill-row span {
@@ -393,8 +399,8 @@ button {
 }
 
 .order-reorder-btn {
-  min-width: 84px;
-  min-height: 36px;
+  width: 100%;
+  min-height: 40px;
   border: none;
   border-radius: 999px;
   background: #636E2C;
@@ -404,10 +410,10 @@ button {
   justify-content: center;
   gap: 6px;
   padding: 0 10px;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 800;
   cursor: pointer;
-  flex-shrink: 0;
+  grid-column: 1 / -1;
 }
 
 .order-reorder-btn:disabled {
@@ -455,43 +461,22 @@ button {
   font-size: 11px;
 }
 
+/* Hide description & instructions to reduce card clutter on mobile */
 .order-desc-zone,
-.order-instructions-zone,
+.order-instructions-zone {
+  display: none;
+}
+
 .order-unavailable {
   margin: 8px 0 0;
   padding: 8px 10px;
   border-radius: 10px;
-  background: rgba(63, 68, 28, 0.05);
-  color: rgba(28, 27, 23, 0.72);
-  font-size: 12px;
-  line-height: 1.4;
-  overflow-wrap: anywhere;
-}
-
-/* Clamp long descriptions/instructions so a single verbose order doesn't
-   blow out the card height when the list already has many items. */
-.order-desc-zone {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.order-instructions-zone {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.order-instructions-zone strong {
-  color: #1C1B17;
-}
-
-.order-unavailable {
   color: #B83A3A;
   font-weight: 800;
   background: rgba(184, 58, 58, 0.08);
+  font-size: 12px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
 }
 
 .liked-item {
@@ -755,20 +740,11 @@ button {
     padding: 12px;
   }
 
-  .order-card-main {
-    grid-template-columns: 50px minmax(0, 1fr) 74px;
-  }
-
-  .order-reorder-btn {
-    min-width: 74px;
-    padding: 0 8px;
-  }
-
   /* Tighter caps on small phones so the section never dominates the screen,
      while still leaving enough room to comfortably scroll a few cards. */
   .section-body-list {
     max-height: 300px;
-    gap: 8px;
+    gap: 12px;
   }
 
   .liked-list {
@@ -778,9 +754,5 @@ button {
   .payment-list {
     max-height: 200px;
   }
-
-  .order-desc-zone,
-  .order-instructions-zone {
-    font-size: 11.5px;
-  }
 }
+

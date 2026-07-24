@@ -616,20 +616,34 @@ function Menu({ setIsLoading }) {
             <p className="filter-sheet-label">Food type</p>
             <div className="filter-toggle-row">
               <button
-                className={`filter-toggle-btn ${vegToggle === "nonveg" ? "active-nonveg" : ""}`}
-                onClick={() => handleVegToggle("nonveg")}
+                className={`filter-toggle-btn ${vegToggle === "veg" ? "active-veg" : ""}`}
+                onClick={() => handleVegToggle("veg")}
               >
                 <Leaf size={14} /> Veg
               </button>
               <button
-                className={`filter-toggle-btn ${vegToggle === "veg" ? "active-veg" : ""}`}
-                onClick={() => handleVegToggle("veg")}
+                className={`filter-toggle-btn ${vegToggle === "nonveg" ? "active-nonveg" : ""}`}
+                onClick={() => handleVegToggle("nonveg")}
               >
                 <Flame size={14} /> Non-Veg
               </button>
             </div>
 
-            <div className="filter-sheet-actions">
+            <p className="filter-sheet-label" style={{ marginTop: '16px' }}>Categories</p>
+            <div className="filter-toggle-row" style={{ flexWrap: 'wrap', gap: '6px' }}>
+              {categories.filter(c => c !== "all").map((cat) => (
+                <button
+                  key={cat}
+                  className={`filter-toggle-btn ${selectedCategory === cat ? 'active-veg' : ''}`}
+                  onClick={() => setSelectedCategory(prev => prev === cat ? "all" : cat)}
+                  style={{ flex: 'none', padding: '8px 14px', fontSize: '13px' }}
+                >
+                  {cat.charAt(0).toUpperCase() + cat.slice(1)}
+                </button>
+              ))}
+            </div>
+
+            <div className="filter-sheet-actions" style={{ marginTop: '16px' }}>
               <button
                 className="btn-clear"
                 onClick={() => {

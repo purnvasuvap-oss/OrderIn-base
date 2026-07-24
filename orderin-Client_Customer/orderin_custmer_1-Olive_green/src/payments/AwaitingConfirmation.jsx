@@ -20,6 +20,7 @@ function AwaitingConfirmation() {
 
   const pendingOrderId =
     sessionStorage.getItem("pendingOrderId") ||
+    localStorage.getItem("orderin_awaiting_orderId") ||
     localStorage.getItem("orderin_countercode_orderId") ||
     null;
 
@@ -51,6 +52,9 @@ function AwaitingConfirmation() {
 
   navigate(getPathWithTable("/cart"));
 };
+  // Fix #15: Show loading state while snapshot is being set up
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+
   useEffect(() => {
     if (!pendingOrderId) {
       navigate(getPathWithTable("/menu"));
@@ -77,13 +81,16 @@ function AwaitingConfirmation() {
       if (orderStatus === "confirmed") {
         setStatus("confirmed");
         clearInterval(timer);
+        
+        // Store the confirmed order data for the Payments page
+        sessionStorage.setItem("confirmedOrderId", currentOrder.id || pendingOrderId);
+        sessionStorage.setItem("confirmedOrderData", JSON.stringify(currentOrder));
+        localStorage.setItem("orderin_confirmed_orderid", currentOrder.id || pendingOrderId);
+        localStorage.setItem("orderin_confirmed_orderdata", JSON.stringify(currentOrder));
+        
         setTimeout(() => {
-          const paymentMethod = currentOrder.paymentMethod || "Online";
-          if (paymentMethod.toLowerCase() === "online" || paymentMethod.toLowerCase() === "upi") {
-            navigate(getPathWithTable("/online-payment"));
-          } else {
-            navigate(getPathWithTable("/counter-code"));
-          }
+          // Navigate to Payments page for payment method selection
+          navigate(getPathWithTable("/payments"));
         }, 2000);
       } else if (orderStatus === "rejected" || orderStatus === "cancelled") {
         setStatus("rejected");
@@ -133,7 +140,7 @@ function AwaitingConfirmation() {
           <div className="awaiting-status awaiting-confirmed">
             <div className="awaiting-icon-check"><CheckCircle size={48} color="#16a34a" /></div>
             <h2>Order Confirmed! 🎉</h2>
-            <p className="awaiting-description">The restaurant has accepted your order. Redirecting you to payment...</p>
+            <p className="awaiting-description">The restaurant has accepted your order. Redirecting you to select a payment method...</p>
             <div className="awaiting-redirecting">
               <div className="awaiting-dot-pulse"><span></span><span></span><span></span></div>
             </div>

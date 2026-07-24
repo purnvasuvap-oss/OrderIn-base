@@ -482,9 +482,11 @@ function Orders() {
     }
   };
 
+  // Total counts ALL orders including rejected/cancelled
   const total = orders.length;
+  // Active excludes Delivered (completed) AND Rejected/Cancelled
+  const active = orders.filter((o) => o.status !== "Delivered" && o.status !== "Rejected" && o.status !== "Cancelled").length;
   const completed = orders.filter((o) => o.status === "Delivered").length;
-  const active = total - completed;
 
   const filteredOrders = (() => {
     let filtered = orders;
@@ -492,7 +494,7 @@ function Orders() {
       filtered = orders.filter((o) => o.status === "Delivered");
     } else if (filter === "active") {
       filtered = orders
-        .filter((o) => o.status !== "Delivered")
+        .filter((o) => o.status !== "Delivered" && o.status !== "Rejected" && o.status !== "Cancelled")
         .slice()
         .reverse();
     }

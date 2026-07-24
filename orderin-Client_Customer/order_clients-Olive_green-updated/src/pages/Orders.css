@@ -15,7 +15,7 @@
   text-overflow: ellipsis;
 }
 .item-name {
-  color: #222;
+  color: var(--text-primary);
   font-weight: 700;
   max-width: 90px;
   overflow: hidden;
@@ -23,7 +23,7 @@
   white-space: nowrap;
 }
 .item-instructions {
-  color: #888;
+  color: var(--text-secondary);
   font-size: 13px;
   font-style: italic;
   max-width: 120px;
@@ -38,6 +38,18 @@
   --muted:#bdbdbd;
   --accent:#636E2C;
   --card-shadow: 0 8px 18px rgba(0,0,0,0.12);
+  /* Single source of truth for the orders table column widths.
+     .table-header and .table-row BOTH reference this so the header
+     and the data cells always line up exactly. Percentages sum to 100%
+     so the table fills the available width with NO horizontal scroll
+     and NO second-line wrapping (cells ellipsis instead of wrapping). */
+  --orders-grid-cols: 9% 12% 11% 7% 20% 13% 8% 13% 7%;
+
+  /* Unified text-color palette used across every column so the table
+     reads consistently instead of a mix of near-black grays. */
+  --text-primary: #1f2933;   /* main values: id, customer, phone, table, time */
+  --text-secondary: #6b7280; /* specs / instructions */
+  --text-brand: #3F441C;     /* verification code + brand accents */
   font-family: "Poppins", "Segoe UI", Arial, sans-serif;
 }
 body {
@@ -457,30 +469,26 @@ color:white;
   min-height:0;
   overflow-y:auto;
 }
+
+/* FIX: header and rows now share the exact same grid-template-columns
+   (via --orders-grid-cols) so columns stay perfectly aligned and don't
+   wrap/drift out of sync with the header labels. */
 .table-header{
   display: grid;
-   grid-template-columns:
-        11%
-        10%
-        10%
-        8%
-        24%
-        11%
-        15%
-        11%;
-
-    gap:8px;
-    width:100%;
-  gap: 8px;            /* reduced from 12px */
+  grid-template-columns: var(--orders-grid-cols);
+  gap: 8px;
+  width: 100%;
   background: #dcdcdc;
-  padding: 12px 16px;  /* reduced from 18px 22px */
+  padding: 12px 16px;
   font-weight: 700;
-  color: #222;
+  color: var(--text-primary);
   border-top-left-radius: 12px;
   border-top-right-radius: 12px;
-  min-width: 800px;    /* reduced from 900px */
+  /* No min-width here on purpose: percentage columns already sum to
+     100%, so the table always fits the screen with zero horizontal
+     scroll instead of forcing an 800-900px minimum. */
   white-space: nowrap;
-  font-size: 13px;     /* slightly smaller header text */
+  font-size: 13px;
 }
 
 .table-header > * {
@@ -491,14 +499,13 @@ color:white;
 
 .table-row{
   display: grid;
-  grid-template-columns: 100px 120px 110px 80px 1fr 130px 110px 85px;
-  gap: 8px;            /* reduced from 12px */
+  grid-template-columns: var(--orders-grid-cols);
+  gap: 8px;
   background: #fff;
   padding:8px 16px;
   min-height:56px;
   align-items: center;
   border-bottom: 1px solid #e7e7e7;
-  min-width: 800px;    /* reduced from 900px */
 }
 
 .table-row > * {
@@ -509,19 +516,36 @@ color:white;
 
 .table-row:last-child{border-bottom:none}
 
-/* columns */
-.col{font-size:14px; color:#222; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
+/* columns — all colors now pull from the shared palette in :root so
+   every cell in the table reads with one consistent, clean look. */
+.col{font-size:14px; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
 .col.id{font-weight:700}
-.col.order-id{font-weight:700; color:#2a2a2a; font-size:13px}
-.col.customer .cust-name{font-weight:700}
-.col.customer .cust-names{font-size:12px; color:#666; margin-top:4px; font-weight:500}
+.col.order-id{font-weight:700; color: var(--text-primary); font-size:13px}
+.col.customer .cust-name{font-weight:700; color: var(--text-primary);}
+.col.customer .cust-names{font-size:12px; color: var(--text-secondary); margin-top:4px; font-weight:500}
 .col.customer{font-weight:700}
-.cust-table{color:#474646;font-weight:700; margin-top:6px}
-.col.phone{font-weight:700; font-size:13px}
-.col.table{font-weight:700; color:#444}
+.cust-table{color: var(--text-secondary); font-weight:700; margin-top:6px}
+.col.phone{font-weight:700; font-size:13px; color: var(--text-primary);}
+.col.table{font-weight:700; color: var(--text-primary);}
 .col.items div{margin-bottom:6px;font-weight:700}
-.col.specs{color:#3d3d3d; font-weight:700}
-.col.time{font-weight:700; font-size:13px}
+.col.specs{color: var(--text-secondary); font-weight:600}
+.col.time{font-weight:700; font-size:13px; color: var(--text-primary);}
+.col.verification-code{font-weight:700; letter-spacing:0.5px; color: var(--text-brand)}
+
+.items-list-btn {
+  margin-top: 6px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  border: 1px solid #d1d5db;
+  background: #f9fafb;
+  color: #333;
+  border-radius: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.items-list-btn:hover { background: #eef2ff; border-color: #636E2C; }
+.items-list-btn.mobile-items-list-btn { width: 100%; margin-top: 0; padding: 8px; font-size: 13px; }
 
 /* status pill */
 .status{
@@ -594,8 +618,10 @@ color:white;
     width: 140px;
     margin-right: 0;
   }
-  
-  .table-header, .table-row {grid-template-columns: 100px 1fr 1fr 160px 100px}
+
+  /* Desktop table is hidden below 900px anyway (card view takes over),
+     but keep this in sync with the shared grid var for safety. */
+  .table-header, .table-row { grid-template-columns: var(--orders-grid-cols); }
   .top-right {display: none}
 }
 /* ...existing code... */
@@ -1183,6 +1209,13 @@ color:white;
   .mobile-sub {
     font-size: 13px;
     color: #666;
+  }
+
+  .mobile-code {
+    font-size: 12px;
+    font-weight: 700;
+    color: #3F441C;
+    margin-top: 2px;
   }
 
   .mobile-items-box {

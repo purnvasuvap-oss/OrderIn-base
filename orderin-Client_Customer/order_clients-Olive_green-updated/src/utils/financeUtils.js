@@ -20,7 +20,8 @@ export const calculateTodaysRevenue = (orders = []) => {
       new Date(order.timestamp);
 
     if (orderDate >= start && orderDate <= end) {
-      return total + (Number(order.subtotal) || 0);
+      // Use totalCost (includes tax) instead of subtotal for accurate revenue
+      return total + (Number(order.totalCost) || Number(order.total) || Number(order.subtotal) || 0);
     }
 
     return total;

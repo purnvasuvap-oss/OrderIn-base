@@ -23,12 +23,35 @@ import "./ItemDetails.css";
 import { getPlaceholder } from "../utils/placeholder";
 import { resolveImageUrl } from "../utils/storageResolver";
 
-// Default customization groups shown when the item doesn't define its own.
+// Default customization groups derived dynamically based on item category.
 // Purely preferential (no price impact) — folded into the saved instructions.
-const DEFAULT_CUSTOMIZATIONS = [
-  { id: "spice", label: "Spice Level", options: ["Mild", "Medium", "Hot"] },
-  { id: "portion", label: "Portion", options: ["Regular", "Large"] },
-];
+const getDefaultsForCategory = (category) => {
+  if (!category) return [{ id: "portion", label: "Portion", options: ["Regular", "Large"] }];
+  const cat = String(category).toLowerCase();
+  // Beverage / Drink items
+  if (/drink|beverage|juice|shake|mocktail|smoothie|soda|cola|tea|coffee|water|soft drink|cold drink|milkshake/.test(cat)) {
+    return [
+      { id: "size", label: "Size", options: ["Regular", "Large", "Extra Large"] },
+      { id: "ice", label: "Ice Level", options: ["No Ice", "Less Ice", "Regular Ice", "Extra Ice"] },
+      { id: "sweetness", label: "Sweetness", options: ["No Sugar", "Less Sweet", "Regular", "Extra Sweet"] },
+    ];
+  }
+  // Food items
+  if (/food|starter|appetizer|main|main course|entree|curry|rice|bread|roti|naan|biryani|fried rice|noodles|pasta|pizza|burger|sandwich|wrap|roll|taco|burrito|dosa|idli|vada|pongal|upma|chowmein/.test(cat)) {
+    return [
+      { id: "spice", label: "Spice Level", options: ["Mild", "Medium", "Hot"] },
+      { id: "portion", label: "Portion", options: ["Regular", "Large"] },
+    ];
+  }
+  // Desserts
+  if (/dessert|ice cream|cake|pastry|sweet|halwa|kheer|pudding|mousse|brownie|cookie/.test(cat)) {
+    return [
+      { id: "portion", label: "Portion", options: ["Regular", "Large"] },
+    ];
+  }
+  // Default fallback
+  return [{ id: "portion", label: "Portion", options: ["Regular", "Large"] }];
+};
 
 function ItemDetails() {
   const location = useLocation();
@@ -44,8 +67,6 @@ function ItemDetails() {
   const [quantity, setQuantity] = useState(1);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [instructions, setInstructions] = useState("");
-  const [touchStart, setTouchStart] = useState(null);
-  const [touchEnd, setTouchEnd] = useState(null);
   const [isFavorited, setIsFavorited] = useState(false);
   const [resolvedImage, setResolvedImage] = useState(item ? (item.image || item.imageURL || item.image_url || '') : '');
   const [linkCopied, setLinkCopied] = useState(false);
@@ -165,7 +186,7 @@ function ItemDetails() {
     if (!item) return;
     const groups = item.customizations && Array.isArray(item.customizations) && item.customizations.length
       ? item.customizations
-      : DEFAULT_CUSTOMIZATIONS;
+      : getDefaultsForCategory(item.category);
     setCustomSelections((prev) => {
       const next = { ...prev };
       groups.forEach((g) => {
@@ -182,31 +203,7 @@ function ItemDetails() {
   if (error) return <div className="itemdetails-error">{error}</div>;
   if (!item) return <div className="itemdetails-error">No item data found.</div>;
 
-  const nextItem = null;
-  const prevItem = null;
-
-  const minSwipeDistance = 50;
-
-  const onTouchStart = (e) => {
-    setTouchEnd(null);
-    setTouchStart(e.targetTouches[0].clientX);
-  };
-
-  const onTouchMove = (e) => setTouchEnd(e.targetTouches[0].clientX);
-
-  const onTouchEnd = () => {
-    if (!touchStart || !touchEnd) return;
-    const distance = touchStart - touchEnd;
-    const isLeftSwipe = distance > minSwipeDistance;
-    const isRightSwipe = distance < -minSwipeDistance;
-
-    if (isLeftSwipe && nextItem) {
-      navigate(getPathWithTable(`/item/${nextItem.name.replace(/\s+/g, '-').toLowerCase()}`), { state: { item: nextItem } });
-    }
-    if (isRightSwipe && prevItem) {
-      navigate(getPathWithTable(`/item/${prevItem.name.replace(/\s+/g, '-').toLowerCase()}`), { state: { item: prevItem } });
-    }
-  };
+  // Swipe navigation removed - nextItem/prevItem were hardcoded to null (dead code)
 
   const handleBack = (e) => {
     e.stopPropagation();
@@ -225,7 +222,7 @@ function ItemDetails() {
   const buildInstructionsWithCustomizations = (baseText) => {
     const groups = item.customizations && Array.isArray(item.customizations) && item.customizations.length
       ? item.customizations
-      : DEFAULT_CUSTOMIZATIONS;
+      : getDefaultsForCategory(item.category);
     const customLine = groups
       .map((g) => (customSelections[g.id] ? `${g.label}: ${customSelections[g.id]}` : null))
       .filter(Boolean)
@@ -342,14 +339,11 @@ function ItemDetails() {
 
   const customizationGroups = item.customizations && Array.isArray(item.customizations) && item.customizations.length
     ? item.customizations
-    : DEFAULT_CUSTOMIZATIONS;
+    : getDefaultsForCategory(item.category);
 
   return (
     <div
       className="itemdetails-overlay"
-      onTouchStart={onTouchStart}
-      onTouchMove={onTouchMove}
-      onTouchEnd={onTouchEnd}
     >
       {/* HERO */}
       <div className="hero-section">

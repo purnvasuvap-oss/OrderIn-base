@@ -55,19 +55,6 @@ const Dashboard = () => {
 
     return () => clearInterval(timer);
   }, []);
-
-  useEffect(() => {
-    const unsubscribe = subscribeAllCustomerOrders((orders) => {
-      const revenue = calculateTodaysRevenue(orders);
-      setTodayRevenue(revenue);
-    });
-
-    return () => {
-      if (typeof unsubscribe === "function") {
-        unsubscribe();
-      }
-    };
-  }, []);
   useEffect(() => {
     const unsubscribeOrders = subscribeDashboardOrders(setTodayOrders);
 

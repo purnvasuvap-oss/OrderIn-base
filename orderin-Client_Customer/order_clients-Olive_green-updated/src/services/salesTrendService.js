@@ -7,11 +7,15 @@ const RESTAURANT_ID = "orderin_restaurant_3";
 
 export const WEEKDAY_LABELS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
-/** Flatten every customer's pastOrders into a single array of normalized orders. */
-export const fetchAllOrdersFlat = async () => {
+/** Flatten every customer's pastOrders into a single array of normalized orders. 
+ *  Fix #31: Added date filter (last 90 days) to avoid massive Firestore reads.
+ */
+export const fetchAllOrdersFlat = async (maxDays = 90) => {
   const customersRef = collection(db, "Restaurant", RESTAURANT_ID, "customers");
   const snap = await getDocs(customersRef);
   const orders = [];
+  const cutoffDate = new Date();
+  cutoffDate.setDate(cutoffDate.getDate() - maxDays);
 
   snap.docs.forEach((customerDoc) => {
     const data = customerDoc.data();
@@ -20,6 +24,8 @@ export const fetchAllOrdersFlat = async () => {
     data.pastOrders.forEach((order) => {
       const timestamp = parseOrderTimestamp(order);
       if (!timestamp) return;
+      // Apply date filter: only include orders within the last maxDays
+      if (timestamp.getTime() < cutoffDate.getTime()) return;
       const items = Array.isArray(order.items)
         ? order.items.map((it) => {
             const price = Number(String(it?.price ?? 0).replace(/[^0-9.-]+/g, "")) || 0;

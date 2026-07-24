@@ -275,7 +275,12 @@ function Profile({ onBackClick, onCartClick }) {
   };
 
   const buildOrderHistory = (pastOrders) => {
-    return (Array.isArray(pastOrders) ? pastOrders : []).map((o, idx) => {
+    // Filter out rejected/cancelled/declined orders so they don't appear in customer's profile
+    const rejectedStatuses = new Set(["rejected", "cancelled", "canceled", "declined"]);
+    return (Array.isArray(pastOrders) ? pastOrders : []).filter((o) => {
+      const status = (o.status || o.paymentStatus || "").toLowerCase().trim();
+      return !rejectedStatuses.has(status);
+    }).map((o, idx) => {
       const first = Array.isArray(o.items) && o.items.length > 0
         ? o.items[0]
         : (o.item || { name: o.itemName || 'Item', price: o.total || o.price || '₹0.00' });
@@ -433,10 +438,23 @@ function Profile({ onBackClick, onCartClick }) {
   const favoriteCount = likedItems.length;
   const savingsEstimate = Math.max(0, totalOrders * 38);
   const memberSince = user.createdAt ? new Date(user.createdAt).toLocaleDateString([], { month: "short", year: "numeric" }) : "since 2024";
-  const paymentMethods = [
-    { label: "Visa • 4242", detail: "Primary card" },
-    { label: "Cash on delivery", detail: "Default at checkout" },
-  ];
+  // Fix #21: Payment methods should be dynamic from user data.
+  // For now, use actual payment methods from past orders if available.
+  const paymentMethods = (() => {
+    const usedMethods = new Set();
+    orderHistory.forEach(order => {
+      if (order.paymentMethod) usedMethods.add(order.paymentMethod);
+    });
+    if (usedMethods.size > 0) {
+      return Array.from(usedMethods).map(method => ({
+        label: method === 'Online' ? 'Online Payment' : method === 'Cash' ? 'Cash on Delivery' : method,
+        detail: method === 'Online' ? 'Used in recent orders' : method === 'Cash' ? 'Pay at counter' : 'Used in recent orders'
+      }));
+    }
+    return [
+      { label: "Cash on delivery", detail: "Default at checkout" },
+    ];
+  })();
 
   const handleLogout = () => {
     localStorage.removeItem("user");
