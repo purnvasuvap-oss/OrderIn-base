@@ -144,7 +144,7 @@ function App() {
           }
         });
         allActions.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-        setActivities(allActions.slice(0, 2));
+        setActivities(allActions.slice(0, 6));
 
         loadBatchesByItem();
       } catch (error) {
@@ -274,7 +274,7 @@ function App() {
       day: '2-digit', month: '2-digit', year: 'numeric',
       hour: '2-digit', minute: '2-digit', hour12: true
     });
-    setActivities(prev => [{ message, timestamp }, ...prev.slice(0, 1)]);
+    setActivities(prev => [{ message, timestamp }, ...prev.slice(0, 5)]);
   };
 
   const logAlertActivity = (itemName, category, low, veryLow, action = "updated") => {
@@ -283,7 +283,7 @@ function App() {
     const date = now.toLocaleDateString("en-GB");
     const message = `Alert ${action} for ${itemName} (${category}) — Low: ${low} / Very Low: ${veryLow}`;
     addActivity(message);
-    setActivities(prev => [{ message, timestamp: `${date} ${time}` }, ...prev.slice(0, 1)]);
+    setActivities(prev => [{ message, timestamp: `${date} ${time}` }, ...prev.slice(0, 5)]);
   };
 
   const getStatusIcon = (status) => {
@@ -333,7 +333,7 @@ function App() {
       }
     });
     allActions.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-    setActivities(allActions.slice(0, 2));
+    setActivities(allActions.slice(0, 6));
     loadBatchesByItem();
   };
 
@@ -421,12 +421,14 @@ function App() {
 
           <div className="Inventory-card-stat Inventory-card-activity">
             <h4 className="Inventory-activity-heading">Recent Activity</h4>
-            {activities.slice(0, 2).map((activity, index) => (
-              <div key={index} className="Inventory-activity-entry">
-                <p>{activity.message}</p>
-                <span>{activity.timestamp}</span>
-              </div>
-            ))}
+            <div className="Inventory-activity-list">
+              {activities.map((activity, index) => (
+                <div key={index} className="Inventory-activity-entry">
+                  <p>{activity.message}</p>
+                  <span>{activity.timestamp}</span>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
