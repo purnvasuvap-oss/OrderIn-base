@@ -351,6 +351,23 @@ button {
   font-weight: 700;
 }
 
+.cart-item-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.cart-item-option-chip {
+  background: rgba(99, 110, 44, 0.08);
+  color: #636E2C;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
 .cart-item-subtotal {
   display: flex;
   flex-direction: column;

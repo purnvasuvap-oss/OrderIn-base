@@ -13,6 +13,7 @@ import { parseOrderTimestamp, createOrderTimestamp } from "../utils/orderDateTim
 import { generateDisplayOrderId } from "../utils/displayOrderIdGenerator";
 import Loading from "../Loading";
 import { HiOutlineShoppingCart } from "react-icons/hi2";
+import { parsePriceValue, calculateOrderTotals } from "../utils/pricing";
 function Cart({ onBackClick }) {
   const [activeTab, setActiveTab] = useState("Current Order");
   const { cartItems, updateQuantity, updateInstructions, removeFromCart, getTotalPrice, placeOrder, saveOrderTempState } = useCart();
@@ -180,13 +181,13 @@ function Cart({ onBackClick }) {
     navigate(getPathWithTable("/menu"));
   };
 
-  const handleEditInstructions = (itemName, currentInstructions) => {
-    setEditingInstructions(itemName);
+  const handleEditInstructions = (cartKey, currentInstructions) => {
+    setEditingInstructions(cartKey);
     setTempInstructions(currentInstructions);
   };
 
-  const handleSaveInstructions = (itemName) => {
-    updateInstructions(itemName, tempInstructions);
+  const handleSaveInstructions = (cartKey) => {
+    updateInstructions(cartKey, tempInstructions);
     setEditingInstructions(null);
   };
 
@@ -239,22 +240,26 @@ function Cart({ onBackClick }) {
       const calculatedSubtotal = parseFloat(getTotalPrice()) || 0;
       const orderTimestamp = createOrderTimestamp();
 
-      // Calculate default tax (5% GST) at order creation for accurate admin display (Fix #2)
-      const defaultTax = calculatedSubtotal * 0.05;
-      const totalWithTax = calculatedSubtotal + defaultTax;
+      // Shared with the on-screen summary card, so what the customer sees matches what's billed/recorded.
+      const { gst: orderGst, packing: orderPacking, discount: orderDiscount, total: orderTotal } =
+        calculateOrderTotals(calculatedSubtotal);
 
       // Create order object without payment method
       const orderForFirestore = {
         id: orderId,
-        items: cartItems.map(({ name, price, quantity, instructions, specifications }) => ({
+        items: cartItems.map(({ name, price, quantity, instructions, effectivePrice, selectedOptions }) => ({
           name,
           price,
           quantity,
           instructions: instructions || "",
+          effectivePrice: effectivePrice ?? parsePriceValue(price),
+          customizations: (selectedOptions || []).map((o) => ({ label: o.group, option: o.label, price: o.price })),
         })),
         subtotal: calculatedSubtotal,
-        taxes: defaultTax, // Fix #2: Calculate default 5% tax at creation instead of 0
-        total: totalWithTax,
+        taxes: orderGst,
+        packing: orderPacking,
+        discount: orderDiscount,
+        total: orderTotal,
         paymentMethod: "", // No payment method yet — will be set after confirmation
         status: "Pending",
         tableNo: tableNumber,
@@ -288,11 +293,13 @@ function Cart({ onBackClick }) {
       sessionStorage.setItem("pendingOrderForFirestore", JSON.stringify(pendingOrderBackup));
       localStorage.setItem("pendingOrderForFirestore", JSON.stringify(pendingOrderBackup));
 
-      // Save temp state for recovery on page refresh — Fix #2: Use defaultTax for accuracy
+      // Save temp state for recovery on page refresh
       const billing = {
         subtotal: calculatedSubtotal,
-        taxes: defaultTax,
-        total: totalWithTax,
+        taxes: orderGst,
+        packing: orderPacking,
+        discount: orderDiscount,
+        total: orderTotal,
       };
       saveOrderTempState(orderId, cartItems, billing, "unpaid");
 
@@ -309,8 +316,6 @@ function Cart({ onBackClick }) {
     }
   };
 
-  const parsePrice = (price) => parseFloat(String(price || "").replace(/[^0-9.\-]/g, "")) || 0;
-
   const formatPrice = (price) => `₹${price.toFixed(2)}`;
 
   const getCartItemImage = (item) => {
@@ -323,11 +328,11 @@ function Cart({ onBackClick }) {
     return getPlaceholder("No Image");
   };
 
-  const subtotal = cartItems.reduce((sum, item) => sum + parsePrice(item.price) * (Number(item.quantity) || 0), 0);
-  const gst = subtotal * 0.05;
-  const packing = subtotal > 0 ? 30 : 0;
-  const discount = subtotal > 0 ? Math.min(60, Math.round(subtotal * 0.08)) : 0;
-  const grandTotal = subtotal + gst + packing - discount;
+  const subtotal = cartItems.reduce(
+    (sum, item) => sum + (item.effectivePrice ?? parsePriceValue(item.price)) * (Number(item.quantity) || 0),
+    0
+  );
+  const { gst, packing, discount, total: grandTotal } = calculateOrderTotals(subtotal);
 
   return (
     <div className="cart-container">
@@ -388,13 +393,14 @@ function Cart({ onBackClick }) {
 
             <div className="cart-list">
               {cartItems.map((item, index) => {
-                const itemPrice = parsePrice(item.price);
+                const itemPrice = item.effectivePrice ?? parsePriceValue(item.price);
                 const quantity = Number(item.quantity) || 0;
                 const itemTotal = itemPrice * quantity;
                 const rating = item.rating || 4.7;
+                const cartKey = item.cartKey || item.name;
 
                 return (
-                  <article key={item.id || item.name || index} className="cart-item">
+                  <article key={cartKey || index} className="cart-item">
                     <div className="cart-item-media">
                       <img
                         src={getCartItemImage(item)}
@@ -418,6 +424,15 @@ function Cart({ onBackClick }) {
                             <p className="cart-item-price">{formatPrice(itemPrice)}</p>
                             <span className="price-meta">each</span>
                           </div>
+                          {Array.isArray(item.selectedOptions) && item.selectedOptions.length > 0 && (
+                            <div className="cart-item-options">
+                              {item.selectedOptions.map((opt, oIdx) => (
+                                <span key={oIdx} className="cart-item-option-chip">
+                                  {opt.label}: +₹{opt.price}
+                                </span>
+                              ))}
+                            </div>
+                          )}
                         </div>
                         <div className="cart-item-subtotal">
                           <span>Item total</span>
@@ -427,21 +442,21 @@ function Cart({ onBackClick }) {
 
                       <div className="cart-item-actions">
                         <div className="quantity-controls" aria-label={`${item.name} quantity`}>
-                          <button className="qty-btn" aria-label={`Decrease ${item.name} quantity`} onClick={() => updateQuantity(item.name, item.quantity - 1)}>
+                          <button className="qty-btn" aria-label={`Decrease ${item.name} quantity`} onClick={() => updateQuantity(cartKey, item.quantity - 1)}>
                             <Minus size={16} />
                           </button>
                           <span className="qty-value">{quantity}</span>
-                          <button className="qty-btn" aria-label={`Increase ${item.name} quantity`} onClick={() => updateQuantity(item.name, item.quantity + 1)}>
+                          <button className="qty-btn" aria-label={`Increase ${item.name} quantity`} onClick={() => updateQuantity(cartKey, item.quantity + 1)}>
                             <Plus size={16} />
                           </button>
                         </div>
 
                         <div className="action-buttons">
-                          <button className="edit-instructions-btn" onClick={() => handleEditInstructions(item.name, item.instructions || "")}>
+                          <button className="edit-instructions-btn" onClick={() => handleEditInstructions(cartKey, item.instructions || "")}>
                             <Edit3 size={14} />
                             <span>{item.instructions ? "Edit notes" : "Add notes"}</span>
                           </button>
-                          <button className="remove-btn" aria-label={`Remove ${item.name}`} onClick={() => removeFromCart(item.name)}>
+                          <button className="remove-btn" aria-label={`Remove ${item.name}`} onClick={() => removeFromCart(cartKey)}>
                             <Trash2 size={16} />
                             <span>Remove</span>
                           </button>
@@ -449,7 +464,7 @@ function Cart({ onBackClick }) {
                       </div>
 
                       <div className="instructions-section">
-                        {editingInstructions === item.name ? (
+                        {editingInstructions === cartKey ? (
                           <div className="edit-instructions">
                             <textarea
                               value={tempInstructions}
@@ -458,7 +473,7 @@ function Cart({ onBackClick }) {
                               rows={2}
                             />
                             <div className="edit-buttons">
-                              <button onClick={() => handleSaveInstructions(item.name)}>Save</button>
+                              <button onClick={() => handleSaveInstructions(cartKey)}>Save</button>
                               <button onClick={handleCancelEdit}>Cancel</button>
                             </div>
                           </div>

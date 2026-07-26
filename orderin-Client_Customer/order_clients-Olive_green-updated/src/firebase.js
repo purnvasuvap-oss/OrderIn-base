@@ -4,14 +4,14 @@ import { getFirestore, collection, getDocs, doc, getDoc, updateDoc } from "fireb
 import { getAuth, signInAnonymously, onAuthStateChanged } from "firebase/auth";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyAk-pLesgCvvG2yoq22IgU575l_NkjfddA",
+  apiKey: "AIzaSyAkRQXh5tKRSajUFe9T0ioBz3iF-AAbz6E",
   authDomain: "orderin-7f8bc.firebaseapp.com",
   projectId: "orderin-7f8bc",
   storageBucket: "orderin-7f8bc.firebasestorage.app",
   messagingSenderId: "977042319750",
-  appId: "1:977042319750:web:eddc81a64139d75769a407",
-  measurementId: "G-HRFZDPDWYZ"
-};
+  appId: "1:977042319750:web:5176bec91195b89169a407",
+  measurementId: "G-JN97SWGE1M"
+}
 
 
 const app = initializeApp(firebaseConfig);

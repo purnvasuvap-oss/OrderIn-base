@@ -47,7 +47,7 @@
   },
 
   "hosting": {
-    "site": "orderin-customer-1",
+    "site": "orderin-olive-cstmr",
     "public": "dist",
     "ignore": [
       "firebase.json",

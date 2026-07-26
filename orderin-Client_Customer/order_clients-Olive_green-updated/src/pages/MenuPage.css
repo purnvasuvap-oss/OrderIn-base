@@ -461,18 +461,28 @@ body {
 }
 
 .menu-customization-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid var(--border-light-gray);
+  border-radius: 10px;
+  background: #fbfbf9;
+}
+
+.menu-customization-group-header {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   gap: 10px;
   align-items: center;
 }
 
-.menu-customization-label,
-.menu-customization-options {
+.menu-customization-label {
   min-height: 40px;
 }
 
-.menu-customization-remove {
+.menu-customization-remove,
+.menu-customization-option-remove {
   width: 36px;
   height: 36px;
   border: 1px solid var(--border-light-gray);
@@ -482,11 +492,68 @@ body {
   font-size: 14px;
   line-height: 1;
   cursor: pointer;
+  flex-shrink: 0;
 }
 
-.menu-customization-remove:hover {
+.menu-customization-remove:hover,
+.menu-customization-option-remove:hover {
   background: #fdeceb;
   border-color: #e7a6a0;
+}
+
+.menu-customization-options-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-left: 12px;
+}
+
+.menu-customization-option-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 110px) auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.menu-customization-option-name {
+  min-height: 36px;
+}
+
+.menu-customization-option-price {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 36px;
+  padding: 0 10px;
+  border: 1px solid var(--border-light-gray);
+  border-radius: 8px;
+  background: #ffffff;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.menu-customization-option-price input {
+  border: none;
+  outline: none;
+  width: 100%;
+  font-size: 13px;
+  color: inherit;
+}
+
+.menu-customization-add-option {
+  align-self: flex-start;
+  padding: 6px 12px;
+  border: 1px dashed var(--primary-Olive);
+  border-radius: 8px;
+  background: rgba(99, 110, 44, 0.06);
+  color: var(--primary-Olive);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.menu-customization-add-option:hover {
+  background: rgba(99, 110, 44, 0.12);
 }
 
 .menu-customization-add {
@@ -527,11 +594,11 @@ body {
 }
 
 @media (max-width: 640px) {
-  .menu-customization-group {
+  .menu-customization-option-row {
     grid-template-columns: 1fr;
   }
 
-  .menu-customization-remove {
+  .menu-customization-option-remove {
     justify-self: flex-end;
   }
 }

@@ -78,14 +78,8 @@ const formatSteppedPrice = (value) => {
 const generateCustomizationId = () =>
   `custom-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
 
-const optionsToText = (options) =>
-  Array.isArray(options) ? options.join(", ") : "";
-
-const textToOptions = (text) =>
-  String(text || "")
-    .split(",")
-    .map((opt) => opt.trim())
-    .filter(Boolean);
+const generateOptionId = () =>
+  `opt-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
 
 const MenuPage = () => {
   const navigate = useNavigate();
@@ -244,7 +238,15 @@ const MenuPage = () => {
         ? item.customizations.map((group) => ({
             id: group.id || generateCustomizationId(),
             label: group.label || "",
-            optionsText: optionsToText(group.options),
+            options: (group.options || []).map((opt) =>
+              typeof opt === "string"
+                ? { id: generateOptionId(), name: opt, price: "0" }
+                : {
+                    id: generateOptionId(),
+                    name: opt.name ?? opt.label ?? "",
+                    price: sanitizePriceInput(opt.price ?? 0) || "0",
+                  }
+            ),
           }))
         : [],
     };
@@ -286,7 +288,12 @@ const MenuPage = () => {
               .map((group) => ({
                 id: group.id || generateCustomizationId(),
                 label: String(group.label || "").trim(),
-                options: textToOptions(group.optionsText),
+                options: (group.options || [])
+                  .map((opt) => ({
+                    name: String(opt.name || "").trim(),
+                    price: priceToNumber(opt.price),
+                  }))
+                  .filter((opt) => opt.name),
               }))
               .filter((group) => group.label && group.options.length > 0)
           : [],
@@ -695,7 +702,7 @@ const MenuPage = () => {
           ...draft,
           customizations: [
             ...groups,
-            { id: generateCustomizationId(), label: "", optionsText: "" },
+            { id: generateCustomizationId(), label: "", options: [] },
           ],
         },
       ];
@@ -726,6 +733,66 @@ const MenuPage = () => {
       const nextGroups = groups.map((group, idx) =>
         idx === groupIndex ? { ...group, [field]: value } : group,
       );
+      return [{ ...draft, customizations: nextGroups }];
+    });
+  };
+
+  const handleAddOption = (groupIndex) => {
+    setEditedItems((current) => {
+      const draft = current[0] || {};
+      const groups = Array.isArray(draft.customizations)
+        ? draft.customizations
+        : [];
+      const nextGroups = groups.map((group, idx) =>
+        idx === groupIndex
+          ? {
+              ...group,
+              options: [
+                ...(group.options || []),
+                { id: generateOptionId(), name: "", price: "0" },
+              ],
+            }
+          : group,
+      );
+      return [{ ...draft, customizations: nextGroups }];
+    });
+  };
+
+  const handleRemoveOption = (groupIndex, optionIndex) => {
+    setEditedItems((current) => {
+      const draft = current[0] || {};
+      const groups = Array.isArray(draft.customizations)
+        ? draft.customizations
+        : [];
+      const nextGroups = groups.map((group, idx) =>
+        idx === groupIndex
+          ? {
+              ...group,
+              options: (group.options || []).filter(
+                (_, oIdx) => oIdx !== optionIndex,
+              ),
+            }
+          : group,
+      );
+      return [{ ...draft, customizations: nextGroups }];
+    });
+  };
+
+  const handleOptionChange = (groupIndex, optionIndex, field, value) => {
+    setEditedItems((current) => {
+      const draft = current[0] || {};
+      const groups = Array.isArray(draft.customizations)
+        ? draft.customizations
+        : [];
+      const nextGroups = groups.map((group, idx) => {
+        if (idx !== groupIndex) return group;
+        const nextOptions = (group.options || []).map((opt, oIdx) =>
+          oIdx === optionIndex
+            ? { ...opt, [field]: field === "price" ? sanitizePriceInput(value) : value }
+            : opt,
+        );
+        return { ...group, options: nextOptions };
+      });
       return [{ ...draft, customizations: nextGroups }];
     });
   };
@@ -1126,40 +1193,71 @@ const MenuPage = () => {
                 )}
                 {(activeEditItem.customizations || []).map((group, idx) => (
                   <div className="menu-customization-group" key={group.id}>
-                    <input
-                      className="menu-editor-control menu-customization-label"
-                      type="text"
-                      value={group.label}
-                      onChange={(e) =>
-                        handleCustomizationGroupChange(
-                          idx,
-                          "label",
-                          e.target.value,
-                        )
-                      }
-                      placeholder="e.g. Spice Level"
-                    />
-                    <input
-                      className="menu-editor-control menu-customization-options"
-                      type="text"
-                      value={group.optionsText}
-                      onChange={(e) =>
-                        handleCustomizationGroupChange(
-                          idx,
-                          "optionsText",
-                          e.target.value,
-                        )
-                      }
-                      placeholder="Mild, Medium, Hot"
-                    />
-                    <button
-                      type="button"
-                      className="menu-customization-remove"
-                      onClick={() => handleRemoveCustomizationGroup(idx)}
-                      aria-label="Remove customization group"
-                    >
-                      ✕
-                    </button>
+                    <div className="menu-customization-group-header">
+                      <input
+                        className="menu-editor-control menu-customization-label"
+                        type="text"
+                        value={group.label}
+                        onChange={(e) =>
+                          handleCustomizationGroupChange(
+                            idx,
+                            "label",
+                            e.target.value,
+                          )
+                        }
+                        placeholder="e.g. Spice Level"
+                      />
+                      <button
+                        type="button"
+                        className="menu-customization-remove"
+                        onClick={() => handleRemoveCustomizationGroup(idx)}
+                        aria-label="Remove customization group"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                    <div className="menu-customization-options-list">
+                      {(group.options || []).map((opt, oIdx) => (
+                        <div className="menu-customization-option-row" key={opt.id}>
+                          <input
+                            className="menu-editor-control menu-customization-option-name"
+                            type="text"
+                            value={opt.name}
+                            onChange={(e) =>
+                              handleOptionChange(idx, oIdx, "name", e.target.value)
+                            }
+                            placeholder="e.g. Large"
+                          />
+                          <div className="menu-customization-option-price">
+                            <span>+₹</span>
+                            <input
+                              type="text"
+                              inputMode="decimal"
+                              value={opt.price}
+                              onChange={(e) =>
+                                handleOptionChange(idx, oIdx, "price", e.target.value)
+                              }
+                              placeholder="0"
+                            />
+                          </div>
+                          <button
+                            type="button"
+                            className="menu-customization-option-remove"
+                            onClick={() => handleRemoveOption(idx, oIdx)}
+                            aria-label="Remove option"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ))}
+                      <button
+                        type="button"
+                        className="menu-customization-add-option"
+                        onClick={() => handleAddOption(idx)}
+                      >
+                        + Add Option
+                      </button>
+                    </div>
                   </div>
                 ))}
                 <button
@@ -1391,7 +1489,15 @@ const MenuPage = () => {
                             title={item.customizations
                               .map(
                                 (g) =>
-                                  `${g.label}: ${(g.options || []).join(", ")}`,
+                                  `${g.label}: ${(g.options || [])
+                                    .map((o) =>
+                                      typeof o === "string"
+                                        ? o
+                                        : o.price
+                                          ? `${o.name} (+₹${o.price})`
+                                          : o.name,
+                                    )
+                                    .join(", ")}`,
                               )
                               .join(" • ")}
                           >

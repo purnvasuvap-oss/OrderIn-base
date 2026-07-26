@@ -1,5 +1,5 @@
 import "./Inventory.css";
-import { CheckCircle, AlertTriangle, XCircle, X, Flame, Inbox, ClipboardList } from "lucide-react";
+import { CheckCircle, AlertTriangle, XCircle, X, Flame, Settings2, ClipboardList } from "lucide-react";
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import routes from "../routes";
@@ -12,7 +12,7 @@ import VeryLowInventory from "./landingpage/very_low_interventory.svg";
 import { withRotIndex, ROT_BANDS } from "../utils/rotIndex";
 import RotBadge from "../components/RotIndex/RotBadge";
 import IllusionPricingModal from "../components/RotIndex/IllusionPricingModal";
-import AuditInboxPanel from "../components/AuditInbox/AuditInboxPanel";
+import InventoryItemManager from "../components/InventoryManager/InventoryItemManager";
 import {
   addInventoryBatch,
   getItemBatches,
@@ -23,11 +23,14 @@ import {
 } from "../services/inventoryBatchService";
 
 
+const isItemActive = (item) => !item.itemStatus || item.itemStatus === "active";
+
 function App() {
   const navigate = useNavigate();
   const { addActivity } = useNotification();
   const [showModal, setShowModal] = useState(false);
   const [showAlertsModal, setShowAlertsModal] = useState(false);
+  const [showActivityModal, setShowActivityModal] = useState(false);
   const [unit, setUnit] = useState("Kgs");
   const [customUnit, setCustomUnit] = useState("");
   const [selectedAction, setSelectedAction] = useState(null);
@@ -88,14 +91,18 @@ function App() {
   const [itemActionHistory, setItemActionHistory] = useState([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
 
-  // Tabs: "inventory" | "audit"
+  // Tabs: "inventory" | "manager"
   const [activeTab, setActiveTab] = useState("inventory");
 
-  const goodCount = data.filter(item => item.status === "Good").length;
-  const lowCount = data.filter(item => item.status === "Low").length;
-  const veryLowCount = data.filter(item => item.status === "Very Low").length;
+  // Excludes paused/deleted items from every active-inventory view; the raw `data`
+  // (all items, any lifecycle status) is still passed to the Item Manager tab.
+  const activeData = useMemo(() => data.filter(isItemActive), [data]);
 
-  const rotData = useMemo(() => withRotIndex(data, batchesByItem), [data, batchesByItem]);
+  const goodCount = activeData.filter(item => item.status === "Good").length;
+  const lowCount = activeData.filter(item => item.status === "Low").length;
+  const veryLowCount = activeData.filter(item => item.status === "Very Low").length;
+
+  const rotData = useMemo(() => withRotIndex(activeData, batchesByItem), [activeData, batchesByItem]);
   const redZoneItems = useMemo(
     () => rotData.filter(item => item.rotBand === ROT_BANDS.RED),
     [rotData]
@@ -123,10 +130,11 @@ function App() {
         const items = inventorySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         setData(items);
 
-        const uniqueCategories = [...new Set(items.map(item => item.itemCategory))];
+        const activeItems = items.filter(isItemActive);
+        const uniqueCategories = [...new Set(activeItems.map(item => item.itemCategory))];
         setCategories(uniqueCategories);
 
-        const uniqueLocations = [...new Set(items.map(item => item.locationOfStorage).filter(Boolean))];
+        const uniqueLocations = [...new Set(activeItems.map(item => item.locationOfStorage).filter(Boolean))];
         setExistingLocations(uniqueLocations);
 
         const allActions = [];
@@ -158,19 +166,19 @@ function App() {
 
   useEffect(() => {
     if (!selectedCategory || isNewCategory) { setCategoryItems([]); return; }
-    setCategoryItems(data.filter(item => item.itemCategory === selectedCategory));
-  }, [selectedCategory, isNewCategory, data]);
+    setCategoryItems(activeData.filter(item => item.itemCategory === selectedCategory));
+  }, [selectedCategory, isNewCategory, activeData]);
 
   useEffect(() => {
     if (!selectedItem) return;
-    const item = data.find(i => i.name === selectedItem);
+    const item = activeData.find(i => i.name === selectedItem);
     if (!item) return;
     setItemName(item.name);
     setUnit(item.unit);
     setLocation(item.locationOfStorage);
     setAlertLowThreshold(String(item.thresholdLow ?? 0));
     setAlertVeryLowThreshold(String(item.thresholdVeryLow ?? 0));
-  }, [selectedItem, data]);
+  }, [selectedItem, activeData]);
 
   useEffect(() => {
     if (selectedAction !== "take" || !selectedItem) {
@@ -191,12 +199,12 @@ function App() {
 
   useEffect(() => {
     if (!selectedAlertCategory) { setAlertItems([]); return; }
-    setAlertItems(data.filter(item => item.itemCategory === selectedAlertCategory));
-  }, [selectedAlertCategory, data]);
+    setAlertItems(activeData.filter(item => item.itemCategory === selectedAlertCategory));
+  }, [selectedAlertCategory, activeData]);
 
   useEffect(() => {
     if (!selectedAlertItem) return;
-    const item = data.find(i => i.name === selectedAlertItem);
+    const item = activeData.find(i => i.name === selectedAlertItem);
     if (!item) return;
     setAlertItemName(item.name);
     setAlertItemCategory(item.itemCategory);
@@ -204,7 +212,16 @@ function App() {
     setAlertVeryLowThreshold(String(item.thresholdVeryLow ?? 0));
     setAlertLowUnit(item.unit);
     setAlertVeryLowUnit(item.unit);
-  }, [selectedAlertItem, data]);
+  }, [selectedAlertItem, activeData]);
+
+  useEffect(() => {
+    if (!arrivalDate || !shelfLifeDays) return;
+    const days = parseFloat(shelfLifeDays);
+    if (isNaN(days) || days <= 0) return;
+    const computedExpiry = new Date(arrivalDate);
+    computedExpiry.setDate(computedExpiry.getDate() + days);
+    setExpiryDate(computedExpiry.toISOString().split("T")[0]);
+  }, [arrivalDate, shelfLifeDays]);
 
   useEffect(() => {
     const term = searchTerm.toLowerCase();
@@ -316,8 +333,9 @@ function App() {
     const updatedSnapshot = await getDocs(inventoryCollection);
     const updatedItems = updatedSnapshot.docs.map(d => ({ id: d.id, ...d.data() }));
     setData(updatedItems);
-    setCategories([...new Set(updatedItems.map(i => i.itemCategory))]);
-    setExistingLocations([...new Set(updatedItems.map(i => i.locationOfStorage).filter(Boolean))]);
+    const activeUpdatedItems = updatedItems.filter(isItemActive);
+    setCategories([...new Set(activeUpdatedItems.map(i => i.itemCategory))]);
+    setExistingLocations([...new Set(activeUpdatedItems.map(i => i.locationOfStorage).filter(Boolean))]);
     const allActions = [];
     updatedItems.forEach(item => {
       if (item.actions && Array.isArray(item.actions)) {
@@ -355,6 +373,30 @@ function App() {
     setHistoryModalItem(null);
     setItemActionHistory([]);
   };
+
+  const historyItemExpiryChips = useMemo(() => {
+    if (!historyModalItem) return [];
+    const batches = batchesByItem[historyModalItem.name] || [];
+    const groups = {};
+    batches.forEach((batch) => {
+      if (batch.status === "consumed") return;
+      const qty = Number(batch.remainingQty) || 0;
+      if (qty <= 0) return;
+      const dateKey = batch.expiryDate ? batch.expiryDate.toDate().toLocaleDateString('en-GB') : "No expiry";
+      const unit = batch.unit || "Kgs";
+      const key = `${dateKey}__${unit}`;
+      if (!groups[key]) {
+        groups[key] = {
+          dateKey,
+          unit,
+          qty: 0,
+          sortValue: batch.expiryDate ? batch.expiryDate.toDate().getTime() : Infinity,
+        };
+      }
+      groups[key].qty += qty;
+    });
+    return Object.values(groups).sort((a, b) => a.sortValue - b.sortValue);
+  }, [historyModalItem, batchesByItem]);
 
   const writeAddBatchAndAction = async (itemNameValue, qty, unitValue, locationOfStorage) => {
     try {
@@ -420,7 +462,18 @@ function App() {
           </div>
 
           <div className="Inventory-card-stat Inventory-card-activity">
-            <h4 className="Inventory-activity-heading">Recent Activity</h4>
+            <div className="Inventory-activity-header">
+              <h4 className="Inventory-activity-heading">Recent Activity</h4>
+              {activities.length > 0 && (
+                <button
+                  type="button"
+                  className="Inventory-activity-viewall"
+                  onClick={() => setShowActivityModal(true)}
+                >
+                  View All
+                </button>
+              )}
+            </div>
             <div className="Inventory-activity-list">
               {activities.map((activity, index) => (
                 <div key={index} className="Inventory-activity-entry">
@@ -460,15 +513,15 @@ function App() {
           <ClipboardList size={16} /> Inventory
         </button>
         <button
-          className={`Inventory-tab-btn ${activeTab === "audit" ? "is-active" : ""}`}
-          onClick={() => setActiveTab("audit")}
+          className={`Inventory-tab-btn ${activeTab === "manager" ? "is-active" : ""}`}
+          onClick={() => setActiveTab("manager")}
         >
-          <Inbox size={16} /> Audit Inbox
+          <Settings2 size={16} /> Item Manager
         </button>
       </div>
 
-      {activeTab === "audit" ? (
-        <AuditInboxPanel items={data} onChanged={() => refetchAndSync(collection(db, "Restaurant", "orderin_restaurant_3", "inventory"))} />
+      {activeTab === "manager" ? (
+        <InventoryItemManager items={data} onChanged={() => refetchAndSync(collection(db, "Restaurant", "orderin_restaurant_3", "inventory"))} />
       ) : (
       <>
       {/* ── Toolbar ── */}
@@ -1103,6 +1156,15 @@ function App() {
               <h3>History — {historyModalItem.name}</h3>
               <button className="Inventory-modal-close" onClick={closeHistoryModal}><X size={20} /></button>
             </div>
+            {historyItemExpiryChips.length > 0 && (
+              <div className="Inventory-expiry-chips-row">
+                {historyItemExpiryChips.map((chip, idx) => (
+                  <span key={idx} className="Inventory-expiry-chip">
+                    {chip.dateKey} × {chip.qty} {chip.unit}
+                  </span>
+                ))}
+              </div>
+            )}
             <div className="Inventory-actions-modal-content">
               {loadingHistory ? (
                 <p>Loading...</p>
@@ -1115,6 +1177,30 @@ function App() {
                     <span>{h.quantity} {h.unit}</span>
                     <span>Expiry: {h.expiryDate ? h.expiryDate.toDate().toLocaleDateString('en-GB') : "—"}</span>
                     <span>{h.timestamp?.toDate ? h.timestamp.toDate().toLocaleString('en-GB') : "—"}</span>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Recent Activity Modal ── */}
+      {showActivityModal && (
+        <div className="Inventory-modal-overlay" onClick={() => setShowActivityModal(false)}>
+          <div className="Inventory-actions-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="Inventory-modal-header">
+              <h3>Recent Activity</h3>
+              <button className="Inventory-modal-close" onClick={() => setShowActivityModal(false)}><X size={20} /></button>
+            </div>
+            <div className="Inventory-actions-modal-content">
+              {activities.length === 0 ? (
+                <p>No recent activity yet.</p>
+              ) : (
+                activities.map((activity, index) => (
+                  <div key={index} className="Inventory-activity-entry Inventory-activity-entry-full">
+                    <p>{activity.message}</p>
+                    <span>{activity.timestamp}</span>
                   </div>
                 ))
               )}

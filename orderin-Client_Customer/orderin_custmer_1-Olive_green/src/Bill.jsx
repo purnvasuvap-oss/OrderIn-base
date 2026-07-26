@@ -9,6 +9,7 @@ import { doc, getDoc, setDoc, updateDoc, arrayUnion, serverTimestamp } from "fir
 import { db } from "./firebaseConfig";
 import { parseOrderTimestamp } from "./utils/orderDateTime";
 import { calculateBilling } from "./utils/billing";
+import { parsePriceValue } from "./utils/pricing";
 
 function Bill() {
   const navigate = useNavigate();
@@ -271,12 +272,21 @@ function Bill() {
 
           <div className="items">
             {items.length > 0 ? items.map((item, idx) => {
-              const unit = parseFloat(String(item.price || '').replace(/[^0-9.\-]/g, '')) || 0;
+              const unit = item.effectivePrice ?? parsePriceValue(item.price);
               const qty = parseInt(item.quantity ?? item.qty ?? 1, 10) || 1;
               const lineTotal = (unit * qty).toFixed(2);
               return (
                 <div key={idx} className="item-row">
-                  <div className="item-name">{item.name}</div>
+                  <div className="item-name">
+                    {item.name}
+                    {Array.isArray(item.customizations) && item.customizations.length > 0 && (
+                      <div className="item-customizations">
+                        {item.customizations.map((c, cIdx) => (
+                          <span key={cIdx}>{c.label}: {c.option} (+₹{c.price})</span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                   <div className="item-qty">{qty} x ₹{unit.toFixed(2)}</div>
                   <div className="item-price">₹{lineTotal}</div>
                 </div>

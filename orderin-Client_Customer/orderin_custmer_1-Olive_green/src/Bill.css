@@ -36,6 +36,7 @@
 .receipt .items { font-size: 13px; margin-top: 6px; }
 .receipt .item-row { display: grid; grid-template-columns: 1fr 110px 70px; gap: 8px; align-items: center; }
 .receipt .item-name { grid-column: 1; }
+.receipt .item-customizations { display: flex; flex-direction: column; font-size: 11px; color: #666; margin-top: 2px; }
 .receipt .item-qty { grid-column: 2; text-align: right; color:#333; font-size:13px }
 .receipt .item-price { grid-column: 3; text-align: right; }
 .receipt .leaders { flex: 0 1 8px; text-align: center; color: #666 }

@@ -159,7 +159,7 @@
   justify-content: flex-start;
   overflow: hidden;
   transition: 0.3s ease;
-  height: 120px;
+  height: 132px;
   padding: 10px 15px;
   box-sizing: border-box;
 }
@@ -167,8 +167,17 @@
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
 }
 
-.Inventory-activity-heading {
+.Inventory-activity-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
   margin: 0 0 6px 0;
+  flex-shrink: 0;
+}
+
+.Inventory-activity-heading {
+  margin: 0;
   font-size: 13px;
   color: #636E2C;
   font-weight: 700;
@@ -176,8 +185,25 @@
   letter-spacing: 0.2px;
 }
 
+.Inventory-activity-viewall {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  font-size: 11px;
+  font-weight: 600;
+  color: #3F441C;
+  text-decoration: underline;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.Inventory-activity-viewall:hover {
+  color: #636E2C;
+}
+
 .Inventory-activity-list {
-  flex: 1;
+  height: 84px;
+  flex: none;
   min-height: 0;
   overflow-y: auto;
   padding-right: 4px;
@@ -1427,6 +1453,25 @@
   display: flex;
   flex-direction: column;
 }
+.Inventory-expiry-chips-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+.Inventory-expiry-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border: 1px solid #636E2C;
+  border-radius: 999px;
+  background: #f3f5ea;
+  color: #3F441C;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
 .Inventory-actions-modal-content {
   margin-top: 16px;
   overflow-y: auto;
@@ -1445,6 +1490,16 @@
   font-size: 13px;
   color: #333;
 }
+.Inventory-activity-entry-full {
+  margin-bottom: 0;
+}
+.Inventory-activity-entry-full p,
+.Inventory-activity-entry-full span {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+}
+
 .Inventory-actions-entry-type {
   font-weight: 700;
   color: #3F441C;

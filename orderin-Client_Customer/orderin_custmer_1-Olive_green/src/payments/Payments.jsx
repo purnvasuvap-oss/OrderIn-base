@@ -11,6 +11,7 @@ import { safeDeleteUnpaidOrders } from "../utils/orderCleanupUtils";
 import { getPlaceholder } from "../utils/placeholder";
 import resolveImageUrl from "../utils/storageResolver";
 import { calculateBilling, TAX_RATE } from "../utils/billing";
+import { parsePriceValue } from "../utils/pricing";
 import "./Payments.css";
 
 function Payments({ onBackClick }) {
@@ -246,7 +247,10 @@ function Payments({ onBackClick }) {
 
         <h2 className="checkout-header">Checkout</h2>
 
-        {cartItems.map((item, index) => (
+        {cartItems.map((item, index) => {
+          const cartKey = item.cartKey || item.name;
+          const unitPrice = item.effectivePrice ?? parsePriceValue(item.price);
+          return (
           <div key={index} className="order-item">
             <img
               src={(resolvedImages[item.name] && resolvedImages[item.name] !== '') ? resolvedImages[item.name] : (item.image && !(item.image.startsWith && item.image.startsWith('gs://')) ? item.image : getPlaceholder('No Image'))}
@@ -256,8 +260,8 @@ function Payments({ onBackClick }) {
             />
             <div className="order-item-details">
               <h3 className="order-item-name">{item.name}</h3>
-              <p className="order-item-price">₹{(parseFloat(String(item.price || '').replace(/[^0-9.\-]/g, '')) * item.quantity).toFixed(2)}</p>
-                <p className="order-item-each">₹{(parseFloat(String(item.price || '').replace(/[^0-9.\-]/g, '')) || 0).toFixed(2)} each</p>
+              <p className="order-item-price">₹{(unitPrice * item.quantity).toFixed(2)}</p>
+                <p className="order-item-each">₹{unitPrice.toFixed(2)} each</p>
               {item.instructions && (
                 <p className="order-item-instructions"><strong>Cooking Preferences:</strong> {item.instructions}</p>
               )}
@@ -265,24 +269,25 @@ function Payments({ onBackClick }) {
 
             <div className="quantity-controls">
               <button
-                onClick={() => updateQuantity(item.name, item.quantity - 1)}
+                onClick={() => updateQuantity(cartKey, item.quantity - 1)}
                 className="qty-button"
               >
                 <Minus size={14} />
               </button>
               <span className="qty-value">{item.quantity}</span>
               <button
-                onClick={() => updateQuantity(item.name, item.quantity + 1)}
+                onClick={() => updateQuantity(cartKey, item.quantity + 1)}
                 className="qty-button"
               >
                 <Plus size={14} />
               </button>
-              <button className="remove-button" onClick={() => removeFromCart(item.name)}>
+              <button className="remove-button" onClick={() => removeFromCart(cartKey)}>
                 <Trash2 size={16} />
               </button>
             </div>
             </div>
-        ))}
+          );
+        })}
 
         <div className="billing-breakdown">
           <h4 className="billing-header">Billing Breakdown</h4>

@@ -5,6 +5,7 @@ import { getPlaceholder } from '../utils/placeholder';
 import { resolveImageUrl } from '../utils/storageResolver';
 import { createOrderTimestamp } from '../utils/orderDateTime';
 import { calculateBilling } from '../utils/billing';
+import { parsePriceValue, sumOptionPrices, buildCartKey } from '../utils/pricing';
 
 const CartContext = createContext();
 
@@ -265,17 +266,19 @@ export const CartProvider = ({ children, tableNo = '1' }) => {
     localStorage.setItem('orderHistory', JSON.stringify(orderHistory));
   }, [orderHistory]);
 
-  const addToCart = (item, quantity, instructions) => {
-    const existingItem = cartItems.find(cartItem => cartItem.name === item.name);
+  const addToCart = (item, quantity, instructions, selectedOptions = []) => {
+    const cartKey = buildCartKey(item.name, selectedOptions);
+    const effectivePrice = parsePriceValue(item.price) + sumOptionPrices(selectedOptions);
+    const existingItem = cartItems.find(cartItem => cartItem.cartKey === cartKey);
     if (existingItem) {
       setCartItems(cartItems.map(cartItem =>
-        cartItem.name === item.name
+        cartItem.cartKey === cartKey
           ? { ...cartItem, quantity: cartItem.quantity + quantity, instructions: instructions || cartItem.instructions }
           : cartItem
       ));
     } else {
       setCartItems(prev => {
-        const newItems = [...prev, { ...item, quantity, instructions: instructions || '' }];
+        const newItems = [...prev, { ...item, quantity, instructions: instructions || '', selectedOptions, effectivePrice, cartKey }];
         return newItems;
       });
     }
@@ -288,34 +291,34 @@ export const CartProvider = ({ children, tableNo = '1' }) => {
         if (img && String(img).startsWith('gs://')) {
           const resolved = await resolveImageUrl(img);
           if (resolved) {
-            setCartItems(prev => prev.map(ci => (ci.name === item.name ? { ...ci, image: resolved } : ci)));
+            setCartItems(prev => prev.map(ci => (ci.cartKey === cartKey ? { ...ci, image: resolved } : ci)));
           }
         }
       } catch (e) { /* ignore */ }
     })();
   };
 
-  const updateQuantity = (name, quantity) => {
+  const updateQuantity = (cartKey, quantity) => {
     setCartItems(prev => prev.map(item =>
-      item.name === name ? { ...item, quantity: Math.max(1, quantity) } : item
+      item.cartKey === cartKey ? { ...item, quantity: Math.max(1, quantity) } : item
     ));
   };
 
-  const updateInstructions = (name, instructions) => {
+  const updateInstructions = (cartKey, instructions) => {
     setCartItems(prev => prev.map(item =>
-      item.name === name ? { ...item, instructions } : item
+      item.cartKey === cartKey ? { ...item, instructions } : item
     ));
   };
 
-  const removeFromCart = (name) => {
-    const updatedItems = cartItems.filter(item => item.name !== name);
+  const removeFromCart = (cartKey) => {
+    const updatedItems = cartItems.filter(item => item.cartKey !== cartKey);
     setCartItems(updatedItems);
-    
+
     // Also update the temporary order state if it exists
     // This ensures removed items don't reappear on page refresh
     const tempState = loadOrderTempState();
     if (tempState) {
-      const updatedCart = tempState.orderin_cart.filter(item => item.name !== name);
+      const updatedCart = tempState.orderin_cart.filter(item => item.cartKey !== cartKey);
       saveOrderTempState(
         tempState.orderin_orderId,
         updatedCart,
@@ -328,7 +331,7 @@ export const CartProvider = ({ children, tableNo = '1' }) => {
 
   const getTotalPrice = () => {
     return cartItems.reduce((total, item) => {
-      const num = parseFloat(String(item.price || '').replace(/[^0-9.\-]/g, '')) || 0;
+      const num = item.effectivePrice ?? parsePriceValue(item.price);
       return total + (num * item.quantity);
     }, 0).toFixed(2);
   };

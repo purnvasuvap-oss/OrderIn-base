@@ -14,7 +14,7 @@
     "rules": "storage.rules"
   },
   "hosting": {
-    "site": "orderin-client",
+    "site": "orderin-olive-client",
     "public": "dist",
     "ignore": [
       "firebase.json",
