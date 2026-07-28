@@ -1,0 +1,37 @@
+<svg width="96" height="96" viewBox="0 0 96 96" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="amberAct" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffd679"/>
+      <stop offset="100%" stop-color="#f2bb46"/>
+    </linearGradient>
+    <linearGradient id="glassAct" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.35"/>
+      <stop offset="15%" stop-color="#ffffff" stop-opacity="0.08"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="chromeTapAct" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#8a8f98"/>
+    </linearGradient>
+    <radialGradient id="glow4" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#f2bb46" stop-opacity="0.35"/>
+      <stop offset="100%" stop-color="#f2bb46" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <circle cx="46" cy="50" r="48" fill="url(#glow4)"/>
+  <ellipse cx="42" cy="86" rx="26" ry="4" fill="#000" opacity="0.3"/>
+  <rect x="66" y="14" width="8" height="40" rx="3" fill="url(#chromeTapAct)"/>
+  <rect x="58" y="20" width="24" height="9" rx="3" fill="url(#chromeTapAct)"/>
+  <circle cx="70" cy="16" r="6" fill="url(#chromeTapAct)"/>
+  <path d="M18 40 h44 v34 a10 10 0 0 1 -10 10 h-24 a10 10 0 0 1 -10 -10 Z" fill="#e7e5d8" opacity="0.18" stroke="#f2bb46" stroke-width="2"/>
+  <path d="M22 46 h36 v28 a8 8 0 0 1 -8 8 h-20 a8 8 0 0 1 -8 -8 Z" fill="url(#amberAct)"/>
+  <path d="M22 46 h36 v28 a8 8 0 0 1 -8 8 h-20 a8 8 0 0 1 -8 -8 Z" fill="url(#glassAct)"/>
+  <path d="M62 50 q14 2 14 16 q0 14 -14 16" fill="none" stroke="#f2bb46" stroke-width="5" opacity="0.7" stroke-linecap="round"/>
+  <ellipse cx="40" cy="46" rx="19" ry="7" fill="#ffffff"/>
+  <circle cx="30" cy="42" r="4" fill="#ffffff"/>
+  <circle cx="48" cy="41" r="3.4" fill="#ffffff"/>
+  <!-- bubbles -->
+  <circle cx="34" cy="58" r="1.6" fill="#fff4d6" opacity="0.8"/>
+  <circle cx="44" cy="66" r="1.2" fill="#fff4d6" opacity="0.7"/>
+  <circle cx="38" cy="72" r="1.4" fill="#fff4d6" opacity="0.6"/>
+</svg>

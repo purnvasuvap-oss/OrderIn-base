@@ -1,0 +1,368 @@
+.header{
+  height:70px;
+  background-color: white;
+  margin-top: 10px;
+  
+}
+/* left block pinned to left corner */
+.header-left{
+  position:absolute;
+  left:15px;
+  top:50%;
+  transform:translateY(-50%);
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+.orderin-logo{width:120px;height:auto;display:block;object-fit:contain}
+.company{font-weight:500}
+
+/* center block absolutely centered */
+.header-center{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);text-align:center;pointer-events:none}
+.center-logo{width:250px;height:250px;object-fit:contain;display:block;margin:10px auto 6px}
+
+/* right block pinned to right corner */
+.header-right{
+  position:absolute;
+  right:64px; /* moved further left from the edge */
+  top:50%;
+  transform:translateY(-50%);
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+.icon-btn{background:transparent;border:none;cursor:pointer;padding:8px;border-radius:8px}
+.icon-btn:hover{background:rgba(0,0,0,0.03)}
+
+.icon-img{width:50px;height:50px;display:block}
+
+/* nudge the logout/export icon left so it's not too close to the right edge */
+.header-right .icon-btn:last-child{margin-left:12px}
+
+/* Notification Modal Styles */
+.notification-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.notification-content {
+  background: white;
+  padding: 0;
+  border-radius: 14px;
+  width: 500px;
+  max-width: 90%;
+  max-height: 85vh;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+}
+
+.close-btn {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  background: none;
+  border: none;
+  font-size: 28px;
+  cursor: pointer;
+  color: #6b7280;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  transition: all 0.2s ease;
+}
+
+.close-btn:hover {
+  color: #1f2937;
+  background: #f3f4f6;
+  border-radius: 6px;
+}
+
+.tab-bar {
+  display: flex;
+  gap: 0;
+  background: white;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 0;
+}
+
+.tab-button {
+  flex: 1;
+  padding: 14px 16px;
+  background: white;
+  border: none;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #6b7280;
+  transition: all 0.3s ease;
+  position: relative;
+  border-bottom: 2px solid transparent;
+}
+
+.tab-button:hover {
+  color: #1f2937;
+  background: #f9fafb;
+}
+
+.tab-button.active {
+  color: #2563eb;
+  border-bottom-color: #2563eb;
+  background: #eff6ff;
+}
+
+.tab-content {
+  padding: 16px 20px;
+  overflow-y: auto;
+  flex: 1;
+  max-height: calc(85vh - 56px - 20px);
+}
+
+.tab-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.tab-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.tab-content::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 3px;
+}
+
+.tab-content::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+/* Empty State */
+.empty-state {
+  text-align: center;
+  padding: 40px 24px;
+  color: #9ca3af;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+/* RECENT ACTIVITIES SECTION */
+.activities-container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.activity-item {
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  background: #f9fafb;
+  border-radius: 8px;
+  border-left: 3px solid #3b82f6;
+  transition: all 0.2s ease;
+}
+
+.activity-item:hover {
+  background: #f3f4f6;
+}
+
+.activity-icon {
+  font-size: 1.2rem;
+  min-width: 24px;
+}
+
+.activity-content {
+  flex: 1;
+}
+
+.activity-message {
+  margin: 0 0 3px 0;
+  font-size: 0.9rem;
+  color: #1f2937;
+  font-weight: 500;
+}
+
+.activity-time {
+  font-size: 0.75rem;
+  color: #9ca3af;
+  display: block;
+}
+
+/* FEEDBACKS SECTION */
+.feedbacks-container {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.feedback-item {
+  background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
+  border-radius: 10px;
+  padding: 14px;
+  border-left: 5px solid #f59e0b;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  transition: all 0.25s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.feedback-item:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  transform: translateY(-1px);
+}
+
+.feedback-index {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  width: 26px;
+  height: 26px;
+  background: #f3f4f6;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.8rem;
+  color: #6b7280;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+.feedback-section {
+  margin-bottom: 9px;
+}
+
+.feedback-header-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.feedback-customer {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.customer-icon {
+  font-size: 1.1rem;
+}
+
+.customer-name {
+  font-weight: 700;
+  color: #1f2937;
+  font-size: 0.95rem;
+}
+
+.feedback-phone {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.75rem;
+  color: #9ca3af;
+  font-family: 'Courier New', monospace;
+}
+
+.phone-icon {
+  font-size: 0.95rem;
+}
+
+.feedback-divider {
+  height: 0.5px;
+  background: rgba(0, 0, 0, 0.06);
+  margin: 7px 0;
+}
+
+.feedback-rating-section {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+}
+
+.rating-label {
+  font-weight: 600;
+  color: #374151;
+}
+
+.rating-stars {
+  display: flex;
+  gap: 1px;
+  padding: 4px 8px;
+  background: rgba(245, 158, 11, 0.08);
+  border-radius: 6px;
+}
+
+.stars-container {
+  display: inline-flex;
+  gap: 1px;
+}
+
+.star {
+  font-size: 1.1rem;
+  transition: all 0.2s ease;
+}
+
+.star.filled {
+  color: #f59e0b;
+}
+
+.star.empty {
+  color: #d1d5db;
+}
+
+.feedback-text-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.text-label {
+  font-weight: 600;
+  color: #374151;
+  font-size: 0.85rem;
+}
+
+.feedback-comment {
+  margin: 0;
+  color: #4b5563;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 0.85rem;
+  background: rgba(59, 130, 246, 0.04);
+  padding: 8px 10px;
+  border-radius: 6px;
+  border-left: 2px solid #3b82f6;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.feedback-footer-section {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.7rem;
+  color: #a1adb8;
+  justify-content: flex-end;
+}
+
+.time-icon {
+  font-size: 0.9rem;
+}
+
+.feedback-timestamp {
+  font-weight: 500;
+}

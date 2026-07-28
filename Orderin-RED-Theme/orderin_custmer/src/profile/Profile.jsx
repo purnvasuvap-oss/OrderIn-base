@@ -1,0 +1,517 @@
+import React, { useState, useEffect } from "react";
+import { ChevronLeft } from "lucide-react";
+import { AiOutlineShoppingCart } from "react-icons/ai";
+import { FiUser, FiFileText, FiHeart, FiChevronRight } from "react-icons/fi";
+import Footer from "../Footer/Footer";
+import { useNavigate } from 'react-router-dom';
+import { useCart } from "../context/CartContext";
+import { useTableNumber } from "../hooks/useTableNumber";
+import { menuStore } from "../menu/Menu";
+import { doc, getDoc, onSnapshot } from "firebase/firestore";
+import { db } from "../firebaseConfig";
+import "./Profile.css";
+import { getPlaceholder } from "../utils/placeholder";
+import { resolveImageUrl } from "../utils/storageResolver";
+import { parseOrderTimestamp } from "../utils/orderDateTime";
+
+function Profile({ onBackClick, onCartClick }) {
+  const navigate = useNavigate();
+  const { getPathWithTable } = useTableNumber();
+  const [user, setUser] = useState({ username: "", phone: "" });
+  const [orderHistory, setOrderHistory] = useState([]);
+  const [likedItems, setLikedItems] = useState([]);
+  const [expandedSection, setExpandedSection] = useState(null);
+  const { addToCart } = useCart();
+  const PLACEHOLDER_IMAGE = getPlaceholder('No Image');
+
+  const formatPrice = (p) => {
+    const n = parseFloat(String(p || '').replace(/[^0-9.\-]/g, '')) || 0;
+    return `₹${n.toFixed(2)}`;
+  };
+
+  useEffect(() => {
+    const userData = localStorage.getItem("user");
+    if (userData) setUser(JSON.parse(userData));
+
+    const fetchOrderHistory = async () => {
+      try {
+        const stored = localStorage.getItem('user');
+        if (!stored) { loadLocalOrderHistory(); return; }
+        const u = JSON.parse(stored);
+        if (!u || !u.phone) { loadLocalOrderHistory(); return; }
+        const customerRef = doc(db, 'Restaurant', 'orderin_restaurant_1', 'customers', u.phone);
+        const snap = await getDoc(customerRef);
+        if (!snap.exists()) {
+          if (!loadLocalOrderHistory()) setOrderHistory([]);
+          return;
+        }
+        const data = snap.data();
+        const pastOrders = Array.isArray(data.pastOrders) ? data.pastOrders : [];
+        setOrderHistory(buildOrderHistory(pastOrders));
+      } catch (err) {
+        console.error('Profile: error fetching pastOrders', err);
+        loadLocalOrderHistory();
+      }
+    };
+
+    fetchOrderHistory();
+
+    let unsubLiked = null;
+    const subscribeLiked = async () => {
+      try {
+        const stored = localStorage.getItem('user');
+        if (!stored) return;
+        const u = JSON.parse(stored);
+        if (!u || !u.phone) return;
+        const customerRef = doc(db, 'Restaurant', 'orderin_restaurant_1', 'customers', u.phone);
+        unsubLiked = onSnapshot(customerRef, (snap) => {
+          if (!snap.exists()) { setLikedItems([]); return; }
+          const data = snap.data();
+          const liked = Array.isArray(data.likedItems) ? data.likedItems : [];
+          const productsListLocal = (menuStore && menuStore.get().length > 0) ? menuStore.get() : (typeof window !== 'undefined' ? (window.__menu_products__ || []) : []);
+          const mapped = liked.map(li => {
+            const prod = findProductMatch(li) || productsListLocal.find(p => String(p.id) === String(li.id));
+            const fullProd = prod ? { ...prod } : null;
+            const resolvedImage = fullProd ? (fullProd.image || fullProd.imageUrl || fullProd.imageURL || fullProd.image_url || fullProd.img || '') : (li.image || li.image_url || PLACEHOLDER_IMAGE);
+            const resolvedPrice = fullProd ? (fullProd.price || li.price) : (li.price || '₹0.00');
+            return fullProd
+              ? { ...fullProd, image: (resolvedImage || PLACEHOLDER_IMAGE), price: resolvedPrice, raw: li }
+              : { name: li.name, id: li.id, image: (resolvedImage || PLACEHOLDER_IMAGE), price: resolvedPrice, raw: li };
+          });
+          setLikedItems(mapped);
+        }, (err) => { console.error('Profile likedItems snapshot error', err); });
+      } catch (err) {
+        console.error('Profile: subscribeLiked error', err);
+      }
+    };
+
+    subscribeLiked();
+    return () => { if (typeof unsubLiked === 'function') unsubLiked(); };
+  }, []);
+
+  useEffect(() => {
+    const handler = () => {
+      try {
+        setOrderHistory(prev => prev.map(order => {
+          const raw = order.rawItem || { name: order.item.name };
+          const prod = findProductMatch(raw);
+          const productsListLocal = (menuStore && menuStore.get().length > 0) ? menuStore.get() : (typeof window !== 'undefined' ? (window.__menu_products__ || []) : []);
+          const isUnavailable = (!prod && productsListLocal.length > 0);
+          const fullProd = prod ? { ...prod } : null;
+          const resolvedImage = fullProd ? (fullProd.image || fullProd.imageUrl || fullProd.imageURL || fullProd.image_url || fullProd.img || '') : (raw.image || raw.image_url || PLACEHOLDER_IMAGE);
+          const resolvedPrice = fullProd ? (fullProd.price || raw.price) : (raw.price || '₹0.00');
+          const newItem = fullProd
+            ? { ...fullProd, image: (resolvedImage || PLACEHOLDER_IMAGE), price: resolvedPrice }
+            : { name: raw.name, image: (resolvedImage || PLACEHOLDER_IMAGE), price: resolvedPrice, unavailable: isUnavailable };
+          if (!newItem.paidPrice) newItem.paidPrice = (raw && (raw.price || raw.paidPrice)) || order.item.paidPrice || null;
+          return { ...order, item: newItem };
+        }));
+      } catch (err) {
+        console.error('Profile: error remapping orderHistory after menu load', err);
+      }
+    };
+    if (typeof window !== 'undefined') {
+      window.addEventListener('menu:loaded', handler);
+      if (window.__menu_products__) handler();
+    }
+    return () => { if (typeof window !== 'undefined') window.removeEventListener('menu:loaded', handler); };
+  }, []);
+
+  useEffect(() => {
+    const remapLiked = () => {
+      try {
+        setLikedItems(prev => prev.map(li => {
+          const raw = li.raw || { name: li.name };
+          const prod = findProductMatch(raw);
+          const productsListLocal = (menuStore && menuStore.get().length > 0) ? menuStore.get() : (typeof window !== 'undefined' ? (window.__menu_products__ || []) : []);
+          const isUnavailable = (!prod && productsListLocal.length > 0);
+          const fullProd = prod ? { ...prod } : null;
+          const resolvedImage = fullProd ? (fullProd.image || fullProd.imageUrl || fullProd.imageURL || fullProd.image_url || fullProd.img || '') : (raw.image || raw.image_url || PLACEHOLDER_IMAGE);
+          const resolvedPrice = fullProd ? (fullProd.price || raw.price) : (raw.price || '₹0.00');
+          return fullProd
+            ? { ...fullProd, image: (resolvedImage || PLACEHOLDER_IMAGE), price: resolvedPrice, raw }
+            : { name: raw.name, image: (resolvedImage || PLACEHOLDER_IMAGE), price: resolvedPrice, unavailable: isUnavailable, raw };
+        }));
+      } catch (err) {
+        console.error('Profile: error remapping likedItems after menu load', err);
+      }
+    };
+    if (typeof window !== 'undefined') {
+      window.addEventListener('menu:loaded', remapLiked);
+      if (window.__menu_products__) remapLiked();
+    }
+    return () => { if (typeof window !== 'undefined') window.removeEventListener('menu:loaded', remapLiked); };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    const resolveOrderImages = async () => {
+      try {
+        const updates = await Promise.all(orderHistory.map(async (o) => {
+          const img = o?.item?.image;
+          if (!img) return null;
+          try {
+            if ((img.startsWith && img.startsWith('gs://')) || (!img.startsWith('http://') && !img.startsWith('https://') && !img.startsWith('data:') && !img.startsWith('blob:'))) {
+              const r = await resolveImageUrl(img);
+              if (r) return { orderId: o.id, url: r };
+            }
+          } catch (e) { console.warn('Profile: error resolving orderHistory image', img, e); }
+          return null;
+        }));
+        if (cancelled) return;
+        const map = new Map(updates.filter(Boolean).map(u => [u.orderId, u.url]));
+        if (map.size === 0) return;
+        setOrderHistory(prev => prev.map(o => ({ ...o, item: { ...o.item, image: map.get(o.id) || o.item.image } })));
+      } catch (e) { /* ignore */ }
+    };
+    if (orderHistory && orderHistory.length) resolveOrderImages();
+    return () => { cancelled = true; };
+  }, [orderHistory]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const resolveLiked = async () => {
+      try {
+        const updates = await Promise.all(likedItems.map(async (li, idx) => {
+          const img = li?.image;
+          if (!img) return null;
+          try {
+            if ((img.startsWith && img.startsWith('gs://')) || (!img.startsWith('http://') && !img.startsWith('https://') && !img.startsWith('data:') && !img.startsWith('blob:'))) {
+              const r = await resolveImageUrl(img);
+              if (r) return { idx, url: r };
+            }
+          } catch (e) { console.warn('Profile: error resolving liked item image', img, e); }
+          return null;
+        }));
+        if (cancelled) return;
+        const map = new Map(updates.filter(Boolean).map(u => [u.idx, u.url]));
+        if (map.size === 0) return;
+        setLikedItems(prev => prev.map((li, idx) => ({ ...li, image: map.get(idx) || li.image })));
+      } catch (e) { /* ignore */ }
+    };
+    if (likedItems && likedItems.length) resolveLiked();
+    return () => { cancelled = true; };
+  }, [likedItems]);
+
+  const normalizeString = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim();
+
+  const findProductMatch = (item) => {
+    if (!item) return null;
+    const name = normalizeString(item.name || item.itemName || '');
+    const id = item.id || item.productId || item.productID || item.sku || null;
+    const productsList = (menuStore && menuStore.get().length > 0) ? menuStore.get() : (typeof window !== 'undefined' ? (window.__menu_products__ || []) : []);
+    if (id) {
+      const byId = productsList.find(p => String(p.id) === String(id) || String(p._id) === String(id) || String(p.productId) === String(id));
+      if (byId) return byId;
+    }
+    if (name) {
+      const exact = productsList.find(p => normalizeString(p.name) === name);
+      if (exact) return exact;
+      const substr = productsList.find(p => normalizeString(p.name).includes(name) || name.includes(normalizeString(p.name)));
+      if (substr) return substr;
+      const tokens = name.split(' ').filter(Boolean);
+      let best = null; let bestScore = 0;
+      for (const p of productsList) {
+        const pTokens = normalizeString(p.name).split(' ').filter(Boolean);
+        const common = tokens.filter(t => pTokens.includes(t)).length;
+        if (common > bestScore) { bestScore = common; best = p; }
+      }
+      if (bestScore > 0) return best;
+    }
+    return null;
+  };
+
+  const buildOrderHistory = (pastOrders) => {
+    return (Array.isArray(pastOrders) ? pastOrders : []).map((o, idx) => {
+      const first = Array.isArray(o.items) && o.items.length > 0
+        ? o.items[0]
+        : (o.item || { name: o.itemName || 'Item', price: o.total || o.price || '₹0.00' });
+      const productsListLocal = (menuStore && menuStore.get().length > 0) ? menuStore.get() : (typeof window !== 'undefined' ? (window.__menu_products__ || []) : []);
+      const prod = findProductMatch(first);
+      const isUnavailable = (!prod && productsListLocal.length > 0);
+      const fullProd = prod ? { ...prod } : null;
+      const resolvedImage = fullProd ? (fullProd.image || fullProd.imageUrl || fullProd.imageURL || fullProd.image_url || fullProd.img || '') : (first.image || first.image_url || PLACEHOLDER_IMAGE);
+      const resolvedPrice = fullProd ? (fullProd.price || first.price) : (first.price || '₹0.00');
+      const itemObj = fullProd
+        ? { ...fullProd, image: (resolvedImage || PLACEHOLDER_IMAGE), price: resolvedPrice }
+        : { name: first.name, image: (resolvedImage || PLACEHOLDER_IMAGE), price: resolvedPrice, unavailable: isUnavailable };
+      if (!itemObj.paidPrice) itemObj.paidPrice = (first && (first.price || first.paidPrice)) || o.total || null;
+      return {
+        id: o.id || (`order-${idx}`),
+        item: itemObj,
+        quantity: Array.isArray(o.items) && o.items.length > 0 ? (o.items[0].quantity || 1) : (o.quantity || 1),
+        itemCount: Array.isArray(o.items) ? o.items.length : 1,
+        instructions: (Array.isArray(o.items) && o.items.length > 0 && o.items[0].instructions) || o.instructions || '',
+        rawItem: first,
+        paidAmount: o.total || itemObj.paidPrice || itemObj.price,
+        status: o.status || o.paymentStatus || '',
+        paymentMethod: o.paymentMethod || '',
+        timestamp: parseOrderTimestamp(o)
+      };
+    }).reverse();
+  };
+
+  const loadLocalOrderHistory = () => {
+    try {
+      const saved = localStorage.getItem('orderHistory');
+      if (!saved) return false;
+      const parsed = JSON.parse(saved);
+      if (!Array.isArray(parsed) || parsed.length === 0) return false;
+      setOrderHistory(buildOrderHistory(parsed));
+      return true;
+    } catch (err) {
+      console.error('Profile: error loading local order history', err);
+      return false;
+    }
+  };
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [tempInstructions, setTempInstructions] = useState("");
+  const [toastMessage, setToastMessage] = useState("");
+  const [showToast, setShowToast] = useState(false);
+  const [addedItems, setAddedItems] = useState(new Set());
+
+  const handleAddToCart = (item, quantity = 1, instructions = "") => {
+    const productsListLocal = (menuStore && menuStore.get().length > 0) ? menuStore.get() : (typeof window !== 'undefined' ? (window.__menu_products__ || []) : []);
+    const matched = findProductMatch(item) || productsListLocal.find(p => String(p.name || '').toLowerCase() === String(item.name || '').toLowerCase());
+    if (!matched) {
+      setToastMessage(`${item.name} is no longer present`);
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 3000);
+      return;
+    }
+    const resolvedImage = matched.image || matched.imageUrl || matched.imageURL || matched.image_url || matched.img || item.image || item.image_url || PLACEHOLDER_IMAGE;
+    const toAdd = { ...matched, image: (resolvedImage || PLACEHOLDER_IMAGE), price: matched.price || item.price };
+    addToCart(toAdd, quantity, instructions);
+    setAddedItems(prev => new Set([...prev, item.name]));
+    setToastMessage(`${item.name} added to cart!`);
+    setShowToast(true);
+    setTimeout(() => {
+      setShowToast(false);
+      setAddedItems(prev => { const s = new Set(prev); s.delete(item.name); return s; });
+    }, 3000);
+  };
+
+  const handleLikedAddToCart = (item) => {
+    setSelectedItem(item);
+    setTempInstructions("");
+    setIsModalOpen(true);
+  };
+
+  const handleSaveInstructions = () => {
+    if (selectedItem) {
+      const productsListLocal = (menuStore && menuStore.get().length > 0) ? menuStore.get() : (typeof window !== 'undefined' ? (window.__menu_products__ || []) : []);
+      const matched = findProductMatch(selectedItem) || productsListLocal.find(p => String(p.name || '').toLowerCase() === String(selectedItem.name || '').toLowerCase());
+      if (!matched) {
+        if (productsListLocal.length === 0) {
+          addToCart({ ...selectedItem, image: selectedItem.image || PLACEHOLDER_IMAGE, price: selectedItem.price || selectedItem.paidPrice || '₹0.00' }, 1, tempInstructions);
+          setToastMessage(`${selectedItem.name} added to cart (menu not loaded)`);
+          setShowToast(true);
+          setTimeout(() => setShowToast(false), 3000);
+          setIsModalOpen(false); setSelectedItem(null); setTempInstructions("");
+          return;
+        }
+        setToastMessage(`${selectedItem.name} is no longer present`);
+        setShowToast(true);
+        setTimeout(() => setShowToast(false), 3000);
+        return;
+      }
+      const resolvedImage = matched.image || matched.imageUrl || matched.imageURL || matched.img || selectedItem.image || PLACEHOLDER_IMAGE;
+      addToCart({ ...matched, image: (resolvedImage || PLACEHOLDER_IMAGE), price: matched.price || selectedItem.price }, 1, tempInstructions);
+      setToastMessage(`${selectedItem.name} added to cart!`);
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 3000);
+      setIsModalOpen(false); setSelectedItem(null); setTempInstructions("");
+    }
+  };
+
+  const handleCancelInstructions = () => {
+    setIsModalOpen(false);
+    setSelectedItem(null);
+    setTempInstructions("");
+  };
+
+  const toggleSection = (section) => {
+    setExpandedSection(expandedSection === section ? null : section);
+  };
+
+  const formatDate = (date) => {
+    if (!date || Number.isNaN(date.getTime?.())) return "Recent order";
+    return `${date.toLocaleDateString([], { month: 'short', day: 'numeric' })} at ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+  };
+
+  const formatPlateCount = (quantity) => {
+    const count = Number(quantity) || 1;
+    return `${count} ${count === 1 ? 'plate' : 'plates'}`;
+  };
+
+  return (
+    <div className="profile-container">
+      <header className="profile-header">
+        <div className="back-icon" onClick={() => { if (onBackClick) onBackClick(); else navigate(-1); }}>
+          <ChevronLeft size={20} />
+        </div>
+        <h1 className="profile-title">Profile</h1>
+      </header>
+
+      {/* User summary card */}
+      <div className="profile-summary-card">
+        <div className="profile-avatar">
+          <FiUser />
+        </div>
+        <div className="profile-user-details">
+          <h2>{user.username}</h2>
+          <p>{user.phone}</p>
+        </div>
+      </div>
+
+      {/* Menu cards */}
+      <div className="profile-menu">
+
+        {/* Order History */}
+        <div className="profile-menu-card" onClick={() => toggleSection("orders")}>
+          <div className="profile-menu-left">
+            <div className="menu-icon order-icon">
+              <FiFileText />
+            </div>
+            <div>
+              <h3>Order History</h3>
+              <span>{orderHistory.length} Orders</span>
+            </div>
+          </div>
+          <FiChevronRight className={`menu-arrow ${expandedSection === "orders" ? "rotate" : ""}`} />
+        </div>
+
+        {expandedSection === "orders" && (
+          <div className="section-content orders-expanded">
+            <div className="scrollable-content">
+              {orderHistory.length === 0 ? (
+                <p className="empty-message">No orders yet</p>
+              ) : (
+                orderHistory.map((order) => {
+                  const extraItems = Math.max(0, (order.itemCount || 1) - 1);
+                  const menuPriceChanged = order.item.price && order.item.paidPrice && formatPrice(order.item.price) !== formatPrice(order.item.paidPrice);
+                  return (
+                    <div key={order.id} className="order-item">
+                      <div className="order-card-main">
+                        <img
+                          src={order.item.image}
+                          alt={order.item.name}
+                          className="order-image"
+                          onError={(e) => { console.warn('Image load failed', e.currentTarget.src); e.currentTarget.src = getPlaceholder('No Image'); }}
+                        />
+                        <div className="order-details">
+                          <div className="order-title-row">
+                            <h4 className="order-title">{order.item.name}</h4>
+                            {extraItems > 0 && <span className="order-count-chip">+{extraItems}</span>}
+                          </div>
+                          <p className="order-timestamp">{formatDate(order.timestamp)}</p>
+                          <div className="order-pill-row">
+                            <span>{formatPlateCount(order.quantity)}</span>
+                            {order.status && <span>{order.status}</span>}
+                            {order.paymentMethod && <span>{order.paymentMethod}</span>}
+                          </div>
+                        </div>
+                        <button
+                          className={`order-reorder-btn ${addedItems.has(order.item.name) ? 'added' : ''}`}
+                          onClick={() => handleAddToCart(order.item, order.quantity, order.instructions)}
+                          disabled={addedItems.has(order.item.name) || order.item.unavailable}
+                          title={order.item.unavailable ? 'Unavailable' : (addedItems.has(order.item.name) ? 'Added' : 'Reorder')}
+                        >
+                          <AiOutlineShoppingCart size={20} />
+                          <span>{addedItems.has(order.item.name) ? 'Added' : 'Reorder'}</span>
+                        </button>
+                      </div>
+
+                      <div className="order-card-footer">
+                        <div className="order-paid-summary">
+                          <span>Paid</span>
+                          <strong>{formatPrice(order.paidAmount || order.item.paidPrice || order.item.price)}</strong>
+                        </div>
+                        {menuPriceChanged && <div className="order-menu-price">Menu price {formatPrice(order.item.price)}</div>}
+                        {order.item.category && <div className="order-category">{order.item.category}</div>}
+                      </div>
+
+                      {order.item.description && <p className="order-desc-zone">{order.item.description}</p>}
+                      {order.instructions && <p className="order-instructions-zone"><strong>Instructions:</strong> {order.instructions}</p>}
+                      {order.item.unavailable && <p className="order-unavailable">This item is no longer available</p>}
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Liked List */}
+        <div className="profile-menu-card" onClick={() => toggleSection("liked")}>
+          <div className="profile-menu-left">
+            <div className="menu-icon heart-icon">
+              <FiHeart />
+            </div>
+            <div>
+              <h3>Liked List</h3>
+              <span>{likedItems.length} Items</span>
+            </div>
+          </div>
+          <FiChevronRight className={`menu-arrow ${expandedSection === "liked" ? "rotate" : ""}`} />
+        </div>
+
+        {expandedSection === "liked" && (
+          <div className="section-content">
+            {likedItems.length === 0 ? (
+              <p className="empty-message">No liked items yet</p>
+            ) : (
+              likedItems.map((item) => (
+                <div key={item.name} className="liked-item">
+                  <div className="liked-info">
+                    <img src={item.image} alt={item.name} className="liked-image" onError={(e) => { e.currentTarget.src = getPlaceholder('No Image'); }} />
+                    <div className="liked-details">
+                      <h4>{item.name}</h4>
+                      <p className="liked-price">{formatPrice(item.price)}</p>
+                    </div>
+                  </div>
+                  <button className="add-btn" onClick={() => handleLikedAddToCart(item)} title="Add to Cart">
+                    <AiOutlineShoppingCart size={20} />
+                  </button>
+                </div>
+              ))
+            )}
+          </div>
+        )}
+
+      </div>
+
+      {/* MODAL */}
+      {isModalOpen && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <h3>Food Instructions</h3>
+            <textarea
+              placeholder="Add any special instructions..."
+              value={tempInstructions}
+              onChange={(e) => setTempInstructions(e.target.value)}
+              rows={4}
+            />
+            <div className="modal-buttons">
+              <button className="cancel-btn" onClick={handleCancelInstructions}>Cancel</button>
+              <button className="save-btn" onClick={handleSaveInstructions}>Save</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TOAST */}
+      {showToast && <div className="toast">{toastMessage}</div>}
+
+      <Footer
+        onCartClick={() => navigate(getPathWithTable('/cart'))}
+        onHomeClick={() => navigate(getPathWithTable('/menu'))}
+        onProfileClick={() => navigate(getPathWithTable('/profile'))}
+      />
+    </div>
+  );
+}
+
+export default Profile;

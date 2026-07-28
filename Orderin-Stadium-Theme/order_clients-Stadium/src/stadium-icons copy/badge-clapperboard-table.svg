@@ -1,0 +1,28 @@
+<svg width="220" height="180" viewBox="0 0 220 180" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="badgeMetal" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#3c434d"/>
+      <stop offset="100%" stop-color="#1c2128"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="110" cy="168" rx="70" ry="8" fill="#000" opacity="0.3"/>
+  <!-- clapper stripe bar (top, slightly open) -->
+  <g transform="rotate(-6 30 40)">
+    <rect x="24" y="20" width="172" height="26" rx="4" fill="#111418"/>
+    <rect x="24" y="20" width="17" height="26" fill="#e9e2cf"/>
+    <rect x="41" y="20" width="17" height="26" fill="#111418"/>
+    <rect x="58" y="20" width="17" height="26" fill="#e9e2cf"/>
+    <rect x="75" y="20" width="17" height="26" fill="#111418"/>
+    <rect x="92" y="20" width="17" height="26" fill="#e9e2cf"/>
+    <rect x="109" y="20" width="17" height="26" fill="#111418"/>
+    <rect x="126" y="20" width="17" height="26" fill="#e9e2cf"/>
+    <rect x="143" y="20" width="17" height="26" fill="#111418"/>
+    <rect x="160" y="20" width="17" height="26" fill="#e9e2cf"/>
+    <rect x="177" y="20" width="17" height="26" fill="#111418"/>
+  </g>
+  <circle cx="26" cy="34" r="6" fill="#5a626e"/>
+  <!-- slate body: blank, live text goes here in code -->
+  <rect x="20" y="52" width="180" height="110" rx="6" fill="url(#badgeMetal)" stroke="#0c0f13" stroke-width="2"/>
+  <rect x="20" y="52" width="180" height="110" rx="6" fill="none" stroke="#f2bb46" stroke-width="1" opacity="0.4"/>
+  <!-- id="slate-text-area" left intentionally blank for "Table N" text overlay -->
+</svg>

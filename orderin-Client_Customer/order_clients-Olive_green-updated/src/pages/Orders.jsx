@@ -1,0 +1,959 @@
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import routes from "../routes";
+import "./Orders.css";
+import {
+  updateOrderStatus,
+  formatTime,
+  subscribeRecentOrders,
+  acceptOrder,
+  rejectOrder,
+  isOrderAccepted,
+  isOrderQueued,
+  isOrderActive,
+  isOrderDelivered,
+  isOrderPaymentCollected,
+  isOrderWithinLast24Hours,
+} from "../services/orderService";
+
+import TotalOrdersIcon from "./landingpage/Total_orders.svg";
+import ActiveOrdersIcon from "./landingpage/Active_Orders.svg";
+import CompletedIcon from "./landingpage/Completed.svg";
+import QueuedOrdersIcon from "./landingpage/orders_today.svg";
+import {
+  collection,
+  getDocs,
+  addDoc,
+  serverTimestamp,
+  doc,
+  getDoc,
+  updateDoc,
+  setDoc,
+} from "firebase/firestore";
+import { db } from "../firebase";
+import OrderItemListModal from "../components/OrderItemListModal/OrderItemListModal";
+import AllOrdersOverlay from "../components/AllOrdersOverlay/AllOrdersOverlay";
+
+function ManualOrderModal({ isOpen, onClose, menuItems, onOrderCreated }) {
+  const [customerName, setCustomerName] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [tableNumber, setTableNumber] = useState("");
+  const [menuSearch, setMenuSearch] = useState("");
+  const [selectedItems, setSelectedItems] = useState([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState("");
+
+  const filteredMenu = menuItems.filter((item) =>
+    item.name?.toLowerCase().includes(menuSearch.toLowerCase()),
+  );
+
+  const addItemToOrder = (menuItem) => {
+    setSelectedItems([
+      ...selectedItems,
+      {
+        name: menuItem.name,
+        quantity: 1,
+        instructions: "",
+        menuId: menuItem.id,
+        price: menuItem.price || 0,
+      },
+    ]);
+  };
+
+  const updateItemQuantity = (index, quantity) => {
+    const updated = [...selectedItems];
+    updated[index].quantity = parseInt(quantity) || 0;
+    setSelectedItems(updated);
+  };
+
+  const updateItemInstructions = (index, instructions) => {
+    const updated = [...selectedItems];
+    updated[index].instructions = instructions;
+    setSelectedItems(updated);
+  };
+
+  const removeItem = (index) => {
+    setSelectedItems(selectedItems.filter((_, i) => i !== index));
+  };
+
+  const handleSubmit = async () => {
+    try {
+      setError("");
+      if (!customerName.trim()) {
+        setError("Customer name is required");
+        return;
+      }
+      if (!phoneNumber.trim()) {
+        setError("Phone number is required");
+        return;
+      }
+      // Issue #27 / TH-3: phone number previously accepted any string
+      // (letters, wrong length, etc.), creating customer docs that
+      // couldn't be found later by phone-based login.
+      if (!/^\d{10}$/.test(phoneNumber.trim())) {
+        setError("Phone number must be exactly 10 digits");
+        return;
+      }
+      if (!tableNumber.trim()) {
+        setError("Table number is required");
+        return;
+      }
+      if (selectedItems.length === 0) {
+        setError("Add at least one item");
+        return;
+      }
+
+      setIsSubmitting(true);
+
+      // Store manual order in customers collection (same as regular orders)
+      const customerRef = doc(
+        db,
+        "Restaurant",
+        "orderin_restaurant_3",
+        "customers",
+        phoneNumber,
+      );
+
+      // Get existing customer data or create new
+      const customerSnap = await getDoc(customerRef);
+      const customerData = customerSnap.exists() ? customerSnap.data() : {};
+
+      // Calculate order totals
+      let subtotal = 0;
+      selectedItems.forEach((item) => {
+        const itemPrice =
+          Number(String(item.price || 0).replace(/[^0-9.-]+/g, "")) || 0;
+        const itemQty = Number(item.quantity) || 1;
+        subtotal += itemPrice * itemQty;
+      });
+      const tax = subtotal > 0 ? Math.ceil(subtotal / 100) : 0;
+      const totalCost = subtotal + tax;
+
+      // Add manual order to pastOrders array
+      // Issue #17 / TB-13: manual orders previously had no `id` field, so the
+      // admin table fell back to `ORD-{phone}-{index}`, which shifts if
+      // orders are ever reordered/removed. Generate a stable id up front.
+      const newOrder = {
+        id: `MANUAL-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+        username: customerName,
+        phoneNumber: phoneNumber,
+        tableNo: parseInt(tableNumber),
+        items: selectedItems,
+        status: "Pending",
+        timestamp: new Date().toISOString(),
+        isManualOrder: true,
+        // Manual orders are entered directly by staff, so they don't go
+        // through the customer-side accept/reject queue.
+        awaitingConfirmation: false,
+        paymentStatus: "manual",
+        paymentType: "Manual",
+        subtotal: subtotal,
+        tax: tax,
+        totalCost: totalCost,
+        amount: totalCost,
+      };
+
+      const pastOrders = Array.isArray(customerData.pastOrders)
+        ? customerData.pastOrders
+        : [];
+      pastOrders.push(newOrder);
+
+      await setDoc(
+        customerRef,
+        {
+          username: customerName,
+          names: [customerName],
+          pastOrders: pastOrders,
+        },
+        { merge: true },
+      );
+
+      onOrderCreated();
+      onClose();
+      setCustomerName("");
+      setPhoneNumber("");
+      setTableNumber("");
+      setMenuSearch("");
+      setSelectedItems([]);
+    } catch (err) {
+      console.error("Error creating manual order:", err);
+      setError("Failed to create order: " + err.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="manual-order-overlay" onClick={onClose}>
+      <div className="manual-order-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-header">
+          <h2>Create Manual Order</h2>
+          <button className="close-btn" onClick={onClose}>
+            ×
+          </button>
+        </div>
+
+        {error && <div className="error-message">{error}</div>}
+
+        <div className="modal-content">
+          <div className="customer-info-section">
+            <h3>Customer Information</h3>
+            <div className="form-group">
+              <label>Customer Name</label>
+              <input
+                type="text"
+                value={customerName}
+                onChange={(e) => setCustomerName(e.target.value)}
+                placeholder="Enter customer name"
+              />
+            </div>
+            <div className="form-group">
+              <label>Phone Number</label>
+              <input
+                type="tel"
+                value={phoneNumber}
+                onChange={(e) => setPhoneNumber(e.target.value)}
+                placeholder="Enter phone number"
+              />
+            </div>
+            <div className="form-group">
+              <label>Table Number</label>
+              <input
+                type="number"
+                value={tableNumber}
+                onChange={(e) => setTableNumber(e.target.value)}
+                placeholder="Enter table number"
+              />
+            </div>
+          </div>
+
+          <div className="menu-selection-section">
+            <h3>Add Items from Menu</h3>
+            <div className="menu-search">
+              <input
+                type="text"
+                value={menuSearch}
+                onChange={(e) => setMenuSearch(e.target.value)}
+                placeholder="Search menu items..."
+              />
+            </div>
+
+            <div className="menu-list">
+              {filteredMenu.map((item) => (
+                <div key={item.id} className="menu-item">
+                  <div className="item-info">
+                    <div className="item-name">{item.name}</div>
+                    {item.price && (
+                      <div className="item-price">₹{item.price}</div>
+                    )}
+                  </div>
+                  <button
+                    className="add-item-btn"
+                    onClick={() => addItemToOrder(item)}
+                  >
+                    + Add
+                  </button>
+                </div>
+              ))}
+              {filteredMenu.length === 0 && (
+                <div
+                  style={{
+                    padding: "12px",
+                    textAlign: "center",
+                    color: "#999",
+                  }}
+                >
+                  No items found
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="selected-items-section">
+            <h3>Selected Items ({selectedItems.length})</h3>
+            <div className="selected-items-list">
+              {selectedItems.map((item, index) => (
+                <div key={index} className="selected-item">
+                  <div className="item-details">
+                    <input
+                      type="number"
+                      min="1"
+                      value={item.quantity}
+                      onChange={(e) =>
+                        updateItemQuantity(index, e.target.value)
+                      }
+                      className="qty-input"
+                    />
+                    <span className="item-label">x {item.name}</span>
+                  </div>
+                  <div className="item-specs">
+                    <input
+                      type="text"
+                      value={item.instructions}
+                      onChange={(e) =>
+                        updateItemInstructions(index, e.target.value)
+                      }
+                      placeholder="Special instructions..."
+                      className="specs-input"
+                    />
+                  </div>
+                  <button
+                    className="remove-item-btn"
+                    onClick={() => removeItem(index)}
+                  >
+                    Remove
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="modal-footer">
+          <button
+            className="cancel-btn"
+            onClick={onClose}
+            disabled={isSubmitting}
+          >
+            Cancel
+          </button>
+          <button
+            className="submit-btn"
+            onClick={handleSubmit}
+            disabled={isSubmitting || selectedItems.length === 0}
+          >
+            {isSubmitting ? "Creating..." : "Create Order"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function StatusPill({ status, onStatusChange, onAccept, onReject, orderId, isLoading, order }) {
+  const [isEditing, setIsEditing] = useState(false);
+  const cls = `status ${status.toLowerCase().replace(/\s+/g, "-")}`;
+
+  // An order is awaiting accept/reject until the restaurant acts on it.
+  // Manual orders are entered directly by staff, so they're accepted
+  // from the moment they're created (see ManualOrderModal).
+  const accepted = order ? isOrderAccepted(order) : true;
+
+  const handleClick = () => {
+    if (!isLoading && accepted) {
+      setIsEditing(true);
+    }
+  };
+
+  const handleChange = async (e) => {
+    const newStatus = e.target.value;
+    setIsEditing(false);
+    await onStatusChange(orderId, newStatus);
+  };
+
+  const handleBlur = () => {
+    setIsEditing(false);
+  };
+
+  // Orders not yet accepted or rejected show Accept/Reject buttons instead
+  // of a status badge — this is the "queued" state.
+  if (!accepted && !isEditing) {
+    return (
+      <div style={{ display: "flex", gap: "4px", flexDirection: "column" }}>
+        <button
+          className="status accept-btn"
+          onClick={() => onAccept(orderId)}
+          disabled={isLoading}
+          style={{ cursor: isLoading ? "not-allowed" : "pointer", background: "#15803d", color: "#fff", border: "none", padding: "4px 8px", borderRadius: "4px", fontSize: "11px", fontWeight: 600 }}
+        >
+          {isLoading ? "..." : "Accept"}
+        </button>
+        <button
+          className="status reject-btn"
+          onClick={() => onReject(orderId)}
+          disabled={isLoading}
+          style={{ cursor: isLoading ? "not-allowed" : "pointer", background: "#dc2626", color: "#fff", border: "none", padding: "4px 8px", borderRadius: "4px", fontSize: "11px", fontWeight: 600 }}
+        >
+          {isLoading ? "..." : "Reject"}
+        </button>
+      </div>
+    );
+  }
+
+  if (isEditing) {
+    return (
+      <select
+        value={status}
+        onChange={handleChange}
+        onBlur={handleBlur}
+        autoFocus
+        className={cls}
+        disabled={isLoading}
+      >
+        <option value="Pending">Pending</option>
+        <option value="Preparing">Preparing</option>
+        <option value="Ready">Ready</option>
+        <option value="Delivered">Delivered</option>
+      </select>
+    );
+  }
+
+  return (
+    <div
+      className={cls}
+      onClick={handleClick}
+      style={{
+        cursor: isLoading ? "not-allowed" : status !== "Delivered" ? "pointer" : "default",
+        opacity: isLoading ? 0.6 : 1,
+      }}
+    >
+      {isLoading ? "Updating..." : status}
+    </div>
+  );
+}
+
+function Orders() {
+  const navigate = useNavigate();
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [filter, setFilter] = useState("all");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [updatingOrderId, setUpdatingOrderId] = useState(null);
+  const [showManualOrderModal, setShowManualOrderModal] = useState(false);
+  const [menuItems, setMenuItems] = useState([]);
+  // Order currently shown in the "Items List" overlay (null = closed)
+  const [itemsListOrder, setItemsListOrder] = useState(null);
+  const [showAllOrdersOverlay, setShowAllOrdersOverlay] = useState(false);
+
+  // Fetch menu items on mount
+  useEffect(() => {
+    const fetchMenuItems = async () => {
+      try {
+        const menuRef = collection(
+          db,
+          "Restaurant",
+          "orderin_restaurant_3",
+          "menu",
+        );
+        const menuSnapshot = await getDocs(menuRef);
+        const items = menuSnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        setMenuItems(items);
+      } catch (err) {
+        console.error("Error fetching menu items:", err);
+      }
+    };
+    fetchMenuItems();
+  }, []);
+
+  // Fetch orders on component mount
+  useEffect(() => {
+    // Use real-time subscription so status changes update automatically in background
+    console.log("=== ORDERS COMPONENT: Subscribing to orders (real-time) ===");
+    setLoading(true);
+    const unsubscribe = subscribeRecentOrders((fetchedOrders) => {
+      console.log(
+        `=== ORDERS COMPONENT (realtime): Received ${fetchedOrders.length} orders ===`,
+      );
+      console.log(`Orders data (realtime):`, fetchedOrders);
+      // Display orders: paid, manual, AND unpaid (pending restaurant confirmation)
+      // Exclude rejected/cancelled orders so they don't clutter the view
+      const rejectedStatuses = new Set(["rejected", "cancelled", "canceled", "declined"]);
+      const displayOrders = fetchedOrders.filter((o) => {
+        const status = String(o.paymentStatus || "").toLowerCase();
+        const orderStatus = String(o.status || "").toLowerCase().trim();
+        // Skip rejected/cancelled orders
+        if (rejectedStatuses.has(orderStatus)) return false;
+        return status === "paid" || status === "manual" || status === "unpaid" || status === "unknown";
+      });
+      console.log(
+        `Filtered to display orders (paid/manual/unpaid): ${displayOrders.length}`,
+      );
+      setOrders(displayOrders);
+      setError(null);
+      setLoading(false);
+    });
+
+    return () => {
+      if (typeof unsubscribe === "function") unsubscribe();
+    };
+  }, []);
+
+  // subscribeRecentOrders only re-filters when a Firestore write triggers a
+  // new snapshot. Without this, an order that quietly crosses the 24-hour
+  // mark (its own timestamp + 24h, not midnight) would keep sitting on the
+  // page until something else happened to change the data. Prune locally
+  // on a timer so it actually drops off on schedule.
+  useEffect(() => {
+    const pruneInterval = setInterval(() => {
+      setOrders((prevOrders) => {
+        const pruned = prevOrders.filter((o) => isOrderWithinLast24Hours(o.timestamp));
+        return pruned.length === prevOrders.length ? prevOrders : pruned;
+      });
+    }, 60000);
+    return () => clearInterval(pruneInterval);
+  }, []);
+
+  const handleStatusChange = async (orderId, newStatus) => {
+    try {
+      setUpdatingOrderId(orderId);
+
+      // Find the order to get phoneNumber and orderIndex
+      const order = orders.find((o) => o.id === orderId);
+      if (!order) {
+        setError("Order not found");
+        return;
+      }
+
+      // Update in Firebase — use order.id to find correct order instead of fragile orderIndex
+      await updateOrderStatus(order.phoneNumber, order.id, newStatus);
+
+      // Update local state
+      setOrders((prevOrders) =>
+        prevOrders.map((o) =>
+          o.id === orderId ? { ...o, status: newStatus } : o,
+        ),
+      );
+    } catch (err) {
+      console.error("Error updating status:", err);
+      setError("Failed to update order status");
+    } finally {
+      setUpdatingOrderId(null);
+    }
+  };
+
+  const handleAccept = async (orderId) => {
+    try {
+      setUpdatingOrderId(orderId);
+      const order = orders.find((o) => o.id === orderId);
+      if (!order) {
+        setError("Order not found");
+        return;
+      }
+      await acceptOrder(order.phoneNumber, order.id);
+      setOrders((prevOrders) =>
+        prevOrders.map((o) =>
+          o.id === orderId ? { ...o, awaitingConfirmation: false } : o,
+        ),
+      );
+    } catch (err) {
+      console.error("Error accepting order:", err);
+      setError("Failed to accept order");
+    } finally {
+      setUpdatingOrderId(null);
+    }
+  };
+
+  const handleReject = async (orderId) => {
+    try {
+      setUpdatingOrderId(orderId);
+      const order = orders.find((o) => o.id === orderId);
+      if (!order) {
+        setError("Order not found");
+        return;
+      }
+      // Marks the order Rejected so the customer's AwaitingConfirmation
+      // page can show its "Order Not Available" screen; that page's own
+      // cleanup then removes the (still-unpaid) order from Firestore once
+      // the customer acknowledges it. See rejectOrder for the full flow.
+      await rejectOrder(order.phoneNumber, order.id);
+      setOrders((prevOrders) => prevOrders.filter((o) => o.id !== orderId));
+    } catch (err) {
+      console.error("Error rejecting order:", err);
+      setError("Failed to reject order");
+    } finally {
+      setUpdatingOrderId(null);
+    }
+  };
+
+  const total = orders.length;
+  const queued = orders.filter(isOrderQueued).length;
+  const active = orders.filter(isOrderActive).length;
+  const completed = orders.filter(isOrderDelivered).length;
+
+  const filteredOrders = (() => {
+    let filtered = orders;
+    if (filter === "completed") {
+      filtered = orders.filter(isOrderDelivered);
+    } else if (filter === "active") {
+      filtered = orders
+        .filter(isOrderActive)
+        .slice()
+        .reverse();
+    } else if (filter === "queued") {
+      filtered = orders
+        .filter(isOrderQueued)
+        .slice()
+        .reverse();
+    }
+    if (searchTerm) {
+      filtered = filtered.filter(
+        (o) =>
+          o.items.some((item) => {
+            if (typeof item === "string") {
+              return item.toLowerCase().includes(searchTerm.toLowerCase());
+            } else if (typeof item === "object" && item !== null) {
+              // Search in name and instructions fields if present
+              const nameMatch =
+                item.name &&
+                item.name.toLowerCase().includes(searchTerm.toLowerCase());
+              const instructionsMatch =
+                item.instructions &&
+                item.instructions
+                  .toLowerCase()
+                  .includes(searchTerm.toLowerCase());
+              return nameMatch || instructionsMatch;
+            }
+            return false;
+          }) ||
+          o.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          o.phoneNumber.toLowerCase().includes(searchTerm.toLowerCase()),
+      );
+    }
+    return filtered;
+  })();
+
+  return (
+    <div className="app">
+
+      <div className="content">
+        <aside className="left-stats">
+          <div className="back-button-container">
+            <button
+              className="custom-btn"
+              onClick={() => navigate(routes.dashboard)}
+            >
+              Back
+            </button>
+          </div>
+          <div
+            className={`stat red ${filter === "all" ? "active" : ""}`}
+            onClick={() => setFilter("all")}
+          >
+            <div className="card-icon">
+              <img src={TotalOrdersIcon} alt="" />
+            </div>
+
+            <h4>Total Orders</h4>
+
+            <h1>{total}</h1>
+
+            <p>Orders from the last 24 hours</p>
+          </div>
+          <div
+            className={`stat blue ${filter === "queued" ? "selected" : ""}`}
+            onClick={() => setFilter("queued")}
+          >
+            <div className="card-icon">
+              <img src={QueuedOrdersIcon} alt="" />
+            </div>
+
+            <h4>Queued Orders</h4>
+
+            <h1>{queued}</h1>
+
+            <p>Awaiting accept / payment</p>
+          </div>
+          <div
+            className={`stat yellow ${filter === "active" ? "selected" : ""}`}
+            onClick={() => setFilter("active")}
+          >
+            <div className="card-icon">
+              <img src={ActiveOrdersIcon} alt="" />
+            </div>
+
+            <h4>Active Orders</h4>
+
+            <h1>{active}</h1>
+
+            <p>Active Orders</p>
+          </div>
+          <div
+            className={`stat green ${filter === "completed" ? "selected" : ""}`}
+            onClick={() => setFilter("completed")}
+          >
+            <div className="card-icon">
+              <img src={CompletedIcon} alt="" />
+            </div>
+
+            <h4>Served Orders</h4>
+
+            <h1>{completed}</h1>
+
+            <p>Served Orders</p>
+          </div>
+        </aside>
+
+        <main className="main-panel">
+          <div className="heading-row">
+            <h2
+              className={
+                filter === "completed" || filter === "active" || filter === "queued" ? "big-left" : ""
+              }
+            >
+              {filter === "completed"
+                ? "Completed Orders"
+                : filter === "active"
+                  ? "Active Orders"
+                  : filter === "queued"
+                    ? "Queued Orders"
+                    : "Total Orders"}
+            </h2>
+            <div className="heading-controls">
+              <button
+                className="all-orders-btn"
+                onClick={() => setShowAllOrdersOverlay(true)}
+              >
+                All Orders
+              </button>
+              <button
+                className="manual-order-btn"
+                onClick={() => setShowManualOrderModal(true)}
+              >
+                + Manual Order
+              </button>
+              <div className="search">
+                <span className="search-icon" aria-hidden="true">
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M21 21l-4.35-4.35"
+                      stroke="#666"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                    <circle
+                      cx="11"
+                      cy="11"
+                      r="6"
+                      stroke="#666"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </span>
+                <input
+                  placeholder="Search"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+            </div>
+          </div>
+
+          {error && (
+            <div
+              style={{
+                padding: "12px",
+                background: "#ffebee",
+                color: "#c62828",
+                borderRadius: "8px",
+                marginBottom: "12px",
+              }}
+            >
+              {error}
+            </div>
+          )}
+
+          {loading ? (
+            <div
+              style={{ padding: "40px", textAlign: "center", color: "#666" }}
+            >
+              Loading recent orders...
+            </div>
+          ) : filteredOrders.length === 0 ? (
+            <div
+              style={{ padding: "40px", textAlign: "center", color: "#999" }}
+            >
+              {orders.length === 0
+                ? "No orders in the last 24 hours"
+                : "No orders match your search"}
+            </div>
+          ) : (
+            <>
+    {/* DESKTOP TABLE VIEW (Visible on larger screens) */}
+    <div className={`orders-table desktop-only-view ${filter === "completed" ? "completed-view" : ""} ${filter === "active" ? "active-view" : ""}`}>
+      <div className="table-header">
+        <div>Order ID</div>
+        <div>Customer</div>
+        <div>Items</div>
+        <div>Payment</div>
+        <div>Status</div>
+        <div>Time</div>
+      </div>
+
+      {filteredOrders.map((o, orderIdx) => {
+        const isPaid = isOrderPaymentCollected(o);
+        const costValue = Number(o.totalCost) || 0;
+        const paidValue = Number(o.paidAmount) || 0;
+        return (
+          <div key={o.id + "-" + orderIdx} className="table-row">
+            <div className="col order-id" title={o.id}>{o.id}</div>
+            <div className="col customer">
+              <div className="cust-name">{o.username}</div>
+              <div className="cust-meta">Table {o.tableNumber} · {o.phoneNumber}</div>
+            </div>
+            <div className="col items">
+              <div className="items-directory">
+                {o.items && Array.isArray(o.items) && o.items.map((item, i) => (
+                  <div
+                    key={i}
+                    className="item-row"
+                    title={item.instructions ? `${item.name} — ${item.instructions}` : item.name}
+                  >
+                    <span className="item-name">
+                      {item.quantity ? `${item.quantity}x ` : ""}{item.name}
+                    </span>
+                    {item.instructions && (
+                      <span className="item-instructions">— {item.instructions}</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+              <button
+                className="items-list-btn"
+                onClick={() => setItemsListOrder(o)}
+              >
+                Items List
+              </button>
+            </div>
+            <div className="col payment">
+              <div className="payment-cost">₹{costValue.toFixed(2)}</div>
+              {isPaid ? (
+                <div className="payment-paid">Paid ₹{paidValue.toFixed(2)}</div>
+              ) : (
+                <div className="payment-unpaid">Unpaid</div>
+              )}
+              <div className="payment-meta">
+                <span className="payment-type-chip">{o.paymentType || "Online"}</span>
+                {o.verificationCode && o.verificationCode !== "-" && (
+                  <span className="payment-code">#{o.verificationCode}</span>
+                )}
+              </div>
+            </div>
+            <div className="col status-cell">
+              <StatusPill
+                status={o.status}
+                onStatusChange={handleStatusChange}
+                onAccept={handleAccept}
+                onReject={handleReject}
+                orderId={o.id}
+                isLoading={updatingOrderId === o.id}
+                order={o}
+              />
+            </div>
+            <div className="col time">{formatTime(o.timestamp)}</div>
+          </div>
+        );
+      })}
+    </div>
+
+    {/* MOBILE RESPONSIVE CARD VIEW (Visible on smaller screens) */}
+    <div className="orders-cards-container mobile-only-view">
+      {filteredOrders.map((o, orderIdx) => {
+        const isPaid = isOrderPaymentCollected(o);
+        const costValue = Number(o.totalCost) || 0;
+        const paidValue = Number(o.paidAmount) || 0;
+        return (
+          <div key={"card-" + o.id + "-" + orderIdx} className="order-mobile-card">
+            <div className="card-header-row">
+              <span className="mobile-id">#{o.id}</span>
+              <span className="mobile-time">{formatTime(o.timestamp)}</span>
+            </div>
+
+            <div className="card-body-row">
+              <div className="mobile-cust-info">
+                <strong>{o.username}</strong>
+                <span className="mobile-sub">Table {o.tableNumber} • {o.phoneNumber}</span>
+              </div>
+              <div className="mobile-status-wrapper">
+                <StatusPill
+                  status={o.status}
+                  onStatusChange={handleStatusChange}
+                  onAccept={handleAccept}
+                  onReject={handleReject}
+                  orderId={o.id}
+                  isLoading={updatingOrderId === o.id}
+                  order={o}
+                />
+              </div>
+            </div>
+
+            <div className="mobile-items-box">
+              {o.items && Array.isArray(o.items) && o.items.map((item, i) => (
+                <div key={i} className="mobile-item-line">
+                  <span className="qty">{item.quantity || 1}x</span>
+                  <span className="name">{item.name}</span>
+                  {item.instructions && (
+                    <span className="instructions">({item.instructions})</span>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            <div className="mobile-payment-row">
+              <span className="mobile-cost">Cost ₹{costValue.toFixed(2)}</span>
+              {isPaid ? (
+                <span className="mobile-paid">Paid ₹{paidValue.toFixed(2)}</span>
+              ) : (
+                <span className="mobile-unpaid">Unpaid</span>
+              )}
+              <span className="mobile-payment-type">{o.paymentType || "Online"}</span>
+              {o.verificationCode && o.verificationCode !== "-" && (
+                <span className="mobile-code">#{o.verificationCode}</span>
+              )}
+            </div>
+
+            <button
+              className="items-list-btn mobile-items-list-btn"
+              onClick={() => setItemsListOrder(o)}
+            >
+              Items List
+            </button>
+          </div>
+        );
+      })}
+    </div>
+  </>
+          )}
+        </main>
+      </div>
+
+      <ManualOrderModal
+        isOpen={showManualOrderModal}
+        onClose={() => setShowManualOrderModal(false)}
+        menuItems={menuItems}
+        onOrderCreated={() => setShowManualOrderModal(false)}
+      />
+
+      {itemsListOrder && (
+        <OrderItemListModal
+          order={itemsListOrder}
+          onClose={() => setItemsListOrder(null)}
+        />
+      )}
+
+      {showAllOrdersOverlay && (
+        <AllOrdersOverlay
+          orders={orders.filter(isOrderActive)}
+          onClose={() => setShowAllOrdersOverlay(false)}
+        />
+      )}
+
+    </div>
+  );
+}
+
+export default Orders;

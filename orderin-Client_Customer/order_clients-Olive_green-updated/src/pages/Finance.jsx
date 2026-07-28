@@ -1,0 +1,830 @@
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { Filter } from "lucide-react";
+import routes from "../routes";
+import "./Finance.css";
+import { formatTime, subscribeAllCustomerOrders, subscribeOnlineCustomerOrders, isOrderFinalizedForFinance } from "../services/orderService";
+import BillModal from "../components/BillModal";
+import SalesTrendsPanel from "../components/SalesTrends/SalesTrendsPanel";
+import OrderAnalyticsPanel from "../components/OrderAnalytics/OrderAnalyticsPanel";
+import CustomerLoyaltyPanel from "../components/CustomerLoyalty/CustomerLoyaltyPanel";
+
+function App() {
+  const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState("ACCOUNTS");
+  const [showFilterModal, setShowFilterModal] = useState(false);
+  const [filters, setFilters] = useState({
+    searchTerm: "",
+    filterBy: {
+      customerName: true,
+      phone: false,
+      orderId: false,
+      table: false,
+    },
+  });
+  const [filteredOrders, setFilteredOrders] = useState([]);
+  const [allCustomerOrders, setAllCustomerOrders] = useState([]);
+  const [loadingAccounts, setLoadingAccounts] = useState(false);
+  const [debugOpen, setDebugOpen] = useState({});
+  const [billOrder, setBillOrder] = useState(null);
+  const [showBillModal, setShowBillModal] = useState(false);
+
+  // EARNINGS CALCULATION state
+  const [earningsFilterType, setEarningsFilterType] = useState('today');
+  const [earningsStartDate, setEarningsStartDate] = useState(new Date().toISOString().split('T')[0]);
+  const [earningsEndDate, setEarningsEndDate] = useState(new Date().toISOString().split('T')[0]);
+  const [earningsOrders, setEarningsOrders] = useState([]);
+  const [loadingEarnings, setLoadingEarnings] = useState(false);
+
+  const toggleDebug = (id) => {
+    setDebugOpen(prev => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  const formatCurrency = (value) => {
+    const n = Number(value);
+    return Number.isFinite(n) ? n.toFixed(2) : "0.00";
+  };
+
+  const formatEarningsPaymentLabel = (type) => {
+    const normalizedType = String(type || "").trim().toLowerCase();
+    return normalizedType === "upi" ? "ONLINE" : normalizedType.toUpperCase();
+  };
+
+  const getDateOrNull = (value) => {
+    if (!value) return null;
+    if (value.toDate && typeof value.toDate === "function") {
+      const timestampDate = value.toDate();
+      return Number.isNaN(timestampDate.getTime()) ? null : timestampDate;
+    }
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? null : date;
+  };
+
+  const formatLedgerDateTime = (value) => {
+    const date = getDateOrNull(value);
+    if (!date) return null;
+    return date.toLocaleString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    });
+  };
+
+  const formatExpectedReceivingDate = (value) => {
+    const date = getDateOrNull(value);
+    if (!date) return null;
+    const bufferedDate = new Date(date);
+    bufferedDate.setDate(bufferedDate.getDate() + 7);
+    bufferedDate.setHours(21, 0, 0, 0);
+    return bufferedDate.toLocaleString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    });
+  };
+
+  const getActualSettlementDate = (order) =>
+    getDateOrNull(order.razorpayTransferSettlementCreatedAt || order.razorpaySettlementCreatedAt || null);
+
+  const formatLedgerReceivingDate = (order) => {
+    const actualSettlementDate = getActualSettlementDate(order);
+    if (actualSettlementDate) {
+      return `Settled on ${formatLedgerDateTime(actualSettlementDate)}`;
+    }
+    const expectedDate = formatExpectedReceivingDate(order.transactionDate);
+    return expectedDate ? `On or before ${expectedDate}` : "Not available";
+  };
+
+  const formatSettlementStatusDetail = (order) => {
+    const transferStatus = order.razorpayTransferSettlementStatus || order.razorpayTransferStatus;
+    const adminStatus = order.razorpaySettlementStatus;
+    const statuses = [transferStatus, adminStatus].filter(Boolean);
+    if (statuses.length === 0) return order.razorpayPaymentId ? "Pending from Razorpay" : "Not available";
+    return [...new Set(statuses.map((status) => String(status)))].join(" / ");
+  };
+
+  const getSettlementReference = (order) =>
+    order.razorpayTransferSettlementUtr ||
+    order.razorpaySettlementUtr ||
+    order.razorpayTransferSettlementId ||
+    order.razorpaySettlementId ||
+    "Not available";
+
+  // Filter orders based on search input and selected filters
+  useEffect(() => {
+    const filtered = allCustomerOrders.filter(order => {
+      const term = filters.searchTerm.toLowerCase();
+      if (!term) return true;
+      const matches = [];
+      if (filters.filterBy.customerName) {
+        matches.push(order.username.toLowerCase().includes(term));
+      }
+      if (filters.filterBy.phone) {
+        matches.push(order.phoneNumber.includes(term));
+      }
+      if (filters.filterBy.orderId) {
+        matches.push(order.id.toLowerCase().includes(term));
+      }
+      if (filters.filterBy.table) {
+        matches.push((`Table ${order.tableNumber}`).toLowerCase().includes(term));
+      }
+      return matches.some(match => match);
+    });
+    setFilteredOrders(filtered);
+  }, [filters.searchTerm, filters.filterBy, allCustomerOrders]);
+
+  // Fetch all customer orders when the ACCOUNTS tab is active
+  useEffect(() => {
+    let unsubscribe = null;
+    if (activeTab === "ACCOUNTS") {
+      setLoadingAccounts(true);
+      console.log("=== FINANCE PAGE: Subscribing to all customer orders (real-time) ===");
+      unsubscribe = subscribeAllCustomerOrders((orders) => {
+        // Accounts should only ever reflect orders the restaurant has
+        // accepted AND that are actually paid for — orders still waiting
+        // on acceptance or payment belong in the queued bucket, not here.
+        const finalizedOrders = orders.filter(isOrderFinalizedForFinance);
+        console.log(`Finance (accounts) - received ${orders.length} orders, ${finalizedOrders.length} accepted+paid`);
+        setAllCustomerOrders(finalizedOrders);
+        setFilteredOrders(finalizedOrders);
+        setLoadingAccounts(false);
+      });
+    }
+    return () => {
+      if (typeof unsubscribe === "function") unsubscribe();
+    };
+  }, [activeTab]);
+
+  useEffect(() => {
+    let unsubscribe = null;
+    if (activeTab === "LEDGER") {
+      setLoadingAccounts(true);
+      console.log("=== FINANCE PAGE: Subscribing to online customer orders for ledger (real-time) ===");
+      unsubscribe = subscribeOnlineCustomerOrders((orders) => {
+        const finalizedOrders = orders.filter(isOrderFinalizedForFinance);
+        console.log(`Finance (ledger) - received ${orders.length} online orders, ${finalizedOrders.length} accepted+paid`);
+        setAllCustomerOrders(finalizedOrders);
+        setLoadingAccounts(false);
+      });
+    }
+    return () => {
+      if (typeof unsubscribe === "function") unsubscribe();
+    };
+  }, [activeTab]);
+
+  // Fetch all orders for earnings calculation
+  useEffect(() => {
+    if (activeTab === "EARNINGS CALCULATION") {
+      setLoadingEarnings(true);
+      console.log("=== FINANCE PAGE: Fetching all orders for earnings calculation ===");
+      subscribeAllCustomerOrders((orders) => {
+        console.log(`Finance (earnings) - received ${orders.length} orders`);
+        setEarningsOrders(orders);
+        setLoadingEarnings(false);
+      });
+    }
+  }, [activeTab]);
+
+  // Calculate date range based on filter type
+  const getDateRange = () => {
+    const today = new Date();
+    let start, end;
+    if (earningsFilterType === 'today') {
+      start = new Date(today);
+      start.setHours(0, 0, 0, 0);
+      end = new Date(today);
+      end.setHours(23, 59, 59, 999);
+    } else if (earningsFilterType === 'week') {
+      const curr = new Date(today);
+      const first = curr.getDate() - curr.getDay();
+      start = new Date(curr.setDate(first));
+      start.setHours(0, 0, 0, 0);
+      end = new Date(start);
+      end.setDate(end.getDate() + 6);
+      end.setHours(23, 59, 59, 999);
+    } else if (earningsFilterType === 'month') {
+      start = new Date(today.getFullYear(), today.getMonth(), 1);
+      start.setHours(0, 0, 0, 0);
+      end = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+      end.setHours(23, 59, 59, 999);
+    } else if (earningsFilterType === 'year') {
+      start = new Date(today.getFullYear(), 0, 1);
+      start.setHours(0, 0, 0, 0);
+      end = new Date(today.getFullYear(), 11, 31);
+      end.setHours(23, 59, 59, 999);
+    } else if (earningsFilterType === 'custom') {
+      start = new Date(earningsStartDate);
+      start.setHours(0, 0, 0, 0);
+      end = new Date(earningsEndDate);
+      end.setHours(23, 59, 59, 999);
+    }
+    return { start, end };
+  };
+
+  // Filter earnings based on date range
+  const filteredEarnings = earningsOrders.filter(order => {
+    const { start, end } = getDateRange();
+    const orderTime = order.timestamp?.toDate?.() || new Date(order.timestamp);
+    return orderTime >= start && orderTime <= end;
+  });
+
+  // Calculate earnings breakdown
+  const calculateEarnings = () => {
+    const breakdown = {
+      totalEarnings: 0,
+      totalTax: 0,
+      byPaymentType: {
+        upi: { earnings: 0, tax: 0, count: 0 },
+        cash: { earnings: 0, tax: 0, count: 0 },
+        card: { earnings: 0, tax: 0, count: 0 },
+        manual: { earnings: 0, tax: 0, count: 0 },
+      },
+    };
+    filteredEarnings.forEach(order => {
+      let paymentType = (order.paymentType || 'upi').toLowerCase();
+      if (paymentType === 'online') paymentType = 'upi';
+      if (!breakdown.byPaymentType[paymentType]) paymentType = 'upi';
+      const earnings = Number(order.totalCost) || Number(order.total) || (Number(order.subtotal) + Number(order.tax)) || 0;
+      const tax = Number(order.tax) || 0;
+      breakdown.totalEarnings += earnings;
+      breakdown.totalTax += tax;
+      breakdown.byPaymentType[paymentType].earnings += earnings;
+      breakdown.byPaymentType[paymentType].tax += tax;
+      breakdown.byPaymentType[paymentType].count += 1;
+    });
+    return breakdown;
+  };
+
+  const earningsData = calculateEarnings();
+  // Updated tabs: removed DAILY TRANSIT, added ORDER ANALYTICS
+  const financeTabs = ["ACCOUNTS", "EARNINGS CALCULATION", "LEDGER", "SALES TRENDS", "ORDER ANALYTICS", "CUSTOMER LOYALTY"];
+
+  const getOrderTimeValue = (order) => {
+    try {
+      if (!order?.timestamp) return 0;
+      if (order.timestamp.toDate && typeof order.timestamp.toDate === "function") {
+        return order.timestamp.toDate().getTime();
+      }
+      const parsed = new Date(order.timestamp);
+      return Number.isNaN(parsed.getTime()) ? 0 : parsed.getTime();
+    } catch (error) {
+      return 0;
+    }
+  };
+
+  const isOnlineLedgerPayment = (order) => {
+    const paymentType = String(order.paymentType || "").toLowerCase();
+    const rawMethod = String(order.paymentMethod || order.PaymentMethod || order.OnlinePayMethod || order.razorpayMethod || "").toLowerCase();
+    return (
+      paymentType === "online" ||
+      rawMethod === "online" ||
+      Boolean(order.razorpayPaymentId) ||
+      Boolean(order.razorpayOrderId) ||
+      Boolean(order.razorpayAmount) ||
+      Boolean(order.razorpayStatus)
+    );
+  };
+
+  const hasSettlementReceipt = (order) => Boolean(getActualSettlementDate(order));
+
+  const getSettlementStatus = (order, pendingSettlement) => {
+    const paymentState = String(order.paymentStatus || order.paid || "").toLowerCase();
+    if (hasSettlementReceipt(order)) return "Settled";
+    if (pendingSettlement <= 0) return "Settled";
+    if (paymentState.includes("paid") || paymentState.includes("success")) return "Ready to settle";
+    if ((Number(order.paidAmount) || 0) > 0) return "Partially collected";
+    return "Awaiting payment";
+  };
+
+  const ledgerTransactions = (allCustomerOrders || [])
+    .filter((order) => isOnlineLedgerPayment(order))
+    .slice()
+    .sort((a, b) => getOrderTimeValue(b) - getOrderTimeValue(a))
+    .map((order) => {
+      const collectedAmount = Number(order.razorpayAmount) || Number(order.paidAmount) || Number(order.totalCost) || 0;
+      const restaurantPayout = Number(order.subtotal) || 0;
+      const alreadySettled = hasSettlementReceipt(order);
+      const settledAmount = alreadySettled ? restaurantPayout : 0;
+      const pendingSettlement = Math.max(restaurantPayout - settledAmount, 0);
+      const transactionDate =
+        order.razorpayCapturedAt ||
+        order.paymentTimestamp ||
+        order.timestamp ||
+        null;
+      return {
+        ...order,
+        collectedAmount,
+        restaurantPayout,
+        settledAmount,
+        pendingSettlement,
+        alreadySettled,
+        transactionDate,
+        ledgerStatus: getSettlementStatus(order, pendingSettlement),
+      };
+    });
+
+  const ledgerTotals = ledgerTransactions.reduce(
+    (summary, order) => {
+      summary.collected += order.collectedAmount;
+      summary.restaurantPayout += order.restaurantPayout;
+      summary.settled += order.settledAmount;
+      summary.pending += order.pendingSettlement;
+      return summary;
+    },
+    { collected: 0, restaurantPayout: 0, settled: 0, pending: 0 }
+  );
+
+  const handleBackToDashboard = () => {
+    sessionStorage.removeItem("financeAuth");
+    navigate(routes.dashboard, { replace: true });
+  };
+
+  return (
+    <div className="fin-app">
+      <h1 className="fin-page-title">Financial Management</h1>
+
+      <div className="fin-top-row">
+        <div className="fin-back-col">
+          <button className="fin-back-btn" onClick={handleBackToDashboard}>Back</button>
+        </div>
+
+        <div className="fin-nav-center">
+          <div className="fin-nav-buttons">
+            {financeTabs.map((tab) => (
+              <button
+                key={tab}
+                className={`fin-nav-btn ${activeTab === tab ? "active" : ""}`}
+                onClick={() => setActiveTab(tab)}
+              >
+                {tab}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ACCOUNTS TAB */}
+      {activeTab === "ACCOUNTS" && (
+        <div className="fin-orders-container">
+          <div className="fin-search-bar">
+            <input
+              type="text"
+              placeholder="Search orders..."
+              value={filters.searchTerm}
+              onChange={(e) => setFilters({ ...filters, searchTerm: e.target.value })}
+            />
+            <Filter
+              className="fin-filter-icon"
+              onClick={() => setShowFilterModal(true)}
+              style={{ cursor: 'pointer' }}
+            />
+          </div>
+
+          {loadingAccounts ? (
+            <div style={{ padding: "40px", textAlign: "center", color: "#666" }}>
+              Loading all customer orders...
+            </div>
+          ) : filteredOrders.length === 0 ? (
+            <div style={{ padding: "40px", textAlign: "center", color: "#999" }}>
+              {allCustomerOrders.length === 0 ? "No orders found" : "No orders match your search"}
+            </div>
+          ) : (
+            <div className="fin-orders-table">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Order ID</th>
+                    <th>Customer</th>
+                    <th>Items</th>
+                    <th>Specifications</th>
+                    <th>Cost</th>
+                    <th>Paid</th>
+                    <th>Date & Time</th>
+                    <th>Print</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredOrders.map((order) => (
+                    <React.Fragment key={order.id}>
+                    <tr>
+                      <td>{order.id}</td>
+                      <td>
+                        {order.username}
+                        <br />
+                        <span className="fin-table-no">{`Table ${order.tableNumber}`}</span>
+                        <br />
+                        <span className="fin-table-no">{order.phoneNumber}</span>
+                      </td>
+                      <td>
+                        {order.itemDetails && order.itemDetails.map((item, idx) => (
+                          <div key={idx} style={{ marginBottom: "10px", paddingBottom: "10px", borderBottom: idx < order.itemDetails.length - 1 ? "1px solid #eee" : "none" }}>
+                            <div style={{ fontWeight: "700" }}>{item.quantity}x {item.name}</div>
+                            <div style={{ fontSize: "12px", color: "#666", marginTop: "3px" }}>₹{item.price} × {item.quantity} = ₹{item.total}</div>
+                          </div>
+                        ))}
+                      </td>
+                      <td>
+                        {Array.isArray(order.specs) && order.specs.length > 0 ? (
+                          order.specs.map((spec, idx) => (
+                            <div key={idx} style={{ marginBottom: "8px", paddingBottom: "8px", borderBottom: idx < order.specs.length - 1 ? "1px solid #eee" : "none" }}>
+                              <div style={{ fontWeight: "600", fontSize: "13px" }}>{spec.name}</div>
+                              <div style={{ fontSize: "12px", color: "#666", marginTop: "2px" }}>
+                                {spec.instructions && spec.instructions !== "-" ? spec.instructions : "No special instructions"}
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          "-"
+                        )}
+                      </td>
+                      <td>
+                        <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                          <div style={{ fontSize: "12px", color: "#666" }}>
+                            Subtotal: <span style={{ fontWeight: "700", color: "#000" }}>₹{formatCurrency(order.subtotal)}</span>
+                          </div>
+                          <div style={{ fontSize: "12px", color: "#666" }}>
+                            Tax: <span style={{ fontWeight: "700", color: "#000" }}>₹{formatCurrency(order.tax)}</span>
+                          </div>
+                          <div style={{ fontSize: "13px", fontWeight: "700", color: "#e74c3c", paddingTop: "4px", borderTop: "1px solid #eee" }}>
+                            Total: ₹{formatCurrency(order.totalCost)}
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        <div style={{ color: "#000" }}>{order.paymentType || "Online"}</div>
+                        <div style={{ color: "#000" }}>₹{formatCurrency(order.paidAmount)}</div>
+                      </td>
+                      <td>
+                        {order.timestamp ? (
+                          <>
+                            <div style={{ fontSize: "12px", color: "#666" }}>
+                              {new Date(order.timestamp.toDate?.() || order.timestamp).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                            </div>
+                            <strong>{formatTime(order.timestamp)}</strong>
+                          </>
+                        ) : (
+                          "N/A"
+                        )}
+                      </td>
+                      <td>
+                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                          <button className="print-btn" title="Print bill" onClick={() => { setBillOrder(order); setShowBillModal(true); }}>
+                          <svg
+                            width="34"
+                            height="34"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            xmlns="http://www.w3.org/2000/svg"
+                          >
+                            <path
+                              d="M5 20h14v-2H5v2zm7-18v12l4-4h-3V4h-2v6H8l4 4z"
+                              fill="#050505"
+                            />
+                          </svg>
+                          </button>
+                          <button
+                            className="debug-btn"
+                            title="Debug order"
+                            onClick={() => toggleDebug(order.id)}
+                            style={{ padding: '8px 10px', borderRadius: 6, border: '1px solid #ddd', background: '#fff', cursor: 'pointer' }}
+                          >
+                            {debugOpen[order.id] ? 'Hide' : 'Debug'}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                    {debugOpen[order.id] && (
+                      <tr key={`${order.id}-debug`}>
+                        <td colSpan={8} style={{ background: '#fafafa', padding: 16 }}>
+                          <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontSize: 12, maxHeight: 300, overflow: 'auto' }}>
+{JSON.stringify(order, null, 2)}
+                          </pre>
+                        </td>
+                      </tr>
+                    )}
+                    </React.Fragment>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {showFilterModal && (
+            <div className="fin-filter-modal-overlay" onClick={() => setShowFilterModal(false)}>
+              <div className="fin-filter-modal" onClick={(e) => e.stopPropagation()}>
+                <h3>Filter Options</h3>
+                <div className="fin-filter-options">
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={filters.filterBy.customerName}
+                      onChange={(e) => setFilters({
+                        ...filters,
+                        filterBy: { ...filters.filterBy, customerName: e.target.checked }
+                      })}
+                    />
+                    Customer Name
+                  </label>
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={filters.filterBy.phone}
+                      onChange={(e) => setFilters({
+                        ...filters,
+                        filterBy: { ...filters.filterBy, phone: e.target.checked }
+                      })}
+                    />
+                    Phone Number
+                  </label>
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={filters.filterBy.orderId}
+                      onChange={(e) => setFilters({
+                        ...filters,
+                        filterBy: { ...filters.filterBy, orderId: e.target.checked }
+                      })}
+                    />
+                    Order ID
+                  </label>
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={filters.filterBy.table}
+                      onChange={(e) => setFilters({
+                        ...filters,
+                        filterBy: { ...filters.filterBy, table: e.target.checked }
+                      })}
+                    />
+                    Table Number
+                  </label>
+                </div>
+                <button className="fin-close-modal" onClick={() => setShowFilterModal(false)}>Close</button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* EARNINGS CALCULATION TAB */}
+      {activeTab === "EARNINGS CALCULATION" && (
+        <div className="fin-orders-container">
+          <div className="fin-earnings-filter-card" style={{ padding: "20px", background: "#f9f9f9", borderRadius: "8px", marginBottom: "20px" }}>
+            <h3 style={{ margin: "0 0 15px 0", fontSize: "16px", fontWeight: "600" }}>Filter by Date</h3>
+            <div className="fin-earnings-filter-controls" style={{ display: "flex", gap: "15px", flexWrap: "wrap", alignItems: "center" }}>
+              <select 
+                value={earningsFilterType} 
+                onChange={(e) => setEarningsFilterType(e.target.value)}
+                style={{ padding: "8px 12px", borderRadius: "6px", border: "1px solid #ddd", fontSize: "14px" }}
+              >
+                <option value="today">Today</option>
+                <option value="week">This Week</option>
+                <option value="month">This Month</option>
+                <option value="year">This Year</option>
+                <option value="custom">Custom Date Range</option>
+              </select>
+
+              {earningsFilterType === 'custom' && (
+                <>
+                  <input 
+                    type="date" 
+                    value={earningsStartDate}
+                    onChange={(e) => setEarningsStartDate(e.target.value)}
+                    style={{ padding: "8px 12px", borderRadius: "6px", border: "1px solid #ddd" }}
+                  />
+                  <span style={{ fontSize: "14px", color: "#666" }}>to</span>
+                  <input 
+                    type="date" 
+                    value={earningsEndDate}
+                    onChange={(e) => setEarningsEndDate(e.target.value)}
+                    style={{ padding: "8px 12px", borderRadius: "6px", border: "1px solid #ddd" }}
+                  />
+                </>
+              )}
+            </div>
+          </div>
+
+          {loadingEarnings ? (
+            <div style={{ padding: "40px", textAlign: "center", color: "#666" }}>
+              Loading earnings data...
+            </div>
+          ) : (
+            <>
+              <div className="fin-earnings-summary-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", marginBottom: "30px" }}>
+                <div className="fin-earnings-summary-card" style={{ background: "#f0f7ff", padding: "20px", borderRadius: "12px", border: "2px solid #2196f3" }}>
+                  <div style={{ fontSize: "12px", color: "#666", marginBottom: "5px", fontWeight: "600" }}>TOTAL EARNINGS</div>
+                  <div style={{ fontSize: "28px", fontWeight: "700", color: "#2196f3" }}>₹{formatCurrency(earningsData.totalEarnings)}</div>
+                  <div style={{ fontSize: "12px", color: "#666", marginTop: "5px" }}>Orders: {filteredEarnings.length}</div>
+                </div>
+                <div className="fin-earnings-summary-card" style={{ background: "#fff3e0", padding: "20px", borderRadius: "12px", border: "2px solid #ff9800" }}>
+                  <div style={{ fontSize: "12px", color: "#666", marginBottom: "5px", fontWeight: "600" }}>TOTAL TAX</div>
+                  <div style={{ fontSize: "28px", fontWeight: "700", color: "#ff9800" }}>₹{formatCurrency(earningsData.totalTax)}</div>
+                  <div style={{ fontSize: "12px", color: "#666", marginTop: "5px" }}>From all payments</div>
+                </div>
+              </div>
+
+              <div className="fin-earnings-section" style={{ background: "#f9f9f9", padding: "20px", borderRadius: "12px", marginBottom: "20px" }}>
+                <h3 style={{ margin: "0 0 20px 0", fontSize: "16px", fontWeight: "600" }}>EARNINGS BY PAYMENT TYPE</h3>
+                <div className="fin-earnings-breakdown-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "15px" }}>
+                  {Object.entries(earningsData.byPaymentType).map(([type, data]) => (
+                    <div key={type} className="fin-earnings-breakdown-card" style={{ background: "white", padding: "15px", borderRadius: "8px", border: "1px solid #eee" }}>
+                      <div style={{ fontSize: "12px", color: "#666", fontWeight: "600", marginBottom: "10px", textTransform: "uppercase" }}>
+                        {formatEarningsPaymentLabel(type)}
+                      </div>
+                      <div style={{ fontSize: "18px", fontWeight: "700", color: "#2196f3", marginBottom: "8px" }}>
+                        ₹{formatCurrency(data.earnings)}
+                      </div>
+                      <div style={{ fontSize: "11px", color: "#999", marginBottom: "5px" }}>
+                        Orders: {data.count}
+                      </div>
+                      <div style={{ fontSize: "11px", color: "#666", background: "#f5f5f5", padding: "6px", borderRadius: "4px", marginBottom: "10px" }}>
+                        Avg: ₹{data.count > 0 ? formatCurrency(data.earnings / data.count) : "0.00"}
+                      </div>
+                      <div style={{ fontSize: "11px", color: "#999", paddingTop: "8px", borderTop: "1px solid #eee" }}>
+                        Tax: <span style={{ fontWeight: "600", color: "#333" }}>₹{formatCurrency(data.tax)}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="fin-earnings-section" style={{ background: "#f9f9f9", padding: "20px", borderRadius: "12px" }}>
+                <h3 style={{ margin: "0 0 20px 0", fontSize: "16px", fontWeight: "600" }}>TAX BY PAYMENT TYPE</h3>
+                <div className="fin-earnings-breakdown-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "15px" }}>
+                  {Object.entries(earningsData.byPaymentType).map(([type, data]) => (
+                    <div key={`tax-${type}`} className="fin-earnings-breakdown-card" style={{ background: "white", padding: "15px", borderRadius: "8px", border: "1px solid #eee" }}>
+                      <div style={{ fontSize: "12px", color: "#666", fontWeight: "600", marginBottom: "10px", textTransform: "uppercase" }}>
+                        {formatEarningsPaymentLabel(type)} TAX
+                      </div>
+                      <div style={{ fontSize: "18px", fontWeight: "700", color: "#ff9800", marginBottom: "8px" }}>
+                        ₹{formatCurrency(data.tax)}
+                      </div>
+                      <div style={{ fontSize: "11px", color: "#999", marginBottom: "5px" }}>
+                        From {data.count} orders
+                      </div>
+                      <div style={{ fontSize: "11px", color: "#666", background: "#f5f5f5", padding: "6px", borderRadius: "4px" }}>
+                        Avg Tax: ₹{data.count > 0 ? formatCurrency(data.tax / data.count) : "0.00"}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
+      {activeTab === "LEDGER" && (
+        <div className="fin-orders-container fin-ledger-screen">
+          <div className="fin-ledger-scroll">
+            <div className="fin-ledger-intro">
+              <span className="fin-ledger-eyebrow">Online payments only</span>
+              <h3>Ledger</h3>
+              <p>
+                Transaction-wise settlement view for online payments for this restaurant only.
+              </p>
+            </div>
+
+            {loadingAccounts ? (
+              <div className="fin-ledger-empty">Loading online ledger transactions...</div>
+            ) : ledgerTransactions.length === 0 ? (
+              <div className="fin-ledger-empty">No online payment transactions available yet.</div>
+            ) : (
+              <>
+                <div className="fin-ledger-summary">
+                  <div className="fin-ledger-card">
+                    <span>Collected from customer</span>
+                    <strong>₹{formatCurrency(ledgerTotals.collected)}</strong>
+                  </div>
+                  <div className="fin-ledger-card">
+                    <span>Restaurant payout</span>
+                    <strong>₹{formatCurrency(ledgerTotals.restaurantPayout)}</strong>
+                  </div>
+                  <div className="fin-ledger-card">
+                    <span>Settled</span>
+                    <strong>₹{formatCurrency(ledgerTotals.settled)}</strong>
+                  </div>
+                  <div className="fin-ledger-card alert">
+                    <span>Pending settlement</span>
+                    <strong>₹{formatCurrency(ledgerTotals.pending)}</strong>
+                  </div>
+                </div>
+
+                <div className="fin-ledger-table-wrap">
+                  <table className="fin-ledger-table">
+                    <thead>
+                      <tr>
+                        <th>Transaction</th>
+                        <th>Customer</th>
+                        <th>Collected</th>
+                        <th>Restaurant Gets</th>
+                        <th>Settled</th>
+                        <th>Pending</th>
+                        <th>Settlement Info</th>
+                        <th>Status</th>
+                        <th>Date & Time</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {ledgerTransactions.map((order) => (
+                        <tr key={`ledger-${order.id}`}>
+                          <td>
+                            <div className="fin-ledger-transaction">
+                              <strong>{order.id}</strong>
+                              <span>{String(order.paymentType || "online").toUpperCase()}</span>
+                            </div>
+                          </td>
+                          <td>
+                            <div className="fin-ledger-customer">
+                              <strong>{order.username || "Walk-in customer"}</strong>
+                              <span>{`Table ${order.tableNumber || "-"}`}</span>
+                              <span>{order.phoneNumber || "No phone number"}</span>
+                            </div>
+                          </td>
+                          <td>₹{formatCurrency(order.collectedAmount)}</td>
+                          <td>₹{formatCurrency(order.restaurantPayout)}</td>
+                          <td>₹{formatCurrency(order.settledAmount)}</td>
+                          <td>₹{formatCurrency(order.pendingSettlement)}</td>
+                          <td>
+                            <div className="fin-ledger-datetime fin-ledger-settlement-details">
+                              <div className="fin-ledger-settlement-line">
+                                <span>Receiving Date</span>
+                                <strong>{formatLedgerReceivingDate(order)}</strong>
+                              </div>
+                              <div className="fin-ledger-settlement-line">
+                                <span>Razorpay Status</span>
+                                <strong>{formatSettlementStatusDetail(order)}</strong>
+                              </div>
+                              <div className="fin-ledger-settlement-line">
+                                <span>Settlement Ref</span>
+                                <strong>{getSettlementReference(order)}</strong>
+                              </div>
+                            </div>
+                          </td>
+                          <td>
+                            <span
+                              className={`fin-ledger-status ${order.ledgerStatus.toLowerCase().replace(/\s+/g, "-")}`}
+                            >
+                              {order.ledgerStatus}
+                            </span>
+                          </td>
+                          <td>
+                            {order.timestamp ? (
+                              <div className="fin-ledger-datetime">
+                                <span>
+                                  {new Date(order.timestamp.toDate?.() || order.timestamp).toLocaleDateString("en-US", {
+                                    month: "short",
+                                    day: "numeric",
+                                    year: "numeric",
+                                  })}
+                                </span>
+                                <strong>{formatTime(order.timestamp)}</strong>
+                              </div>
+                            ) : (
+                              "N/A"
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {activeTab === "SALES TRENDS" && (
+        <div className="fin-orders-container">
+          <SalesTrendsPanel />
+        </div>
+      )}
+
+      {activeTab === "ORDER ANALYTICS" && (
+        <div className="fin-orders-container">
+          <OrderAnalyticsPanel />
+        </div>
+      )}
+
+      {activeTab === "CUSTOMER LOYALTY" && (
+        <div className="fin-orders-container">
+          <CustomerLoyaltyPanel />
+        </div>
+      )}
+
+      {showBillModal && (
+        <BillModal order={billOrder} open={showBillModal} onClose={() => setShowBillModal(false)} />
+      )}
+    </div>
+  );
+}
+
+export default App;
+

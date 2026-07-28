@@ -1,0 +1,148 @@
+.AllOrdersOverlay-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 1200;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.AllOrdersOverlay-panel {
+  width: min(420px, 100%);
+  height: 100%;
+  background: #fff;
+  box-shadow: -12px 0 40px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  animation: AllOrdersOverlay-slide-in 0.25s ease-out;
+}
+
+@keyframes AllOrdersOverlay-slide-in {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.AllOrdersOverlay-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 18px 20px;
+  border-bottom: 1px solid #eee;
+  background: #f8faf5;
+}
+
+.AllOrdersOverlay-header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #3F441C;
+}
+
+.AllOrdersOverlay-header-left h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: #111;
+}
+
+.AllOrdersOverlay-subtitle {
+  margin: 2px 0 0 0;
+  font-size: 12px;
+  color: #666;
+}
+
+.AllOrdersOverlay-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #666;
+  padding: 4px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.AllOrdersOverlay-close:hover {
+  background: #eef0e6;
+  color: #3F441C;
+}
+
+.AllOrdersOverlay-summary {
+  display: flex;
+  gap: 20px;
+  padding: 12px 20px;
+  background: #f8fafc;
+  border-bottom: 1px solid #eee;
+  font-size: 13px;
+  color: #555;
+}
+
+.AllOrdersOverlay-summary strong {
+  color: #111;
+}
+
+.AllOrdersOverlay-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 16px 20px;
+}
+
+.AllOrdersOverlay-empty {
+  padding: 40px 10px;
+  text-align: center;
+  color: #999;
+  font-size: 14px;
+}
+
+.AllOrdersOverlay-row {
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid #eee;
+  margin-bottom: 8px;
+  background: #fff;
+}
+
+.AllOrdersOverlay-row.has-instructions {
+  background: #fefce8;
+  border-color: #fde68a;
+}
+
+.AllOrdersOverlay-row-main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.AllOrdersOverlay-item-name {
+  font-weight: 700;
+  color: #1f2933;
+  font-size: 14px;
+}
+
+.AllOrdersOverlay-item-qty {
+  font-weight: 800;
+  color: #636E2C;
+  font-size: 15px;
+  flex-shrink: 0;
+}
+
+.AllOrdersOverlay-item-instr {
+  margin-top: 6px;
+  font-size: 12px;
+  color: #92400e;
+  font-style: italic;
+  word-break: break-word;
+}
+
+@media (max-width: 480px) {
+  .AllOrdersOverlay-panel {
+    width: 100%;
+  }
+}
