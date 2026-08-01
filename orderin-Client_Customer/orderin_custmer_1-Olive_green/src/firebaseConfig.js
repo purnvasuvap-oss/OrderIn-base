@@ -76,8 +76,6 @@ export const auth = (() => {
 
 console.info('firebaseConfig: auth object exported');
 
-console.info('firebaseConfig: auth object exported');
-
 // Initialize Cloud Firestore and get a reference to the service
 export const db = getFirestore(app);
 

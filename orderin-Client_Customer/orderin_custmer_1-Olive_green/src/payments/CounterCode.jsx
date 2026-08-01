@@ -31,13 +31,20 @@ function CounterCode({ onBackClick }) {
 
   // Fallback onBackClick: navigate back and clean up unpaid orders from Firestore
   const handleBackClick = async () => {
-    // Step 1: Delete unpaid orders from Firestore BEFORE navigating back
+    // Step 1: Delete the unpaid order this page was showing (and only that
+    // one) from Firestore BEFORE navigating back. Passing no orderId would
+    // delete every unpaid order the user has — including any other
+    // legitimate pending orders from a different table/session.
     try {
       const user = JSON.parse(localStorage.getItem("user"));
-      if (user && user.phone) {
-        // Delete all unpaid orders for this user
-        // This is called when user navigates BACK from Counter Code page
-        await safeDeleteUnpaidOrders(user.phone);
+      const pendingOrderId =
+        sessionStorage.getItem('pendingOrderId') ||
+        localStorage.getItem('orderin_countercode_orderId') ||
+        restoredOrderId ||
+        orderHistory[orderHistory.length - 1]?.id ||
+        null;
+      if (user && user.phone && pendingOrderId) {
+        await safeDeleteUnpaidOrders(user.phone, pendingOrderId);
       }
     } catch (err) {
       console.error('Error during order cleanup on back navigation:', err);
@@ -238,11 +245,17 @@ function CounterCode({ onBackClick }) {
         // Also remove pending verification code after success
         sessionStorage.removeItem('pendingVerificationCode');
         localStorage.removeItem('pendingVerificationCode');
+        // Also clear this page's own restore keys now that the code has been used
+        localStorage.removeItem('orderin_countercode_orderId');
+        localStorage.removeItem('orderin_countercode_paymentMethod');
         markPaymentSuccessful(orderIdToCheck);
         navigate(getPathWithTable('/payment-success'));
       } else {
-        console.warn('CounterCode mismatch: entered', enteredNorm, 'expected (pending/db)', pendingExpected || storedNorm, 'stored(db)=', storedNorm);
-        alert(`Invalid counter code. Please try again. (entered: ${fullCode}, expected (pending/db): ${pendingExpected || storedCode})`);
+        // Never surface the expected/stored code in a user-facing alert —
+        // that would let anyone who can see the screen read out the valid
+        // verification code and authorize a payment they shouldn't be able to.
+        console.warn('CounterCode mismatch for order', orderIdToCheck);
+        alert("Invalid counter code. Please check with the counter and try again.");
         setCounterCode(["", "", "", ""]);
       }
     } catch (err) {

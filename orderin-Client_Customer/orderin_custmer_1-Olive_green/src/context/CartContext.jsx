@@ -6,6 +6,16 @@ import { resolveImageUrl } from '../utils/storageResolver';
 import { createOrderTimestamp } from '../utils/orderDateTime';
 import { calculateBilling } from '../utils/billing';
 import { parsePriceValue, sumOptionPrices, buildCartKey } from '../utils/pricing';
+import { menuStore } from '../menu/menuStore';
+
+// Menu products list, preferring the reactive menuStore (populated the same
+// moment Menu.jsx sets window.__menu_products__, but not dependent on the
+// window global staying intact) with the window value as a fallback only.
+const getMenuProducts = () => {
+  const fromStore = menuStore.get();
+  if (Array.isArray(fromStore) && fromStore.length > 0) return fromStore;
+  return (typeof window !== 'undefined' && Array.isArray(window.__menu_products__)) ? window.__menu_products__ : null;
+};
 
 const CartContext = createContext();
 
@@ -112,9 +122,8 @@ const normalizeCartItem = (item) => {
     // If image present, use it
     if (item.image && String(item.image).trim() !== '') return item;
 
-    // Try to match against global `products` array (imported by Menu sets it)
-    // We avoid importing Menu here to prevent cycles; rely on window-level products if available
-    const globalProducts = (typeof window !== 'undefined' && window.__menu_products__) ? window.__menu_products__ : null;
+    // Try to match against the shared menu products list
+    const globalProducts = getMenuProducts();
     let resolvedImage = '';
     if (globalProducts && Array.isArray(globalProducts)) {
       const match = globalProducts.find(p => String(p.name || '').toLowerCase() === String(item.name || '').toLowerCase());
@@ -131,7 +140,7 @@ const normalizeForMatch = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9
 
 const findProductInWindow = (name) => {
   try {
-    const products = (typeof window !== 'undefined' && window.__menu_products__) ? window.__menu_products__ : null;
+    const products = getMenuProducts();
     if (!products || !name) return null;
     const n = normalizeForMatch(name);
     // exact
@@ -158,7 +167,7 @@ const findProductInWindow = (name) => {
 // Replace cart items with canonical menu details when menu becomes available
 const updateCartItemsWithMenu = (cartItems) => {
   try {
-    const products = (typeof window !== 'undefined' && window.__menu_products__) ? window.__menu_products__ : null;
+    const products = getMenuProducts();
     if (!products) return cartItems;
     return (cartItems || []).map(ci => {
       const match = findProductInWindow(ci.name || ci.productName || ci.itemName || '');
@@ -234,8 +243,9 @@ export const CartProvider = ({ children, tableNo = '1' }) => {
       // Restore cart items from temp state
       // Normalize cart items when restoring
       const restored = (tempState.orderin_cart || []).map(i => normalizeCartItem(i));
-      // If menu already loaded on window, upgrade items to canonical menu data
-      const upgraded = (typeof window !== 'undefined' && window.__menu_products__) ? updateCartItemsWithMenu(restored) : restored;
+      // If the menu is already loaded, upgrade items to canonical menu data
+      // (updateCartItemsWithMenu is a no-op and returns cartItems as-is if not).
+      const upgraded = updateCartItemsWithMenu(restored);
       setCartItems(upgraded);
       // Note: orderId is used by Payments/CounterCode components via sessionStorage if needed
     }
@@ -254,7 +264,7 @@ export const CartProvider = ({ children, tableNo = '1' }) => {
     if (typeof window !== 'undefined') {
       window.addEventListener('menu:loaded', handler);
       // also run immediately if menu is already present
-      if (window.__menu_products__) handler();
+      if (getMenuProducts()) handler();
     }
     return () => {
       if (typeof window !== 'undefined') window.removeEventListener('menu:loaded', handler);
@@ -308,6 +318,40 @@ export const CartProvider = ({ children, tableNo = '1' }) => {
     setCartItems(prev => prev.map(item =>
       item.cartKey === cartKey ? { ...item, instructions } : item
     ));
+  };
+
+  // Re-picks the customization chips for an existing cart line. Since the cart key is
+  // derived from name+selections, changing selections gives the line a new key — if that
+  // key already matches another line, the two are merged instead of left as duplicates.
+  const updateSelectedOptions = (cartKey, newSelectedOptions) => {
+    setCartItems(prev => {
+      const target = prev.find(ci => ci.cartKey === cartKey);
+      if (!target) return prev;
+
+      const newCartKey = buildCartKey(target.name, newSelectedOptions);
+      const newEffectivePrice = parsePriceValue(target.price) + sumOptionPrices(newSelectedOptions);
+
+      if (newCartKey === cartKey) {
+        return prev.map(ci =>
+          ci.cartKey === cartKey ? { ...ci, selectedOptions: newSelectedOptions, effectivePrice: newEffectivePrice } : ci
+        );
+      }
+
+      const mergeTarget = prev.find(ci => ci.cartKey === newCartKey);
+      if (mergeTarget) {
+        return prev
+          .filter(ci => ci.cartKey !== cartKey)
+          .map(ci =>
+            ci.cartKey === newCartKey ? { ...ci, quantity: ci.quantity + target.quantity } : ci
+          );
+      }
+
+      return prev.map(ci =>
+        ci.cartKey === cartKey
+          ? { ...ci, selectedOptions: newSelectedOptions, effectivePrice: newEffectivePrice, cartKey: newCartKey }
+          : ci
+      );
+    });
   };
 
   const removeFromCart = (cartKey) => {
@@ -471,6 +515,7 @@ export const CartProvider = ({ children, tableNo = '1' }) => {
       addToCart,
       updateQuantity,
       updateInstructions,
+      updateSelectedOptions,
       removeFromCart,
       getTotalPrice,
       clearCart,

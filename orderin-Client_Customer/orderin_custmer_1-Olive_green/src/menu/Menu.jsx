@@ -1,18 +1,15 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { collection, getDocs, doc, getDoc } from "firebase/firestore";
+import { doc, getDoc } from "firebase/firestore";
 import { db } from "../firebaseConfig";
 import { useTableNumber } from "../hooks/useTableNumber";
 import { menuStore } from "./menuStore";
 import "./Menu.css";
 import {
   Search,
-  Mic,
   X,
   SlidersHorizontal,
-  Star,
   Flame,
-  Plus,
   Leaf,
   Bike,
 } from "lucide-react";
@@ -20,30 +17,23 @@ import Header from "../header/header";
 import Footer from "../Footer/Footer";
 import { getPlaceholder } from "../utils/placeholder";
 import { resolveImageUrl } from "../utils/storageResolver";
+import { DEFAULT_RESTAURANT_ID } from "../config/restaurant";
+import { fetchMenuItems, fetchPromotions } from "../utils/fetchRestaurantMenu";
+import {
+  normalizeToken,
+  isNonVegToken,
+  isVegToken,
+  getDietType,
+  isBestseller,
+  getSpiceLevel,
+  isUnavailableStatus,
+  isOnPromotion,
+  parsePrice,
+  deriveCategoryList,
+  groupItemsByCategory,
+} from "../utils/menuItemHelpers";
 
-const CART_STORAGE_KEY = "orderin_cart";
 const ACTIVE_ORDER_STORAGE_KEY = "orderin_active_order";
-
-const withTimeout = (promise, ms) => {
-  const t = new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), ms));
-  return Promise.race([promise, t]);
-};
-
-const loadActivePromotions = async () => {
-  try {
-    const snap = await getDocs(collection(db, "Restaurant", "orderin_restaurant_3", "promotions"));
-    const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-    const now = Date.now();
-    return list.filter((p) => {
-      if (!p.expiryAt) return false;
-      const expiry = typeof p.expiryAt === "object" && p.expiryAt.toMillis ? p.expiryAt.toMillis() : p.expiryAt;
-      return expiry >= now;
-    });
-  } catch (err) {
-    console.warn("loadActivePromotions", err);
-    return [];
-  }
-};
 
 const prefetchImageWithRetries = (url, attempts = 2, timeout = 3000) => {
   return new Promise((resolve) => {
@@ -91,32 +81,6 @@ const getGreeting = () => {
   return "Late night cravings";
 };
 
-// Deterministic fallback rating (3.8 - 4.8) so cards never look unfinished
-// while real `rating` data is still being populated in Firestore.
-const hashToRating = (id) => {
-  const str = String(id || "item");
-  let h = 0;
-  for (let i = 0; i < str.length; i += 1) h = (h * 31 + str.charCodeAt(i)) >>> 0;
-  return Math.round((3.8 + (h % 11) / 10) * 10) / 10;
-};
-
-const readCart = () => {
-  try {
-    return JSON.parse(localStorage.getItem(CART_STORAGE_KEY) || "[]");
-  } catch (e) {
-    return [];
-  }
-};
-
-const writeCart = (cart) => {
-  try {
-    localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
-    window.dispatchEvent(new CustomEvent("cart:updated", { detail: cart }));
-  } catch (e) {
-    /* ignore */
-  }
-};
-
 function Menu({ setIsLoading }) {
   const { getPathWithTable, tableNumber: tableNumberFromHook } = useTableNumber();
   const navigate = useNavigate();
@@ -131,9 +95,6 @@ function Menu({ setIsLoading }) {
   const [fetchedProducts, setFetchedProducts] = useState([]);
   const [restaurantName, setRestaurantName] = useState("Our Restaurant");
   const [activeOrder, setActiveOrder] = useState(null);
-  const [isListening, setIsListening] = useState(false);
-  const [pulseId, setPulseId] = useState(null);
-  const recognitionRef = useRef(null);
 
   const tableNumber = tableNumberFromHook || null;
 
@@ -142,7 +103,7 @@ function Menu({ setIsLoading }) {
     let alive = true;
     (async () => {
       try {
-        const snap = await getDoc(doc(db, "Restaurant", "orderin_restaurant_3"));
+        const snap = await getDoc(doc(db, "Restaurant", DEFAULT_RESTAURANT_ID));
         if (alive && snap.exists() && snap.data().name) {
           setRestaurantName(snap.data().name);
         }
@@ -170,8 +131,7 @@ function Menu({ setIsLoading }) {
     const fetchMenu = async () => {
       try {
         setIsLoading(true);
-        const snap = await withTimeout(getDocs(collection(db, "Restaurant", "orderin_restaurant_3", "menu")), 8000);
-        const data = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+        const data = await fetchMenuItems(DEFAULT_RESTAURANT_ID);
         if (!alive) return;
         setFetchedProducts(data);
         menuStore.set(data);
@@ -209,7 +169,7 @@ function Menu({ setIsLoading }) {
 
         (async () => {
           try {
-            const promos = await withTimeout(loadActivePromotions(), 5000);
+            const promos = await fetchPromotions(DEFAULT_RESTAURANT_ID);
             if (!promos || promos.length === 0) return;
 
             try {
@@ -240,6 +200,7 @@ function Menu({ setIsLoading }) {
             const unseen = promos.filter((p) => !seen.includes(p.id));
             const candidate = unseen.length === 0 ? promos[Math.floor(Math.random() * promos.length)] : unseen[Math.floor(Math.random() * unseen.length)];
             if (!candidate) return;
+            if (!alive) return;
             const normalized = { ...candidate, imageURL: candidate.imageURL || candidate.imageUrl || candidate.image || candidate.image_url || "" };
             setAdPromotion(normalized);
             setAdImageLoaded(false);
@@ -252,11 +213,14 @@ function Menu({ setIsLoading }) {
               const resolved = await resolveImageUrl(normalized.imageURL);
               if (resolved) adUrl = resolved;
             } catch (e) {}
+            if (!alive) return;
             setAdImageSrc(adUrl);
             const ok = await prefetchImageWithRetries(adUrl, 2, 2500);
+            if (!alive) return;
             if (!ok) {
               try {
                 const resp = await fetch(adUrl, { cache: "no-store" });
+                if (!alive) return;
                 if (resp.ok) {
                   const contentType = resp.headers && resp.headers.get ? resp.headers.get("content-type") : null;
                   if (!contentType || !contentType.startsWith("image/")) {
@@ -265,6 +229,9 @@ function Menu({ setIsLoading }) {
                     setAdImageLoaded(true);
                   } else {
                     const blob = await resp.blob();
+                    // The component may have unmounted while awaiting the blob —
+                    // creating a URL now with nothing left to revoke it would leak.
+                    if (!alive) return;
                     if (adObjectUrlRef.current) {
                       URL.revokeObjectURL(adObjectUrlRef.current);
                       adObjectUrlRef.current = null;
@@ -276,6 +243,7 @@ function Menu({ setIsLoading }) {
                 }
               } catch (err) {
                 console.warn("Promotion blob fallback failed", adUrl, err);
+                if (!alive) return;
                 try {
                   setAdImageSrc(getPlaceholder("Promotion"));
                   setAdImageLoaded(true);
@@ -309,100 +277,7 @@ function Menu({ setIsLoading }) {
   const handleCardClick = (item) => navigate(`/item/${String(item.name || "").replace(/\s+/g, "-").toLowerCase()}${window.location.search}`, { state: { item } });
   const handleAdImageLoad = () => setAdImageLoaded(true);
 
-  const handleQuickAdd = (e, item) => {
-    e.stopPropagation();
-    const cart = readCart();
-    const idx = cart.findIndex((c) => c.id === item.id);
-    if (idx >= 0) cart[idx].qty += 1;
-    else cart.push({ id: item.id, name: item.name, price: parsePrice(item.price).value, qty: 1 });
-    writeCart(cart);
-    setPulseId(item.id);
-    setTimeout(() => setPulseId((cur) => (cur === item.id ? null : cur)), 450);
-  };
-
-  const normalizeToken = (s) => (s || "").toString().toLowerCase().replace(/[^a-z0-9]/g, "");
-  const isNonVegToken = (t) => {
-    if (!t) return false;
-    return t.includes("nonveg") || t.includes("nonveget");
-  };
-  const isVegToken = (t) => {
-    if (!t) return false;
-    if (isNonVegToken(t)) return false;
-    return t.includes("veg") || t.includes("veget");
-  };
-
-  const getDietType = (item) => {
-    const token = normalizeToken(item.type || item.tags || "");
-    if (isNonVegToken(token)) return "nonveg";
-    if (isVegToken(token)) return "veg";
-    return null;
-  };
-
-  const isBestseller = (item) => {
-    if (!item) return false;
-    if (item.bestseller === true || item.isBestseller === true) return true;
-    return normalizeToken(item.tags || "").includes("bestseller");
-  };
-
-  const getSpiceLevel = (item) => {
-    if (!item) return 0;
-    if (typeof item.spiceLevel === "number") return Math.max(0, Math.min(3, item.spiceLevel));
-    if (item.spicy === true) return 2;
-    const tags = normalizeToken(item.tags || "") + normalizeToken(item.type || "");
-    if (tags.includes("extraspicy") || tags.includes("veryspicy")) return 3;
-    if (tags.includes("spicy")) return 2;
-    if (tags.includes("mild")) return 1;
-    return 0;
-  };
-
-  const isUnavailableStatus = (status) => {
-    if (status == null) return false;
-    try {
-      const norm = String(status).toLowerCase().trim();
-      const key = norm.replace(/[^a-z0-9]/g, "");
-      const unavailable = new Set(["no", "low", "soldout", "unavailable", "outofstock", "false", "0", "sold"]);
-      return unavailable.has(key);
-    } catch (e) {
-      return false;
-    }
-  };
-
-  const isOnPromotion = (item) => {
-    if (!item) return false;
-    const keys = ["promotions", "promotion", "onPromotion", "promo", "promotionStatus", "promotion_flag"];
-    for (const k of keys) {
-      const v = item[k];
-      if (v == null) continue;
-      if (typeof v === "boolean") return v;
-      if (typeof v === "number") return v !== 0;
-      if (typeof v === "string") {
-        const s = v.toLowerCase().trim();
-        if (["true", "1", "yes", "on"].includes(s)) return true;
-      }
-    }
-    return false;
-  };
-
-  const parsePrice = (priceStr) => {
-    const s = String(priceStr || "");
-    const num = parseFloat(s.replace(/[^0-9.\-]/g, "")) || 0;
-    return { value: num, symbol: "₹" };
-  };
-
-  const categories = React.useMemo(() => {
-    const setC = new Set();
-    const list = ["all"];
-    fetchedProducts.forEach((it) => {
-      if (it.category) {
-        const lower = it.category.toLowerCase();
-        if (!setC.has(lower)) {
-          setC.add(lower);
-          list.push(it.category);
-        }
-      }
-    });
-    return list;
-  }, [fetchedProducts]);
+  const categories = React.useMemo(() => deriveCategoryList(fetchedProducts), [fetchedProducts]);
 
   const filteredProducts = fetchedProducts.filter((item) => {
     const name = (item.name || "").toLowerCase();
@@ -504,31 +379,20 @@ function Menu({ setIsLoading }) {
       <div className="menu-grid-section">
         {filteredProducts.length > 0 ? (
           (() => {
-            const categoryOrder = [];
-            const buckets = new Map();
+            const grouped = groupItemsByCategory(filteredProducts);
 
-            filteredProducts.forEach((item) => {
-              const cat = (item.category || "").trim() || "Uncategorized";
-              if (!buckets.has(cat)) {
-                buckets.set(cat, []);
-                categoryOrder.push(cat);
-              }
-              buckets.get(cat).push(item);
-            });
-
-            return categoryOrder.map((cat) => (
+            return grouped.map(({ category: cat, items: catItems }) => (
               <div className="category-section" key={cat}>
                 <div className="category-section-header">
                   <span>{cat}</span>
-                  <span className="category-count">{buckets.get(cat).length}</span>
+                  <span className="category-count">{catItems.length}</span>
                 </div>
                 <div className="food-grid">
-                  {buckets.get(cat).map((item, index) => {
+                  {catItems.map((item, index) => {
                     const isUnavailable = isUnavailableStatus(item.availability || item.status || item.availabilty);
                     const diet = getDietType(item);
                     const bestseller = isBestseller(item);
                     const spiceLevel = getSpiceLevel(item);
-                    const rating = typeof item.rating === "number" ? item.rating : hashToRating(item.id);
                     const { value, symbol } = parsePrice(item.price);
                     const onPromo = isOnPromotion(item);
                     const increased = (value * 1.25).toFixed(2);

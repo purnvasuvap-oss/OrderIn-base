@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Login from './login/login';
+const PublicMenu = lazy(() => import('./publicMenu/PublicMenu'));
 import Menu from './menu/Menu';
 import Help from './help/Help';
 import About from './help/About';
@@ -24,8 +25,9 @@ import { useGlobalBackButton } from './hooks/useGlobalBackButton';
  * ROUTING STRUCTURE & BACK-BUTTON BEHAVIOR:
  * 
  * PUBLIC ROUTES (No auth required):
- * - / (Login) → Back button: PREVENT
- * 
+ * - / (public pre-login flipbook menu) → Back button: PREVENT
+ * - /login → Back button: PREVENT
+ *
  * PROTECTED ROUTES (Auth required):
  * - /menu → Back button: Go to Login
  * - /help, /about, /about-orderin → Back button: Go to Menu
@@ -55,7 +57,15 @@ function AppContent({ isLoading, setIsLoading }) {
       <Loading isLoading={isLoading} />
       <Routes>
         {/* ===== PUBLIC ROUTES ===== */}
-        <Route path="/" element={<Login setIsLoading={setIsLoading} />} />
+        <Route
+          path="/"
+          element={
+            <Suspense fallback={<Loading isLoading={true} />}>
+              <PublicMenu setIsLoading={setIsLoading} />
+            </Suspense>
+          }
+        />
+        <Route path="/login" element={<Login setIsLoading={setIsLoading} />} />
 
         {/* ===== PROTECTED ROUTES ===== */}
         <Route path="/menu" element={<ProtectedRoute><Menu setIsLoading={setIsLoading} /></ProtectedRoute>} />

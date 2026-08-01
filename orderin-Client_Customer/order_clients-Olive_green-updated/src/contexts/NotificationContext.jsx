@@ -1,6 +1,7 @@
 import React, { createContext, useState, useEffect } from 'react';
 import { collection, getDocs, addDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
 import { db } from '../firebase';
+import { subscribeRecentOrders, isOrderQueued } from '../services/orderService';
 
 export const NotificationContext = createContext();
 
@@ -23,6 +24,20 @@ const toDate = (value) => {
 
 export const NotificationProvider = ({ children }) => {
   const [activities, setActivities] = useState([]);
+  const [queuedOrders, setQueuedOrders] = useState([]);
+
+  // Live list of queued orders (not yet accepted, or accepted but unpaid),
+  // kept independent of the Orders page so the bell badge/tab work from any page.
+  useEffect(() => {
+    const unsubscribe = subscribeRecentOrders((orders) => {
+      setQueuedOrders(orders.filter(isOrderQueued));
+    });
+    return () => {
+      if (typeof unsubscribe === 'function') unsubscribe();
+    };
+  }, []);
+
+  const queuedCount = queuedOrders.length;
 
   // Fetch all activities from Firestore on mount
   useEffect(() => {
@@ -101,7 +116,7 @@ export const NotificationProvider = ({ children }) => {
   };
 
   return (
-    <NotificationContext.Provider value={{ activities, addActivity }}>
+    <NotificationContext.Provider value={{ activities, addActivity, queuedCount, queuedOrders }}>
       {children}
     </NotificationContext.Provider>
   );

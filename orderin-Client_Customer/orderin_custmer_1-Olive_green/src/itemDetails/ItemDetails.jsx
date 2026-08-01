@@ -7,8 +7,6 @@ import {
   Plus,
   ShoppingCart,
   Check,
-  Star,
-  Clock,
   Share2,
   Leaf,
   Flame,
@@ -26,40 +24,11 @@ import {
   parsePriceValue,
   normalizeGroupOptions,
   getCustomizationGroups,
+  getDefaultsForCategory,
   buildSelectedOptions,
   sumOptionPrices,
   buildCartKey,
 } from "../utils/pricing";
-
-// Default customization groups derived dynamically based on item category.
-// Purely preferential (no price impact) — folded into the saved instructions.
-const getDefaultsForCategory = (category) => {
-  if (!category) return [{ id: "portion", label: "Portion", options: ["Regular", "Large"] }];
-  const cat = String(category).toLowerCase();
-  // Beverage / Drink items
-  if (/drink|beverage|juice|shake|mocktail|smoothie|soda|cola|tea|coffee|water|soft drink|cold drink|milkshake/.test(cat)) {
-    return [
-      { id: "size", label: "Size", options: ["Regular", "Large", "Extra Large"] },
-      { id: "ice", label: "Ice Level", options: ["No Ice", "Less Ice", "Regular Ice", "Extra Ice"] },
-      { id: "sweetness", label: "Sweetness", options: ["No Sugar", "Less Sweet", "Regular", "Extra Sweet"] },
-    ];
-  }
-  // Food items
-  if (/food|starter|appetizer|main|main course|entree|curry|rice|bread|roti|naan|biryani|fried rice|noodles|pasta|pizza|burger|sandwich|wrap|roll|taco|burrito|dosa|idli|vada|pongal|upma|chowmein/.test(cat)) {
-    return [
-      { id: "spice", label: "Spice Level", options: ["Mild", "Medium", "Hot"] },
-      { id: "portion", label: "Portion", options: ["Regular", "Large"] },
-    ];
-  }
-  // Desserts
-  if (/dessert|ice cream|cake|pastry|sweet|halwa|kheer|pudding|mousse|brownie|cookie/.test(cat)) {
-    return [
-      { id: "portion", label: "Portion", options: ["Regular", "Large"] },
-    ];
-  }
-  // Default fallback
-  return [{ id: "portion", label: "Portion", options: ["Regular", "Large"] }];
-};
 
 function ItemDetails() {
   const location = useLocation();
@@ -333,9 +302,6 @@ function ItemDetails() {
   const effectiveUnitPrice = parsePriceValue(item.price) + sumOptionPrices(liveSelectedOptions);
   const totalPrice = (effectiveUnitPrice * quantity).toFixed(2);
 
-  const rating = item.rating || 4.6;
-  const reviewCount = item.reviewCount || item.ratingsCount || null;
-  const prepTime = item.prepTime || item.preparationTime || '15–20 min';
   const isBestseller = Boolean(item.bestseller || item.isBestseller);
   const isVeg = item.isVeg === true || (typeof item.dietType === 'string' && item.dietType.toLowerCase() === 'veg');
   const isNonVeg = item.isVeg === false || (typeof item.dietType === 'string' && item.dietType.toLowerCase() === 'non-veg');
@@ -396,18 +362,6 @@ function ItemDetails() {
         </div>
 
         {linkCopied && <div className="link-toast"><Link2 size={13} /> Link copied</div>}
-
-        <div className="hero-info-row">
-          <span className="hero-pill">
-            <Star size={13} className="pill-star" />
-            {rating.toFixed ? rating.toFixed(1) : rating}
-            {reviewCount ? <span className="pill-muted"> ({reviewCount})</span> : null}
-          </span>
-          <span className="hero-pill">
-            <Clock size={13} />
-            {prepTime}
-          </span>
-        </div>
       </div>
 
       {/* CONTENT CARD */}

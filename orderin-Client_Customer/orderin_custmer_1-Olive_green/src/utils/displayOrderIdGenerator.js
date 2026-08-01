@@ -23,7 +23,7 @@ import { db } from '../firebaseConfig';
  * Returns the next sequence number and updates the counter atomically
  * 
  * Firestore Structure:
- * - Collection: Restaurant/orderin_restaurant_2/dailyOrderCounters
+ * - Collection: Restaurant/orderin_restaurant_3/dailyOrderCounters
  * - Document ID: DDMMYY (e.g., "181225" for 18-12-2025)
  * - Fields: { count: number, date: string, lastUpdated: timestamp }
  * 
@@ -43,7 +43,7 @@ export const getAndIncrementDailyCounter = async (date = new Date()) => {
     
     const dateKey = dayStr + monthStr + yearStr; // e.g., "181225"
     
-    // Path: Restaurant/orderin_restaurant_2/dailyOrderCounters/<DDMMYY>
+    // Path: Restaurant/orderin_restaurant_3/dailyOrderCounters/<DDMMYY>
     const counterRef = doc(
       db,
       "Restaurant",

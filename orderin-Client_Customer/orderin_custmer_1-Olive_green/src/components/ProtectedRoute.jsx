@@ -14,8 +14,9 @@ function ProtectedRoute({ children }) {
   const isAuthenticated = user !== null && user !== undefined;
 
   if (!isAuthenticated) {
-    // User not logged in, redirect to login with replace to avoid history
-    return <Navigate to="/" replace />;
+    // User not logged in, redirect to login with replace to avoid history.
+    // Login now lives at /login — / is the public pre-login flipbook menu.
+    return <Navigate to="/login" replace />;
   }
 
   // User is authenticated, render the component

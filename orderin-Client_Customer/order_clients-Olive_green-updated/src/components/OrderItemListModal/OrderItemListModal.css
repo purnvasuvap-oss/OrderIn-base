@@ -176,3 +176,73 @@
   color: #111;
 }
 
+/* Below this width the 5-column grid (Item/Qty/Price/Total/Instructions)
+   gets too cramped to read on a phone/tablet — collapse the header and
+   reflow each row into a labelled, stacked card instead. */
+@media (max-width: 720px) {
+  .OrderItemList-modal {
+    width: 94%;
+    max-height: 90vh;
+  }
+
+  .OrderItemList-header-left h3 {
+    font-size: 15px;
+  }
+
+  .OrderItemList-summary {
+    flex-wrap: wrap;
+    gap: 6px 16px;
+  }
+
+  .OrderItemList-table-header {
+    display: none;
+  }
+
+  .OrderItemList-row {
+    grid-template-columns: 1fr;
+    gap: 4px;
+    padding: 12px 6px;
+  }
+
+  .OrderItemList-item-name {
+    white-space: normal;
+    font-size: 14px;
+  }
+
+  .OrderItemList-item-qty,
+  .OrderItemList-item-price,
+  .OrderItemList-item-total {
+    text-align: left;
+  }
+
+  .OrderItemList-item-qty::before {
+    content: "Qty ";
+    color: #999;
+    font-weight: 600;
+  }
+
+  .OrderItemList-item-price::before {
+    content: "Price ";
+    color: #999;
+    font-weight: 600;
+  }
+
+  .OrderItemList-item-total::before {
+    content: "Total ";
+    color: #999;
+    font-weight: 600;
+  }
+
+  .OrderItemList-item-instr::before {
+    content: "Note: ";
+    color: #999;
+    font-weight: 600;
+  }
+
+  .OrderItemList-footer {
+    flex-wrap: wrap;
+    gap: 6px 20px;
+    justify-content: flex-start;
+  }
+}
+

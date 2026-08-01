@@ -13,11 +13,49 @@ import { parseOrderTimestamp, createOrderTimestamp } from "../utils/orderDateTim
 import { generateDisplayOrderId } from "../utils/displayOrderIdGenerator";
 import Loading from "../Loading";
 import { HiOutlineShoppingCart } from "react-icons/hi2";
-import { parsePriceValue, calculateOrderTotals } from "../utils/pricing";
+import {
+  parsePriceValue,
+  calculateOrderTotals,
+  getCustomizationGroups,
+  getDefaultsForCategory,
+  buildSelectedOptions,
+  normalizeGroupOptions,
+} from "../utils/pricing";
 function Cart({ onBackClick }) {
   const [activeTab, setActiveTab] = useState("Current Order");
-  const { cartItems, updateQuantity, updateInstructions, removeFromCart, getTotalPrice, placeOrder, saveOrderTempState } = useCart();
-  const [orderHistory, setOrderHistory] = useState([]);
+  const { cartItems, updateQuantity, updateInstructions, updateSelectedOptions, removeFromCart, clearCart, getTotalPrice, placeOrder, saveOrderTempState } = useCart();
+  const [editingOptionsKey, setEditingOptionsKey] = useState(null);
+  const [tempCustomSelections, setTempCustomSelections] = useState({});
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
+
+  const handleClearCart = () => {
+    clearCart();
+    setShowClearConfirm(false);
+  };
+
+  const handleStartEditOptions = (item, groups) => {
+    const initial = {};
+    groups.forEach((g) => {
+      const match = (item.selectedOptions || []).find((o) => o.group === g.label);
+      if (match) initial[g.id] = match.label;
+    });
+    setTempCustomSelections(initial);
+    setEditingOptionsKey(item.cartKey);
+  };
+
+  const handleSaveOptions = (item, groups) => {
+    const newSelectedOptions = buildSelectedOptions(groups, tempCustomSelections);
+    updateSelectedOptions(item.cartKey, newSelectedOptions);
+    setEditingOptionsKey(null);
+  };
+
+  const handleCancelEditOptions = () => {
+    setEditingOptionsKey(null);
+  };
+  // Live Firestore order-tracking list for the "Order Track" tab — deliberately
+  // named differently from CartContext's `orderHistory` (a separate, unrelated
+  // piece of state) so the two are never confused with one another.
+  const [orderTrackList, setOrderTrackList] = useState([]);
   const deliveredTimers = useRef({});
   const [editingInstructions, setEditingInstructions] = useState(null);
   const [tempInstructions, setTempInstructions] = useState("");
@@ -37,7 +75,7 @@ function Cart({ onBackClick }) {
     const customerRef = doc(db, "Restaurant", "orderin_restaurant_3", "customers", u.phone);
     unsub = onSnapshot(customerRef, (snap) => {
       if (!snap.exists()) {
-        setOrderHistory([]);
+        setOrderTrackList([]);
         return;
       }
 
@@ -60,6 +98,11 @@ function Cart({ onBackClick }) {
           else if (status === "paid") displayStatus = "Paid";
 
           const ts = parseOrderTimestamp(order);
+          // Stable fallback identity for orders without an `id` — derived from
+          // content that doesn't shift if this array gets filtered/re-sorted,
+          // unlike the raw array index (which would point the delivered-timer
+          // at the wrong order once the list changes shape).
+          const orderKey = order.id || `notime-${order.time || order.createdAt || order.createdAtMs || ""}-${order.username || ""}`;
           if (displayStatus === "Delivered") {
             const deliveredAt = parseOrderTimestamp({
               deliveredAt: order.deliveredAt,
@@ -69,23 +112,23 @@ function Cart({ onBackClick }) {
             });
             const msSinceDelivered = now - deliveredAt.getTime();
             if (msSinceDelivered < 5 * 60 * 1000) {
-              if (!deliveredTimers.current[order.id || idx]) {
-                deliveredTimers.current[order.id || idx] = setTimeout(() => {
-                  setOrderHistory((prev) => prev.filter((o) => (o.id || o._idx) !== (order.id || idx)));
-                  delete deliveredTimers.current[order.id || idx];
+              if (!deliveredTimers.current[orderKey]) {
+                deliveredTimers.current[orderKey] = setTimeout(() => {
+                  setOrderTrackList((prev) => prev.filter((o) => (o.id || o._idx) !== orderKey));
+                  delete deliveredTimers.current[orderKey];
                 }, Math.max(2 * 60 * 1000, 5 * 60 * 1000 - msSinceDelivered));
               }
-              return { ...order, id: order.id || idx, status: displayStatus, timestamp: ts, _idx: idx };
+              return { ...order, id: orderKey, status: displayStatus, timestamp: ts, _idx: idx };
             }
             return null;
           }
 
-          return { ...order, id: order.id || idx, status: displayStatus, timestamp: ts, _idx: idx };
+          return { ...order, id: orderKey, status: displayStatus, timestamp: ts, _idx: idx };
         })
         .filter(Boolean);
 
       mapped.sort((a, b) => b.timestamp - a.timestamp);
-      setOrderHistory(mapped);
+      setOrderTrackList(mapped);
     });
 
     return () => {
@@ -136,47 +179,6 @@ function Cart({ onBackClick }) {
     };
   }, [cartItems]);
 
-  useEffect(() => {
-    let cancelled = false;
-    const resolveHistory = async () => {
-      try {
-        const updates = await Promise.all(
-          orderHistory.map(async (o) => {
-            const img = o?.item?.image;
-            if (!img) return null;
-            try {
-              if (img.startsWith && img.startsWith("gs://")) {
-                const r = await resolveImageUrl(img);
-                if (r) return { id: o.id, url: r };
-                console.warn("Cart: resolveImageUrl returned no URL for orderHistory item image", img, "orderId=", o.id);
-                return null;
-              }
-              if (!img.startsWith("http://") && !img.startsWith("https://") && !img.startsWith("data:") && !img.startsWith("blob:")) {
-                const r = await resolveImageUrl(img);
-                if (r) return { id: o.id, url: r };
-              }
-            } catch (e) {
-              console.warn("Cart: error resolving orderHistory image", img, e);
-            }
-            return null;
-          })
-        );
-
-        if (cancelled) return;
-        const map = new Map(updates.filter(Boolean).map((u) => [u.id, u.url]));
-        if (map.size === 0) return;
-        setOrderHistory((prev) => prev.map((o) => ({ ...o, item: { ...o.item, image: map.get(o.id) || o.item.image } })));
-      } catch (e) {
-        /* ignore */
-      }
-    };
-
-    if (orderHistory && orderHistory.length) resolveHistory();
-    return () => {
-      cancelled = true;
-    };
-  }, [orderHistory]);
-
   const handleContinueShopping = () => {
     navigate(getPathWithTable("/menu"));
   };
@@ -220,6 +222,20 @@ function Cart({ onBackClick }) {
         const data = customerSnap.data();
         pastOrders = Array.isArray(data.pastOrders) ? data.pastOrders : [];
       }
+
+      // Garbage-collect stale unpaid orders (abandoned mid-checkout by a
+      // crash/refresh/closed tab, which skips the explicit back-navigation
+      // cleanup) so they don't accumulate in Firestore forever. Only orders
+      // still unpaid after a full hour are dropped — anything newer is left
+      // alone in case it's a payment still genuinely in progress.
+      const ONE_HOUR_MS = 60 * 60 * 1000;
+      const now = Date.now();
+      pastOrders = pastOrders.filter((o) => {
+        if (o.paymentStatus !== "unpaid") return true;
+        const createdMs = o.createdAtMs || (o.createdAt ? new Date(o.createdAt).getTime() : null) || (o.time ? new Date(o.time).getTime() : null);
+        if (!createdMs || Number.isNaN(createdMs)) return true;
+        return now - createdMs < ONE_HOUR_MS;
+      });
 
       // Generate order ID
       try {
@@ -382,22 +398,14 @@ function Cart({ onBackClick }) {
 </div>
         ) : (
           <div className="cart-content">
-            <section className="status-banner">
-              <div>
-                <p className="status-label">Delivery status</p>
-                <h2>Preparing now</h2>
-                <p>Estimated time: 15–20 min • Freshly cooked and packed</p>
-              </div>
-              <div className="status-pill">⭐ 4.8 Rated</div>
-            </section>
-
             <div className="cart-list">
               {cartItems.map((item, index) => {
                 const itemPrice = item.effectivePrice ?? parsePriceValue(item.price);
                 const quantity = Number(item.quantity) || 0;
                 const itemTotal = itemPrice * quantity;
-                const rating = item.rating || 4.7;
                 const cartKey = item.cartKey || item.name;
+                const customizationGroups = getCustomizationGroups(item, getDefaultsForCategory);
+                const isEditingOptions = editingOptionsKey === cartKey;
 
                 return (
                   <article key={cartKey || index} className="cart-item">
@@ -418,17 +426,17 @@ function Cart({ onBackClick }) {
                         <div className="cart-item-copy">
                           <div className="item-title-row">
                             <h3 className="cart-item-name">{item.name}</h3>
-                            <span className="rating-pill">⭐ {rating.toFixed(1)}</span>
                           </div>
                           <div className="price-row">
                             <p className="cart-item-price">{formatPrice(itemPrice)}</p>
                             <span className="price-meta">each</span>
                           </div>
-                          {Array.isArray(item.selectedOptions) && item.selectedOptions.length > 0 && (
+                          {!isEditingOptions && Array.isArray(item.selectedOptions) && item.selectedOptions.length > 0 && (
                             <div className="cart-item-options">
                               {item.selectedOptions.map((opt, oIdx) => (
                                 <span key={oIdx} className="cart-item-option-chip">
-                                  {opt.label}: +₹{opt.price}
+                                  {opt.group ? `${opt.group}: ${opt.label}` : opt.label}
+                                  {opt.price > 0 && <span className="cart-item-option-chip-price"> +₹{opt.price}</span>}
                                 </span>
                               ))}
                             </div>
@@ -452,6 +460,19 @@ function Cart({ onBackClick }) {
                         </div>
 
                         <div className="action-buttons">
+                          {customizationGroups.length > 0 && (
+                            <button
+                              className="edit-instructions-btn"
+                              onClick={() =>
+                                isEditingOptions
+                                  ? handleCancelEditOptions()
+                                  : handleStartEditOptions(item, customizationGroups)
+                              }
+                            >
+                              <Edit3 size={14} />
+                              <span>{isEditingOptions ? "Cancel options" : "Edit options"}</span>
+                            </button>
+                          )}
                           <button className="edit-instructions-btn" onClick={() => handleEditInstructions(cartKey, item.instructions || "")}>
                             <Edit3 size={14} />
                             <span>{item.instructions ? "Edit notes" : "Add notes"}</span>
@@ -462,6 +483,48 @@ function Cart({ onBackClick }) {
                           </button>
                         </div>
                       </div>
+
+                      {isEditingOptions && (
+                        <div className="cart-customize-section">
+                          {customizationGroups.map((group) => {
+                            const options = normalizeGroupOptions(group.options);
+                            return (
+                              <div className="cart-customize-group" key={group.id || group.label}>
+                                <p className="cart-customize-label">{group.label}</p>
+                                <div className="cart-chip-row">
+                                  {options.map((opt) => {
+                                    const isActive = tempCustomSelections[group.id] === opt.label;
+                                    return (
+                                      <button
+                                        type="button"
+                                        key={opt.label}
+                                        className={`cart-option-chip ${isActive ? "active" : ""}`}
+                                        onClick={() =>
+                                          setTempCustomSelections((prev) => ({ ...prev, [group.id]: opt.label }))
+                                        }
+                                      >
+                                        {opt.label}
+                                        {opt.price > 0 && <span className="cart-option-chip-price"> +₹{opt.price}</span>}
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            );
+                          })}
+                          <div className="cart-customize-actions">
+                            <button
+                              className="cart-customize-save"
+                              onClick={() => handleSaveOptions(item, customizationGroups)}
+                            >
+                              Save Options
+                            </button>
+                            <button className="cart-customize-cancel" onClick={handleCancelEditOptions}>
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      )}
 
                       <div className="instructions-section">
                         {editingInstructions === cartKey ? (
@@ -530,10 +593,10 @@ function Cart({ onBackClick }) {
       ) : (
         <div className="order-track-content">
           <div className="order-track-list">
-            {orderHistory.length === 0 ? (
+            {orderTrackList.length === 0 ? (
               <p className="empty-text">No orders to track</p>
             ) : (
-              orderHistory.map((order) => (
+              orderTrackList.map((order) => (
                 <div key={order.id} className="order-track-item">
                   <div className="track-status">
                     <div className={`status-indicator ${order.status.toLowerCase()}`}>
@@ -552,6 +615,31 @@ function Cart({ onBackClick }) {
                 </div>
               ))
             )}
+          </div>
+        </div>
+      )}
+
+      {activeTab === "Current Order" && cartItems.length > 0 && (
+        <button
+          type="button"
+          className="clear-cart-fab"
+          aria-label="Clear cart"
+          onClick={() => setShowClearConfirm(true)}
+        >
+          <Trash2 size={18} />
+          <span>Clear Cart</span>
+        </button>
+      )}
+
+      {showClearConfirm && (
+        <div className="clear-cart-overlay" onClick={() => setShowClearConfirm(false)}>
+          <div className="clear-cart-card" onClick={(e) => e.stopPropagation()}>
+            <h3>Clear your cart?</h3>
+            <p>This will remove all {cartItems.length} item{cartItems.length > 1 ? "s" : ""} from your cart.</p>
+            <div className="clear-cart-actions">
+              <button className="clear-cart-cancel" onClick={() => setShowClearConfirm(false)}>Cancel</button>
+              <button className="clear-cart-confirm" onClick={handleClearCart}>Clear Cart</button>
+            </div>
           </div>
         </div>
       )}

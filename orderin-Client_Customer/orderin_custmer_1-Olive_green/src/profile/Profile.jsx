@@ -20,7 +20,7 @@ function Profile({ onBackClick, onCartClick }) {
   const [orderHistory, setOrderHistory] = useState([]);
   const [likedItems, setLikedItems] = useState([]);
   const [expandedSection, setExpandedSection] = useState(null); // 'orders' or 'liked'
-  const { addToCart } = useCart();
+  const { addToCart, clearCart, clearOrderTempState } = useCart();
   const PLACEHOLDER_IMAGE = getPlaceholder('No Image');
 
   const formatPrice = (p) => {
@@ -447,18 +447,36 @@ function Profile({ onBackClick, onCartClick }) {
     });
     if (usedMethods.size > 0) {
       return Array.from(usedMethods).map(method => ({
-        label: method === 'Online' ? 'Online Payment' : method === 'Cash' ? 'Cash on Delivery' : method,
+        label: method === 'Online' ? 'Online Payment' : method === 'Cash' ? 'Cash at Counter' : method,
         detail: method === 'Online' ? 'Used in recent orders' : method === 'Cash' ? 'Pay at counter' : 'Used in recent orders'
       }));
     }
     return [
-      { label: "Cash on delivery", detail: "Default at checkout" },
+      { label: "Cash at Counter", detail: "Default at checkout" },
     ];
   })();
 
   const handleLogout = () => {
+    // Only removing "user"/"cart" left behind cart_items, orderHistory,
+    // and all the temp order-flow keys — the next person to log in on this
+    // device would see the previous customer's cart/order data. Clear
+    // everything this app writes to localStorage (tableNumber is left in
+    // place: it identifies the physical table this device is at, not the
+    // departing user, and a fresh QR scan overwrites it anyway).
+    clearCart();
+    clearOrderTempState();
     localStorage.removeItem("user");
     localStorage.removeItem("cart");
+    localStorage.removeItem("orderHistory");
+    localStorage.removeItem("orderin_onlinepayment_orderId");
+    localStorage.removeItem("orderin_paymentData");
+    localStorage.removeItem("orderin_confirmed_orderid");
+    localStorage.removeItem("orderin_confirmed_orderdata");
+    localStorage.removeItem("orderin_awaiting_orderId");
+    localStorage.removeItem("orderin_active_order");
+    localStorage.removeItem("orderin_txns");
+    localStorage.removeItem("pendingVerificationCode");
+    sessionStorage.clear();
     navigate(getPathWithTable("/"));
   };
 

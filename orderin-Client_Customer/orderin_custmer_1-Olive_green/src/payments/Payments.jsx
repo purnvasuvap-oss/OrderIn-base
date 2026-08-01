@@ -19,6 +19,9 @@ function Payments({ onBackClick }) {
   const [selectedPayment, setSelectedPayment] = useState(null);
   const [confirmedOrderData, setConfirmedOrderData] = useState(null);
   const [confirmedOrderId, setConfirmedOrderId] = useState(null);
+  // Gates rendering until we know whether a confirmed order exists, so the
+  // page never flashes its full cart/payment UI right before redirecting away.
+  const [initializing, setInitializing] = useState(true);
   const navigate = useNavigate();
   const { getPathWithTable } = useTableNumber();
 
@@ -26,22 +29,29 @@ function Payments({ onBackClick }) {
   useEffect(() => {
     const orderId = sessionStorage.getItem("confirmedOrderId") || localStorage.getItem("orderin_confirmed_orderid");
     const orderDataStr = sessionStorage.getItem("confirmedOrderData") || localStorage.getItem("orderin_confirmed_orderdata");
-    
+
     if (orderId && orderDataStr) {
       try {
         const parsedData = JSON.parse(orderDataStr);
         setConfirmedOrderId(orderId);
         setConfirmedOrderData(parsedData);
         console.log("Payments: loaded confirmed order:", orderId, parsedData);
+        setInitializing(false);
       } catch (e) {
         console.warn("Payments: error parsing confirmed order data", e);
+        navigate(getPathWithTable("/menu"), { replace: true });
       }
     } else {
       console.warn("Payments: no confirmed order found. Redirecting to menu.");
-      // If no confirmed order, redirect back
-      setTimeout(() => navigate(getPathWithTable("/menu")), 100);
+      // Navigate immediately — no reason to delay, and delaying only risked
+      // a state update racing the navigation.
+      navigate(getPathWithTable("/menu"), { replace: true });
     }
   }, []);
+
+  if (initializing) {
+    return <Loading isLoading={true} />;
+  }
 
   // Fallback onBackClick: navigate back and clean up unpaid orders from Firestore
   const handleBackClick = async () => {
@@ -112,9 +122,16 @@ function Payments({ onBackClick }) {
     return () => { cancelled = true; };
   }, [cartItems]);
   
-  // Use the cart items data for display and calculate billing
+  // Use the cart items data for display and calculate billing.
+  // Deliberately NOT passed `selectedPayment`: Cash/Card round the tax to a
+  // whole rupee for easier physical settlement, but recalculating this on
+  // every tap of a payment button made the on-screen total visibly jump
+  // around as the customer merely explored options, which reads as prices
+  // being manipulated. The exact, stable total is shown throughout checkout;
+  // the (at most few-paise) rounding is only applied to what's actually
+  // billed once a method is picked, in handlePlaceOrder below.
   const subtotal = parseFloat(getTotalPrice());
-  const displayedBilling = calculateBilling(subtotal, selectedPayment);
+  const displayedBilling = calculateBilling(subtotal, null);
 
   const handlePaymentSelect = (method) => {
     setSelectedPayment(method);

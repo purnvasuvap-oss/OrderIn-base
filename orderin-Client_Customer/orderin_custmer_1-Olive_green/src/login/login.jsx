@@ -5,9 +5,11 @@ import { db, auth } from "../firebaseConfig";
 import { onAuthStateChanged } from "firebase/auth";
 import "./login.css";
 import { FiUser } from "react-icons/fi";
+import { useTableNumber } from "../hooks/useTableNumber";
 
 const Login = () => {
   const navigate = useNavigate();
+  const { tableNumber, getPathWithTable } = useTableNumber();
   const [username, setUsername] = useState("");
   const [phone, setPhone] = useState("");
   const [countryCode, setCountryCode] = useState("+91");
@@ -200,6 +202,10 @@ const Login = () => {
       setErrorMessage("Please enter phone number");
       return;
     }
+    if (!/^\d{6,15}$/.test(phone.trim())) {
+      setErrorMessage("Please enter a valid phone number (digits only)");
+      return;
+    }
     if (username.trim() === "") {
       setErrorMessage("Please enter your name");
       return;
@@ -207,14 +213,14 @@ const Login = () => {
     setIsLoading(true);
     setErrorMessage("");
     try {
-      const fullPhone = `${countryCode}${phone}`;
+      const fullPhone = `${countryCode}${phone.trim()}`;
       const result = await saveUserToFirestore(fullPhone, username);
       if (result.success) {
         const user = { username, phone: fullPhone };
         localStorage.setItem("user", JSON.stringify(user));
-        localStorage.setItem("tableNumber", window.tableNumber || '1');
+        localStorage.setItem("tableNumber", tableNumber || '1');
         alert(`Welcome ${username}!`);
-        navigate(`/menu?table=${window.tableNumber || '1'}`);
+        navigate(getPathWithTable('/menu'));
       } else {
         setErrorMessage(`Error saving user: ${result.error}`);
       }
@@ -473,13 +479,17 @@ const Login = () => {
                 type="text"
                 className="country-code-selector"
                 placeholder="+91"
-                value={countryCode}
-                onChange={(e) => {
-                  setCountryCode(e.target.value);
-                  setSearchCode(e.target.value);
-                }}
+                // While the dropdown is open, the field is a search box (typing
+                // "ind" to find India shouldn't overwrite the actually-selected
+                // code until an option is picked); once closed, it shows the
+                // real selected code again.
+                value={showCountryDropdown ? searchCode : countryCode}
+                onChange={(e) => setSearchCode(e.target.value)}
                 onClick={() => setShowCountryDropdown(!showCountryDropdown)}
-                onFocus={() => setShowCountryDropdown(true)}
+                onFocus={() => {
+                  setSearchCode("");
+                  setShowCountryDropdown(true);
+                }}
                 onBlur={() => setTimeout(() => setShowCountryDropdown(false), 200)}
               />
               {showCountryDropdown && (

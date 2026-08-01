@@ -138,16 +138,10 @@
 
 .awaiting-progress-fill {
   height: 100%;
-  width: 30%;
+  width: 0%;
   background: linear-gradient(90deg, #f59e0b, #f97316);
   border-radius: 3px;
-  animation: progressIndeterminate 2s ease-in-out infinite;
-}
-
-@keyframes progressIndeterminate {
-  0% { transform: translateX(-100%); width: 30%; }
-  50% { width: 50%; }
-  100% { transform: translateX(400%); width: 30%; }
+  transition: width 1s linear;
 }
 
 .awaiting-hint {
@@ -251,6 +245,18 @@
   font-weight: 700;
   color: #dc2626;
   margin: 0 0 12px;
+}
+
+.awaiting-modal-timeout h2 {
+  color: #b45309;
+}
+
+.awaiting-modal-timeout .awaiting-modal-order-info {
+  background: #fffbeb;
+}
+
+.awaiting-modal-timeout .awaiting-modal-order-info p {
+  color: #92400e;
 }
 
 .awaiting-modal-desc {

@@ -29,7 +29,8 @@ export const useTableNumber = () => {
    */
   const getPathWithTable = (path) => {
     const table = tableNumber || localStorage.getItem('tableNumber') || '1';
-    return `${path}?table=${table}`;
+    const separator = path.includes('?') ? '&' : '?';
+    return `${path}${separator}table=${table}`;
   };
 
   return { tableNumber, getPathWithTable };

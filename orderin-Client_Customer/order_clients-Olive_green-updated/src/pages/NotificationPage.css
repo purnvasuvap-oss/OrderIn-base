@@ -100,6 +100,15 @@
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
 }
 
+.queued-order-item {
+  background: #fffbeb;
+  border-left-color: #f59e0b;
+}
+
+.queued-order-item:hover {
+  background: #fef3c7;
+}
+
 .activity-icon {
   font-size: 1.5rem;
   min-width: 28px;

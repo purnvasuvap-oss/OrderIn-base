@@ -2,11 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { useNotification } from '../hooks/useNotification';
 import { db } from '../firebase';
 import { collection, getDocs } from 'firebase/firestore';
+import { formatTime, isOrderAccepted } from '../services/orderService';
 import './NotificationPage.css';
 
 const NotificationPage = () => {
   const [activeTab, setActiveTab] = useState('recent');
-  const { activities } = useNotification();
+  const { activities, queuedCount, queuedOrders } = useNotification();
   const [feedbackList, setFeedbackList] = useState([]);
   const [loadingFeedbacks, setLoadingFeedbacks] = useState(false);
 
@@ -149,6 +150,32 @@ const NotificationPage = () => {
     );
   };
 
+  // Render Queued Orders tab
+  const renderQueuedOrders = () => {
+    if (!queuedOrders || queuedOrders.length === 0) {
+      return <div className="empty-state">No orders waiting in queue</div>;
+    }
+
+    return (
+      <div className="activities-container">
+        {queuedOrders.map((order) => (
+          <div key={order.id} className="activity-item queued-order-item">
+            <div className="activity-icon">📦</div>
+            <div className="activity-content">
+              <p className="activity-message">
+                #{order.id} — {order.username} (Table {order.tableNumber})
+              </p>
+              <span className="activity-time">
+                {!isOrderAccepted(order) ? 'Awaiting acceptance' : 'Awaiting payment'}
+                {order.timestamp ? ` • ${formatTime(order.timestamp)}` : ''}
+              </span>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
   // Render Feedback tab
   const renderFeedback = () => {
     if (loadingFeedbacks) {
@@ -218,6 +245,12 @@ const NotificationPage = () => {
           📋 Recent Activities
         </button>
         <button
+          className={`tab-button ${activeTab === 'queued' ? 'active' : ''}`}
+          onClick={() => setActiveTab('queued')}
+        >
+          📦 Queued Orders{queuedCount > 0 ? ` (${queuedCount})` : ''}
+        </button>
+        <button
           className={`tab-button ${activeTab === 'feedback' ? 'active' : ''}`}
           onClick={() => setActiveTab('feedback')}
         >
@@ -227,6 +260,7 @@ const NotificationPage = () => {
 
       <div className="tab-content-area">
         {activeTab === 'recent' && renderRecentActivities()}
+        {activeTab === 'queued' && renderQueuedOrders()}
         {activeTab === 'feedback' && renderFeedback()}
       </div>
     </div>

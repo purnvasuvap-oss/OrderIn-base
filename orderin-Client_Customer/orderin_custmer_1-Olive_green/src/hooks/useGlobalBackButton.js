@@ -4,7 +4,7 @@ import { safeDeleteUnpaidOrders } from '../utils/orderCleanupUtils';
 
 /**
  * STRICT back-button control for OrderIn SPA with ORDER CLEANUP
- * 
+ *
  * RULES:
  * 1. Payment flow (Cart → Payments → Counter Code):
  *    - These pages allow NORMAL back navigation within the flow
@@ -13,9 +13,9 @@ import { safeDeleteUnpaidOrders } from '../utils/orderCleanupUtils';
  *    - Back button → Menu page (directly, no stepping through)
  * 3. Menu page:
  *    - Back button → Login page
- * 4. Login page:
+ * 4. Login page (/login) and the public pre-login flipbook (/):
  *    - Back button → Do nothing (prevent going back)
- * 
+ *
  * CLEANUP LOGIC:
  * - When user navigates BACK from payment flow pages (payments, counter-code)
  * - Delete all unpaid orders from Firestore
@@ -40,13 +40,19 @@ export const useGlobalBackButton = () => {
     // Determine intended behavior based on current page
     const getBackBehavior = (path) => {
       if (path === '/') {
+        // Public pre-login flipbook menu (the new QR landing page): it has
+        // its own internal page-flip navigation, so hardware back has
+        // nothing meaningful to do — prevent, same as Login used to.
+        console.log('[useGlobalBackButton] Public menu (/) - prevent back');
+        return { action: 'prevent', target: null, requiresCleanup: false };
+      } else if (path === '/login') {
         // Login page: prevent back
         console.log('[useGlobalBackButton] Login page - prevent back');
         return { action: 'prevent', target: null, requiresCleanup: false };
       } else if (path === '/menu') {
         // Menu page: go to login
         console.log('[useGlobalBackButton] Menu page - go to login');
-        return { action: 'redirect', target: '/', requiresCleanup: false };
+        return { action: 'redirect', target: '/login', requiresCleanup: false };
       } else if (paymentFlowPages.some(page => path.startsWith(page))) {
         // Payment flow: allow normal back (do nothing)
         // But mark if cleanup is needed
@@ -70,15 +76,21 @@ export const useGlobalBackButton = () => {
     // Generate unique state ID for this page
     const currentStateId = ++stateIdRef.current;
 
-    // Push state immediately (this prevents going back to previous app state)
-    window.history.pushState(
-      { 
+    // Replace (not push) the current history entry with our guard state.
+    // react-router's own navigate() calls already add an entry per page
+    // change; pushing another one here on top of that meant every single
+    // navigation grew the stack by two entries, so leaving the app via the
+    // back button could take dozens of presses. replaceState re-tags the
+    // entry react-router just created instead of stacking a second one, and
+    // the popstate interception below still works identically either way.
+    window.history.replaceState(
+      {
         orderinState: currentStateId,
         path: currentPath,
         behavior: backBehavior.action,
         target: backBehavior.target,
         requiresCleanup: backBehavior.requiresCleanup
-      }, 
+      },
       null
     );
 
@@ -97,12 +109,19 @@ export const useGlobalBackButton = () => {
           const cleanupAsync = async () => {
             try {
               const user = JSON.parse(localStorage.getItem("user"));
-              if (user && user.phone) {
-                console.log('Global back handler: Starting cleanup for', user.phone);
-                
+              // Resolve the specific pending order this page was for — passing
+              // no orderId would delete every unpaid order the user has,
+              // including any other legitimate pending order.
+              const pendingOrderId =
+                sessionStorage.getItem('pendingOrderId') ||
+                localStorage.getItem('orderin_countercode_orderId') ||
+                null;
+              if (user && user.phone && pendingOrderId) {
+                console.log('Global back handler: Starting cleanup for', user.phone, pendingOrderId);
+
                 // Wait for cleanup to complete
-                await safeDeleteUnpaidOrders(user.phone);
-                
+                await safeDeleteUnpaidOrders(user.phone, pendingOrderId);
+
                 console.log('Global back handler: Cleanup completed');
                 
                 // Clear session storage

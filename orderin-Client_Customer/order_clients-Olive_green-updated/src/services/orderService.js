@@ -1045,8 +1045,12 @@ export const acceptOrder = async (phoneNumber, orderIdOrIndex, restaurantId = RE
  * that page's listener before it ever gets to show the rejection.
  * Either way the order never resurfaces in this admin's Orders/Finance
  * views: both already filter out/exclude "Rejected" orders.
+ *
+ * `reason` (one of the three preset options from RejectReasonModal) is
+ * stored as `rejectionReason` on the order so the customer app can show
+ * it in its "Order Not Available" screen.
  */
-export const rejectOrder = async (phoneNumber, orderIdOrIndex, restaurantId = RESTAURANT_ID) => {
+export const rejectOrder = async (phoneNumber, orderIdOrIndex, restaurantId = RESTAURANT_ID, reason = null) => {
   try {
     const customerRef = doc(db, "Restaurant", restaurantId, "customers", phoneNumber);
     const customerSnap = await getDoc(customerRef);
@@ -1066,6 +1070,7 @@ export const rejectOrder = async (phoneNumber, orderIdOrIndex, restaurantId = RE
     if (foundIndex >= 0 && pastOrders[foundIndex]) {
       pastOrders[foundIndex].status = "Rejected";
       pastOrders[foundIndex].awaitingConfirmation = false;
+      pastOrders[foundIndex].rejectionReason = reason;
       await updateDoc(customerRef, { pastOrders });
     }
   } catch (error) {

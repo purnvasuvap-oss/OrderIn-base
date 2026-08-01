@@ -1,13 +1,15 @@
 import React from "react";
 import { Clock, CheckCircle, XCircle, ChevronLeft, ShoppingBag } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useTableNumber } from "../hooks/useTableNumber";
 import { doc, onSnapshot } from "firebase/firestore";
 import { db } from "../firebaseConfig";
 import { useCart } from "../context/CartContext";
 import { safeDeleteUnpaidOrders } from "../utils/orderCleanupUtils";
 import "./AwaitingConfirmation.css";
+
+const AWAITING_CONFIRMATION_TIMEOUT_SECONDS = 90;
 
 function AwaitingConfirmation() {
   const navigate = useNavigate();
@@ -17,6 +19,13 @@ function AwaitingConfirmation() {
   const [orderData, setOrderData] = useState(null);
   const [waitTime, setWaitTime] = useState(0);
   const [showRejectedPopup, setShowRejectedPopup] = useState(false);
+  const [showTimeoutPopup, setShowTimeoutPopup] = useState(false);
+  const statusRef = useRef("waiting");
+
+  const setStatusSafe = (next) => {
+    statusRef.current = next;
+    setStatus(next);
+  };
 
   const pendingOrderId =
     sessionStorage.getItem("pendingOrderId") ||
@@ -61,8 +70,19 @@ function AwaitingConfirmation() {
       return;
     }
 
+    let unsubscribe;
+
     const timer = setInterval(() => {
-      setWaitTime((prev) => prev + 1);
+      setWaitTime((prev) => {
+        const next = prev + 1;
+        if (statusRef.current === "waiting" && next >= AWAITING_CONFIRMATION_TIMEOUT_SECONDS) {
+          clearInterval(timer);
+          if (typeof unsubscribe === "function") unsubscribe();
+          setStatusSafe("timedout");
+          setShowTimeoutPopup(true);
+        }
+        return next;
+      });
     }, 1000);
 
     const user = JSON.parse(localStorage.getItem("user"));
@@ -70,30 +90,32 @@ function AwaitingConfirmation() {
 
     const customerRef = doc(db, "Restaurant", "orderin_restaurant_3", "customers", user.phone);
 
-    const unsubscribe = onSnapshot(customerRef, (snap) => {
+    unsubscribe = onSnapshot(customerRef, (snap) => {
+      setIsInitialLoad(false);
       if (!snap.exists()) return;
       const data = snap.data();
       const pastOrders = Array.isArray(data.pastOrders) ? data.pastOrders : [];
       const currentOrder = pastOrders.find((o) => String(o.id || "") === String(pendingOrderId));
       if (!currentOrder) return;
       setOrderData(currentOrder);
+      if (statusRef.current !== "waiting") return;
       const orderStatus = String(currentOrder.status || "Pending").toLowerCase();
       if (orderStatus === "confirmed") {
-        setStatus("confirmed");
+        setStatusSafe("confirmed");
         clearInterval(timer);
-        
+
         // Store the confirmed order data for the Payments page
         sessionStorage.setItem("confirmedOrderId", currentOrder.id || pendingOrderId);
         sessionStorage.setItem("confirmedOrderData", JSON.stringify(currentOrder));
         localStorage.setItem("orderin_confirmed_orderid", currentOrder.id || pendingOrderId);
         localStorage.setItem("orderin_confirmed_orderdata", JSON.stringify(currentOrder));
-        
+
         setTimeout(() => {
           // Navigate to Payments page for payment method selection
           navigate(getPathWithTable("/payments"));
         }, 2000);
       } else if (orderStatus === "rejected" || orderStatus === "cancelled") {
-        setStatus("rejected");
+        setStatusSafe("rejected");
         clearInterval(timer);
         setShowRejectedPopup(true);
       }
@@ -121,7 +143,9 @@ function AwaitingConfirmation() {
           <div className="awaiting-status awaiting-waiting">
             <div className="awaiting-spinner"><Clock size={48} color="#f59e0b" /></div>
             <h2>Awaiting Confirmation</h2>
-            <p className="awaiting-description">Please wait while the restaurant reviews your order.</p>
+            <p className="awaiting-description">
+              {isInitialLoad ? "Connecting to the restaurant…" : "Please wait while the restaurant reviews your order."}
+            </p>
             <div className="awaiting-timer"><Clock size={18} /><span>Waiting for <strong>{displayTime}</strong></span></div>
             {orderData && (
               <div className="awaiting-order-details">
@@ -131,7 +155,7 @@ function AwaitingConfirmation() {
               </div>
             )}
             <div className="awaiting-progress-bar">
-              <div className="awaiting-progress-fill" style={{ width: `${Math.min(100, (waitTime / 60) * 20)}%` }} />
+              <div className="awaiting-progress-fill" style={{ width: `${Math.min(100, (waitTime / AWAITING_CONFIRMATION_TIMEOUT_SECONDS) * 100)}%` }} />
             </div>
           </div>
         )}
@@ -153,13 +177,33 @@ function AwaitingConfirmation() {
           <div className="awaiting-modal">
             <div className="awaiting-modal-icon rejected"><XCircle size={48} color="#dc2626" /></div>
             <h2>Order Not Available</h2>
-            <p className="awaiting-modal-desc">Unfortunately, the restaurant is unable to fulfill your order at this time.</p>
+            <p className="awaiting-modal-desc">
+              {orderData?.rejectionReason || "Unfortunately, the restaurant is unable to fulfill your order at this time."}
+            </p>
             <div className="awaiting-modal-order-info">
               <p><strong>Order #{pendingOrderId}</strong></p>
               {orderData && <p>Total: ₹{Number(orderData.total || orderData.totalCost || 0).toFixed(2)}</p>}
             </div>
             <p className="awaiting-modal-suggestion">Please try ordering different items or visit again later.</p>
             <button className="awaiting-modal-btn" onClick={handleBackToMenu}><ShoppingBag size={18} /> Continue Shopping</button>
+            <button className="awaiting-modal-btn-secondary" onClick={handleViewCart}>View Cart</button>
+          </div>
+        </div>
+      )}
+
+      {showTimeoutPopup && (
+        <div className="awaiting-modal-overlay">
+          <div className="awaiting-modal awaiting-modal-timeout">
+            <div className="awaiting-modal-icon timeout"><Clock size={48} color="#f59e0b" /></div>
+            <h2>Taking Longer Than Expected</h2>
+            <p className="awaiting-modal-desc">
+              The restaurant hasn't accepted your order yet. Please reorder to try again.
+            </p>
+            <div className="awaiting-modal-order-info">
+              <p><strong>Order #{pendingOrderId}</strong></p>
+              {orderData && <p>Total: ₹{Number(orderData.total || orderData.totalCost || 0).toFixed(2)}</p>}
+            </div>
+            <button className="awaiting-modal-btn" onClick={handleBackToMenu}><ShoppingBag size={18} /> Reorder</button>
             <button className="awaiting-modal-btn-secondary" onClick={handleViewCart}>View Cart</button>
           </div>
         </div>

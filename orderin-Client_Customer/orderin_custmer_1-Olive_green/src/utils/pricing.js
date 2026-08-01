@@ -10,6 +10,36 @@ export const normalizeOption = (opt) => {
 export const normalizeGroupOptions = (options) =>
   Array.isArray(options) ? options.map(normalizeOption) : [];
 
+// Default customization groups derived dynamically based on item category.
+// Purely preferential (no price impact) — folded into the saved instructions.
+export const getDefaultsForCategory = (category) => {
+  if (!category) return [{ id: "portion", label: "Portion", options: ["Regular", "Large"] }];
+  const cat = String(category).toLowerCase();
+  // Beverage / Drink items
+  if (/drink|beverage|juice|shake|mocktail|smoothie|soda|cola|tea|coffee|water|soft drink|cold drink|milkshake/.test(cat)) {
+    return [
+      { id: "size", label: "Size", options: ["Regular", "Large", "Extra Large"] },
+      { id: "ice", label: "Ice Level", options: ["No Ice", "Less Ice", "Regular Ice", "Extra Ice"] },
+      { id: "sweetness", label: "Sweetness", options: ["No Sugar", "Less Sweet", "Regular", "Extra Sweet"] },
+    ];
+  }
+  // Food items
+  if (/food|starter|appetizer|main|main course|entree|curry|rice|bread|roti|naan|biryani|fried rice|noodles|pasta|pizza|burger|sandwich|wrap|roll|taco|burrito|dosa|idli|vada|pongal|upma|chowmein/.test(cat)) {
+    return [
+      { id: "spice", label: "Spice Level", options: ["Mild", "Medium", "Hot"] },
+      { id: "portion", label: "Portion", options: ["Regular", "Large"] },
+    ];
+  }
+  // Desserts
+  if (/dessert|ice cream|cake|pastry|sweet|halwa|kheer|pudding|mousse|brownie|cookie/.test(cat)) {
+    return [
+      { id: "portion", label: "Portion", options: ["Regular", "Large"] },
+    ];
+  }
+  // Default fallback
+  return [{ id: "portion", label: "Portion", options: ["Regular", "Large"] }];
+};
+
 // item.customizations if present/non-empty, else the category-based fallback groups (always price 0).
 export const getCustomizationGroups = (item, getDefaultsForCategory) =>
   item?.customizations && Array.isArray(item.customizations) && item.customizations.length

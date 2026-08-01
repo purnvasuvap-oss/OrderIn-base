@@ -93,15 +93,81 @@ function PaymentSuccess() {
 
     fetchLatestOrderFromBackend();
 
-    // Clear all temporary localStorage after displaying (give UI time to render)
-    // Use setTimeout to ensure state is set before clearing
+    // Clear all temporary localStorage after displaying (give UI time to render).
+    // If the user navigates away before the 1s delay, the unmount cleanup
+    // below used to just cancel this timer — meaning clearOrderTempState()
+    // never ran at all, leaving stale temp order state to be wrongly
+    // restored on a later visit. The cleanup now always clears it too, so it
+    // runs exactly once either way (harmless if it ends up running twice).
     const clearTimer = setTimeout(() => {
       clearOrderTempState();
       console.log('PaymentSuccess: cleared temp state from localStorage');
     }, 1000);
 
-    return () => clearTimeout(clearTimer);
+    return () => {
+      clearTimeout(clearTimer);
+      clearOrderTempState();
+    };
   }, [orderHistory, clearOrderTempState]);
+
+  const handleSubmitFeedback = async () => {
+    setFeedbackError('');
+    setSavingFeedback(true);
+    let errorOccurred = false;
+    try {
+      const user = JSON.parse(localStorage.getItem('user'));
+      console.log('PaymentSuccess submitFeedback: user from localStorage=', user);
+      if (!user || !user.phone) {
+        const msg = 'No logged-in user (missing phone). Please log in to save feedback.';
+        console.warn('PaymentSuccess submitFeedback:', msg);
+        setFeedbackError(msg);
+        errorOccurred = true;
+      } else {
+        const phone = user.phone;
+        const customerRef = doc(db, 'Restaurant', 'orderin_restaurant_3', 'customers', phone);
+        console.log('Attempting to save feedback to', customerRef.path);
+        const entry = { stars: rating, text: feedback || '', createdAt: new Date().toISOString() };
+
+        // Try to update existing doc with arrayUnion; if doc doesn't exist, create it
+        try {
+          const snap = await getDoc(customerRef);
+          if (snap.exists()) {
+            try {
+              await updateDoc(customerRef, { feedback: arrayUnion(entry), updatedAt: serverTimestamp() });
+              console.log('PaymentSuccess feedback updated for', phone, entry);
+            } catch (uErr) {
+              console.warn('updateDoc failed, falling back to setDoc merge', uErr);
+              await setDoc(customerRef, { feedback: arrayUnion(entry), updatedAt: serverTimestamp() }, { merge: true });
+              console.log('PaymentSuccess feedback saved with setDoc merge for', phone);
+            }
+          } else {
+            // Create customer doc with feedback
+            await setDoc(customerRef, { feedback: [entry], createdAt: serverTimestamp(), updatedAt: serverTimestamp() }, { merge: true });
+            console.log('PaymentSuccess created customer doc and saved feedback for', phone);
+          }
+        } catch (dbErr) {
+          console.error('PaymentSuccess: Firestore write failed', dbErr);
+          setFeedbackError(String(dbErr?.message || dbErr));
+          errorOccurred = true;
+        }
+        // success (no error set)
+        if (!errorOccurred) {
+          try { alert('Thank you — your feedback was saved.'); } catch (_) {}
+        }
+      }
+    } catch (err) {
+      console.error('Error saving PaymentSuccess feedback:', err);
+      setFeedbackError(String(err?.message || err));
+      errorOccurred = true;
+    } finally {
+      setSavingFeedback(false);
+      // Only close and navigate if there was no error
+      if (!errorOccurred) {
+        setShowFeedback(false);
+        navigate(getPathWithTable('/menu'));
+      }
+    }
+  };
 
   return (
     <div className="payment-success-container">
@@ -162,64 +228,7 @@ function PaymentSuccess() {
               rows={4}
             />
             <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
-              <button className="submit-feedback-btn" onClick={async () => {
-                setFeedbackError('');
-                setSavingFeedback(true);
-                let errorOccurred = false;
-                try {
-                  const user = JSON.parse(localStorage.getItem('user'));
-                  console.log('PaymentSuccess submitFeedback: user from localStorage=', user);
-                  if (!user || !user.phone) {
-                    const msg = 'No logged-in user (missing phone). Please log in to save feedback.';
-                    console.warn('PaymentSuccess submitFeedback:', msg);
-                    setFeedbackError(msg);
-                    errorOccurred = true;
-                  } else {
-                    const phone = user.phone;
-                    const customerRef = doc(db, 'Restaurant', 'orderin_restaurant_3', 'customers', phone);
-                    console.log('Attempting to save feedback to', customerRef.path);
-                    const entry = { stars: rating, text: feedback || '', createdAt: new Date().toISOString() };
-
-                    // Try to update existing doc with arrayUnion; if doc doesn't exist, create it
-                    try {
-                      const snap = await getDoc(customerRef);
-                      if (snap.exists()) {
-                        try {
-                          await updateDoc(customerRef, { feedback: arrayUnion(entry), updatedAt: serverTimestamp() });
-                          console.log('PaymentSuccess feedback updated for', phone, entry);
-                        } catch (uErr) {
-                          console.warn('updateDoc failed, falling back to setDoc merge', uErr);
-                          await setDoc(customerRef, { feedback: arrayUnion(entry), updatedAt: serverTimestamp() }, { merge: true });
-                          console.log('PaymentSuccess feedback saved with setDoc merge for', phone);
-                        }
-                      } else {
-                        // Create customer doc with feedback
-                        await setDoc(customerRef, { feedback: [entry], createdAt: serverTimestamp(), updatedAt: serverTimestamp() }, { merge: true });
-                        console.log('PaymentSuccess created customer doc and saved feedback for', phone);
-                      }
-                    } catch (dbErr) {
-                      console.error('PaymentSuccess: Firestore write failed', dbErr);
-                      setFeedbackError(String(dbErr?.message || dbErr));
-                      errorOccurred = true;
-                    }
-                    // success (no error set)
-                    if (!errorOccurred) {
-                      try { alert('Thank you — your feedback was saved.'); } catch (_) {}
-                    }
-                  }
-                } catch (err) {
-                  console.error('Error saving PaymentSuccess feedback:', err);
-                  setFeedbackError(String(err?.message || err));
-                  errorOccurred = true;
-                } finally {
-                  setSavingFeedback(false);
-                  // Only close and navigate if there was no error
-                  if (!errorOccurred) {
-                    setShowFeedback(false);
-                    navigate(getPathWithTable('/menu'));
-                  }
-                }
-              }}>Submit Feedback</button>
+              <button className="submit-feedback-btn" onClick={handleSubmitFeedback}>Submit Feedback</button>
               <button className="submit-feedback-btn" onClick={() => { setShowFeedback(false); navigate(getPathWithTable('/menu')); }}>Skip</button>
             </div>
             {savingFeedback && <div style={{ marginTop: 8 }}>Saving feedback...</div>}

@@ -5,9 +5,14 @@ import { useCart } from "../context/CartContext";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db } from "../firebaseConfig";
 import { X } from "lucide-react";
+import { safeDeleteUnpaidOrders } from "../utils/orderCleanupUtils";
 import "./OnlinePayment.css";
 
 const idsMatch = (left, right) => String(left) === String(right);
+
+// Configurable via env so the admin payment gateway's domain can change
+// without a code change + redeploy of this app.
+const ADMIN_PAY_URL = import.meta.env.VITE_ADMIN_PAY_URL || 'https://orderin-admin.web.app/pay';
 
 function OnlinePayment() {
   const navigate = useNavigate();
@@ -18,7 +23,21 @@ function OnlinePayment() {
   const [paymentData, setPaymentData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [debugMode, setDebugMode] = useState(true);
-  const [iframeUrl, setIframeUrl] = useState('https://orderin-admin.web.app/pay');
+  const [iframeUrl, setIframeUrl] = useState(ADMIN_PAY_URL);
+
+  // Deletes this specific unpaid order from Firestore (never someone else's
+  // pending order) so cancelled/errored/abandoned payments don't pile up.
+  const cleanupUnpaidOrder = async (id) => {
+    if (!id) return;
+    try {
+      const user = JSON.parse(localStorage.getItem('user'));
+      if (user && user.phone) {
+        await safeDeleteUnpaidOrders(user.phone, id);
+      }
+    } catch (err) {
+      console.error('[OnlinePayment] Error cleaning up unpaid order:', err);
+    }
+  };
 
   useEffect(() => {
     // This useEffect ONLY handles initialization
@@ -70,7 +89,7 @@ function OnlinePayment() {
       params.append('accountNumber', foundPaymentData.accountNumber || '');
       params.append('customerPhone', foundPaymentData.customerPhone || '');
       
-      const urlWithParams = `https://orderin-admin.web.app/pay?${params.toString()}`;
+      const urlWithParams = `${ADMIN_PAY_URL}?${params.toString()}`;
       console.log('iframe URL with params:', urlWithParams);
       console.log('Sending to embedded page - Taxes:', foundPaymentData.taxes);
       setIframeUrl(urlWithParams);
@@ -159,6 +178,7 @@ function OnlinePayment() {
       // Handle payment cancellation
       else if (event.data && event.data.type === "PAYMENT_CANCELLED") {
         console.log("[OnlinePayment] Payment cancelled");
+        await cleanupUnpaidOrder(orderId);
         sessionStorage.removeItem('pendingOrderId');
         localStorage.removeItem('orderin_onlinepayment_orderId');
         sessionStorage.removeItem('paymentData');
@@ -168,6 +188,7 @@ function OnlinePayment() {
       // Handle payment error
       else if (event.data && event.data.type === "PAYMENT_ERROR") {
         console.error("[OnlinePayment] Payment error:", event.data.message);
+        await cleanupUnpaidOrder(orderId);
         sessionStorage.removeItem('pendingOrderId');
         localStorage.removeItem('orderin_onlinepayment_orderId');
         sessionStorage.removeItem('paymentData');
@@ -180,8 +201,9 @@ function OnlinePayment() {
     return () => window.removeEventListener("message", handleMessage);
   }, [orderId, navigate, getPathWithTable, markPaymentSuccessful]);
 
-  const handleBackClick = () => {
+  const handleBackClick = async () => {
     console.log('[OnlinePayment] Back button clicked');
+    await cleanupUnpaidOrder(orderId);
     sessionStorage.removeItem('pendingOrderId');
     localStorage.removeItem('orderin_onlinepayment_orderId');
     sessionStorage.removeItem('paymentData');
@@ -193,39 +215,14 @@ function OnlinePayment() {
   if (!isLoading && !orderId) {
     return (
       <div className="online-payment-container">
-        <div style={{
-          backgroundColor: "#fff3cd",
-          border: "1px solid #ffc107",
-          borderRadius: "8px",
-          padding: "20px",
-          maxWidth: "400px",
-          textAlign: "center"
-        }}>
+        <div className="payment-error-card">
           <h2>Error</h2>
           <p>No order ID found. Cannot load payment gateway.</p>
-          <button 
-            onClick={handleBackClick}
-            style={{
-              padding: "10px 20px",
-              backgroundColor: "#007bff",
-              color: "white",
-              border: "none",
-              borderRadius: "4px",
-              cursor: "pointer"
-            }}
-          >
+          <button className="payment-error-btn" onClick={handleBackClick}>
             Go Back to Payments
           </button>
           {debugMode && (
-            <div style={{ 
-              marginTop: "20px", 
-              textAlign: "left",
-              fontSize: "12px",
-              fontFamily: "monospace",
-              backgroundColor: "#f8f9fa",
-              padding: "10px",
-              borderRadius: "4px"
-            }}>
+            <div className="payment-error-debug">
               <p><strong>Debug Info:</strong></p>
               <p>Location: {location.pathname}{location.search}</p>
               <p>Session pendingOrderId: {sessionStorage.getItem('pendingOrderId') || 'NOT FOUND'}</p>
@@ -259,7 +256,11 @@ function OnlinePayment() {
         title="Online Payment Gateway"
         className="payment-iframe"
         allow="payment"
-        sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox allow-top-navigation"
+        // No allow-top-navigation: a compromised/malicious admin payment page
+        // must not be able to redirect the customer's top-level window
+        // (phishing vector). All state changes come back via postMessage,
+        // which this component already listens for above.
+        sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox"
       />
     </div>
   );

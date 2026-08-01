@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "./context/CartContext";
 import { useTableNumber } from "./hooks/useTableNumber";
@@ -20,43 +20,102 @@ function Bill() {
   const [feedback, setFeedback] = useState('');
   const [savingFeedback, setSavingFeedback] = useState(false);
   const [feedbackError, setFeedbackError] = useState('');
+  const [restaurantName, setRestaurantName] = useState("Our Restaurant");
+  const [restaurantAddress, setRestaurantAddress] = useState("");
+
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const snap = await getDoc(doc(db, "Restaurant", "orderin_restaurant_3"));
+        if (alive && snap.exists()) {
+          const data = snap.data();
+          if (data.name) setRestaurantName(data.name);
+          if (data.address) setRestaurantAddress(data.address);
+        }
+      } catch (e) {
+        /* keep defaults */
+      }
+    })();
+    return () => { alive = false; };
+  }, []);
 
 
-  // Resolve order data dynamically: prefer pending order id, then orderHistory last item, then fallback
-  const resolveOrder = () => {
-    try {
+  // Resolve order data: the real order lives in Firestore (Cart.jsx's
+  // checkout writes straight there and never touches CartContext's
+  // orderHistory, so that state is always empty in the live app — it can
+  // only be used as an offline/legacy fallback, never the primary source).
+  const [order, setOrder] = useState(null);
+  const [orderLoading, setOrderLoading] = useState(true);
+
+  useEffect(() => {
+    let alive = true;
+
+    const resolveOrder = async () => {
       const pendingFromSession = sessionStorage.getItem('pendingOrderId');
       const pendingFromLocal = localStorage.getItem('orderin_countercode_orderId') || localStorage.getItem('orderin_orderId');
       const orderId = pendingFromSession || pendingFromLocal || null;
 
-      let history = Array.isArray(orderHistory) ? orderHistory : [];
-      if (!history.length) {
-        try {
-          const storedHistory = JSON.parse(localStorage.getItem('orderHistory') || '[]');
-          history = Array.isArray(storedHistory) ? storedHistory : [];
-        } catch (parseErr) {
-          history = [];
+      try {
+        const user = JSON.parse(localStorage.getItem('user') || 'null');
+        if (user && user.phone) {
+          const customerRef = doc(db, "Restaurant", "orderin_restaurant_3", "customers", user.phone);
+          const snap = await getDoc(customerRef);
+          if (snap.exists()) {
+            const pastOrders = Array.isArray(snap.data().pastOrders) ? snap.data().pastOrders : [];
+            let found = orderId ? pastOrders.find(o => String(o.id) === String(orderId)) : null;
+            if (!found) {
+              // No (or stale) pending id — fall back to the most recently
+              // paid/manual order, same source PaymentSuccess.jsx already uses.
+              found = pastOrders
+                .filter(o => o.paymentStatus === 'paid' || o.paymentStatus === 'manual')
+                .sort((a, b) => parseOrderTimestamp(b) - parseOrderTimestamp(a))[0] || null;
+            }
+            if (found) {
+              if (alive) { setOrder(found); setOrderLoading(false); }
+              return;
+            }
+          }
         }
+      } catch (e) {
+        console.warn('Bill: Firestore order lookup failed', e);
       }
 
-      let found = null;
-      if (orderId && history.length) {
-        found = history.find(o => String(o.id) === String(orderId));
+      // Offline/legacy fallback: local orderHistory (rarely populated, kept for
+      // safety). This key may have been written by an older/different version
+      // of the app, so only accept entries that actually look like an order
+      // (an items array) rather than trusting whatever shape is stored.
+      const looksLikeOrder = (o) => o && typeof o === 'object' && Array.isArray(o.items);
+      try {
+        let history = Array.isArray(orderHistory) ? orderHistory.filter(looksLikeOrder) : [];
+        if (!history.length) {
+          const storedHistory = JSON.parse(localStorage.getItem('orderHistory') || '[]');
+          history = Array.isArray(storedHistory) ? storedHistory.filter(looksLikeOrder) : [];
+        }
+        let found = null;
+        if (orderId && history.length) found = history.find(o => String(o.id) === String(orderId));
+        if (!found && history.length) found = history[history.length - 1];
+        if (alive) { setOrder(found || null); setOrderLoading(false); }
+      } catch (e) {
+        console.warn('Bill: resolveOrder fallback error', e);
+        if (alive) { setOrder(null); setOrderLoading(false); }
       }
-      if (!found && history.length) {
-        found = history[history.length - 1];
-      }
+    };
 
-      if (found) return found;
+    resolveOrder();
+    return () => { alive = false; };
+  }, [orderHistory]);
 
-      return null;
-    } catch (e) {
-      console.warn('resolveOrder error', e);
-      return null;
-    }
-  };
+  if (orderLoading) {
+    return (
+      <div className="bill-container">
+        <div className="bill-empty">
+          <h2>Preparing your receipt…</h2>
+        </div>
+      </div>
+    );
+  }
 
-  const order = resolveOrder();
   if (!order) {
     return (
       <div className="bill-container">
@@ -77,6 +136,13 @@ function Bill() {
   const total = order.total ?? order.amount ?? order.totalAmount ?? '0.00';
   const paymentMethod = order.paymentMethod || order.payment || 'Cash';
   const orderDate = parseOrderTimestamp(order);
+  // parseOrderTimestamp silently falls back to "now" when an order has no
+  // usable timestamp field at all — fine for sorting, but showing today's
+  // date on a receipt for an order that isn't actually from today would be
+  // actively misleading, so detect that case and say so instead.
+  const hasRealTimestamp = Boolean(
+    order.createdAt || order.createdAtMs || order.timestamp || order.time || order.paidAt || order.deliveredAt
+  );
 
   // Ensure numeric parsing and compute subtotal from items if missing
   const parsedTaxes = parseFloat(taxes);
@@ -198,12 +264,24 @@ function Bill() {
     temp.appendChild(clone);
     document.body.appendChild(temp);
 
+    // Capture at the receipt's own rendered width/height so html2pdf builds a
+    // page sized to the receipt instead of stretching its capture container to
+    // a full A4 page and stranding the (much narrower) receipt in blank space.
+    const receiptEl = clone.querySelector('.receipt') || clone;
+    const pxPerIn = 96;
+    const receiptWidthPx = receiptEl.offsetWidth || 320;
+    const receiptHeightPx = receiptEl.offsetHeight || 500;
+    const marginIn = 0.2;
+    const pageWidthIn = receiptWidthPx / pxPerIn + marginIn * 2;
+    const pageHeightIn = receiptHeightPx / pxPerIn + marginIn * 2;
+
     const opt = {
-      margin: 0.2,
+      margin: marginIn,
       filename: `receipt-${transactionId}.pdf`,
       image: { type: "jpeg", quality: 0.98 },
-      html2canvas: { scale: 2 },
-      jsPDF: { unit: "in", format: "a4", orientation: "portrait" },
+      html2canvas: { scale: 2, width: receiptWidthPx, windowWidth: receiptWidthPx },
+      jsPDF: { unit: "in", format: [pageWidthIn, pageHeightIn], orientation: "portrait" },
+      pagebreak: { mode: ["css"] },
     };
 
     html2pdf().set(opt).from(clone).save().then(() => {
@@ -215,6 +293,24 @@ function Bill() {
     });
   };
 
+  // Reads the live, currently-applied stylesheets instead of a hand-copied CSS
+  // string, so the print window always matches Bill.css exactly (no drift).
+  const getDocumentStylesText = () => {
+    let css = '';
+    for (const sheet of document.styleSheets) {
+      try {
+        const rules = sheet.cssRules || sheet.rules;
+        if (!rules) continue;
+        for (const rule of rules) {
+          css += rule.cssText + '\n';
+        }
+      } catch (e) {
+        // Cross-origin stylesheet (e.g. an @import'd web font) - can't be read, skip it.
+      }
+    }
+    return css;
+  };
+
   const printReceipt = () => {
     const content = document.getElementById('bill-content');
     if (!content) return;
@@ -223,8 +319,7 @@ function Bill() {
     const actions = clone.querySelector('.actions');
     if (actions) actions.remove();
 
-    const styles = document.getElementById('bill-styles') ? document.getElementById('bill-styles').innerText : '';
-    const css = `<style>${styles}</style>`;
+    const css = `<style>${getDocumentStylesText()}</style>`;
     const newWin = window.open('', '_blank', 'toolbar=0,location=0,menubar=0');
     if (!newWin) {
       alert('Popup blocked. Allow popups for this site to print the bill.');
@@ -241,33 +336,10 @@ function Bill() {
 
   return (
     <div className="bill-container">
-      <div id="bill-styles" style={{display: 'none'}}>
-{`.receipt { width: 320px; max-width: 88vw; margin: 20px auto; font-family: 'Courier New', Courier, monospace; color: #111; background: #fff; padding: 14px 18px; }
-.receipt .business { text-align: center; font-weight: 700; font-size: 18px; letter-spacing: 1px; }
-.receipt .address { text-align: center; font-size: 12px; margin-top: 6px; color: #333 }
-.receipt .dotted { border-top: 2px dotted #444; margin: 10px 0; }
-.receipt .items { font-size: 13px; margin-top: 6px; }
-.receipt .item-row { display: flex; justify-content: space-between; gap: 8px; }
-.receipt .item-name { flex: 1 1 auto; }
-.receipt .item-price { width: 70px; text-align: right; }
-.receipt .leaders { flex: 0 1 8px; text-align: center; color: #666 }
-.receipt .summary { margin-top: 8px; font-size: 13px; }
-.receipt .summary .row { display:flex; justify-content:space-between; margin:4px 0; }
-.receipt .total { font-weight: 700; font-size: 16px; margin-top: 6px; display:flex; justify-content:space-between }
-.receipt .paid-by { margin-top: 8px; display:flex; justify-content:space-between; font-size:13px }
-.receipt .meta { font-size:11px; color:#333; margin-top:10px }
-.receipt .thankyou { text-align:center; font-weight:700; margin-top:12px }
-.receipt .small { font-size:11px }
-.receipt .actions { display:flex; gap:8px; margin-top:12px }
-.receipt .btn { flex:1; padding:8px 10px; border-radius:6px; border:1px solid #111; background:transparent; cursor:pointer; font-weight:600 }
-.receipt .btn-primary { background:#111; color:#fff }
-`}
-      </div>
-
       <div className="bill-card" id="bill-content">
         <div className="receipt">
-          <div className="business">BUSINESS NAME</div>
-          <div className="address small">1234 Main Street<br/>Suite 567<br/>City Name, State 54321<br/>123-456-7890</div>
+          <div className="business">{restaurantName}</div>
+          {restaurantAddress && <div className="address small">{restaurantAddress}</div>}
           <div className="dotted" />
 
           <div className="items">
@@ -311,7 +383,7 @@ function Bill() {
           <div className="paid-by"><span>Paid By:</span><span>{paymentMethod}</span></div>
 
           <div className="meta small">
-            <div>{`${orderDate.toLocaleDateString()} ${orderDate.toLocaleTimeString()}`}</div>
+            <div>{hasRealTimestamp ? `${orderDate.toLocaleDateString()} ${orderDate.toLocaleTimeString()}` : "Date unavailable"}</div>
             <div>Transaction ID: {transactionId}</div>
             <div>Order ID: {id}</div>
           </div>
@@ -322,7 +394,7 @@ function Bill() {
           <div className="actions">
             <button className="btn" onClick={() => navigate(getPathWithTable('/menu'))}>Done</button>
             <button className="btn" onClick={printReceipt}>Print</button>
-            <button className="btn btn-primary download-btn" onClick={downloadBill}>Download</button>
+            <button className="btn btn-primary" onClick={downloadBill}>Download</button>
           </div>
         </div>
       </div>
@@ -349,9 +421,20 @@ function Bill() {
               onChange={(e) => setFeedback(e.target.value)}
               rows={4}
             />
-            <button className="submit-feedback-btn" onClick={submitFeedback}>
-              Submit Feedback
-            </button>
+            {feedbackError && (
+              <p style={{ color: 'crimson', fontSize: '13px', marginTop: '8px' }}>{feedbackError}</p>
+            )}
+            <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+              <button className="submit-feedback-btn" onClick={submitFeedback} disabled={savingFeedback}>
+                {savingFeedback ? 'Saving...' : 'Submit Feedback'}
+              </button>
+              <button
+                className="submit-feedback-btn"
+                onClick={() => { setShowFeedback(false); navigate(getPathWithTable('/menu')); }}
+              >
+                Skip
+              </button>
+            </div>
           </div>
         </div>
       )}
