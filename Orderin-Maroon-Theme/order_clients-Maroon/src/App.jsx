@@ -17,6 +17,7 @@ import InventoryLogin from "./pages/InventoryLogin.jsx";
 import Inventory from "./pages/Inventory.jsx";
 import Finance from "./pages/Finance.jsx";
 import NotificationPage from "./pages/NotificationPage.jsx";
+import TableManagement from "./pages/TableManagement.jsx";
 import { NotificationProvider } from "./contexts/NotificationContext.jsx";
 
 function App() {
@@ -132,6 +133,19 @@ function App() {
                   <Inventory />
                 </>
               </SectionProtectedRoute>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Table Management Route */}
+        <Route
+          path={routes.tableManagement}
+          element={
+            <ProtectedRoute>
+              <>
+                <Header />
+                <TableManagement />
+              </>
             </ProtectedRoute>
           }
         />

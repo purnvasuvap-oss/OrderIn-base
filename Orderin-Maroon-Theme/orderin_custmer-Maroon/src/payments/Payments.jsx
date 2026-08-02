@@ -18,8 +18,33 @@ import "./Payments.css";
 function Payments({ onBackClick }) {
   const { cartItems, updateQuantity, removeFromCart, getTotalPrice, placeOrder, markPaymentSuccessful, saveOrderTempState, clearOrderTempState } = useCart();
   const [selectedPayment, setSelectedPayment] = useState(null);
+  // Confirmed-order handoff: if the customer went through the Awaiting
+  // Confirmation flow and the restaurant already accepted the order,
+  // AwaitingConfirmation.jsx stashes the accepted order's id/data here before
+  // navigating to /payments. When present, we must reuse/update that EXISTING
+  // order instead of creating a brand-new one via placeOrder().
+  const [confirmedOrderId, setConfirmedOrderId] = useState(null);
+  const [confirmedOrderData, setConfirmedOrderData] = useState(null);
   const navigate = useNavigate();
   const { getPathWithTable } = useTableNumber();
+
+  // On mount, load confirmed order data from storage (set by AwaitingConfirmation),
+  // if any. If none is present, this is the normal direct-checkout path and
+  // handlePlaceOrder falls back to today's placeOrder()-based behavior.
+  useEffect(() => {
+    try {
+      const orderId = sessionStorage.getItem("confirmedOrderId") || localStorage.getItem("orderin_confirmed_orderid");
+      const orderDataStr = sessionStorage.getItem("confirmedOrderData") || localStorage.getItem("orderin_confirmed_orderdata");
+      if (orderId && orderDataStr) {
+        const parsedData = JSON.parse(orderDataStr);
+        setConfirmedOrderId(orderId);
+        setConfirmedOrderData(parsedData);
+        console.log("Payments: loaded confirmed order for handoff:", orderId, parsedData);
+      }
+    } catch (e) {
+      console.warn("Payments: error parsing confirmed order data", e);
+    }
+  }, []);
 
   // Fallback onBackClick: navigate back and clean up unpaid orders from Firestore
   const handleBackClick = async () => {
@@ -29,7 +54,7 @@ function Payments({ onBackClick }) {
       if (user && user.phone) {
         // Delete all unpaid orders for this user
         // This is called when user navigates BACK from Payments page
-        await safeDeleteUnpaidOrders(user.phone);
+        await safeDeleteUnpaidOrders(user.phone, confirmedOrderId || undefined);
       }
     } catch (err) {
       console.error('Error during order cleanup on back navigation:', err);
@@ -40,9 +65,13 @@ function Payments({ onBackClick }) {
     sessionStorage.removeItem('pendingOrderId');
     sessionStorage.removeItem('pendingOrderForFirestore');
     sessionStorage.removeItem('pendingVerificationCode');
+    sessionStorage.removeItem('confirmedOrderId');
+    sessionStorage.removeItem('confirmedOrderData');
     localStorage.removeItem('orderin_countercode_orderId');
     localStorage.removeItem('orderin_countercode_paymentMethod');
     localStorage.removeItem('orderin_onlinepayment_orderId');
+    localStorage.removeItem('orderin_confirmed_orderid');
+    localStorage.removeItem('orderin_confirmed_orderdata');
     localStorage.removeItem('pendingVerificationCode');
 
     // Step 3: Navigate back
@@ -126,49 +155,6 @@ function Payments({ onBackClick }) {
         pastOrders = Array.isArray(data.pastOrders) ? data.pastOrders : [];
       }
 
-      // Generate human-readable order ID (format: ORD-DDMMYY<sequence>)
-      // This is now the PRIMARY order ID stored in the database
-      let orderId = null;
-      try {
-        orderId = await generateDisplayOrderId();
-        if (!orderId) {
-          throw new Error('generateDisplayOrderId returned empty value');
-        }
-        console.log('Generated order ID:', orderId);
-      } catch (displayIdErr) {
-        console.warn('Failed to generate order ID, creating fallback:', displayIdErr);
-        // Fallback: use a simple timestamp-based ID if counter generation fails
-        const now = new Date();
-        const timestamp = now.getTime();
-        orderId = `ORD-${timestamp}`;
-        console.log('Using fallback order ID:', orderId);
-      }
-
-      // Ensure orderId is defined before proceeding
-      if (!orderId) {
-        throw new Error('Failed to generate order ID: orderId is undefined');
-      }
-
-      const calculatedSubtotal = parseFloat(getTotalPrice());
-      const calculatedBilling = calculateBilling(calculatedSubtotal, selectedPayment);
-      
-      console.log('Calculated - Subtotal:', calculatedBilling.subtotal, 'Tax:', calculatedBilling.taxes, 'Total:', calculatedBilling.total);
-
-      // Place the order with the human-readable ID
-      order = placeOrder(selectedPayment);
-      console.log('Order created from placeOrder():', order);
-      // Override the order id in the in-memory order object (orderHistory stores the same object reference)
-      if (!order) {
-        throw new Error('placeOrder() returned null or undefined');
-      }
-      order.id = orderId;
-      
-      // Override with exact calculated values to ensure consistency
-      order.subtotal = calculatedBilling.subtotal;
-      order.taxes = calculatedBilling.taxes;
-      order.total = calculatedBilling.total;
-      console.log('Order updated with calculated values - Subtotal:', order.subtotal, 'Taxes:', order.taxes, 'Total:', order.total);
-
       // Generate verification code for cash/card orders (4 random digits)
       let verificationCode = null;
       if (selectedPayment === 'Cash' || selectedPayment === 'Card') {
@@ -189,58 +175,152 @@ function Payments({ onBackClick }) {
         console.warn('Payments: could not persist pendingVerificationCode', err);
       }
 
-      const orderTimestamp = createOrderTimestamp();
+      const calculatedSubtotal = parseFloat(getTotalPrice());
+      const calculatedBilling = calculateBilling(calculatedSubtotal, selectedPayment);
 
-      // Prepare order object for Firestore (no images/media)
-      const orderForFirestore = {
-        id: orderId,
-        items: order.items.map(({ name, price, quantity, instructions, specifications }) => ({
-          name,
-          price,
-          quantity,
-          instructions: instructions || "",
-        })),
-        subtotal: order.subtotal,
-        taxes: order.taxes,
-        total: order.total,
-        paymentMethod: order.paymentMethod,
-        status: order.status,
-        tableNo: tableNumber,
-        time: orderTimestamp.time,
-        createdAt: orderTimestamp.createdAt,
-        createdAtMs: orderTimestamp.createdAtMs,
-        paymentStatus: 'unpaid',
-        verificationCode: verificationCode,
-        OnlinePayMethod: ""  // Empty string initially, will be updated to UPI/CARD/NET BANKING/WALLET from embedded payment page
-      };
+      console.log('Calculated - Subtotal:', calculatedBilling.subtotal, 'Tax:', calculatedBilling.taxes, 'Total:', calculatedBilling.total);
 
-      console.log('Order object before saving to Firestore:', orderForFirestore);
-      console.log('OnlinePayMethod value:', orderForFirestore.OnlinePayMethod);
+      if (confirmedOrderId) {
+        // --- Confirmed-order handoff path ---
+        // The order already exists in pastOrders (created by Cart.jsx's
+        // checkout and accepted by the restaurant during Awaiting
+        // Confirmation). Update that EXISTING order in place instead of
+        // creating a duplicate via placeOrder().
+        const idsMatch = (left, right) => String(left) === String(right);
+        let matchedOrder = null;
+        const updatedOrders = pastOrders.map((o) => {
+          if (!idsMatch(o.id, confirmedOrderId)) return o;
+          matchedOrder = {
+            ...o,
+            paymentMethod: selectedPayment,
+            subtotal: calculatedBilling.subtotal,
+            taxes: calculatedBilling.taxes,
+            total: calculatedBilling.total,
+            verificationCode: verificationCode,
+            paymentStatus: 'unpaid',
+            awaitingConfirmation: false,
+          };
+          return matchedOrder;
+        });
 
-      const pendingOrderBackup = {
-        phoneNumber,
-        restaurantId: 'orderin_restaurant_3',
-        order: orderForFirestore,
-      };
-      sessionStorage.setItem('pendingOrderForFirestore', JSON.stringify(pendingOrderBackup));
-      localStorage.setItem('pendingOrderForFirestore', JSON.stringify(pendingOrderBackup));
+        if (!matchedOrder) {
+          // Race-condition fallback: order not found in pastOrders yet.
+          // Rebuild it from the data AwaitingConfirmation captured and append it.
+          console.warn('Payments: confirmedOrderId not found in pastOrders, reconstructing from confirmedOrderData');
+          matchedOrder = {
+            ...(confirmedOrderData || {}),
+            id: confirmedOrderId,
+            paymentMethod: selectedPayment,
+            subtotal: calculatedBilling.subtotal,
+            taxes: calculatedBilling.taxes,
+            total: calculatedBilling.total,
+            verificationCode: verificationCode,
+            paymentStatus: 'unpaid',
+            awaitingConfirmation: false,
+          };
+          updatedOrders.push(matchedOrder);
+        }
 
-      // Save to Firestore immediately with 'unpaid' status
-      // It will be deleted if user goes back, or updated to 'paid' after verification
-      pastOrders.push(orderForFirestore);
-      console.log('Past orders array before Firestore save:', pastOrders);
-      await setDoc(customerRef, { pastOrders, lastOrderAt: serverTimestamp() }, { merge: true });
-      console.log('Order saved to Firestore successfully');
-      
+        await setDoc(customerRef, { pastOrders: updatedOrders }, { merge: true });
+        console.log('Payments: updated existing confirmed order in place (no duplicate created):', matchedOrder);
+
+        order = matchedOrder;
+      } else {
+        // --- Direct-checkout fallback path (unchanged) ---
+        // No confirmed handoff order exists, so create a brand-new order via
+        // placeOrder(), exactly as before the Awaiting-Confirmation flow existed.
+
+        // Generate human-readable order ID (format: ORD-DDMMYY<sequence>)
+        // This is now the PRIMARY order ID stored in the database
+        let orderId = null;
+        try {
+          orderId = await generateDisplayOrderId();
+          if (!orderId) {
+            throw new Error('generateDisplayOrderId returned empty value');
+          }
+          console.log('Generated order ID:', orderId);
+        } catch (displayIdErr) {
+          console.warn('Failed to generate order ID, creating fallback:', displayIdErr);
+          // Fallback: use a simple timestamp-based ID if counter generation fails
+          const now = new Date();
+          const timestamp = now.getTime();
+          orderId = `ORD-${timestamp}`;
+          console.log('Using fallback order ID:', orderId);
+        }
+
+        // Ensure orderId is defined before proceeding
+        if (!orderId) {
+          throw new Error('Failed to generate order ID: orderId is undefined');
+        }
+
+        // Place the order with the human-readable ID
+        order = placeOrder(selectedPayment);
+        console.log('Order created from placeOrder():', order);
+        // Override the order id in the in-memory order object (orderHistory stores the same object reference)
+        if (!order) {
+          throw new Error('placeOrder() returned null or undefined');
+        }
+        order.id = orderId;
+
+        // Override with exact calculated values to ensure consistency
+        order.subtotal = calculatedBilling.subtotal;
+        order.taxes = calculatedBilling.taxes;
+        order.total = calculatedBilling.total;
+        console.log('Order updated with calculated values - Subtotal:', order.subtotal, 'Taxes:', order.taxes, 'Total:', order.total);
+
+        const orderTimestamp = createOrderTimestamp();
+
+        // Prepare order object for Firestore (no images/media)
+        const orderForFirestore = {
+          id: orderId,
+          items: order.items.map(({ name, price, quantity, instructions, specifications }) => ({
+            name,
+            price,
+            quantity,
+            instructions: instructions || "",
+          })),
+          subtotal: order.subtotal,
+          taxes: order.taxes,
+          total: order.total,
+          paymentMethod: order.paymentMethod,
+          status: order.status,
+          tableNo: tableNumber,
+          time: orderTimestamp.time,
+          createdAt: orderTimestamp.createdAt,
+          createdAtMs: orderTimestamp.createdAtMs,
+          paymentStatus: 'unpaid',
+          verificationCode: verificationCode,
+          OnlinePayMethod: ""  // Empty string initially, will be updated to UPI/CARD/NET BANKING/WALLET from embedded payment page
+        };
+
+        console.log('Order object before saving to Firestore:', orderForFirestore);
+        console.log('OnlinePayMethod value:', orderForFirestore.OnlinePayMethod);
+
+        const pendingOrderBackup = {
+          phoneNumber,
+          restaurantId: 'orderin_restaurant_3',
+          order: orderForFirestore,
+        };
+        sessionStorage.setItem('pendingOrderForFirestore', JSON.stringify(pendingOrderBackup));
+        localStorage.setItem('pendingOrderForFirestore', JSON.stringify(pendingOrderBackup));
+
+        // Save to Firestore immediately with 'unpaid' status
+        // It will be deleted if user goes back, or updated to 'paid' after verification
+        pastOrders.push(orderForFirestore);
+        console.log('Past orders array before Firestore save:', pastOrders);
+        await setDoc(customerRef, { pastOrders, lastOrderAt: serverTimestamp() }, { merge: true });
+        console.log('Order saved to Firestore successfully');
+      }
+
       // Save temporary order state to localStorage for refresh recovery
       const billing = {
         subtotal: calculatedBilling.subtotal,
         taxes: calculatedBilling.taxes,
         total: calculatedBilling.total
       };
-      saveOrderTempState(orderId, cartItems, billing, 'unpaid');
-      
-      console.log("Order saved to Firestore with id:", orderId, "Status: unpaid");
+      saveOrderTempState(order.id, cartItems, billing, 'unpaid');
+
+      console.log("Order saved to Firestore with id:", order.id, "Status: unpaid");
       console.log("Saved billing:", billing);
     } catch (err) {
       console.error("Error during order processing:", err);

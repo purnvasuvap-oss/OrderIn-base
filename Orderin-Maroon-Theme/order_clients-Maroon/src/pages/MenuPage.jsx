@@ -75,6 +75,12 @@ const formatSteppedPrice = (value) => {
   return rounded.toFixed(2);
 };
 
+const generateCustomizationId = () =>
+  `custom-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+
+const generateOptionId = () =>
+  `opt-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+
 const MenuPage = () => {
   const navigate = useNavigate();
   const { addActivity } = useNotification();
@@ -228,6 +234,21 @@ const MenuPage = () => {
       oldImage: item.image_url || item.image || null,
       // store previous firebase storage path (if any) so we can delete on replace
       oldImagePath: item.image_path || null,
+      customizations: Array.isArray(item.customizations)
+        ? item.customizations.map((group) => ({
+            id: group.id || generateCustomizationId(),
+            label: group.label || "",
+            options: (group.options || []).map((opt) =>
+              typeof opt === "string"
+                ? { id: generateOptionId(), name: opt, price: "0" }
+                : {
+                    id: generateOptionId(),
+                    name: opt.name ?? opt.label ?? "",
+                    price: sanitizePriceInput(opt.price ?? 0) || "0",
+                  },
+            ),
+          }))
+        : [],
     };
     setEditedItems([single]);
   };
@@ -242,6 +263,7 @@ const MenuPage = () => {
       availability: "Yes",
       description: "",
       type: TYPE_VEG,
+      customizations: [],
     };
     setIsAdding(true);
     setEditingIndex(null);
@@ -261,6 +283,20 @@ const MenuPage = () => {
         ...item,
         price: normalizePrice(item.price),
         type: allVegMode ? TYPE_VEG : normalizeMenuType(item.type),
+        customizations: Array.isArray(item.customizations)
+          ? item.customizations
+              .map((group) => ({
+                id: group.id || generateCustomizationId(),
+                label: String(group.label || "").trim(),
+                options: (group.options || [])
+                  .map((opt) => ({
+                    name: String(opt.name || "").trim(),
+                    price: priceToNumber(opt.price),
+                  }))
+                  .filter((opt) => opt.name),
+              }))
+              .filter((group) => group.label && group.options.length > 0)
+          : [],
       }));
 
       // Validate edited items. Only require an image for NEW items (no id).
@@ -655,6 +691,115 @@ const MenuPage = () => {
     setEditedItems((current) => [{ ...(current[0] || {}), [field]: value }]);
   };
 
+  const handleAddCustomizationGroup = () => {
+    setEditedItems((current) => {
+      const draft = current[0] || {};
+      const groups = Array.isArray(draft.customizations)
+        ? draft.customizations
+        : [];
+      return [
+        {
+          ...draft,
+          customizations: [
+            ...groups,
+            { id: generateCustomizationId(), label: "", options: [] },
+          ],
+        },
+      ];
+    });
+  };
+
+  const handleRemoveCustomizationGroup = (groupIndex) => {
+    setEditedItems((current) => {
+      const draft = current[0] || {};
+      const groups = Array.isArray(draft.customizations)
+        ? draft.customizations
+        : [];
+      return [
+        {
+          ...draft,
+          customizations: groups.filter((_, idx) => idx !== groupIndex),
+        },
+      ];
+    });
+  };
+
+  const handleCustomizationGroupChange = (groupIndex, field, value) => {
+    setEditedItems((current) => {
+      const draft = current[0] || {};
+      const groups = Array.isArray(draft.customizations)
+        ? draft.customizations
+        : [];
+      const nextGroups = groups.map((group, idx) =>
+        idx === groupIndex ? { ...group, [field]: value } : group,
+      );
+      return [{ ...draft, customizations: nextGroups }];
+    });
+  };
+
+  const handleAddOption = (groupIndex) => {
+    setEditedItems((current) => {
+      const draft = current[0] || {};
+      const groups = Array.isArray(draft.customizations)
+        ? draft.customizations
+        : [];
+      const nextGroups = groups.map((group, idx) =>
+        idx === groupIndex
+          ? {
+              ...group,
+              options: [
+                ...(group.options || []),
+                { id: generateOptionId(), name: "", price: "0" },
+              ],
+            }
+          : group,
+      );
+      return [{ ...draft, customizations: nextGroups }];
+    });
+  };
+
+  const handleRemoveOption = (groupIndex, optionIndex) => {
+    setEditedItems((current) => {
+      const draft = current[0] || {};
+      const groups = Array.isArray(draft.customizations)
+        ? draft.customizations
+        : [];
+      const nextGroups = groups.map((group, idx) =>
+        idx === groupIndex
+          ? {
+              ...group,
+              options: (group.options || []).filter(
+                (_, oIdx) => oIdx !== optionIndex,
+              ),
+            }
+          : group,
+      );
+      return [{ ...draft, customizations: nextGroups }];
+    });
+  };
+
+  const handleOptionChange = (groupIndex, optionIndex, field, value) => {
+    setEditedItems((current) => {
+      const draft = current[0] || {};
+      const groups = Array.isArray(draft.customizations)
+        ? draft.customizations
+        : [];
+      const nextGroups = groups.map((group, idx) => {
+        if (idx !== groupIndex) return group;
+        const nextOptions = (group.options || []).map((opt, oIdx) =>
+          oIdx === optionIndex
+            ? {
+                ...opt,
+                [field]: field === "price" ? sanitizePriceInput(value) : value,
+              }
+            : opt,
+        );
+        return { ...group, options: nextOptions };
+      });
+      return [{ ...draft, customizations: nextGroups }];
+    });
+  };
+
   const handleDraftFileChange = (field, file) => {
     setEditedItems((current) => [
       { ...(current[0] || {}), [`${field}File`]: file },
@@ -1039,6 +1184,107 @@ const MenuPage = () => {
                 placeholder="Short item description"
               />
             </label>
+
+            <div className="menu-editor-field menu-customizations-field">
+              <span>Customizations / Specializations</span>
+              <div className="menu-customizations-builder">
+                {(activeEditItem.customizations || []).length === 0 && (
+                  <p className="menu-customizations-empty">
+                    No customizations yet. Customers will see generic
+                    defaults based on category until you add one.
+                  </p>
+                )}
+                {(activeEditItem.customizations || []).map((group, idx) => (
+                  <div className="menu-customization-group" key={group.id}>
+                    <div className="menu-customization-group-header">
+                      <input
+                        className="menu-editor-control menu-customization-label"
+                        type="text"
+                        value={group.label}
+                        onChange={(e) =>
+                          handleCustomizationGroupChange(
+                            idx,
+                            "label",
+                            e.target.value,
+                          )
+                        }
+                        placeholder="e.g. Spice Level"
+                      />
+                      <button
+                        type="button"
+                        className="menu-customization-remove"
+                        onClick={() => handleRemoveCustomizationGroup(idx)}
+                        aria-label="Remove customization group"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                    <div className="menu-customization-options-list">
+                      {(group.options || []).map((opt, oIdx) => (
+                        <div
+                          className="menu-customization-option-row"
+                          key={opt.id}
+                        >
+                          <input
+                            className="menu-editor-control menu-customization-option-name"
+                            type="text"
+                            value={opt.name}
+                            onChange={(e) =>
+                              handleOptionChange(
+                                idx,
+                                oIdx,
+                                "name",
+                                e.target.value,
+                              )
+                            }
+                            placeholder="e.g. Large"
+                          />
+                          <div className="menu-customization-option-price">
+                            <span>+₹</span>
+                            <input
+                              type="text"
+                              inputMode="decimal"
+                              value={opt.price}
+                              onChange={(e) =>
+                                handleOptionChange(
+                                  idx,
+                                  oIdx,
+                                  "price",
+                                  e.target.value,
+                                )
+                              }
+                              placeholder="0"
+                            />
+                          </div>
+                          <button
+                            type="button"
+                            className="menu-customization-option-remove"
+                            onClick={() => handleRemoveOption(idx, oIdx)}
+                            aria-label="Remove option"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ))}
+                      <button
+                        type="button"
+                        className="menu-customization-add-option"
+                        onClick={() => handleAddOption(idx)}
+                      >
+                        + Add Option
+                      </button>
+                    </div>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  className="menu-customization-add"
+                  onClick={handleAddCustomizationGroup}
+                >
+                  + Add Customization Group
+                </button>
+              </div>
+            </div>
           </div>
 
           <div className="menu-editor-footer">
@@ -1192,6 +1438,8 @@ const MenuPage = () => {
 
                   <th>Description</th>
 
+                  <th>Customizations</th>
+
                   {!allVegMode && <th>Type</th>}
 
                   <th>Delete</th>
@@ -1248,6 +1496,38 @@ const MenuPage = () => {
                         {item.description && item.description.length > 24
                           ? item.description.substring(0, 24) + "..."
                           : item.description}
+                      </td>
+
+                      <td>
+                        {Array.isArray(item.customizations) &&
+                        item.customizations.length > 0 ? (
+                          <span
+                            className="menu-customizations-badge"
+                            title={item.customizations
+                              .map(
+                                (g) =>
+                                  `${g.label}: ${(g.options || [])
+                                    .map((o) =>
+                                      typeof o === "string"
+                                        ? o
+                                        : o.price
+                                          ? `${o.name} (+₹${o.price})`
+                                          : o.name,
+                                    )
+                                    .join(", ")}`,
+                              )
+                              .join(" • ")}
+                          >
+                            {item.customizations
+                              .map((g) => g.label)
+                              .filter(Boolean)
+                              .join(", ")}
+                          </span>
+                        ) : (
+                          <span className="menu-customizations-badge menu-customizations-badge--none">
+                            Default
+                          </span>
+                        )}
                       </td>
 
                       {!allVegMode && <td>{normalizeMenuType(item.type)}</td>}

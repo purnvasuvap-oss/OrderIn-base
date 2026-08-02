@@ -13,6 +13,7 @@ import Payments from './payments/Payments';
 import PaymentSuccess from './payments/PaymentSuccess';
 import CounterCode from './payments/CounterCode';
 import OnlinePayment from './payments/OnlinePayment';
+import AwaitingConfirmation from './payments/AwaitingConfirmation';
 import Loading from './Loading';
 import ProtectedRoute from './components/ProtectedRoute';
 import { useGlobalBackButton } from './hooks/useGlobalBackButton';
@@ -168,6 +169,16 @@ function AppContent({ isLoading, setIsLoading }) {
           element={
             <ProtectedRoute>
               <OnlinePayment setIsLoading={setIsLoading} />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* ===== AWAITING CONFIRMATION ROUTE ===== */}
+        <Route
+          path="/awaiting-confirmation"
+          element={
+            <ProtectedRoute>
+              <AwaitingConfirmation setIsLoading={setIsLoading} />
             </ProtectedRoute>
           }
         />

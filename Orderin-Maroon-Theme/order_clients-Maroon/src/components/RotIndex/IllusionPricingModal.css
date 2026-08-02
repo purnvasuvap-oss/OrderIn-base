@@ -1,0 +1,114 @@
+.Illusion-modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.55);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 1100;
+  padding: 16px;
+}
+.Illusion-modal-box {
+  background: #261013;
+  border: 2px solid #B5823F;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 460px;
+  max-height: 92vh;
+  overflow-y: auto;
+}
+.Illusion-modal-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(245, 223, 187, 0.18);
+}
+.Illusion-modal-header h3 {
+  margin: 0; display: flex; align-items: center; gap: 8px; color: #F5DFBB; font-size: 17px;
+}
+.Illusion-modal-header button { background: none; border: none; cursor: pointer; color: #F5DFBB; }
+.Illusion-modal-body { padding: 18px 20px; }
+
+.Illusion-intro {
+  background: rgba(161, 61, 61, 0.15);
+  border: 1px solid rgba(161, 61, 61, 0.4);
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #F5DFBB;
+  margin: 0 0 14px 0;
+}
+
+.Illusion-modal-body label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(245, 223, 187, 0.75);
+  margin: 10px 0 4px;
+}
+
+.Illusion-modal-body input[type="text"],
+.Illusion-modal-body input[type="number"] {
+  width: 100%;
+  padding: 9px 10px;
+  border: 1px solid #B5823F;
+  border-radius: 7px;
+  font-size: 14px;
+  box-sizing: border-box;
+  background: #3F0B11;
+  color: #F5DFBB;
+}
+
+.Illusion-menu-list {
+  border: 1px solid #B5823F;
+  border-radius: 8px;
+  max-height: 200px;
+  overflow-y: auto;
+  margin-top: 6px;
+}
+.Illusion-menu-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-bottom: 1px solid rgba(245, 223, 187, 0.12);
+  cursor: pointer;
+  font-size: 13px;
+}
+.Illusion-menu-row:last-child { border-bottom: none; }
+.Illusion-menu-row.is-selected { background: rgba(242, 187, 70, 0.12); }
+.Illusion-menu-name { font-weight: 600; flex: 1 1 auto; color: #F5DFBB; }
+.Illusion-menu-cat { color: rgba(245, 223, 187, 0.55); }
+.Illusion-menu-price { color: #F2BB46; }
+
+.Illusion-fields-row {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+}
+.Illusion-fields-row > div { flex: 1; }
+
+.Illusion-preview {
+  margin-top: 12px;
+  font-size: 13px;
+  color: #F5DFBB;
+  background: rgba(181, 130, 63, 0.15);
+  padding: 8px 10px;
+  border-radius: 8px;
+}
+
+.Illusion-activate-btn {
+  width: 100%;
+  margin-top: 16px;
+  background: #A13D3D;
+  color: #F5DFBB;
+  border: none;
+  border-radius: 8px;
+  padding: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.Illusion-activate-btn:hover { background: #8a3333; }
+.Illusion-activate-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.Illusion-empty { font-size: 13px; color: rgba(245, 223, 187, 0.55); padding: 8px; }
+
+@media (max-width: 480px) {
+  .Illusion-fields-row { flex-direction: column; }
+}

@@ -22,13 +22,14 @@ import Footer from "../Footer/Footer";
 import "./ItemDetails.css";
 import { getPlaceholder } from "../utils/placeholder";
 import { resolveImageUrl } from "../utils/storageResolver";
-
-// Default customization groups shown when the item doesn't define its own.
-// Purely preferential (no price impact) — folded into the saved instructions.
-const DEFAULT_CUSTOMIZATIONS = [
-  { id: "spice", label: "Spice Level", options: ["Mild", "Medium", "Hot"] },
-  { id: "portion", label: "Portion", options: ["Regular", "Large"] },
-];
+import {
+  parsePriceValue,
+  normalizeGroupOptions,
+  getCustomizationGroups,
+  getDefaultsForCategory,
+  buildSelectedOptions,
+  sumOptionPrices,
+} from "../utils/pricing";
 
 function ItemDetails() {
   const location = useLocation();
@@ -54,12 +55,22 @@ function ItemDetails() {
   // helper: normalize string for matching
   const normalizeString = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim();
 
+  const customizationGroups = item ? getCustomizationGroups(item, getDefaultsForCategory) : [];
+  const liveSelectedOptions = buildSelectedOptions(customizationGroups, customSelections);
+
+  // Two selections are "the same line" only if every chosen option matches (order follows the group order, stable per item).
+  const optionsMatch = (a = [], b = []) =>
+    a.length === b.length && a.every((o, i) => b[i] && o.group === b[i].group && o.label === b[i].label);
+
   const cartItemForCurrentItem = cartItems.find((cartItem) => {
     if (!item || !cartItem) return false;
     const itemId = item.id || item.productId || item.itemId;
     const cartId = cartItem.id || cartItem.productId || cartItem.itemId;
-    if (itemId && cartId && String(itemId) === String(cartId)) return true;
-    return normalizeString(cartItem.name) === normalizeString(item.name);
+    const nameMatches =
+      (itemId && cartId && String(itemId) === String(cartId)) ||
+      normalizeString(cartItem.name) === normalizeString(item.name);
+    if (!nameMatches) return false;
+    return optionsMatch(cartItem.selectedOptions, liveSelectedOptions);
   });
 
   const cartQuantity = Number(cartItemForCurrentItem?.quantity) || 0;
@@ -163,15 +174,13 @@ function ItemDetails() {
   // seed default customization selections once item is available
   useEffect(() => {
     if (!item) return;
-    const groups = item.customizations && Array.isArray(item.customizations) && item.customizations.length
-      ? item.customizations
-      : DEFAULT_CUSTOMIZATIONS;
+    const groups = getCustomizationGroups(item, getDefaultsForCategory);
     setCustomSelections((prev) => {
       const next = { ...prev };
       groups.forEach((g) => {
-        const opts = g.options || [];
+        const opts = normalizeGroupOptions(g.options);
         if (!next[g.id] && opts.length) {
-          next[g.id] = typeof opts[0] === 'string' ? opts[0] : opts[0].label;
+          next[g.id] = opts[0].label;
         }
       });
       return next;
@@ -223,10 +232,7 @@ function ItemDetails() {
   };
 
   const buildInstructionsWithCustomizations = (baseText) => {
-    const groups = item.customizations && Array.isArray(item.customizations) && item.customizations.length
-      ? item.customizations
-      : DEFAULT_CUSTOMIZATIONS;
-    const customLine = groups
+    const customLine = customizationGroups
       .map((g) => (customSelections[g.id] ? `${g.label}: ${customSelections[g.id]}` : null))
       .filter(Boolean)
       .join(' · ');
@@ -240,12 +246,12 @@ function ItemDetails() {
       ? buildInstructionsWithCustomizations(instructionText)
       : "";
     if (cartItemForCurrentItem) {
-      updateQuantity(cartItemForCurrentItem.name, quantity);
+      updateQuantity(cartItemForCurrentItem.cartKey, quantity);
       if (shouldSaveInstructions) {
-        updateInstructions(cartItemForCurrentItem.name, cleanedInstructions);
+        updateInstructions(cartItemForCurrentItem.cartKey, cleanedInstructions);
       }
     } else {
-      addToCart(item, quantity, shouldSaveInstructions ? cleanedInstructions : "");
+      addToCart(item, quantity, shouldSaveInstructions ? cleanedInstructions : "", liveSelectedOptions);
     }
     setIsModalOpen(false);
     setInstructions(shouldSaveInstructions ? instructionText.trim() : (cartItemForCurrentItem?.instructions || ""));
@@ -320,7 +326,8 @@ function ItemDetails() {
     }
   };
 
-  const totalPrice = (parseFloat(String(item.price || '').replace(/[^0-9.\-]/g, '')) * quantity).toFixed(2);
+  const effectiveUnitPrice = parsePriceValue(item.price) + sumOptionPrices(liveSelectedOptions);
+  const totalPrice = (effectiveUnitPrice * quantity).toFixed(2);
 
   const rating = item.rating || 4.6;
   const reviewCount = item.reviewCount || item.ratingsCount || null;
@@ -339,10 +346,6 @@ function ItemDetails() {
   }
 
   const ingredients = Array.isArray(item.ingredients) ? item.ingredients.filter(Boolean) : [];
-
-  const customizationGroups = item.customizations && Array.isArray(item.customizations) && item.customizations.length
-    ? item.customizations
-    : DEFAULT_CUSTOMIZATIONS;
 
   return (
     <div
@@ -462,7 +465,7 @@ function ItemDetails() {
             <h3 className="section-heading">Customize</h3>
             <div className="customize-groups">
               {customizationGroups.map((group) => {
-                const options = (group.options || []).map((o) => (typeof o === 'string' ? { label: o } : o));
+                const options = normalizeGroupOptions(group.options);
                 return (
                   <div className="customize-group" key={group.id || group.label}>
                     <p className="customize-label">{group.label}</p>
@@ -477,6 +480,7 @@ function ItemDetails() {
                             onClick={() => setCustomSelections((prev) => ({ ...prev, [group.id]: opt.label }))}
                           >
                             {opt.label}
+                            {opt.price > 0 && <span className="option-chip-price">+₹{opt.price}</span>}
                           </button>
                         );
                       })}

@@ -8,16 +8,17 @@ import MenuIcon from "./landingpage/menu.svg";
 import FinanceIcon from "./landingpage/finance.svg";
 import OrdersIcon from "./landingpage/orders.svg";
 import InventoryIcon from "./landingpage/inventory.svg";
-import { Bell, LogOut, Calendar, Plus, Package } from "lucide-react";
+import { Bell, LogOut, Calendar, Plus, Package, ChevronRight } from "lucide-react";
 
-import { subscribeAllCustomerOrders } from "../services/orderService";
+import { subscribeAllCustomerOrders, subscribeRecentOrders } from "../services/orderService";
 import { calculateTodaysRevenue, formatCurrency } from "../utils/financeUtils";
 import {
   subscribeDashboardOrders,
   getTodayCustomers,
 } from "../utils/dashboardStats";
 import { getTodaysCustomersCount } from "../utils/CustomerCount";
-import { getOccupiedTablesCount } from "../utils/tableCount";
+import { subscribeTables, reconcileOccupiedTables } from "../services/tableService";
+import routes from "../routes";
 import "./Dashboard.css";
 
 const Dashboard = () => {
@@ -30,6 +31,9 @@ const Dashboard = () => {
   const [orders, setOrders] = useState([]);
   const todayCustomers = getTodaysCustomersCount(orders);
   const [tablesOccupied, setTablesOccupied] = useState(0);
+  const [totalTables, setTotalTables] = useState(0);
+  const [rawTables, setRawTables] = useState([]);
+  const [recentOrders, setRecentOrders] = useState([]);
 
   useEffect(() => {
     const unsubscribe = subscribeAllCustomerOrders((ordersData) => {
@@ -37,9 +41,6 @@ const Dashboard = () => {
 
       const revenue = calculateTodaysRevenue(ordersData);
       setTodayRevenue(revenue);
-
-      const tables = getOccupiedTablesCount(ordersData);
-      setTablesOccupied(tables);
     });
 
     return () => {
@@ -48,6 +49,40 @@ const Dashboard = () => {
       }
     };
   }, []);
+
+  // Real table count + Occupied count, both read straight off the stored
+  // `tables` collection — the same one Table Management edits — so the two
+  // pages can never disagree. "Occupied" here includes tables whose order
+  // has already been served but hasn't been manually "Freed" yet (guests
+  // are still eating), since reconcileOccupiedTables only ever promotes to
+  // occupied, never auto-clears it.
+  useEffect(() => {
+    const unsubscribe = subscribeTables((tables) => {
+      setRawTables(tables);
+      setTotalTables(tables.length);
+      setTablesOccupied(tables.filter((t) => t.status === "occupied").length);
+    });
+    return () => {
+      if (typeof unsubscribe === "function") unsubscribe();
+    };
+  }, []);
+
+  useEffect(() => {
+    const unsubscribe = subscribeRecentOrders((ordersData) => {
+      setRecentOrders(ordersData || []);
+    });
+    return () => {
+      if (typeof unsubscribe === "function") unsubscribe();
+    };
+  }, []);
+
+  // Runs the same one-way occupied-promotion Table Management runs, so
+  // occupancy stays accurate even if nobody has the Table Management page
+  // open at the moment a new order comes in.
+  useEffect(() => {
+    if (rawTables.length === 0 || recentOrders.length === 0) return;
+    reconcileOccupiedTables(rawTables, recentOrders);
+  }, [rawTables, recentOrders]);
   useEffect(() => {
     const timer = setInterval(() => {
       setDateTime(new Date());
@@ -145,10 +180,19 @@ const Dashboard = () => {
 
           <div>
             <p>Tables Occupied</p>
-            <h2>{tablesOccupied} / 25</h2>
+            <h2>{tablesOccupied} / {totalTables}</h2>
 
-            <span>{Math.round((tablesOccupied / 25) * 100)}% Occupancy</span>
+            <span>{totalTables > 0 ? Math.round((tablesOccupied / totalTables) * 100) : 0}% Occupancy</span>
           </div>
+          <button
+            type="button"
+            className="stat-card-link-btn"
+            title="Open Table Management"
+            aria-label="Open Table Management"
+            onClick={goTo(routes.tableManagement)}
+          >
+            <ChevronRight size={28} strokeWidth={2.0} />
+          </button>
         </div>
       </div>
       
@@ -156,11 +200,8 @@ const Dashboard = () => {
 
       <div className="modules-grid">
         <div className="module-card menu-module" onClick={goTo("/menu-login")}>
-          <div className="module-top">
-            <div className="module-icon-circle menu-bg">
+          <div className="module-top">   
               <img src={MenuIcon} alt="" />
-            </div>
-
             <div>
               <h3>Menu</h3>
               <p>Manage dishes, categories and promotions.</p>
@@ -174,11 +215,8 @@ const Dashboard = () => {
           className="module-card finance-module"
           onClick={goTo("/finance-login")}
         >
-          <div className="module-top">
-            <div className="module-icon-circle finance-bg">
+          <div className="module-top">      
               <img src={FinanceIcon} alt="" />
-            </div>
-
             <div>
               <h3>Financial</h3>
               <p>Handle transactions, bills and financial reports.</p>
@@ -190,9 +228,7 @@ const Dashboard = () => {
 
         <div className="module-card orders-module" onClick={goTo("/orders")}>
           <div className="module-top">
-            <div className="module-icon-circle orders-bg">
               <img src={OrdersIcon} alt="" />
-            </div>
 
             <div>
               <h3>Orders</h3>
@@ -208,9 +244,9 @@ const Dashboard = () => {
           onClick={goTo("/inventory-login")}
         >
           <div className="module-top">
-            <div className="module-icon-circle inventory-bg">
+            
               <img src={InventoryIcon} alt="" />
-            </div>
+            
 
             <div>
               <h3>Inventory</h3>

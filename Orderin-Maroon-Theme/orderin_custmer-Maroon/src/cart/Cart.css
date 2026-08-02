@@ -359,6 +359,116 @@ button {
   font-weight: 700;
 }
 
+.cart-item-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.cart-item-option-chip {
+  background: rgba(242, 187, 70, 0.1);
+  color: var(--color-accent);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.cart-item-option-chip-price {
+  opacity: 0.75;
+}
+
+.cart-customize-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px;
+  margin-top: 4px;
+  border-radius: 12px;
+  background: rgba(242, 187, 70, 0.06);
+  border: 1px solid rgba(242, 187, 70, 0.18);
+}
+
+.cart-customize-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cart-customize-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: rgba(245, 223, 187, 0.65);
+  letter-spacing: 0.2px;
+  margin: 0;
+}
+
+.cart-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.cart-option-chip {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--color-text);
+  background: rgba(245, 223, 187, 0.06);
+  border: 1px solid rgba(245, 223, 187, 0.18);
+  padding: 7px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.cart-option-chip:hover {
+  border-color: rgba(242, 187, 70, 0.4);
+}
+
+.cart-option-chip.active {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--color-bg);
+  font-weight: 700;
+}
+
+.cart-option-chip-price {
+  margin-left: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  opacity: 0.75;
+}
+
+.cart-customize-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.cart-customize-save,
+.cart-customize-cancel {
+  flex: 1;
+  min-height: 36px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.cart-customize-save {
+  background: var(--color-accent);
+  color: var(--color-bg);
+}
+
+.cart-customize-cancel {
+  background: rgba(245, 223, 187, 0.06);
+  color: var(--color-text);
+  border-color: rgba(245, 223, 187, 0.12);
+}
+
 .cart-item-subtotal {
   display: flex;
   flex-direction: column;

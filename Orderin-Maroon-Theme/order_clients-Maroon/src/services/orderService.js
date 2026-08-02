@@ -197,6 +197,61 @@ const toNumberOrNull = (value) => {
 };
 
 /**
+ * Set of order-workflow statuses the UI is willing to display verbatim.
+ * Anything else (missing, blank, or a stray value like "created" that a
+ * legacy/external write path may have stored) is normalized to "Pending"
+ * so the status badge never shows a raw/unexpected value to staff.
+ * Ported from the Olive Green admin app's Accept/Reject workflow.
+ */
+const KNOWN_ORDER_STATUSES = ["Pending", "Preparing", "Ready", "Delivered", "Rejected"];
+// Legacy/alternate spellings that should still read as "Rejected" rather
+// than falling back to "Pending".
+const REJECTED_STATUS_ALIASES = new Set(["rejected", "cancelled", "canceled", "declined"]);
+
+export const normalizeOrderStatus = (rawStatus) => {
+  const value = String(rawStatus || "").trim();
+  const lower = value.toLowerCase();
+  if (REJECTED_STATUS_ALIASES.has(lower)) return "Rejected";
+  const match = KNOWN_ORDER_STATUSES.find((known) => known.toLowerCase() === lower);
+  return match || "Pending";
+};
+
+/**
+ * Manual orders are entered directly by staff, so they never wait on a
+ * restaurant-side Accept/Reject decision (see ManualOrderModal). Every
+ * other order starts life as "Pending" and needs an explicit Accept
+ * (which advances it to "Preparing") or Reject (terminal "Rejected")
+ * before it becomes editable via the normal status dropdown.
+ */
+export const isOrderAccepted = (order) => {
+  if (!order) return true;
+  if (order.isManualOrder) return true;
+  return normalizeOrderStatus(order.status) !== "Pending";
+};
+
+/**
+ * Order state flow helpers (ported from the Olive Green admin app, adapted
+ * to this app's isOrderAccepted, which is status-based rather than an
+ * `awaitingConfirmation` flag):
+ *  - queued: not yet accepted, OR accepted but payment isn't collected yet
+ *  - active: accepted AND payment collected AND not delivered
+ *  - delivered: status is Delivered
+ */
+export const isOrderPaymentCollected = (order) => {
+  const s = String((order && order.paymentStatus) || "").toLowerCase().trim();
+  return s === "paid" || s === "manual";
+};
+
+export const isOrderDelivered = (order) =>
+  normalizeOrderStatus(order && order.status) === "Delivered";
+
+export const isOrderQueued = (order) =>
+  !isOrderDelivered(order) && (!isOrderAccepted(order) || !isOrderPaymentCollected(order));
+
+export const isOrderActive = (order) =>
+  !isOrderDelivered(order) && isOrderAccepted(order) && isOrderPaymentCollected(order);
+
+/**
  * Check if a timestamp falls within today's date range
  * Accounts for timezone differences
  * Handles: Firestore Timestamp objects, Date objects, numbers, and date strings
@@ -258,6 +313,45 @@ const isOrderFromToday = (timestamp) => {
     return isFromToday;
   } catch (error) {
     console.error("    [isOrderFromToday] Error checking order date:", error);
+    return false;
+  }
+};
+
+/**
+ * Check whether an order falls within a rolling 24-hour window measured
+ * from its OWN timestamp, rather than a calendar-day (midnight-to-midnight)
+ * cutoff. isOrderFromToday would drop an order placed at 11:59 PM the
+ * instant the clock ticks past midnight, even though the kitchen hasn't
+ * finished it yet — this keeps every order visible for a full 24 hours
+ * from when it was actually placed, independent of the wall-clock date.
+ * Ported from the Olive Green admin app.
+ */
+export const isOrderWithinLast24Hours = (timestamp) => {
+  if (!timestamp) return false;
+
+  try {
+    let orderDate;
+
+    if (timestamp.toDate && typeof timestamp.toDate === "function") {
+      orderDate = timestamp.toDate();
+    } else if (timestamp instanceof Date) {
+      orderDate = timestamp;
+    } else if (typeof timestamp === "number") {
+      orderDate = new Date(timestamp);
+    } else if (typeof timestamp === "string") {
+      orderDate = new Date(timestamp);
+    } else {
+      return false;
+    }
+
+    if (isNaN(orderDate.getTime())) return false;
+
+    const ageMs = Date.now() - orderDate.getTime();
+    // Treat slightly-future timestamps (clock skew) as still current,
+    // but anything older than 24 hours drops off.
+    return ageMs < 24 * 60 * 60 * 1000;
+  } catch (error) {
+    console.error("Error checking 24-hour window:", error);
     return false;
   }
 };
@@ -427,7 +521,7 @@ export const fetchTodaysOrders = async () => {
  * Subscribe to customers collection and call onUpdate with processed orders whenever data changes.
  * Returns an unsubscribe function.
  */
-export const subscribeTodaysOrders = (onUpdate) => {
+export const subscribeTodaysOrders = (onUpdate, dateFilterFn = isOrderFromToday) => {
   try {
     console.log("=== SUBSCRIBING TO ORDERS (real-time) ===");
 
@@ -543,7 +637,8 @@ export const subscribeTodaysOrders = (onUpdate) => {
                 items: Array.isArray(rawItemsArray) ? rawItemsArray : [],
                 itemDetails: itemDetails,
                 timestamp: timestamp,
-                status: order.status || "Pending",
+                status: normalizeOrderStatus(order.status),
+                isManualOrder: order.isManualOrder === true,
                 orderIndex: index,
                 customerRef: phoneNumber,
                 specs: specsArr,
@@ -557,7 +652,7 @@ export const subscribeTodaysOrders = (onUpdate) => {
                 paidAmount: paymentInfo.paidAmount,
               };
 
-              if (timestamp && isOrderFromToday(timestamp)) {
+              if (timestamp && dateFilterFn(timestamp)) {
                 allProcessedOrders.push(orderObj);
               }
             });
@@ -589,6 +684,17 @@ export const subscribeTodaysOrders = (onUpdate) => {
     return () => {};
   }
 };
+
+/**
+ * Same live subscription as subscribeTodaysOrders, but keeps each order
+ * visible for a rolling 24 hours from its own timestamp instead of
+ * clearing everything out at midnight. This is what the Orders page uses,
+ * so an order placed at 11:59 PM doesn't vanish before the kitchen has
+ * even finished it just because the calendar day rolled over.
+ * Ported from the Olive Green admin app.
+ */
+export const subscribeRecentOrders = (onUpdate) =>
+  subscribeTodaysOrders(onUpdate, isOrderWithinLast24Hours);
 
 /**
  * Subscribe to all customer orders (history) and call onUpdate whenever data changes.
@@ -669,7 +775,9 @@ export const subscribeAllCustomerOrders = (onUpdate) => {
                 phoneNumber: phoneNumber,
                 username: displayName,
                 tableNumber: order.tableNo || "N/A",
+                items: Array.isArray(order.items) ? order.items : [],
                 itemDetails: itemDetails,
+                isManualOrder: order.isManualOrder === true,
                 specs: order.items?.map((it, idx) => ({
                   name: it.name || `Item ${idx + 1}`,
                   instructions: it.instructions || it.instruction || "-",
@@ -765,8 +873,14 @@ export const subscribeOnlineCustomerOrders = (onUpdate) => {
 /**
  * Update order status in Firebase
  * Updates the status field in pastOrders array for a specific customer
+ * Fix: previously looked orders up by their raw array index
+ * (`order.orderIndex`), which is fragile — it silently updates the wrong
+ * order whenever pastOrders shifts (e.g. another reject/delete happens in
+ * between). Now looks the order up by its stable `id` first, falling back
+ * to treating the argument as a raw index only for legacy callers that
+ * don't have an id to pass.
  */
-export const updateOrderStatus = async (phoneNumber, orderIndex, newStatus, restaurantId = RESTAURANT_ID) => {
+export const updateOrderStatus = async (phoneNumber, orderIdOrIndex, newStatus, restaurantId = RESTAURANT_ID) => {
   try {
     const customerRef = doc(
       db,
@@ -785,9 +899,17 @@ export const updateOrderStatus = async (phoneNumber, orderIndex, newStatus, rest
     const customerData = customerSnap.data();
     const pastOrders = [...(customerData.pastOrders || [])];
 
+    // Try to find the order by its stable ID first (robust), falling back
+    // to using the argument as a raw array index for backward compatibility.
+    const idsMatch = (a, b) => String(a) === String(b);
+    let foundIndex = pastOrders.findIndex((o) => idsMatch(o.id, orderIdOrIndex));
+    if (foundIndex === -1) {
+      foundIndex = Number(orderIdOrIndex);
+    }
+
     // Update the status of the specific order
-    if (pastOrders[orderIndex]) {
-      pastOrders[orderIndex].status = newStatus;
+    if (foundIndex >= 0 && pastOrders[foundIndex]) {
+      pastOrders[foundIndex].status = newStatus;
 
       // Update the document
       await updateDoc(customerRef, {
@@ -796,6 +918,83 @@ export const updateOrderStatus = async (phoneNumber, orderIndex, newStatus, rest
     }
   } catch (error) {
     console.error("Error updating order status:", error);
+    throw error;
+  }
+};
+
+/**
+ * Accept a pending customer order: advances its status directly to
+ * "Preparing" so it leaves the Accept/Reject queue and becomes editable via
+ * the normal status dropdown. Manual orders never need this (see
+ * isOrderAccepted) since staff created them directly and they never sit in
+ * the Pending queue waiting on a restaurant decision.
+ */
+export const acceptOrder = async (phoneNumber, orderIdOrIndex, restaurantId = RESTAURANT_ID) => {
+  try {
+    const customerRef = doc(db, "Restaurant", restaurantId, "customers", phoneNumber);
+    const customerSnap = await getDoc(customerRef);
+    if (!customerSnap.exists()) {
+      throw new Error("Customer not found");
+    }
+
+    const customerData = customerSnap.data();
+    const pastOrders = [...(customerData.pastOrders || [])];
+
+    const idsMatch = (a, b) => String(a) === String(b);
+    let foundIndex = pastOrders.findIndex((o) => idsMatch(o.id, orderIdOrIndex));
+    if (foundIndex === -1) {
+      foundIndex = Number(orderIdOrIndex);
+    }
+
+    if (foundIndex >= 0 && pastOrders[foundIndex]) {
+      pastOrders[foundIndex].status = "Preparing";
+      await updateDoc(customerRef, { pastOrders });
+    }
+  } catch (error) {
+    console.error("Error accepting order:", error);
+    throw error;
+  }
+};
+
+/**
+ * Reject a pending customer order. Writes a terminal "Rejected" status
+ * (rather than deleting the record outright) so it's kept for reference,
+ * but the Orders page filters "Rejected"/"Cancelled"/"Declined" orders out
+ * of the live list (see the subscribeTodaysOrders filter in Orders.jsx), so
+ * a rejected order never resurfaces there once this is written.
+ *
+ * `reason` (optional) is the staff-selected reason from RejectReasonModal
+ * (e.g. "Item Sold Out") and is persisted alongside the status so the
+ * customer can be told why. Added as an optional trailing parameter ahead
+ * of `restaurantId` — the only caller (Orders.jsx) never passes
+ * `restaurantId` explicitly, so this stays backward compatible.
+ */
+export const rejectOrder = async (phoneNumber, orderIdOrIndex, reason = null, restaurantId = RESTAURANT_ID) => {
+  try {
+    const customerRef = doc(db, "Restaurant", restaurantId, "customers", phoneNumber);
+    const customerSnap = await getDoc(customerRef);
+    if (!customerSnap.exists()) {
+      throw new Error("Customer not found");
+    }
+
+    const customerData = customerSnap.data();
+    const pastOrders = [...(customerData.pastOrders || [])];
+
+    const idsMatch = (a, b) => String(a) === String(b);
+    let foundIndex = pastOrders.findIndex((o) => idsMatch(o.id, orderIdOrIndex));
+    if (foundIndex === -1) {
+      foundIndex = Number(orderIdOrIndex);
+    }
+
+    if (foundIndex >= 0 && pastOrders[foundIndex]) {
+      pastOrders[foundIndex].status = "Rejected";
+      if (reason) {
+        pastOrders[foundIndex].rejectionReason = reason;
+      }
+      await updateDoc(customerRef, { pastOrders });
+    }
+  } catch (error) {
+    console.error("Error rejecting order:", error);
     throw error;
   }
 };

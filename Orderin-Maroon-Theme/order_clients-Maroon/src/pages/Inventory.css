@@ -161,7 +161,7 @@
   justify-content: flex-start;
   overflow: hidden;
   transition: 0.3s ease;
-  height: 120px;
+  height: 132px;
   padding: 10px 15px;
   box-sizing: border-box;
 }
@@ -169,13 +169,53 @@
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5);
 }
 
-.Inventory-activity-heading {
+.Inventory-activity-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
   margin: 0 0 6px 0;
+  flex-shrink: 0;
+}
+
+.Inventory-activity-heading {
+  margin: 0;
   font-size: 13px;
   color: #F2BB46;
   font-weight: 700;
   flex-shrink: 0;
   letter-spacing: 0.2px;
+}
+
+.Inventory-activity-viewall {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  font-size: 11px;
+  font-weight: 600;
+  color: #F5DFBB;
+  text-decoration: underline;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.Inventory-activity-viewall:hover {
+  color: #F2BB46;
+}
+
+.Inventory-activity-list {
+  height: 84px;
+  flex: none;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+.Inventory-activity-list::-webkit-scrollbar {
+  width: 5px;
+}
+.Inventory-activity-list::-webkit-scrollbar-thumb {
+  background: rgba(181, 130, 63, 0.5);
+  border-radius: 3px;
 }
 
 .Inventory-activity-entry {
@@ -1269,4 +1309,229 @@
   .Inventory-inventory-table { font-size: 9px; }
   .Inventory-inventory-table th,
   .Inventory-inventory-table td { padding: 4px 6px; font-size: 9px; }
+}
+/* ── Rot Index / Item Manager additions ── */
+/* Red Zone band colors (Green/Amber/Red) are semantic status colors and are
+   intentionally NOT re-themed — they stay red regardless of the app's palette. */
+.Inventory-redzone-banner {
+  background: rgba(161, 61, 61, 0.15);
+  border: 1px solid rgba(161, 61, 61, 0.4);
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin: 0 24px 16px;
+}
+.Inventory-redzone-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  color: #d17a7a;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+.Inventory-redzone-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.Inventory-redzone-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #261013;
+  border: 1px solid rgba(161, 61, 61, 0.45);
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 12px;
+  color: #F5DFBB;
+}
+.Inventory-redzone-chip button {
+  background: #A13D3D;
+  color: #F5DFBB;
+  border: none;
+  border-radius: 6px;
+  padding: 5px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.Inventory-redzone-chip button:hover { background: #8a3333; }
+
+.Inventory-tabs {
+  display: flex;
+  gap: 8px;
+  margin: 0 24px 16px;
+  border-bottom: 1px solid rgba(181, 130, 63, 0.3);
+}
+.Inventory-tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  padding: 10px 14px;
+  font-weight: 600;
+  color: rgba(245, 223, 187, 0.55);
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+}
+.Inventory-tab-btn.is-active {
+  color: #F2BB46;
+  border-bottom-color: #F2BB46;
+}
+
+@media (max-width: 640px) {
+  .Inventory-redzone-banner, .Inventory-tabs { margin-left: 12px; margin-right: 12px; }
+}
+
+/* === Expiry Date field (Add Stock) === */
+.Inventory-expiry-field input {
+  width: 100%;
+}
+
+/* === Batch selector (Take Out) === */
+.Inventory-batch-selector {
+  border: 1.8px solid rgba(181, 130, 63, 0.45);
+  border-radius: 10px;
+  max-height: 180px;
+  overflow-y: auto;
+  padding: 8px 10px;
+  background: #3F0B11;
+}
+.Inventory-batch-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 4px;
+  font-size: 13px;
+  color: #F5DFBB;
+  cursor: pointer;
+}
+.Inventory-batch-option input[type="checkbox"] {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  cursor: pointer;
+}
+.Inventory-batch-option span {
+  line-height: 1.3;
+}
+.Inventory-batch-option + .Inventory-batch-option {
+  border-top: 1px solid rgba(181, 130, 63, 0.2);
+}
+.Inventory-batch-selectall {
+  font-weight: 700;
+  border-bottom: 1px solid rgba(181, 130, 63, 0.3);
+  padding-bottom: 8px;
+  margin-bottom: 4px;
+}
+.Inventory-batch-empty {
+  font-size: 13px;
+  color: rgba(245, 223, 187, 0.55);
+  font-style: italic;
+  margin: 0;
+}
+
+/* === Actions column button === */
+.Inventory-btn-actions-cell {
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(181, 130, 63, 0.45);
+  background: #261013;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  color: #F5DFBB;
+  white-space: nowrap;
+}
+.Inventory-btn-actions-cell:hover {
+  background: rgba(181, 130, 63, 0.2);
+  border-color: #F2BB46;
+}
+
+/* === Actions History modal (centered, scrollable) === */
+.Inventory-actions-modal {
+  background-color: #261013;
+  width: 640px;
+  max-width: 90vw;
+  max-height: 80vh;
+  border-radius: 16px;
+  padding: 20px;
+  border: 2px solid #B5823F;
+  box-shadow: 0 4px 25px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+}
+.Inventory-expiry-chips-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+.Inventory-expiry-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border: 1px solid #B5823F;
+  border-radius: 999px;
+  background: rgba(181, 130, 63, 0.15);
+  color: #F5DFBB;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.Inventory-actions-modal-content {
+  margin-top: 16px;
+  overflow-y: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.Inventory-actions-entry {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1.4fr 1.6fr;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 8px;
+  border-bottom: 1px solid rgba(181, 130, 63, 0.2);
+  font-size: 13px;
+  color: rgba(245, 223, 187, 0.85);
+}
+.Inventory-activity-entry-full {
+  margin-bottom: 0;
+}
+.Inventory-activity-entry-full p,
+.Inventory-activity-entry-full span {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+}
+
+.Inventory-actions-entry-type {
+  font-weight: 700;
+  color: #F2BB46;
+}
+
+/* === Set Alerts labels === */
+.Inventory-alert-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: rgba(245, 223, 187, 0.8);
+  display: block;
+  margin-bottom: -4px;
+}
+
+@media (max-width: 640px) {
+  .Inventory-actions-modal {
+    width: 95%;
+    padding: 14px;
+  }
+  .Inventory-actions-entry {
+    grid-template-columns: 1fr 1fr;
+    row-gap: 4px;
+  }
 }

@@ -11,6 +11,7 @@ const routes = {
   inventoryLogin: "/inventory-login",
   inventory: "/inventory",
   notification: "/notification",
+  tableManagement: "/table-management",
 };
 
 export default routes;

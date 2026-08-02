@@ -374,6 +374,13 @@
   font-weight: 600;
 }
 
+.option-chip-price {
+  margin-left: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  opacity: 0.75;
+}
+
 /* ============ QUANTITY ============ */
 .quantity-section-wrap .section-heading {
   margin-bottom: 14px;

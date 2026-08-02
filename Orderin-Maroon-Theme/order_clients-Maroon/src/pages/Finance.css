@@ -1188,6 +1188,7 @@ td {
 
   .fin-ledger-summary {
     grid-template-columns: 1fr 1fr;
+  }
 
   .fin-ledger-card strong {
     font-size: 22px;
@@ -1202,4 +1203,86 @@ td {
   .fin-ledger-table {
     min-width: 900px;
   }
-}}
+}
+
+/* === Customer Loyalty tab === */
+.fin-loyalty-section {
+  padding: 24px;
+}
+
+.fin-loyalty-section h3 {
+  margin: 0 0 4px 0;
+  color: #F5DFBB;
+}
+
+.fin-loyalty-subtitle {
+  margin: 0 0 20px 0;
+  color: rgba(245, 223, 187, 0.6);
+  font-size: 13px;
+}
+
+.fin-loyalty-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.fin-loyalty-table thead {
+  background: #261013;
+}
+
+.fin-loyalty-table th {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #F2BB46;
+  padding: 14px 16px;
+  text-align: left;
+}
+
+.fin-loyalty-table td {
+  padding: 14px 16px;
+  border-bottom: 1px solid rgba(181, 130, 63, 0.15);
+  font-size: 13px;
+  color: rgba(245, 223, 187, 0.85);
+}
+
+.fin-loyalty-rank {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  font-weight: 800;
+  font-size: 13px;
+}
+
+.fin-loyalty-rank.gold {
+  background: #fef3c7;
+  color: #b45309;
+  box-shadow: 0 0 0 2px #f59e0b inset;
+}
+
+.fin-loyalty-rank.silver {
+  background: #f1f5f9;
+  color: #475569;
+  box-shadow: 0 0 0 2px #94a3b8 inset;
+}
+
+.fin-loyalty-rank.bronze {
+  background: #ffedd5;
+  color: #9a3412;
+  box-shadow: 0 0 0 2px #c2703d inset;
+}
+
+.fin-loyalty-rank.default {
+  background: rgba(181, 130, 63, 0.15);
+  color: #F5DFBB;
+}
+
+@media (max-width: 768px) {
+  .fin-loyalty-table {
+    min-width: 720px;
+  }
+}
