@@ -18,9 +18,11 @@ export default function Header() {
     localStorage.removeItem("menuAuth");
     localStorage.removeItem("financeAuth");
     localStorage.removeItem("inventoryAuth");
+    localStorage.removeItem("staffAuth");
     sessionStorage.removeItem("menuAuth");
     sessionStorage.removeItem("financeAuth");
     sessionStorage.removeItem("inventoryAuth");
+    sessionStorage.removeItem("staffAuth");
 
     navigate("/", { replace: true });
   };

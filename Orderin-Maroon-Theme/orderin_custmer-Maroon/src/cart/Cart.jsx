@@ -5,7 +5,7 @@ import { useCart } from "../context/CartContext";
 import { useNavigate } from "react-router-dom";
 import { useTableNumber } from "../hooks/useTableNumber";
 import { doc, getDoc, setDoc, onSnapshot, serverTimestamp } from "firebase/firestore";
-import { db } from "../firebaseConfig";
+import { db, subscribeAcceptingOrders } from "../firebaseConfig";
 import "./Cart.css";
 import { getPlaceholder } from "../utils/placeholder";
 import resolveImageUrl from "../utils/storageResolver";
@@ -61,8 +61,22 @@ function Cart({ onBackClick }) {
   const [tempInstructions, setTempInstructions] = useState("");
   const [resolvedImages, setResolvedImages] = useState({});
   const [isSavingCart, setIsSavingCart] = useState(false);
+  const [acceptingOrders, setAcceptingOrders] = useState(true);
+  const [checkoutBlockedMessage, setCheckoutBlockedMessage] = useState("");
   const navigate = useNavigate();
   const { getPathWithTable } = useTableNumber();
+
+  // Live "is the restaurant accepting new orders" flag, read off the same
+  // Restaurant/{id}.acceptingOrders field the admin dashboard toggle writes.
+  useEffect(() => {
+    const unsub = subscribeAcceptingOrders((value) => {
+      setAcceptingOrders(value);
+      if (value) setCheckoutBlockedMessage("");
+    });
+    return () => {
+      if (typeof unsub === "function") unsub();
+    };
+  }, []);
 
   useEffect(() => {
     let unsub = null;
@@ -203,6 +217,16 @@ function Cart({ onBackClick }) {
       alert("Your cart is empty");
       return;
     }
+
+    // Gate on the restaurant's live "accepting orders" toggle before doing
+    // any work — do not create/write the pending order if it's off.
+    if (!acceptingOrders) {
+      setCheckoutBlockedMessage(
+        "This restaurant is not accepting orders right now. Please try again later."
+      );
+      return;
+    }
+    setCheckoutBlockedMessage("");
 
     setIsSavingCart(true);
     let orderId = null;
@@ -593,8 +617,25 @@ function Cart({ onBackClick }) {
                   <strong>{formatPrice(grandTotal)}</strong>
                 </div>
               </div>
+              {!acceptingOrders && (
+                <div className="checkout-blocked-banner" role="alert">
+                  This restaurant is not accepting orders right now. Please try again later.
+                </div>
+              )}
+              {acceptingOrders && checkoutBlockedMessage && (
+                <div className="checkout-blocked-banner" role="alert">
+                  {checkoutBlockedMessage}
+                </div>
+              )}
               <div className="checkout-panel">
-                <button className="checkout-btn" onClick={handleCheckout}>Checkout</button>
+                <button
+                  className="checkout-btn"
+                  onClick={handleCheckout}
+                  disabled={!acceptingOrders}
+                  title={!acceptingOrders ? "Restaurant is not accepting orders right now" : undefined}
+                >
+                  Checkout
+                </button>
               </div>
             </section>
           </div>

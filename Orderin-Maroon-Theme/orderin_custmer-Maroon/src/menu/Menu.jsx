@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { collection, getDocs, doc, getDoc } from "firebase/firestore";
-import { db } from "../firebaseConfig";
+import { db, subscribeAcceptingOrders } from "../firebaseConfig";
 import { useTableNumber } from "../hooks/useTableNumber";
 import { menuStore } from "./menuStore";
 import "./Menu.css";
@@ -134,6 +134,17 @@ function Menu({ setIsLoading }) {
   const [isListening, setIsListening] = useState(false);
   const [pulseId, setPulseId] = useState(null);
   const recognitionRef = useRef(null);
+  const [acceptingOrders, setAcceptingOrders] = useState(true);
+
+  // Persistent "restaurant closed" banner, so customers see this before they
+  // even try to check out. Reads the same Restaurant/{id}.acceptingOrders
+  // field the admin dashboard toggle writes and the Cart checkout gate reads.
+  useEffect(() => {
+    const unsub = subscribeAcceptingOrders(setAcceptingOrders);
+    return () => {
+      if (typeof unsub === "function") unsub();
+    };
+  }, []);
 
   const tableNumber = tableNumberFromHook || null;
 
@@ -425,6 +436,12 @@ function Menu({ setIsLoading }) {
   return (
     <div className="menu-container">
       <Header />
+
+      {!acceptingOrders && (
+        <div className="restaurant-closed-banner" role="alert">
+          Restaurant is currently closed for new orders. You can browse the menu, but checkout is disabled.
+        </div>
+      )}
 
       <div className="hero-bar">
         <div className="hero-greeting">

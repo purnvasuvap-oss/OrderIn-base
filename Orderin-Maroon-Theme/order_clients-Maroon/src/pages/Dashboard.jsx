@@ -8,7 +8,18 @@ import MenuIcon from "./landingpage/menu.svg";
 import FinanceIcon from "./landingpage/finance.svg";
 import OrdersIcon from "./landingpage/orders.svg";
 import InventoryIcon from "./landingpage/inventory.svg";
-import { Bell, LogOut, Calendar, Plus, Package, ChevronRight } from "lucide-react";
+import StaffIcon from "./landingpage/customers.svg";
+import {
+  Bell,
+  LogOut,
+  Calendar,
+  Plus,
+  Package,
+  ChevronRight,
+  Lock,
+  ShieldCheck,
+  DoorOpen,
+} from "lucide-react";
 
 import { subscribeAllCustomerOrders, subscribeRecentOrders } from "../services/orderService";
 import { calculateTodaysRevenue, formatCurrency } from "../utils/financeUtils";
@@ -18,6 +29,7 @@ import {
 } from "../utils/dashboardStats";
 import { getTodaysCustomersCount } from "../utils/CustomerCount";
 import { subscribeTables, reconcileOccupiedTables } from "../services/tableService";
+import { subscribeAcceptingOrders, setAcceptingOrders } from "../firebase";
 import routes from "../routes";
 import "./Dashboard.css";
 
@@ -34,6 +46,8 @@ const Dashboard = () => {
   const [totalTables, setTotalTables] = useState(0);
   const [rawTables, setRawTables] = useState([]);
   const [recentOrders, setRecentOrders] = useState([]);
+  const [acceptingOrders, setAcceptingOrdersState] = useState(true);
+  const [togglingOrders, setTogglingOrders] = useState(false);
 
   useEffect(() => {
     const unsubscribe = subscribeAllCustomerOrders((ordersData) => {
@@ -91,6 +105,34 @@ const Dashboard = () => {
     return () => clearInterval(timer);
   }, []);
 
+  // Live "Accepting orders" toggle — read straight off Restaurant/{id}.acceptingOrders
+  // (defaults true when the field has never been set) so this reflects the same
+  // real value the customer app's checkout gate reads.
+  useEffect(() => {
+    const unsubscribe = subscribeAcceptingOrders((value) => {
+      setAcceptingOrdersState(value);
+    });
+    return () => {
+      if (typeof unsubscribe === "function") unsubscribe();
+    };
+  }, []);
+
+  const handleToggleAcceptingOrders = async () => {
+    if (togglingOrders) return;
+    const next = !acceptingOrders;
+    setTogglingOrders(true);
+    try {
+      await setAcceptingOrders(next);
+      // subscribeAcceptingOrders will push the confirmed value; no need to
+      // set local state here, avoiding a flash back to the old value if the
+      // write is slow.
+    } catch (err) {
+      console.error("Failed to update accepting-orders toggle:", err);
+    } finally {
+      setTogglingOrders(false);
+    }
+  };
+
   useEffect(() => {
     const unsubscribe = subscribeAllCustomerOrders((orders) => {
       const revenue = calculateTodaysRevenue(orders);
@@ -132,17 +174,38 @@ const Dashboard = () => {
           <p>Here's an overview of your restaurant operations.</p>
         </div>
 
-        <div className="date-card">
-          <Calendar size={38} color="white" strokeWidth={2.2} />
+        <div className="banner-right">
+          <div className="date-card">
+            <Calendar size={38} color="white" strokeWidth={2.2} />
 
-          <div>
-            <p>{currentDate}</p>
-            <h4>{currentTime}</h4>
+            <div>
+              <p>{currentDate}</p>
+              <h4>{currentTime}</h4>
+            </div>
           </div>
+
+          <button
+            type="button"
+            className={`accepting-toggle ${acceptingOrders ? "is-open" : "is-closed"}`}
+            onClick={handleToggleAcceptingOrders}
+            disabled={togglingOrders}
+            aria-pressed={acceptingOrders}
+            title="Toggle whether the restaurant accepts new orders"
+          >
+            <span className="accepting-toggle-label">Accepting orders</span>
+            <span className="accepting-toggle-pill">
+              <span className="accepting-toggle-state">{acceptingOrders ? "Open" : "Closed"}</span>
+              <span className="accepting-toggle-track">
+                <span className="accepting-toggle-thumb" />
+              </span>
+            </span>
+          </button>
         </div>
       </section>
 
       {/* KPI */}
+
+      <h3 className="section-label">Today's numbers</h3>
 
       <div className="stats-grid">
         <div className="stat-card revenue">
@@ -184,23 +247,53 @@ const Dashboard = () => {
 
             <span>{totalTables > 0 ? Math.round((tablesOccupied / totalTables) * 100) : 0}% Occupancy</span>
           </div>
-          <button
-            type="button"
-            className="stat-card-link-btn"
-            title="Open Table Management"
-            aria-label="Open Table Management"
-            onClick={goTo(routes.tableManagement)}
-          >
-            <ChevronRight size={28} strokeWidth={2.0} />
-          </button>
         </div>
       </div>
       
       {/* Modules */}
 
+      <h3 className="section-label">Manage your restaurant</h3>
+
       <div className="modules-grid">
+        <div className="module-card orders-module" onClick={goTo("/orders")}>
+          <div className="module-badge">
+            <DoorOpen size={12} />
+            <span>Open to all</span>
+          </div>
+          <div className="module-top">
+              <img src={OrdersIcon} alt="" />
+
+            <div>
+              <h3>Orders</h3>
+              <p>Track live orders and view order history.</p>
+            </div>
+          </div>
+
+          <div className="module-bottom yellow-text">Open Orders →</div>
+        </div>
+
+        <div className="module-card tables-module" onClick={goTo(routes.tableManagement)}>
+          <div className="module-badge">
+            <DoorOpen size={12} />
+            <span>Open to all</span>
+          </div>
+          <div className="module-top">
+              <img src={TablesIcon} alt="" />
+            <div>
+              <h3>Tables</h3>
+              <p>Manage the floor, seating and live table status.</p>
+            </div>
+          </div>
+
+          <div className="module-bottom blue-text">Open Tables →</div>
+        </div>
+
         <div className="module-card menu-module" onClick={goTo("/menu-login")}>
-          <div className="module-top">   
+          <div className="module-badge">
+            <Lock size={12} />
+            <span>PIN</span>
+          </div>
+          <div className="module-top">
               <img src={MenuIcon} alt="" />
             <div>
               <h3>Menu</h3>
@@ -215,7 +308,11 @@ const Dashboard = () => {
           className="module-card finance-module"
           onClick={goTo("/finance-login")}
         >
-          <div className="module-top">      
+          <div className="module-badge">
+            <Lock size={12} />
+            <span>PIN</span>
+          </div>
+          <div className="module-top">
               <img src={FinanceIcon} alt="" />
             <div>
               <h3>Financial</h3>
@@ -226,27 +323,18 @@ const Dashboard = () => {
           <div className="module-bottom green-text">Open Financial →</div>
         </div>
 
-        <div className="module-card orders-module" onClick={goTo("/orders")}>
-          <div className="module-top">
-              <img src={OrdersIcon} alt="" />
-
-            <div>
-              <h3>Orders</h3>
-              <p>Track live orders and view order history.</p>
-            </div>
-          </div>
-
-          <div className="module-bottom yellow-text">Open Orders →</div>
-        </div>
-
         <div
           className="module-card inventory-module"
           onClick={goTo("/inventory-login")}
         >
+          <div className="module-badge">
+            <Lock size={12} />
+            <span>PIN</span>
+          </div>
           <div className="module-top">
-            
+
               <img src={InventoryIcon} alt="" />
-            
+
 
             <div>
               <h3>Inventory</h3>
@@ -255,6 +343,22 @@ const Dashboard = () => {
           </div>
 
           <div className="module-bottom green-text">Open Inventory →</div>
+        </div>
+
+        <div className="module-card staff-module" onClick={goTo(routes.staffManagement)}>
+          <div className="module-badge">
+            <ShieldCheck size={12} />
+            <span>Owner &amp; Manager</span>
+          </div>
+          <div className="module-top">
+              <img src={StaffIcon} alt="" />
+            <div>
+              <h3>Staff Management</h3>
+              <p>Profiles, PINs, roster and attendance.</p>
+            </div>
+          </div>
+
+          <div className="module-bottom purple-text">Open Staff Management →</div>
         </div>
       </div>
 

@@ -3,7 +3,7 @@
 import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
 import { getAuth, initializeAuth, browserLocalPersistence, connectAuthEmulator } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+import { getFirestore, doc, onSnapshot } from "firebase/firestore";
 
 // Your web app's Firebase configuration
 // Use the working Firebase configuration provided
@@ -77,6 +77,25 @@ console.info('firebaseConfig: auth object exported');
 
 // Initialize Cloud Firestore and get a reference to the service
 export const db = getFirestore(app);
+
+// Restaurant id shared with the admin app (Orderin-Maroon-Theme/order_clients-Maroon/src/firebase.js
+// uses the same literal "orderin_restaurant_3" for the same Restaurant/{id} doc).
+const RESTAURANT_ID = "orderin_restaurant_3";
+
+// Live-subscribe to whether the restaurant is currently accepting new orders.
+// Reads Restaurant/{RESTAURANT_ID}.acceptingOrders — the same field the admin
+// dashboard's toggle writes — and defaults to `true` when the field has never
+// been set, so existing restaurants keep accepting orders as before.
+export function subscribeAcceptingOrders(onUpdate) {
+  const restRef = doc(db, "Restaurant", RESTAURANT_ID);
+  return onSnapshot(restRef, (snap) => {
+    const data = snap.exists() ? snap.data() || {} : {};
+    const accepting = data.acceptingOrders === undefined ? true : Boolean(data.acceptingOrders);
+    onUpdate(accepting);
+  }, (err) => {
+    console.error("subscribeAcceptingOrders - snapshot error:", err);
+  });
+}
 
 // Initialize Analytics if available (catch for environments without a window/Analytics support)
 export const analytics = (() => {

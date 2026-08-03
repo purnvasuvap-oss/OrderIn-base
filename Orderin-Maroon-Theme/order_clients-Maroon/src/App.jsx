@@ -18,6 +18,8 @@ import Inventory from "./pages/Inventory.jsx";
 import Finance from "./pages/Finance.jsx";
 import NotificationPage from "./pages/NotificationPage.jsx";
 import TableManagement from "./pages/TableManagement.jsx";
+import StaffLogin from "./pages/StaffLogin.jsx";
+import StaffManagement from "./pages/StaffManagement.jsx";
 import { NotificationProvider } from "./contexts/NotificationContext.jsx";
 
 function App() {
@@ -146,6 +148,29 @@ function App() {
                 <Header />
                 <TableManagement />
               </>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Staff Management Routes */}
+        <Route
+          path={routes.staffLogin}
+          element={
+            <ProtectedRoute>
+              <StaffLogin />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path={routes.staffManagement}
+          element={
+            <ProtectedRoute>
+              <SectionProtectedRoute storageKey="staffAuth" redirectTo={routes.staffLogin}>
+                <>
+                  <Header />
+                  <StaffManagement />
+                </>
+              </SectionProtectedRoute>
             </ProtectedRoute>
           }
         />

@@ -707,6 +707,25 @@ button {
   box-shadow: 0 10px 24px rgba(242, 187, 70, 0.25);
 }
 
+.checkout-btn:disabled {
+  background: rgba(245, 223, 187, 0.18);
+  color: rgba(245, 223, 187, 0.55);
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.checkout-blocked-banner {
+  margin-top: 10px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(239, 68, 68, 0.14);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  color: #ff8080;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+}
+
 .order-track-content {
   padding: 20px;
 }

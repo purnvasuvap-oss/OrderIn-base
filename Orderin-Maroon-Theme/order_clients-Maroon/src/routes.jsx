@@ -12,6 +12,8 @@ const routes = {
   inventory: "/inventory",
   notification: "/notification",
   tableManagement: "/table-management",
+  staffLogin: "/staff-login",
+  staffManagement: "/staff-management",
 };
 
 export default routes;

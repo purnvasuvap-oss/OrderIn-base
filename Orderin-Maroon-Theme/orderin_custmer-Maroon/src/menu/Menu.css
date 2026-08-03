@@ -51,6 +51,19 @@
 
 * { box-sizing: border-box; }
 
+/* Persistent notice when the restaurant has toggled off "Accepting orders". */
+.restaurant-closed-banner {
+  margin: 12px 20px 0;
+  padding: 12px 14px;
+  border-radius: var(--radius-sm, 12px);
+  background: rgba(239, 68, 68, 0.14);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  color: #ff8080;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+}
+
 /* ==========================================================================
    Hero — greeting, restaurant name, table + order status
    ========================================================================== */

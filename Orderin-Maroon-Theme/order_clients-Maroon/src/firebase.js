@@ -1,6 +1,6 @@
 import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
-import { getFirestore, collection, getDocs, doc, getDoc, updateDoc } from "firebase/firestore";
+import { getFirestore, collection, getDocs, doc, getDoc, updateDoc, onSnapshot } from "firebase/firestore";
 import { getAuth, signInAnonymously, onAuthStateChanged } from "firebase/auth";
 
 const firebaseConfig = {
@@ -203,6 +203,32 @@ export const verifySectionPasscode = async (sectionName, passcode) => {
     }
   }
   return false;
+};
+
+// Live-subscribe to the restaurant's "accepting orders" toggle. Defaults to
+// `true` when the field is missing so restaurants that never touch this
+// toggle keep accepting orders exactly as before this feature existed.
+export function subscribeAcceptingOrders(onUpdate) {
+  const restRef = doc(db, "Restaurant", "orderin_restaurant_3");
+  return onSnapshot(restRef, (snap) => {
+    const data = snap.exists() ? snap.data() || {} : {};
+    const accepting = data.acceptingOrders === undefined ? true : Boolean(data.acceptingOrders);
+    onUpdate(accepting);
+  }, (err) => {
+    console.error("subscribeAcceptingOrders - snapshot error:", err);
+  });
+}
+
+// Flip the restaurant's "accepting orders" toggle. Writes directly onto the
+// same Restaurant/{RESTAURANT_ID} doc read by getRestaurantStatus, etc.
+export const setAcceptingOrders = async (value) => {
+  const restRef = doc(db, "Restaurant", "orderin_restaurant_3");
+  try {
+    await updateDoc(restRef, { acceptingOrders: Boolean(value) });
+  } catch (error) {
+    console.error("setAcceptingOrders - error updating doc:", error);
+    throw error;
+  }
 };
 
 export { app, auth, db, updateDoc, analytics };
