@@ -3,7 +3,7 @@ import { db } from "../firebase";
 import { collection, getDocs } from "firebase/firestore";
 import { parseOrderTimestamp } from "../utils/orderDateTime";
 
-const RESTAURANT_ID = "orderin_restaurant_3";
+const RESTAURANT_ID = "orderin_restaurant_4";
 
 export const WEEKDAY_LABELS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 export const MONTH_LABELS = [

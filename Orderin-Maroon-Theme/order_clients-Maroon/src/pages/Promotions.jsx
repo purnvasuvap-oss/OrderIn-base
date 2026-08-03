@@ -53,7 +53,7 @@ const Promotions = () => {
     const fetchPromotions = async () => {
         try {
             setLoadingPromotions(true);
-            const promotionsRef = collection(db, 'Restaurant', 'orderin_restaurant_3', 'promotions');
+            const promotionsRef = collection(db, 'Restaurant', 'orderin_restaurant_4', 'promotions');
             const q = query(promotionsRef, orderBy('createdAt', 'desc'));
             const querySnapshot = await getDocs(q);
 
@@ -170,7 +170,7 @@ const Promotions = () => {
                 const expiryAt = calculateExpiryAt(duration);
 
                 // Save to Firestore (store canonical storage metadata)
-                const promotionsRef = collection(db, 'Restaurant', 'orderin_restaurant_3', 'promotions');
+                const promotionsRef = collection(db, 'Restaurant', 'orderin_restaurant_4', 'promotions');
                 const docRef = await addDoc(promotionsRef, {
                     image_url,
                     image_path,
@@ -210,7 +210,7 @@ const Promotions = () => {
         try {
             // Get promotion metadata locally (to delete image from storage)
             const promotion = promotions.find(p => p.id === promotionId) || null;
-            const promotionsRef = collection(db, 'Restaurant', 'orderin_restaurant_3', 'promotions');
+            const promotionsRef = collection(db, 'Restaurant', 'orderin_restaurant_4', 'promotions');
 
             // If a storage path exists, try to delete the image first (best-effort)
             if (promotion?.image_path) {

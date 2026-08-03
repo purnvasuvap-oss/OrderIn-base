@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
-import { db, auth } from "../firebaseConfig";
+import { db, auth, subscribeAcceptingOrders } from "../firebaseConfig";
 import { onAuthStateChanged } from "firebase/auth";
 import "./login.css";
 import { FiUser } from "react-icons/fi";
@@ -21,11 +21,24 @@ const Login = () => {
   const [restaurantStatus, setRestaurantStatus] = useState(null); // 'Active', 'Inactive', 'Off', or null
   const [inactiveTimestamp, setInactiveTimestamp] = useState(null); // Firestore timestamp (ms)
   const [statusError, setStatusError] = useState("");
+  const [acceptingOrders, setAcceptingOrders] = useState(true);
+
+  // Live "accepting orders" flag — the same field the admin dashboard's
+  // toggle and the Cart checkout gate both read/enforce, so a customer who
+  // opens the login page while the restaurant has paused orders sees this
+  // immediately, and a login attempt made while it's off is blocked below.
+  useEffect(() => {
+    const unsubscribe = subscribeAcceptingOrders(setAcceptingOrders);
+    return () => {
+      if (typeof unsubscribe === "function") unsubscribe();
+    };
+  }, []);
+
     // Fetch restaurant status from Firestore on mount
   useEffect(() => {
     const fetchStatus = async () => {
       try {
-        const restaurantRef = doc(db, "Restaurant", "orderin_restaurant_3");
+        const restaurantRef = doc(db, "Restaurant", "orderin_restaurant_4");
         const restaurantSnap = await getDoc(restaurantRef);
         if (restaurantSnap.exists()) {
           const data = restaurantSnap.data();
@@ -127,7 +140,7 @@ const Login = () => {
 
   const saveUserToFirestore = async (phoneNumber, enteredName) => {
     try {
-      const customerRef = doc(db, "Restaurant", "orderin_restaurant_3", "customers", phoneNumber);
+      const customerRef = doc(db, "Restaurant", "orderin_restaurant_4", "customers", phoneNumber);
       const customerSnap = await getDoc(customerRef);
 
       const timestamp = new Date().toISOString();
@@ -194,6 +207,10 @@ const Login = () => {
       } else {
         setErrorMessage("Login is currently disabled. Please try again later.");
       }
+      return;
+    }
+    if (!acceptingOrders) {
+      setErrorMessage("This restaurant is not accepting orders right now. Please try again later.");
       return;
     }
     if (phone.trim() === "") {
@@ -504,12 +521,20 @@ const Login = () => {
             </div>
             <input
               type="tel"
+              inputMode="numeric"
+              maxLength={15}
               className="phone-input"
               placeholder="Enter phone number"
               value={phone}
-              onChange={(e) => setPhone(e.target.value)}
+              onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 15))}
             />
           </div>
+
+          {!acceptingOrders && (
+            <div style={{ color: 'red', marginBottom: '10px', fontSize: '14px', textAlign: 'center' }}>
+              This restaurant is not accepting orders right now. Please try again later.
+            </div>
+          )}
 
           {errorMessage && (
             <div style={{ color: 'red', marginBottom: '10px', fontSize: '14px', textAlign: 'center' }}>
@@ -520,16 +545,18 @@ const Login = () => {
               <button
                 onClick={handleDirectLogin}
                 className="login-btn"
-                disabled={isLoading || !!statusError || restaurantStatus === null}
-                style={(!!statusError || restaurantStatus === null) ? { background: '#ccc', cursor: 'not-allowed' } : {}}
+                disabled={isLoading || !!statusError || restaurantStatus === null || !acceptingOrders}
+                style={(!!statusError || restaurantStatus === null || !acceptingOrders) ? { background: '#ccc', cursor: 'not-allowed' } : {}}
               >
                 {statusError
                   ? 'Status Error'
                   : restaurantStatus === null
                     ? 'Checking status...'
-                    : isLoading
-                      ? 'Logging in...'
-                      : 'Login'}
+                    : !acceptingOrders
+                      ? 'Not Accepting Orders'
+                      : isLoading
+                        ? 'Logging in...'
+                        : 'Login'}
               </button>
 
               {/* OTP input removed for direct login */}

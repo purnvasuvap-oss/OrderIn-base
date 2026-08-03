@@ -139,7 +139,7 @@ function CounterCode({ onBackClick }) {
       }
       const phoneNumber = user.phone;
 
-      const customerRef = doc(db, "Restaurant", "orderin_restaurant_3", "customers", phoneNumber);
+      const customerRef = doc(db, "Restaurant", "orderin_restaurant_4", "customers", phoneNumber);
       const customerSnap = await getDoc(customerRef);
       if (!customerSnap.exists()) {
         alert("Customer record not found");
@@ -210,7 +210,7 @@ function CounterCode({ onBackClick }) {
           const user = JSON.parse(localStorage.getItem("user"));
           if (user && user.phone) {
             const phoneNumber = user.phone;
-            const customerRef = doc(db, "Restaurant", "orderin_restaurant_3", "customers", phoneNumber);
+            const customerRef = doc(db, "Restaurant", "orderin_restaurant_4", "customers", phoneNumber);
             const customerSnap = await getDoc(customerRef);
             
             if (customerSnap.exists()) {

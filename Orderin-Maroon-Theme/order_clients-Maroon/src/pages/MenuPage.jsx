@@ -162,7 +162,7 @@ const MenuPage = () => {
       const menuCollection = collection(
         db,
         "Restaurant",
-        "orderin_restaurant_3",
+        "orderin_restaurant_4",
         "menu",
       );
       await Promise.all(
@@ -199,7 +199,7 @@ const MenuPage = () => {
         const menuCollection = collection(
           db,
           "Restaurant",
-          "orderin_restaurant_3",
+          "orderin_restaurant_4",
           "menu",
         );
         const menuSnapshot = await getDocs(menuCollection);
@@ -362,7 +362,7 @@ const MenuPage = () => {
       const menuCollection = collection(
         db,
         "Restaurant",
-        "orderin_restaurant_3",
+        "orderin_restaurant_4",
         "menu",
       );
       console.log("Menu collection:", menuCollection);
@@ -856,7 +856,7 @@ const MenuPage = () => {
         const menuCollection = collection(
           db,
           "Restaurant",
-          "orderin_restaurant_3",
+          "orderin_restaurant_4",
           "menu",
         );
         await deleteDoc(doc(menuCollection, itemToDelete.id));

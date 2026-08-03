@@ -86,7 +86,7 @@ function Cart({ onBackClick }) {
     const u = JSON.parse(stored);
     if (!u || !u.phone) return;
 
-    const customerRef = doc(db, "Restaurant", "orderin_restaurant_3", "customers", u.phone);
+    const customerRef = doc(db, "Restaurant", "orderin_restaurant_4", "customers", u.phone);
     unsub = onSnapshot(customerRef, (snap) => {
       if (!snap.exists()) {
         setOrderTrackList([]);
@@ -239,7 +239,7 @@ function Cart({ onBackClick }) {
       }
       const phoneNumber = user.phone;
 
-      const customerRef = doc(db, "Restaurant", "orderin_restaurant_3", "customers", phoneNumber);
+      const customerRef = doc(db, "Restaurant", "orderin_restaurant_4", "customers", phoneNumber);
       const customerSnap = await getDoc(customerRef);
       let pastOrders = [];
       if (customerSnap.exists()) {
@@ -327,7 +327,7 @@ function Cart({ onBackClick }) {
       // Store a backup for recovery
       const pendingOrderBackup = {
         phoneNumber,
-        restaurantId: "orderin_restaurant_3",
+        restaurantId: "orderin_restaurant_4",
         order: orderForFirestore,
       };
       sessionStorage.setItem("pendingOrderForFirestore", JSON.stringify(pendingOrderBackup));

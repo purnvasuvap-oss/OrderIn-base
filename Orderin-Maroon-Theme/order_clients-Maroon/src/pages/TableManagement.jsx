@@ -570,7 +570,7 @@ function TableManagement() {
   useEffect(() => {
     const fetchMenuItems = async () => {
       try {
-        const menuRef = collection(db, "Restaurant", "orderin_restaurant_3", "menu");
+        const menuRef = collection(db, "Restaurant", "orderin_restaurant_4", "menu");
         const menuSnapshot = await getDocs(menuRef);
         setMenuItems(menuSnapshot.docs.map((d) => ({ id: d.id, ...d.data() })));
       } catch (err) {

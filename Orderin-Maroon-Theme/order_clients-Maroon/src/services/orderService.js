@@ -2,7 +2,7 @@ import { db } from "../firebase";
 import { collection, getDocs, doc, updateDoc, getDoc, onSnapshot } from "firebase/firestore";
 import { parseOrderTimestamp } from "../utils/orderDateTime";
 
-const RESTAURANT_ID = "orderin_restaurant_3";
+const RESTAURANT_ID = "orderin_restaurant_4";
 
 /**
  * Get today's date at midnight (start of day) for comparison

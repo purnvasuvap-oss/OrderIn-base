@@ -54,7 +54,7 @@ function PaymentSuccess() {
         }
 
         const phoneNumber = user.phone;
-        const customerRef = doc(db, "Restaurant", "orderin_restaurant_3", "customers", phoneNumber);
+        const customerRef = doc(db, "Restaurant", "orderin_restaurant_4", "customers", phoneNumber);
         const customerSnap = await getDoc(customerRef);
 
         if (customerSnap.exists()) {
@@ -174,7 +174,7 @@ function PaymentSuccess() {
                     errorOccurred = true;
                   } else {
                     const phone = user.phone;
-                    const customerRef = doc(db, 'Restaurant', 'orderin_restaurant_3', 'customers', phone);
+                    const customerRef = doc(db, 'Restaurant', 'orderin_restaurant_4', 'customers', phone);
                     console.log('Attempting to save feedback to', customerRef.path);
                     const entry = { stars: rating, text: feedback || '', createdAt: new Date().toISOString() };
 

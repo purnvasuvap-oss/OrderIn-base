@@ -2,7 +2,7 @@
 import { db } from "../firebase";
 import { collection, doc, updateDoc, Timestamp } from "firebase/firestore";
 
-const RESTAURANT_ID = "orderin_restaurant_3";
+const RESTAURANT_ID = "orderin_restaurant_4";
 const restaurantRoot = () => collection(db, "Restaurant", RESTAURANT_ID, "inventory");
 
 const STATUS_FIELDS = {

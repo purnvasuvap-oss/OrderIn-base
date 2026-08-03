@@ -28,7 +28,7 @@ async function run() {
   const now = admin.firestore.Timestamp.now();
   console.log('Diagnostic run at', new Date().toISOString());
 
-  const ref = db.collection('Restaurant').doc('orderin_restaurant_3').collection('promotions');
+  const ref = db.collection('Restaurant').doc('orderin_restaurant_4').collection('promotions');
   const snap = await ref.get();
   let total = 0;
   let expiredCount = 0;

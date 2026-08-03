@@ -346,6 +346,10 @@
   background: rgba(245, 223, 187, 0.04);
 }
 
+.sm-cell-label {
+  display: none;
+}
+
 .sm-cell-employee {
   display: flex;
   align-items: center;
@@ -884,11 +888,61 @@
     grid-template-columns: 1fr;
   }
   .sm-thead,
-  .sm-trow,
-  .sm-thead-att,
-  .sm-trow-att {
+  .sm-trow {
     grid-template-columns: 1fr;
     gap: 4px;
+  }
+
+  /* Attendance rows become labeled cards instead of an unlabeled single
+     column — the header row (redundant once every field has its own
+     label) is hidden, and each row gets card styling + a wrapping actions
+     row instead of the desktop grid. */
+  .sm-thead-att {
+    display: none;
+  }
+  .sm-trow-att {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    grid-template-columns: unset;
+    background: var(--sm-panel-2);
+    border-radius: 10px;
+    margin: 10px;
+    padding: 12px 14px;
+    border-top: none;
+    border: 1px solid var(--sm-line);
+  }
+  .sm-att-field {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .sm-cell-label {
+    display: block;
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--sm-text-3);
+    font-weight: 700;
+  }
+  .sm-trow-att .sm-cell-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: flex-start;
+    padding-top: 4px;
+    border-top: 1px solid var(--sm-line);
+  }
+  .sm-trow-att .sm-cell-actions .sm-btn {
+    flex: 1;
+    min-width: 90px;
+  }
+  .sm-summary-strip {
+    flex-wrap: wrap;
+  }
+  .sm-summary-strip .sm-export-btn {
+    margin-left: 0;
   }
 }
 @media (max-width: 560px) {
@@ -897,5 +951,12 @@
   }
   .sm-pagehead {
     align-items: flex-start;
+  }
+  .sm-keypad {
+    gap: 6px;
+  }
+  .sm-key {
+    padding: 12px 0;
+    font-size: 15px;
   }
 }

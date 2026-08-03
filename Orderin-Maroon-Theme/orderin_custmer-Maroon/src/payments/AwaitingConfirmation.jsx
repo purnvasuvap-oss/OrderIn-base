@@ -57,6 +57,10 @@ function AwaitingConfirmation() {
       console.error(err);
     }
 
+    // The order tied to these cart items was just rejected/timed out and
+    // deleted above — clear the cart too so it doesn't linger and get
+    // accidentally resubmitted as-is.
+    clearCart();
     clearOrderTempState();
 
     navigate(getPathWithTable("/cart"));
@@ -88,7 +92,7 @@ function AwaitingConfirmation() {
     const user = JSON.parse(localStorage.getItem("user"));
     if (!user || !user.phone) return;
 
-    const customerRef = doc(db, "Restaurant", "orderin_restaurant_3", "customers", user.phone);
+    const customerRef = doc(db, "Restaurant", "orderin_restaurant_4", "customers", user.phone);
 
     unsubscribe = onSnapshot(customerRef, (snap) => {
       setIsInitialLoad(false);

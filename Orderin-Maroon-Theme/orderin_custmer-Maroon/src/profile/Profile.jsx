@@ -48,7 +48,7 @@ function Profile({ onBackClick, onCartClick }) {
           return;
         }
 
-        const customerRef = doc(db, 'Restaurant', 'orderin_restaurant_3', 'customers', u.phone);
+        const customerRef = doc(db, 'Restaurant', 'orderin_restaurant_4', 'customers', u.phone);
         const snap = await getDoc(customerRef);
         if (!snap.exists()) {
           // no customer doc yet
@@ -75,7 +75,7 @@ function Profile({ onBackClick, onCartClick }) {
         if (!stored) return;
         const u = JSON.parse(stored);
         if (!u || !u.phone) return;
-        const customerRef = doc(db, 'Restaurant', 'orderin_restaurant_3', 'customers', u.phone);
+        const customerRef = doc(db, 'Restaurant', 'orderin_restaurant_4', 'customers', u.phone);
         unsubLiked = onSnapshot(customerRef, (snap) => {
           if (!snap.exists()) {
             setLikedItems([]);

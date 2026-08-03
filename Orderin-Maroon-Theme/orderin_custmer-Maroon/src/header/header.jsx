@@ -8,6 +8,7 @@ import './header.css';
 function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const sideMenuRef = useRef(null);
+  const menuIconRef = useRef(null);
   const { currentTableNo } = useCart();
 
   const toggleMenu = () => {
@@ -40,6 +41,15 @@ function Header() {
 
   useEffect(() => {
     const handleClickOutside = (event) => {
+      // Clicking the toggle icon itself must NOT count as "outside" —
+      // otherwise this handler closes the menu on mousedown and the icon's
+      // own onClick immediately re-opens it right after, so a single click
+      // on the icon never actually closes the menu (only a second click
+      // "wins" the race). Excluding the icon lets its own toggleMenu click
+      // handler be the sole source of truth for closing via the icon.
+      if (menuIconRef.current && menuIconRef.current.contains(event.target)) {
+        return;
+      }
       if (sideMenuRef.current && !sideMenuRef.current.contains(event.target)) {
         setIsMenuOpen(false);
       }
@@ -59,7 +69,7 @@ function Header() {
        <div className="header-bar">
          <img src="/OrderIn.png" alt="OrderIn" className="orderin-logo-header" />
          <div className="table-number">Table {currentTableNo}</div>
-         <svg className="menu-icon" onClick={toggleMenu} width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+         <svg ref={menuIconRef} className="menu-icon" onClick={toggleMenu} width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
            <path d="M3 12H21M3 6H21M3 18H21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
          </svg>
        </div>

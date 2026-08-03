@@ -1,7 +1,7 @@
 import { db } from "../firebase";
 import { collection, getDocs, doc, setDoc, updateDoc, addDoc, Timestamp, serverTimestamp, query, orderBy, limit } from "firebase/firestore";
 
-const RESTAURANT_PATH = "Restaurant/orderin_restaurant_3";
+const RESTAURANT_PATH = "Restaurant/orderin_restaurant_4";
 
 /**
  * Add a new batch to an inventory item

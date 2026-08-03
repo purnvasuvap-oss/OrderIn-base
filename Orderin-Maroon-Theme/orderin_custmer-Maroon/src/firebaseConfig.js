@@ -13,8 +13,8 @@ const firebaseConfig = {
   projectId: "orderin-7f8bc",
   storageBucket: "orderin-7f8bc.firebasestorage.app",
   messagingSenderId: "977042319750",
-  appId: "1:977042319750:web:db7f2ecbba2edb2a69a407",
-  measurementId: "G-B3GKRJ27DS"
+  appId: "1:977042319750:web:26d0e5ddcaa0307169a407",
+  measurementId: "G-81VL3ZTGG6"
 };
 
 // Initialize Firebase
@@ -78,9 +78,13 @@ console.info('firebaseConfig: auth object exported');
 // Initialize Cloud Firestore and get a reference to the service
 export const db = getFirestore(app);
 
-// Restaurant id shared with the admin app (Orderin-Maroon-Theme/order_clients-Maroon/src/firebase.js
-// uses the same literal "orderin_restaurant_3" for the same Restaurant/{id} doc).
-const RESTAURANT_ID = "orderin_restaurant_3";
+// Restaurant id shared with the admin app (Orderin-Maroon-Theme/order_clients-Maroon/src/firebase.js's
+// subscribeAcceptingOrders/setAcceptingOrders use the same literal) — and with
+// every other Restaurant/{id} path in THIS file (Bill.jsx, Cart.jsx, login.jsx,
+// Menu.jsx, etc. all hardcode "orderin_restaurant_4" directly for orders/menu/
+// customers). Keep this in sync with those — a mismatch here silently breaks
+// the accepting-orders popup/gate with no visible error.
+const RESTAURANT_ID = "orderin_restaurant_4";
 
 // Live-subscribe to whether the restaurant is currently accepting new orders.
 // Reads Restaurant/{RESTAURANT_ID}.acceptingOrders — the same field the admin

@@ -127,7 +127,14 @@ function StaffFormModal({ onClose, onConfirm }) {
           </div>
           <div className="sm-form-group">
             <label>Phone</label>
-            <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="e.g. 98765 43210" />
+            <input
+              type="tel"
+              inputMode="numeric"
+              maxLength={10}
+              value={phone}
+              onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
+              placeholder="e.g. 9876543210"
+            />
           </div>
           <div className="sm-form-group">
             <label>Email <span className="sm-optional">(optional)</span></label>
@@ -901,12 +908,28 @@ function AttendanceTab({ staffList }) {
               const status = attendanceStatus(r);
               return (
                 <div className="sm-trow sm-trow-att" key={r.id}>
-                  <span>{r.staffName}</span>
-                  <span>{fmtClock(r.clockInAt)}</span>
-                  <span>{fmtClock(r.clockOutAt)}</span>
-                  <span>{r.breakMinutes || 0}m</span>
-                  <span>{hoursOf(r).toFixed(2)}</span>
-                  <span>
+                  <span className="sm-att-field">
+                    <span className="sm-cell-label">Employee</span>
+                    <span>{r.staffName}</span>
+                  </span>
+                  <span className="sm-att-field">
+                    <span className="sm-cell-label">Clock in</span>
+                    <span>{fmtClock(r.clockInAt)}</span>
+                  </span>
+                  <span className="sm-att-field">
+                    <span className="sm-cell-label">Clock out</span>
+                    <span>{fmtClock(r.clockOutAt)}</span>
+                  </span>
+                  <span className="sm-att-field">
+                    <span className="sm-cell-label">Break</span>
+                    <span>{r.breakMinutes || 0}m</span>
+                  </span>
+                  <span className="sm-att-field">
+                    <span className="sm-cell-label">Hours</span>
+                    <span>{hoursOf(r).toFixed(2)}</span>
+                  </span>
+                  <span className="sm-att-field">
+                    <span className="sm-cell-label">Status</span>
                     <span className={`sm-att-status sm-att-status-${status}`}>
                       {status === "on-shift" && "On shift"}
                       {status === "on-break" && "On break"}
@@ -999,7 +1022,13 @@ function StaffManagement() {
           <h1 className="sm-page-h1">Staff Management</h1>
           <div className="sm-page-sub">Staff directory, roster, and live attendance — backed by Firestore</div>
         </div>
-        <button className="sm-back-btn" onClick={() => navigate(routes.dashboard)}>
+        <button
+          className="sm-back-btn"
+          onClick={() => {
+            sessionStorage.removeItem("staffAuth");
+            navigate(routes.dashboard, { replace: true });
+          }}
+        >
           <ChevronLeft size={16} /> Back to Dashboard
         </button>
       </div>

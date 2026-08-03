@@ -24,7 +24,7 @@ import {
   serverTimestamp,
 } from "firebase/firestore";
 
-const RESTAURANT_ID = "orderin_restaurant_3";
+const RESTAURANT_ID = "orderin_restaurant_4";
 
 const staffCollectionRef = () => collection(db, "Restaurant", RESTAURANT_ID, "staff");
 const staffDocRef = (id) => doc(db, "Restaurant", RESTAURANT_ID, "staff", id);

@@ -102,7 +102,7 @@ function ManualOrderModal({ isOpen, onClose, menuItems, onOrderCreated, initialT
       const customerRef = doc(
         db,
         "Restaurant",
-        "orderin_restaurant_3",
+        "orderin_restaurant_4",
         "customers",
         phoneNumber,
       );
@@ -203,8 +203,10 @@ function ManualOrderModal({ isOpen, onClose, menuItems, onOrderCreated, initialT
               <label>Phone Number</label>
               <input
                 type="tel"
+                inputMode="numeric"
+                maxLength={10}
                 value={phoneNumber}
-                onChange={(e) => setPhoneNumber(e.target.value)}
+                onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, "").slice(0, 10))}
                 placeholder="Enter phone number"
               />
             </div>
