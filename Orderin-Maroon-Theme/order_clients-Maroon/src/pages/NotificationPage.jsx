@@ -1,14 +1,49 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useNotification } from '../hooks/useNotification';
 import { db } from '../firebase';
 import { collection, getDocs } from 'firebase/firestore';
+import routes from '../routes';
+import { subscribeRecentOrders, isOrderQueued, formatTime } from '../services/orderService';
 import './NotificationPage.css';
 
+// An unpaid order is treated as a stalled "billing issue" once it has sat
+// unpaid for longer than this window — see the Order Alerts tab below.
+const BILLING_ISSUE_STALE_MS = 15 * 60 * 1000;
+
 const NotificationPage = () => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('recent');
   const { activities } = useNotification();
   const [feedbackList, setFeedbackList] = useState([]);
   const [loadingFeedbacks, setLoadingFeedbacks] = useState(false);
+  const [liveOrders, setLiveOrders] = useState([]);
+
+  // Independent live subscription for the "Order Alerts" tab — deliberately
+  // separate from NotificationContext (which only does a one-time fetch on
+  // mount).
+  useEffect(() => {
+    const unsubscribe = subscribeRecentOrders((orders) => {
+      setLiveOrders(Array.isArray(orders) ? orders : []);
+    });
+    return () => {
+      if (typeof unsubscribe === 'function') unsubscribe();
+    };
+  }, []);
+
+  const queuedOrderAlerts = liveOrders.filter(isOrderQueued);
+  const billingIssueAlerts = liveOrders.filter((o) => {
+    const paymentStatus = String(o.paymentStatus || '').toLowerCase();
+    if (paymentStatus !== 'unpaid') return false;
+    const ts = o.timestamp;
+    const orderTimeMs = ts && typeof ts.getTime === 'function' ? ts.getTime() : (ts ? new Date(ts).getTime() : NaN);
+    if (!orderTimeMs || isNaN(orderTimeMs)) return false;
+    return Date.now() - orderTimeMs > BILLING_ISSUE_STALE_MS;
+  });
+
+  const handleAlertClick = (order) => {
+    navigate(routes.orders, { state: { searchTerm: order.id } });
+  };
 
   // Fetch feedbacks from Firestore
   useEffect(() => {
@@ -149,6 +184,75 @@ const NotificationPage = () => {
     );
   };
 
+  // Render Order Alerts tab
+  const renderOrderAlerts = () => {
+    return (
+      <div className="order-alerts-container">
+        <div className="alert-section">
+          <div className="alert-section-title">Queued Orders</div>
+          {queuedOrderAlerts.length === 0 ? (
+            <div className="empty-state">No queued orders</div>
+          ) : (
+            <div className="activities-container">
+              {queuedOrderAlerts.map((order) => (
+                <div
+                  key={order.id}
+                  className="activity-item order-alert-item"
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => handleAlertClick(order)}
+                  onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && handleAlertClick(order)}
+                >
+                  <div className="activity-icon">📦</div>
+                  <div className="activity-content">
+                    <p className="activity-message">
+                      Order <strong>{order.id}</strong> — {order.username || 'Unknown'} (Table {order.tableNumber || 'N/A'})
+                    </p>
+                    <span className="activity-time">
+                      {formatTime(order.timestamp)} · ₹{Number(order.totalCost) || 0}
+                    </span>
+                  </div>
+                  <span className="alert-badge queued">Queued</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="alert-section">
+          <div className="alert-section-title">Billing Issues</div>
+          {billingIssueAlerts.length === 0 ? (
+            <div className="empty-state">No billing issues</div>
+          ) : (
+            <div className="activities-container">
+              {billingIssueAlerts.map((order) => (
+                <div
+                  key={order.id}
+                  className="activity-item order-alert-item billing-issue"
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => handleAlertClick(order)}
+                  onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && handleAlertClick(order)}
+                >
+                  <div className="activity-icon">⚠️</div>
+                  <div className="activity-content">
+                    <p className="activity-message">
+                      Order <strong>{order.id}</strong> — {order.username || 'Unknown'} (Table {order.tableNumber || 'N/A'})
+                    </p>
+                    <span className="activity-time">
+                      {formatTime(order.timestamp)} · ₹{Number(order.totalCost) || 0}
+                    </span>
+                  </div>
+                  <span className="alert-badge billing-issue-badge">Billing Issue</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   // Render Feedback tab
   const renderFeedback = () => {
     if (loadingFeedbacks) {
@@ -223,11 +327,18 @@ const NotificationPage = () => {
         >
           ⭐ Feedback
         </button>
+        <button
+          className={`tab-button ${activeTab === 'orders' ? 'active' : ''}`}
+          onClick={() => setActiveTab('orders')}
+        >
+          📦 Order Alerts
+        </button>
       </div>
 
       <div className="tab-content-area">
         {activeTab === 'recent' && renderRecentActivities()}
         {activeTab === 'feedback' && renderFeedback()}
+        {activeTab === 'orders' && renderOrderAlerts()}
       </div>
     </div>
   );

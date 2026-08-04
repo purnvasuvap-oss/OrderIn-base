@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { Suspense, lazy, useEffect, useState } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Login from './login/login';
+const PublicMenu = lazy(() => import('./publicMenu/PublicMenu'));
 import Menu from './menu/Menu';
 import Help from './help/Help';
 import About from './help/About';
@@ -24,10 +25,11 @@ import { useGlobalBackButton } from './hooks/useGlobalBackButton';
  * AppContent - Main routing component
  * 
  * ROUTING STRUCTURE & BACK-BUTTON BEHAVIOR:
- * 
+ *
  * PUBLIC ROUTES (No auth required):
- * - / (Login) → Back button: PREVENT
- * 
+ * - / (public pre-login flipbook menu) → Back button: PREVENT
+ * - /login → Back button: PREVENT
+ *
  * PROTECTED ROUTES (Auth required):
  * - /menu → Back button: Go to Login
  * - /help, /about, /about-orderin → Back button: Go to Menu
@@ -55,9 +57,9 @@ function AppContent({ isLoading, setIsLoading }) {
   const location = useLocation();
 
   // Global "restaurant not serving" popup — shown on every page except
-  // Login (which already surfaces this inline) so an already-logged-in
-  // customer browsing the menu/cart/etc. finds out immediately, not just
-  // when they try to check out.
+  // /login (which already surfaces this inline) so a customer browsing the
+  // public menu or an already-logged-in customer browsing the menu/cart/etc.
+  // finds out immediately, not just when they try to check out.
   const [acceptingOrders, setAcceptingOrders] = useState(true);
   const [acceptingOrdersDismissed, setAcceptingOrdersDismissed] = useState(false);
 
@@ -74,7 +76,7 @@ function AppContent({ isLoading, setIsLoading }) {
   }, []);
 
   const showAcceptingOrdersModal =
-    !acceptingOrders && !acceptingOrdersDismissed && location.pathname !== '/';
+    !acceptingOrders && !acceptingOrdersDismissed && location.pathname !== '/login';
 
   return (
     <div className="App">
@@ -84,9 +86,19 @@ function AppContent({ isLoading, setIsLoading }) {
       )}
       <Routes>
         {/* ===== PUBLIC ROUTES (No Auth Required) ===== */}
-        
-        {/* Login - Gateway to app */}
-        <Route path="/" element={<Login setIsLoading={setIsLoading} />} />
+
+        {/* Public pre-login flipbook menu - new QR landing page */}
+        <Route
+          path="/"
+          element={
+            <Suspense fallback={<Loading isLoading={true} />}>
+              <PublicMenu setIsLoading={setIsLoading} />
+            </Suspense>
+          }
+        />
+
+        {/* Login - now at /login */}
+        <Route path="/login" element={<Login setIsLoading={setIsLoading} />} />
 
         {/* ===== PROTECTED ROUTES (Auth Required) ===== */}
         

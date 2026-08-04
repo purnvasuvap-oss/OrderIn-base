@@ -322,6 +322,50 @@
   letter-spacing: 0.3px;
 }
 
+/* ORDER ALERTS SECTION */
+.order-alerts-container {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.alert-section-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #F2BB46;
+  margin-bottom: 12px;
+}
+
+.order-alert-item {
+  cursor: pointer;
+  align-items: center;
+}
+
+.order-alert-item.billing-issue {
+  border-left-color: #e57373;
+}
+
+.alert-badge {
+  align-self: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 5px 12px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.alert-badge.queued {
+  background: rgba(242, 187, 70, 0.16);
+  color: #F2BB46;
+}
+
+.alert-badge.billing-issue-badge {
+  background: rgba(229, 57, 53, 0.18);
+  color: #e57373;
+}
+
 /* ===== TABLET RESPONSIVE (768px and below) ===== */
 @media (max-width: 768px) {
   .notification-page {

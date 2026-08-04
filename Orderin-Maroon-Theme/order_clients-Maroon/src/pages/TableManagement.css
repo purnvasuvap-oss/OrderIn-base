@@ -397,6 +397,14 @@
   min-height: 16px;
   margin: 6px 0 10px;
 }
+.tm-tile-upcoming-reservation {
+  color: var(--tm-resv);
+  font-weight: 600;
+}
+.tm-mrow-upcoming-reservation span:last-child {
+  color: var(--tm-resv);
+  font-weight: 600;
+}
 .tm-tile-actions {
   display: flex;
   gap: 8px;
@@ -539,6 +547,46 @@
   padding: 8px 12px;
   font-size: 12.5px;
   margin-bottom: 12px;
+}
+
+/* Reservation cleanup-alert toast — fires when a reservation's
+   `reservationAlerted` flag flips on while Table Management is open. */
+.tm-reservation-toast {
+  position: fixed;
+  top: 88px;
+  right: 24px;
+  z-index: 2000;
+  display: grid;
+  gap: 3px;
+  max-width: min(360px, calc(100vw - 32px));
+  padding: 12px 14px;
+  border: 1px solid var(--tm-line-2);
+  border-left: 4px solid var(--tm-gold);
+  border-radius: 10px;
+  background: var(--tm-panel);
+  color: var(--tm-text);
+  box-shadow: var(--tm-shadow);
+  animation: tm-reservation-toast-in 180ms ease-out;
+}
+.tm-reservation-toast strong {
+  color: var(--tm-gold);
+  font-size: 13px;
+  font-weight: 800;
+}
+.tm-reservation-toast span {
+  color: var(--tm-text-2);
+  font-size: 12.5px;
+  line-height: 1.35;
+}
+@keyframes tm-reservation-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @media (max-width: 900px) {

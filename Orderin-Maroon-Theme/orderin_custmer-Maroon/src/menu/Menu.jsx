@@ -633,14 +633,14 @@ function Menu({ setIsLoading }) {
             <p className="filter-sheet-label">Food type</p>
             <div className="filter-toggle-row">
               <button
-                className={`filter-toggle-btn ${vegToggle === "nonveg" ? "active-nonveg" : ""}`}
-                onClick={() => handleVegToggle("nonveg")}
+                className={`filter-toggle-btn ${vegToggle === "veg" ? "active-veg" : ""}`}
+                onClick={() => handleVegToggle("veg")}
               >
                 <Leaf size={14} /> Veg
               </button>
               <button
-                className={`filter-toggle-btn ${vegToggle === "veg" ? "active-veg" : ""}`}
-                onClick={() => handleVegToggle("veg")}
+                className={`filter-toggle-btn ${vegToggle === "nonveg" ? "active-nonveg" : ""}`}
+                onClick={() => handleVegToggle("nonveg")}
               >
                 <Flame size={14} /> Non-Veg
               </button>

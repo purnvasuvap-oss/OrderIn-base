@@ -8,6 +8,7 @@ import {
   updateDoc,
   setDoc,
   deleteDoc,
+  addDoc,
   serverTimestamp,
 } from "firebase/firestore";
 import { isOrderQueued, isOrderActive } from "./orderService";
@@ -45,6 +46,8 @@ export const seedTablesIfEmpty = async () => {
         status: "available",
         reservedName: null,
         reservedTime: null,
+        reservedAt: null,
+        reservationAlerted: false,
         updatedAt: serverTimestamp(),
       });
     }
@@ -76,7 +79,12 @@ export const subscribeTables = (onUpdate) => {
               capacity: Number(data.capacity) || DEFAULT_CAPACITY,
               status: data.status || "available",
               reservedName: data.reservedName ?? null,
+              // `reservedTime` is the legacy free-text field (kept for
+              // display fallback on old docs); `reservedAt` is the new
+              // ISO-string real timestamp `reconcileReservations` acts on.
               reservedTime: data.reservedTime ?? null,
+              reservedAt: data.reservedAt ?? null,
+              reservationAlerted: Boolean(data.reservationAlerted),
             };
           })
           .sort((a, b) => a.num - b.num);
@@ -103,6 +111,8 @@ export const addTable = async (num, capacity = DEFAULT_CAPACITY) => {
     status: "available",
     reservedName: null,
     reservedTime: null,
+    reservedAt: null,
+    reservationAlerted: false,
     updatedAt: serverTimestamp(),
   });
 };
@@ -115,12 +125,21 @@ export const updateTableCapacity = async (num, capacity) => {
   });
 };
 
-/** Reserve a table: staff-entered guest/party name + free-text arrival time. */
-export const reserveTable = async (num, reservedName, reservedTime) => {
+/**
+ * Reserve a table: staff-entered guest/party name + a real ISO-string
+ * arrival timestamp (`reservedAt`, from the `datetime-local` picker in
+ * `ReserveTableModal`). Replaces the old free-text `reservedTime` field —
+ * that field is cleared here so a re-reservation of a table that still has
+ * an old free-text value doesn't leave stale data around. `reservationAlerted`
+ * resets to false so the 15-minute cleanup alert can fire for this booking.
+ */
+export const reserveTable = async (num, reservedName, reservedAt) => {
   await updateDoc(tableDocRef(num), {
     status: "reserved",
     reservedName: reservedName || null,
-    reservedTime: reservedTime || null,
+    reservedAt: reservedAt || null,
+    reservedTime: null,
+    reservationAlerted: false,
     updatedAt: serverTimestamp(),
   });
 };
@@ -131,6 +150,8 @@ export const cancelReservation = async (num) => {
     status: "available",
     reservedName: null,
     reservedTime: null,
+    reservedAt: null,
+    reservationAlerted: false,
     updatedAt: serverTimestamp(),
   });
 };
@@ -219,6 +240,127 @@ export const reconcileOccupiedTables = async (rawTables, orders) => {
       console.error("Error auto-promoting table to occupied:", error);
     } finally {
       promotingInFlight.delete(numStr);
+    }
+  }
+};
+
+// --- Time-aware reservations -------------------------------------------
+//
+// `reservedAt` is an ISO string captured from the `datetime-local` picker in
+// `ReserveTableModal`. Some existing table docs may still only have the OLD
+// free-text `reservedTime` field from before this change (no `reservedAt`
+// at all) — every helper below treats a missing/unparseable `reservedAt` as
+// "not time-tracked" and simply skips time-based logic for that table,
+// rather than crashing on it.
+
+/** Parses `reservedAt` to epoch ms, or null if missing/unparseable. */
+const parseReservedAtMs = (reservedAt) => {
+  if (!reservedAt) return null;
+  const ms = new Date(reservedAt).getTime();
+  return Number.isNaN(ms) ? null : ms;
+};
+
+/** Human-readable arrival time for notification text / display fallback. */
+export const formatReservedAt = (reservedAt) => {
+  const ms = parseReservedAtMs(reservedAt);
+  if (ms === null) return null;
+  return new Date(ms).toLocaleString([], {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+};
+
+/**
+ * "Is this reserved table effectively available right now" — true up until
+ * ~15 minutes before the reserved time, so `TableManagement.jsx` can show it
+ * as bookable-for-walk-ins (display-layer only; the reservation fields stay
+ * untouched in Firestore). Also true (backward-compat) when `reservedAt` is
+ * missing/unparseable, e.g. an old free-text-only doc.
+ */
+export const isReservationPending = (table) => {
+  if (!table || table.status !== "reserved") return false;
+  const ms = parseReservedAtMs(table.reservedAt);
+  if (ms === null) return true;
+  return Date.now() < ms - 15 * 60 * 1000;
+};
+
+// De-dupe guards, same pattern/purpose as `promotingInFlight` above — both
+// TableManagement.jsx and Dashboard.jsx call `reconcileReservations` from
+// their own periodic effects, so concurrent writes for the same table need
+// to be avoided.
+const alertingInFlight = new Set();
+const clearingInFlight = new Set();
+
+/**
+ * Time-based reservation reconciliation, mirroring `reconcileOccupiedTables`'s
+ * style (error-tolerant per-table try/catch, in-flight de-dupe guards,
+ * `updateDoc`/`serverTimestamp()` conventions). For every table with
+ * `status === "reserved"` and a valid, parseable `reservedAt`:
+ *  - within 15 minutes of the reserved time (and not yet alerted): flips
+ *    `reservationAlerted` and writes a `reservation-alert` doc into the
+ *    `notifications` collection (same shape `NotificationContext.jsx`'s
+ *    `addActivity` writes, so it renders on the existing "Recent Activities"
+ *    tab unchanged).
+ *  - 30+ minutes past the reserved time and the table is STILL "reserved"
+ *    (i.e. no live order ever showed up — `reconcileOccupiedTables` would
+ *    already have flipped it to "occupied" otherwise): auto-clears the
+ *    reservation as a no-show.
+ * Tables with no parseable `reservedAt` (missing, or an old free-text-only
+ * doc) are skipped entirely — no time-based logic applies to them.
+ */
+export const reconcileReservations = async (rawTables) => {
+  const now = Date.now();
+  for (const t of rawTables || []) {
+    if (!t || t.status !== "reserved") continue;
+    const ms = parseReservedAtMs(t.reservedAt);
+    if (ms === null) continue;
+    const numStr = String(t.num);
+
+    if (
+      now >= ms - 15 * 60 * 1000 &&
+      now < ms &&
+      !t.reservationAlerted &&
+      !alertingInFlight.has(numStr)
+    ) {
+      alertingInFlight.add(numStr);
+      try {
+        await updateDoc(tableDocRef(t.num), {
+          reservationAlerted: true,
+          updatedAt: serverTimestamp(),
+        });
+        await addDoc(collection(db, "Restaurant", RESTAURANT_ID, "notifications"), {
+          message: `Table ${t.num} has a reservation at ${formatReservedAt(t.reservedAt)} — clean it up within 15 minutes`,
+          type: "reservation-alert",
+          source: "table-management",
+          tableNum: t.num,
+          timestamp: serverTimestamp(),
+          createdAt: serverTimestamp(),
+        });
+      } catch (error) {
+        console.error("Error firing reservation alert for table:", t.num, error);
+      } finally {
+        alertingInFlight.delete(numStr);
+      }
+      continue;
+    }
+
+    if (now >= ms + 30 * 60 * 1000 && !clearingInFlight.has(numStr)) {
+      clearingInFlight.add(numStr);
+      try {
+        await updateDoc(tableDocRef(t.num), {
+          status: "available",
+          reservedName: null,
+          reservedAt: null,
+          reservationAlerted: false,
+          updatedAt: serverTimestamp(),
+        });
+      } catch (error) {
+        console.error("Error auto-clearing no-show reservation for table:", t.num, error);
+      } finally {
+        clearingInFlight.delete(numStr);
+      }
     }
   }
 };

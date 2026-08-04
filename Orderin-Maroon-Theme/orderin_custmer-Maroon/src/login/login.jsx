@@ -5,6 +5,7 @@ import { db, auth, subscribeAcceptingOrders } from "../firebaseConfig";
 import { onAuthStateChanged } from "firebase/auth";
 import "./login.css";
 import { FiUser } from "react-icons/fi";
+import { sanitizePhoneInput } from "../utils/phoneValidation";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -42,11 +43,21 @@ const Login = () => {
         const restaurantSnap = await getDoc(restaurantRef);
         if (restaurantSnap.exists()) {
           const data = restaurantSnap.data();
-          setRestaurantStatus(data.status || null);
+          // A missing `status` field (e.g. the doc only has `acceptingOrders`
+          // set so far) must default to "Active", not null — null is what
+          // this component's initial state uses to mean "still checking",
+          // so leaving it null here made the button show "Checking
+          // status..." forever even though the fetch had already succeeded.
+          // Matches the admin app's own getRestaurantStatus() default.
+          setRestaurantStatus(data.status || "Active");
           setInactiveTimestamp(data.inactiveTimestamp || null);
         } else {
+          // Doc genuinely doesn't exist — a real config problem, not "still
+          // loading". Surface it instead of leaving restaurantStatus at its
+          // initial null forever (which the button reads as "still checking").
           setRestaurantStatus(null);
           setInactiveTimestamp(null);
+          setStatusError("Restaurant configuration not found. Please contact support.");
         }
       } catch (err) {
         setRestaurantStatus(null);
@@ -521,12 +532,11 @@ const Login = () => {
             </div>
             <input
               type="tel"
-              inputMode="numeric"
-              maxLength={15}
+              maxLength={20}
               className="phone-input"
               placeholder="Enter phone number"
               value={phone}
-              onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 15))}
+              onChange={(e) => setPhone(sanitizePhoneInput(e.target.value))}
             />
           </div>
 

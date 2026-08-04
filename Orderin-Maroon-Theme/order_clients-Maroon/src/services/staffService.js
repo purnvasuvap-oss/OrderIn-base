@@ -45,6 +45,20 @@ const attendanceDocRef = (dateKey, staffId) =>
 export const ROLES = ["Admin", "General Manager", "Kitchen", "Floor"];
 export const DAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
+// Zone / Team are organisational tags distinct from `role` (which is the
+// access-level enum above). Team is a flat list, not filtered/gated by the
+// selected Zone — per user confirmation every team is available under
+// every zone despite conceptually sitting "under" one.
+export const ZONES = ["Floor", "Kitchen", "Dining Hall", "Management"];
+export const TEAMS = [
+  "Cooking Team",
+  "Finance Team",
+  "Cleaning Team",
+  "Serving Team",
+  "Maintenance Team",
+  "Security Team",
+];
+
 /* ---------------------------------------------------------------------- */
 /* Helpers                                                                 */
 /* ---------------------------------------------------------------------- */
@@ -101,7 +115,8 @@ export const shiftWeekKey = (weekKey, deltaWeeks) => {
 /**
  * Subscribe to the `staff` collection.
  * Doc shape: { name, role, phone, email (nullable), pin, status: "active"|
- * "paused", createdAt, updatedAt }
+ * "paused", zone (nullable), team (nullable), jobRole (nullable), createdAt,
+ * updatedAt }
  */
 export const subscribeStaff = (onUpdate) => {
   try {
@@ -125,9 +140,9 @@ export const subscribeStaff = (onUpdate) => {
   }
 };
 
-/** Add a staff member. Email is OPTIONAL — pass null/"" if not provided.
- * PIN auto-generates (4-digit) if left blank. */
-export const addStaff = async ({ name, role, phone, email, pin, status = "active" }) => {
+/** Add a staff member. Email, zone, team, jobRole are all OPTIONAL — pass
+ * null/"" if not provided. PIN auto-generates (4-digit) if left blank. */
+export const addStaff = async ({ name, role, phone, email, pin, status = "active", zone, team, jobRole }) => {
   const payload = {
     name: (name || "").trim(),
     role: role || "Floor",
@@ -135,6 +150,9 @@ export const addStaff = async ({ name, role, phone, email, pin, status = "active
     email: email && email.trim() ? email.trim() : null,
     pin: pin && String(pin).trim() ? String(pin).trim() : generatePin(),
     status,
+    zone: zone && zone.trim() ? zone.trim() : null,
+    team: team && team.trim() ? team.trim() : null,
+    jobRole: jobRole && jobRole.trim() ? jobRole.trim() : null,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   };
@@ -142,13 +160,17 @@ export const addStaff = async ({ name, role, phone, email, pin, status = "active
   return docRef.id;
 };
 
-/** Edit a staff member's core fields. Email stays optional/nullable. */
-export const updateStaff = async (id, { name, role, phone, email }) => {
+/** Edit a staff member's core fields. Email/zone/team/jobRole stay
+ * optional/nullable. */
+export const updateStaff = async (id, { name, role, phone, email, zone, team, jobRole }) => {
   await updateDoc(staffDocRef(id), {
     name: (name || "").trim(),
     role,
     phone: (phone || "").trim(),
     email: email && email.trim() ? email.trim() : null,
+    zone: zone && zone.trim() ? zone.trim() : null,
+    team: team && team.trim() ? team.trim() : null,
+    jobRole: jobRole && jobRole.trim() ? jobRole.trim() : null,
     updatedAt: serverTimestamp(),
   });
 };
@@ -361,6 +383,28 @@ export const subscribeTodayAttendance = (onUpdate) => {
     console.error("Failed to subscribe to attendance:", error);
     if (typeof onUpdate === "function") onUpdate([]);
     return () => {};
+  }
+};
+
+/**
+ * One-time fetch of attendance records across a date range (inclusive),
+ * for the Calendar tab's month grid. Queries the same `attendance`
+ * collection `subscribeTodayAttendance` uses, just without the "==
+ * todayKey()" restriction. `startKey`/`endKey` are ISO yyyy-mm-dd strings
+ * (same format as `dateKey`/`todayKey()`).
+ */
+export const getAttendanceForDateRange = async (startKey, endKey) => {
+  try {
+    const q = query(
+      attendanceCollectionRef(),
+      where("dateKey", ">=", startKey),
+      where("dateKey", "<=", endKey),
+    );
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
+  } catch (error) {
+    console.error("Failed to fetch attendance for date range:", error);
+    return [];
   }
 };
 

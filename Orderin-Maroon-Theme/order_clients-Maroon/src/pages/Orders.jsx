@@ -184,12 +184,20 @@ function Orders() {
       return next;
     });
 
-  // Table Management's "View order" action navigates here with
-  // `{ state: { tableNumber } }` so staff land on Orders already filtered to
-  // that table. Applied once on mount (an empty dep array — a fresh nav from
-  // Table Management always mounts this page anew) so it doesn't fight with
-  // the user's own subsequent edits to the search box.
+  // Deep-link into Orders from other pages via `navigate(routes.orders, { state })`.
+  // Table Management's "View order" action passes `{ tableNumber }` so staff
+  // land here already filtered to that table; the Notifications "Order
+  // Alerts" tab passes `{ searchTerm: order.id }` so clicking an alert jumps
+  // straight to that order. `searchTerm` takes priority when both would
+  // otherwise apply. Applied once on mount (an empty dep array — a fresh nav
+  // always mounts this page anew) so it doesn't fight with the user's own
+  // subsequent edits to the search box.
   useEffect(() => {
+    const searchTermFromNav = location.state?.searchTerm;
+    if (searchTermFromNav !== undefined && searchTermFromNav !== null) {
+      setSearchTerm(String(searchTermFromNav));
+      return;
+    }
     const tableNumberFromNav = location.state?.tableNumber;
     if (tableNumberFromNav !== undefined && tableNumberFromNav !== null) {
       setSearchTerm(String(tableNumberFromNav));
@@ -369,7 +377,7 @@ function Orders() {
   const queued = orders.filter(isOrderQueued).length;
   const active = orders.filter(isOrderActive).length;
   const completed = orders.filter(isOrderDelivered).length;
-  const largeCount = orders.filter((o) => totalQty(o) >= 8).length;
+  const largeCount = orders.filter((o) => totalQty(o) >= 5).length;
 
   const matchesSearch = (o) => {
     const q = searchTerm.toLowerCase();
@@ -391,9 +399,13 @@ function Orders() {
     // utils/tableCount.js so no records are missed.
     const tableNumberValue = o.tableNumber || o.tableNo || o.table || "";
     const inTable = String(tableNumberValue).toLowerCase().includes(q);
+    // The Order Alerts tab in Notifications deep-links here with the
+    // order's own id as the search term, so it must be matchable too.
+    const inId = String(o.id || "").toLowerCase().includes(q);
     return (
       inItems ||
       inTable ||
+      inId ||
       (o.username || "").toLowerCase().includes(q) ||
       (o.phoneNumber || "").toLowerCase().includes(q)
     );
@@ -404,7 +416,7 @@ function Orders() {
     if (filter === "completed") filtered = orders.filter(isOrderDelivered);
     else if (filter === "active") filtered = orders.filter(isOrderActive);
     else if (filter === "queued") filtered = orders.filter(isOrderQueued);
-    else if (filter === "large") filtered = orders.filter((o) => totalQty(o) >= 8);
+    else if (filter === "large") filtered = orders.filter((o) => totalQty(o) >= 5);
 
     if (searchTerm) filtered = filtered.filter(matchesSearch);
 
@@ -425,7 +437,7 @@ function Orders() {
     queued: ["Queued Orders", "Awaiting accept / payment"],
     active: ["Active Orders", "In the kitchen right now"],
     completed: ["Served Orders", "Delivered today"],
-    large: ["Large Orders", "Orders with 8 or more items"],
+    large: ["Large Orders", "Orders with 5 or more items"],
   };
   const [pageTitle, pageSub] = titleMap[filter] || titleMap.all;
 
@@ -434,7 +446,7 @@ function Orders() {
     { key: "queued", label: "Queued", cap: "Awaiting accept / payment", count: queued, color: "#2F6FB0", icon: QueuedOrdersIcon },
     { key: "active", label: "Active", cap: "In the kitchen", count: active, color: "#B5823F", icon: ActiveOrdersIcon },
     { key: "completed", label: "Served", cap: "Delivered today", count: completed, color: "#3FA34D", icon: CompletedIcon },
-    { key: "large", label: "Large Orders", cap: "8+ items", count: largeCount, color: "#D2691E", icon: null },
+    { key: "large", label: "Large Orders", cap: "5+ items", count: largeCount, color: "#D2691E", icon: null },
   ];
 
   /* ---------- payment cell renderer ---------- */

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronLeft, Plus, Search, Pencil, X, Trash2 } from "lucide-react";
 import { collection, getDocs } from "firebase/firestore";
@@ -18,6 +18,9 @@ import {
   markTableReady,
   deleteTable,
   reconcileOccupiedTables,
+  reconcileReservations,
+  isReservationPending,
+  formatReservedAt,
 } from "../services/tableService";
 
 const STATUS_META = {
@@ -77,10 +80,25 @@ const timeSince = (timestamp) => {
   return `${hrs}h ${mins % 60}m ago`;
 };
 
+// Prefer the new real `reservedAt` timestamp; fall back to the legacy
+// free-text `reservedTime` field for tables reserved before this change.
+const reservedTimeLabel = (table) => formatReservedAt(table?.reservedAt) || table?.reservedTime || null;
+
 /* ---------------- Reserve table modal ---------------- */
+// Converts a stored reservedAt ISO string into the local value a
+// <input type="datetime-local"> needs (YYYY-MM-DDTHH:mm, no timezone/seconds).
+const toDatetimeLocalValue = (reservedAt) => {
+  if (!reservedAt) return "";
+  const d = new Date(reservedAt);
+  if (Number.isNaN(d.getTime())) return "";
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+};
+
 function ReserveTableModal({ table, onClose, onConfirm }) {
-  const [name, setName] = useState("");
-  const [time, setTime] = useState("");
+  const isUpdate = table?.status === "reserved";
+  const [name, setName] = useState(table?.reservedName || "");
+  const [time, setTime] = useState(toDatetimeLocalValue(table?.reservedAt));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
@@ -91,10 +109,19 @@ function ReserveTableModal({ table, onClose, onConfirm }) {
       setError("Guest / party name is required");
       return;
     }
+    if (!time) {
+      setError("Arrival date & time is required");
+      return;
+    }
+    const parsed = new Date(time);
+    if (Number.isNaN(parsed.getTime())) {
+      setError("Enter a valid arrival date & time");
+      return;
+    }
     setSaving(true);
     setError("");
     try {
-      await onConfirm(table.num, name.trim(), time.trim());
+      await onConfirm(table.num, name.trim(), parsed.toISOString());
     } catch (err) {
       setError("Failed to reserve table: " + err.message);
     } finally {
@@ -106,7 +133,7 @@ function ReserveTableModal({ table, onClose, onConfirm }) {
     <div className="tm-overlay" onClick={onClose}>
       <div className="tm-modal tm-modal-small" onClick={(e) => e.stopPropagation()}>
         <div className="tm-modal-head">
-          <h3>Reserve Table {table.num}</h3>
+          <h3>{isUpdate ? "Update Reservation — " : "Reserve "}Table {table.num}</h3>
           <button className="tm-icon-btn" onClick={onClose}>
             <X size={18} />
           </button>
@@ -124,12 +151,11 @@ function ReserveTableModal({ table, onClose, onConfirm }) {
             />
           </div>
           <div className="tm-form-group">
-            <label>Arrival time</label>
+            <label>Arrival date &amp; time</label>
             <input
-              type="text"
+              type="datetime-local"
               value={time}
               onChange={(e) => setTime(e.target.value)}
-              placeholder="e.g. 8:00 PM"
             />
           </div>
         </div>
@@ -138,7 +164,7 @@ function ReserveTableModal({ table, onClose, onConfirm }) {
             Cancel
           </button>
           <button className="tm-btn tm-btn-gold" onClick={handleConfirm} disabled={saving}>
-            {saving ? "Saving…" : "Reserve"}
+            {saving ? "Saving…" : isUpdate ? "Update" : "Reserve"}
           </button>
         </div>
       </div>
@@ -353,7 +379,7 @@ function TableDetailModal({ table, liveOrders, onClose, actions }) {
               </div>
               <div className="tm-mrow">
                 <span>Arrival</span>
-                <span>{table.reservedTime || "—"}</span>
+                <span>{reservedTimeLabel(table) || "—"}</span>
               </div>
             </>
           )}
@@ -371,13 +397,28 @@ function TableDetailModal({ table, liveOrders, onClose, actions }) {
               <span>Ready to seat</span>
             </div>
           )}
+
+          {table.displayStatus === "available" && table.status === "reserved" && (
+            <div className="tm-mrow tm-mrow-upcoming-reservation">
+              <span>Upcoming reservation</span>
+              <span>
+                {table.reservedName || "Reserved"}
+                {reservedTimeLabel(table) ? ` · ${reservedTimeLabel(table)}` : ""}
+              </span>
+            </div>
+          )}
         </div>
 
         <div className="tm-modal-foot">
+          {table.displayStatus === "available" && table.status === "reserved" && (
+            <button className="tm-btn tm-btn-danger" onClick={() => actions.onCancelReservation(table)}>
+              Cancel reservation
+            </button>
+          )}
           {table.displayStatus === "available" && (
             <>
               <button className="tm-btn tm-btn-ghost" onClick={() => actions.onReserve(table)}>
-                Reserve
+                {table.status === "reserved" ? "Update reservation" : "Reserve"}
               </button>
               <button className="tm-btn tm-btn-gold" onClick={() => actions.onSeat(table)}>
                 Seat guests
@@ -454,12 +495,18 @@ function TableTile({ table, liveOrders, onOpen, actions }) {
       <div className="tm-tile-capacity">{table.capacity} seats</div>
 
       <div className="tm-tile-info">
-        {table.displayStatus === "available" && "Ready to seat"}
+        {table.displayStatus === "available" && table.status === "reserved" && (
+          <span className="tm-tile-upcoming-reservation">
+            Ready to seat · Reserved {reservedTimeLabel(table) ? `at ${reservedTimeLabel(table)}` : "later"}
+            {table.reservedName ? ` (${table.reservedName})` : ""}
+          </span>
+        )}
+        {table.displayStatus === "available" && table.status !== "reserved" && "Ready to seat"}
         {table.displayStatus === "cleaning" && "Being cleaned"}
         {table.displayStatus === "reserved" && (
           <>
             {table.reservedName || "Reserved"}
-            {table.reservedTime ? ` · ${table.reservedTime}` : ""}
+            {reservedTimeLabel(table) ? ` · ${reservedTimeLabel(table)}` : ""}
           </>
         )}
         {table.displayStatus === "occupied" && primaryOrder && (
@@ -477,8 +524,16 @@ function TableTile({ table, liveOrders, onOpen, actions }) {
               Seat guests
             </button>
             <button className="tm-btn tm-btn-ghost tm-btn-sm" onClick={() => actions.onReserve(table)}>
-              Reserve
+              {table.status === "reserved" ? "Update" : "Reserve"}
             </button>
+            {table.status === "reserved" && (
+              <button
+                className="tm-btn tm-btn-danger tm-btn-sm"
+                onClick={() => actions.onCancelReservation(table)}
+              >
+                Cancel
+              </button>
+            )}
           </>
         )}
         {table.displayStatus === "occupied" && (
@@ -525,6 +580,9 @@ function TableManagement() {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [seatTarget, setSeatTarget] = useState(""); // table number for ManualOrderModal
   const [menuItems, setMenuItems] = useState([]);
+  const [reservationToast, setReservationToast] = useState(null);
+  const prevAlertedRef = useRef(new Map());
+  const rawTablesRef = useRef(rawTables);
 
   // Seed the tables collection once (no-op if it already has docs), then
   // subscribe for real-time updates to the stored Available/Reserved/
@@ -589,6 +647,45 @@ function TableManagement() {
     reconcileOccupiedTables(rawTables, orders);
   }, [rawTables, orders]);
 
+  // Time-aware reservation reconciliation (fires the 15-min cleanup alert,
+  // auto-clears 30-min no-shows) — see reconcileReservations. Runs off a
+  // ref rather than depending on `rawTables` directly so the 60s interval
+  // isn't reset every time the live tables feed ticks.
+  useEffect(() => {
+    rawTablesRef.current = rawTables;
+  }, [rawTables]);
+
+  useEffect(() => {
+    reconcileReservations(rawTablesRef.current);
+    const interval = setInterval(() => {
+      reconcileReservations(rawTablesRef.current);
+    }, 60000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Local popup when a reservation's cleanup alert newly fires (detected by
+  // `reservationAlerted` flipping false -> true on the live `subscribeTables`
+  // feed), so staff see it immediately if Table Management is open.
+  useEffect(() => {
+    const prev = prevAlertedRef.current;
+    rawTables.forEach((t) => {
+      const wasAlerted = prev.get(t.num) || false;
+      if (t.reservationAlerted && !wasAlerted) {
+        setReservationToast({
+          id: `${t.num}-${Date.now()}`,
+          message: `Table ${t.num}${t.reservedName ? ` (${t.reservedName})` : ""} has a reservation soon — clean it up within 15 minutes.`,
+        });
+      }
+      prev.set(t.num, Boolean(t.reservationAlerted));
+    });
+  }, [rawTables]);
+
+  useEffect(() => {
+    if (!reservationToast) return undefined;
+    const timer = window.setTimeout(() => setReservationToast(null), 6000);
+    return () => window.clearTimeout(timer);
+  }, [reservationToast]);
+
   // Group every order (live or already delivered) by table number, newest
   // first, so an Occupied tile can still show its order info even after
   // that order has been served and is waiting on a manual "Free".
@@ -610,27 +707,44 @@ function TableManagement() {
     return map;
   }, [orders]);
 
-  // `status` on the stored table doc is now fully authoritative (including
-  // "occupied" — see reconcileOccupiedTables); just attach each table's
-  // orders for display.
+  // `status` on the stored table doc is authoritative for everything except
+  // one display-layer override: a "reserved" table whose reservation is
+  // still >15 minutes out (per isReservationPending) shows as "available"
+  // so it stays fully bookable for walk-ins — the underlying status/
+  // reservedName/reservedAt fields in Firestore are left untouched.
   const tables = useMemo(() => {
     return rawTables.map((t) => {
       const tableOrders = ordersByTable.get(String(t.num)) || [];
-      return { ...t, displayStatus: t.status, liveOrders: tableOrders };
+      const displayStatus =
+        t.status === "reserved" && isReservationPending(t) ? "available" : t.status;
+      return { ...t, displayStatus, liveOrders: tableOrders };
     });
   }, [rawTables, ordersByTable]);
 
+  // "Reserved" is counted/filtered off the underlying `status`, not
+  // `displayStatus` — a table more than 15 minutes out from its reservation
+  // still displays as bookable-for-walk-ins (see the tiles), but it should
+  // still show up under the Reserved section/count so staff can see all
+  // upcoming reservations at a glance, not just the ones inside the 15-min
+  // cleanup window. Available is the complement: displaying as available
+  // AND not actually reserved, so the two categories don't double-count.
   const counts = useMemo(() => {
     const c = { all: tables.length, available: 0, occupied: 0, reserved: 0, cleaning: 0 };
     tables.forEach((t) => {
-      if (c[t.displayStatus] !== undefined) c[t.displayStatus] += 1;
+      if (t.status === "reserved") {
+        c.reserved += 1;
+      } else if (c[t.displayStatus] !== undefined) {
+        c[t.displayStatus] += 1;
+      }
     });
     return c;
   }, [tables]);
 
   const filteredTables = useMemo(() => {
     let list = tables;
-    if (filter !== "all") list = list.filter((t) => t.displayStatus === filter);
+    if (filter === "reserved") list = list.filter((t) => t.status === "reserved");
+    else if (filter === "available") list = list.filter((t) => t.displayStatus === "available" && t.status !== "reserved");
+    else if (filter !== "all") list = list.filter((t) => t.displayStatus === filter);
     if (searchTerm.trim()) {
       const q = searchTerm.trim().toLowerCase();
       list = list.filter((t) => String(t.num).includes(q));
@@ -826,6 +940,13 @@ function TableManagement() {
         initialTableNumber={seatTarget}
         onOrderCreated={() => setSeatTarget("")}
       />
+
+      {reservationToast && (
+        <div className="tm-reservation-toast" role="status" aria-live="polite">
+          <strong>Reservation alert</strong>
+          <span>{reservationToast.message}</span>
+        </div>
+      )}
     </div>
   );
 }

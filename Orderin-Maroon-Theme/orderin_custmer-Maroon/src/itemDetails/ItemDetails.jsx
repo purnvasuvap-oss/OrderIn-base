@@ -7,12 +7,8 @@ import {
   Plus,
   ShoppingCart,
   Check,
-  Star,
-  Clock,
-  Share2,
   Leaf,
   Flame,
-  Link2,
 } from "lucide-react";
 import { collection, getDocs, doc, getDoc, setDoc } from "firebase/firestore";
 import { db } from "../firebaseConfig";
@@ -49,7 +45,6 @@ function ItemDetails() {
   const [touchEnd, setTouchEnd] = useState(null);
   const [isFavorited, setIsFavorited] = useState(false);
   const [resolvedImage, setResolvedImage] = useState(item ? (item.image || item.imageURL || item.image_url || '') : '');
-  const [linkCopied, setLinkCopied] = useState(false);
   const [customSelections, setCustomSelections] = useState({});
 
   // helper: normalize string for matching
@@ -303,35 +298,9 @@ function ItemDetails() {
     }
   };
 
-  const handleShare = async () => {
-    const shareData = {
-      title: item.name,
-      text: `Check out ${item.name} on the menu`,
-      url: window.location.href,
-    };
-    try {
-      if (navigator.share) {
-        await navigator.share(shareData);
-        return;
-      }
-      throw new Error('Web Share unavailable');
-    } catch (e) {
-      try {
-        await navigator.clipboard.writeText(window.location.href);
-        setLinkCopied(true);
-        setTimeout(() => setLinkCopied(false), 1800);
-      } catch (clipErr) {
-        console.error('Unable to share or copy link', clipErr);
-      }
-    }
-  };
-
   const effectiveUnitPrice = parsePriceValue(item.price) + sumOptionPrices(liveSelectedOptions);
   const totalPrice = (effectiveUnitPrice * quantity).toFixed(2);
 
-  const rating = item.rating || 4.6;
-  const reviewCount = item.reviewCount || item.ratingsCount || null;
-  const prepTime = item.prepTime || item.preparationTime || '15–20 min';
   const isBestseller = Boolean(item.bestseller || item.isBestseller);
   const isVeg = item.isVeg === true || (typeof item.dietType === 'string' && item.dietType.toLowerCase() === 'veg');
   const isNonVeg = item.isVeg === false || (typeof item.dietType === 'string' && item.dietType.toLowerCase() === 'non-veg');
@@ -381,9 +350,6 @@ function ItemDetails() {
             <ArrowLeft size={20} />
           </button>
           <div className="floating-icon-group">
-            <button className="floating-icon-btn" onClick={handleShare} aria-label="Share this item">
-              {linkCopied ? <Check size={18} /> : <Share2 size={18} />}
-            </button>
             <button
               className="floating-icon-btn"
               onClick={handleFavoriteToggle}
@@ -392,20 +358,6 @@ function ItemDetails() {
               <Heart size={18} className={isFavorited ? 'heart-filled' : ''} />
             </button>
           </div>
-        </div>
-
-        {linkCopied && <div className="link-toast"><Link2 size={13} /> Link copied</div>}
-
-        <div className="hero-info-row">
-          <span className="hero-pill">
-            <Star size={13} className="pill-star" />
-            {rating.toFixed ? rating.toFixed(1) : rating}
-            {reviewCount ? <span className="pill-muted"> ({reviewCount})</span> : null}
-          </span>
-          <span className="hero-pill">
-            <Clock size={13} />
-            {prepTime}
-          </span>
         </div>
       </div>
 

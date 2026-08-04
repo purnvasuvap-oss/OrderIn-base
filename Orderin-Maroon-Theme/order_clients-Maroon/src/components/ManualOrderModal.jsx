@@ -6,6 +6,7 @@ import {
 } from "firebase/firestore";
 import { db } from "../firebase";
 import "../pages/Orders.css";
+import { sanitizePhoneInput, isValidPhoneNumber } from "../utils/phoneValidation";
 
 // Extracted verbatim (no behavior changes) from Orders.jsx, where it used to
 // be defined inline as a non-exported function component. Moved here so it
@@ -82,9 +83,10 @@ function ManualOrderModal({ isOpen, onClose, menuItems, onOrderCreated, initialT
       }
       // Phone number previously accepted any string (letters, wrong
       // length, etc.), creating customer docs that couldn't be found
-      // later by phone-based login. Require exactly 10 digits.
-      if (!/^\d{10}$/.test(phoneNumber.trim())) {
-        setError("Phone number must be exactly 10 digits");
+      // later by phone-based login. Require a plausible international
+      // number (7-15 digits once formatting characters are stripped).
+      if (!isValidPhoneNumber(phoneNumber)) {
+        setError("Enter a valid phone number");
         return;
       }
       if (!tableNumber.trim()) {
@@ -203,10 +205,9 @@ function ManualOrderModal({ isOpen, onClose, menuItems, onOrderCreated, initialT
               <label>Phone Number</label>
               <input
                 type="tel"
-                inputMode="numeric"
-                maxLength={10}
+                maxLength={20}
                 value={phoneNumber}
-                onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, "").slice(0, 10))}
+                onChange={(e) => setPhoneNumber(sanitizePhoneInput(e.target.value))}
                 placeholder="Enter phone number"
               />
             </div>

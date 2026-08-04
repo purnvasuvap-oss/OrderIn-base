@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import RevenueIcon from "./landingpage/revenue.svg";
 import OrdersTodayIcon from "./landingpage/orders_today.svg";
 import CustomersIcon from "./landingpage/customers.svg";
@@ -28,7 +28,11 @@ import {
   getTodayCustomers,
 } from "../utils/dashboardStats";
 import { getTodaysCustomersCount } from "../utils/CustomerCount";
-import { subscribeTables, reconcileOccupiedTables } from "../services/tableService";
+import {
+  subscribeTables,
+  reconcileOccupiedTables,
+  reconcileReservations,
+} from "../services/tableService";
 import { subscribeAcceptingOrders, setAcceptingOrders } from "../firebase";
 import routes from "../routes";
 import "./Dashboard.css";
@@ -48,6 +52,7 @@ const Dashboard = () => {
   const [recentOrders, setRecentOrders] = useState([]);
   const [acceptingOrders, setAcceptingOrdersState] = useState(true);
   const [togglingOrders, setTogglingOrders] = useState(false);
+  const [showCloseConfirm, setShowCloseConfirm] = useState(false);
 
   useEffect(() => {
     const unsubscribe = subscribeAllCustomerOrders((ordersData) => {
@@ -97,6 +102,25 @@ const Dashboard = () => {
     if (rawTables.length === 0 || recentOrders.length === 0) return;
     reconcileOccupiedTables(rawTables, recentOrders);
   }, [rawTables, recentOrders]);
+
+  // Time-aware reservation reconciliation (15-min cleanup alert + 30-min
+  // no-show auto-clear — see reconcileReservations in tableService.js),
+  // mirroring the occupancy reconciliation above so it fires regardless of
+  // whether Table Management is open. Runs off a ref so the periodic
+  // interval isn't reset every time the live tables feed ticks. No popup
+  // here — that's Table Management's job when it's the page open.
+  const rawTablesRef = useRef(rawTables);
+  useEffect(() => {
+    rawTablesRef.current = rawTables;
+  }, [rawTables]);
+
+  useEffect(() => {
+    reconcileReservations(rawTablesRef.current);
+    const interval = setInterval(() => {
+      reconcileReservations(rawTablesRef.current);
+    }, 60000);
+    return () => clearInterval(interval);
+  }, []);
   useEffect(() => {
     const timer = setInterval(() => {
       setDateTime(new Date());
@@ -117,9 +141,20 @@ const Dashboard = () => {
     };
   }, []);
 
-  const handleToggleAcceptingOrders = async () => {
+  const handleToggleAcceptingOrders = () => {
     if (togglingOrders) return;
-    const next = !acceptingOrders;
+    // Closing is the consequential direction (blocks every customer from
+    // ordering) — confirm before applying so an accidental click on the
+    // dashboard can't take the restaurant offline. Re-opening is harmless
+    // and applies immediately.
+    if (acceptingOrders) {
+      setShowCloseConfirm(true);
+      return;
+    }
+    applyAcceptingOrders(true);
+  };
+
+  const applyAcceptingOrders = async (next) => {
     setTogglingOrders(true);
     try {
       await setAcceptingOrders(next);
@@ -131,6 +166,11 @@ const Dashboard = () => {
     } finally {
       setTogglingOrders(false);
     }
+  };
+
+  const handleConfirmClose = () => {
+    setShowCloseConfirm(false);
+    applyAcceptingOrders(false);
   };
 
   useEffect(() => {
@@ -202,6 +242,36 @@ const Dashboard = () => {
           </button>
         </div>
       </section>
+
+      {showCloseConfirm && (
+        <div className="dash-confirm-overlay" onClick={() => setShowCloseConfirm(false)}>
+          <div className="dash-confirm-modal" onClick={(e) => e.stopPropagation()}>
+            <h3>Stop accepting orders?</h3>
+            <p>
+              Customers won't be able to place new orders on the website until you turn this back
+              on. Existing orders already in progress are not affected.
+            </p>
+            <div className="dash-confirm-actions">
+              <button
+                type="button"
+                className="dash-confirm-btn dash-confirm-btn-ghost"
+                onClick={() => setShowCloseConfirm(false)}
+                disabled={togglingOrders}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="dash-confirm-btn dash-confirm-btn-danger"
+                onClick={handleConfirmClose}
+                disabled={togglingOrders}
+              >
+                {togglingOrders ? "Closing…" : "Yes, stop accepting orders"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* KPI */}
 

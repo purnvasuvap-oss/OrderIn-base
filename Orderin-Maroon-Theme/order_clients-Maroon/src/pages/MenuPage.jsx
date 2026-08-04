@@ -109,6 +109,8 @@ const MenuPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [selectedAvailability, setSelectedAvailability] = useState("All");
+  const [vegOnlyFilter, setVegOnlyFilter] = useState(false);
+  const [showAllVegConfirm, setShowAllVegConfirm] = useState(false);
   useEffect(() => {
     if (!menuNotice) return undefined;
 
@@ -903,7 +905,10 @@ const MenuPage = () => {
       selectedAvailability === "All" ||
       item.availability === selectedAvailability;
 
-    return matchesSearch && matchesCategory && matchesAvailability;
+    const matchesVeg =
+      !vegOnlyFilter || normalizeMenuType(item.type) === TYPE_VEG;
+
+    return matchesSearch && matchesCategory && matchesAvailability && matchesVeg;
   });
   return (
     <div className="menu-management-container">
@@ -955,7 +960,18 @@ const MenuPage = () => {
               <input
                 type="checkbox"
                 checked={allVegMode}
-                onChange={(e) => handleAllVegToggle(e.target.checked)}
+                onChange={(e) => {
+                  if (e.target.checked) {
+                    // Marking everything Veg overwrites every non-veg item
+                    // in the database — confirm first so an accidental
+                    // click can't do this. Un-checking has no destructive
+                    // effect (it never reverted items), so it applies
+                    // immediately.
+                    setShowAllVegConfirm(true);
+                  } else {
+                    handleAllVegToggle(false);
+                  }
+                }}
                 disabled={isSaving || isApplyingAllVeg}
               />
               <span>All Veg</span>
@@ -1394,12 +1410,16 @@ const MenuPage = () => {
           <option value="Yes">Yes</option>
           <option value="No">No</option>
         </select>
-        {/* Veg Toggle */}
+        {/* Veg Only filter — display-only, does NOT change any data.
+            (Previously this accidentally reused handleAllVegToggle, which
+            bulk-overwrote every menu item's type to Veg in Firestore just
+            from filtering the list — that bulk action now lives only on the
+            standalone "All Veg" control below, behind a confirmation.) */}
         <label className="veg-toggle-ui">
           <input
             type="checkbox"
-            checked={allVegMode}
-            onChange={(e) => handleAllVegToggle(e.target.checked)}
+            checked={vegOnlyFilter}
+            onChange={(e) => setVegOnlyFilter(e.target.checked)}
           />
           <span></span>
           <p>Veg Only</p>
@@ -1557,6 +1577,46 @@ const MenuPage = () => {
           </div>
         </div>
       </div>
+
+      {showAllVegConfirm && (
+        <div
+          className="menu-allveg-confirm-overlay"
+          onClick={() => setShowAllVegConfirm(false)}
+        >
+          <div
+            className="menu-allveg-confirm-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3>Mark every item as Veg?</h3>
+            <p>
+              This will overwrite every non-veg item on the menu to Veg. This
+              can't be undone automatically — items would need to be switched
+              back individually.
+            </p>
+            <div className="menu-allveg-confirm-actions">
+              <button
+                type="button"
+                className="menu-allveg-confirm-btn menu-allveg-confirm-btn-ghost"
+                onClick={() => setShowAllVegConfirm(false)}
+                disabled={isApplyingAllVeg}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="menu-allveg-confirm-btn menu-allveg-confirm-btn-danger"
+                onClick={() => {
+                  setShowAllVegConfirm(false);
+                  handleAllVegToggle(true);
+                }}
+                disabled={isApplyingAllVeg}
+              >
+                {isApplyingAllVeg ? "Applying…" : "Yes, mark all as Veg"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -10,11 +10,15 @@ import {
   ChevronLeft as ArrowLeft,
   ChevronRight as ArrowRight,
   Download,
+  Calendar as CalendarIcon,
 } from "lucide-react";
 import routes from "../routes";
 import "./StaffManagement.css";
+import { sanitizePhoneInput } from "../utils/phoneValidation";
 import {
   ROLES,
+  ZONES,
+  TEAMS,
   DAY_LABELS,
   subscribeStaff,
   addStaff,
@@ -39,6 +43,7 @@ import {
   clockOutRecord,
   hoursOf,
   attendanceStatus,
+  getAttendanceForDateRange,
 } from "../services/staffService";
 
 const ROLE_META = {
@@ -74,6 +79,9 @@ function StaffFormModal({ onClose, onConfirm }) {
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [pin, setPin] = useState("");
+  const [zone, setZone] = useState(ZONES[0]);
+  const [team, setTeam] = useState(TEAMS[0]);
+  const [jobRole, setJobRole] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
@@ -93,7 +101,7 @@ function StaffFormModal({ onClose, onConfirm }) {
     setSaving(true);
     setError("");
     try {
-      await onConfirm({ name, role, phone, email, pin });
+      await onConfirm({ name, role, phone, email, pin, zone, team, jobRole });
     } catch (err) {
       setError("Failed to add staff: " + err.message);
       setSaving(false);
@@ -116,7 +124,7 @@ function StaffFormModal({ onClose, onConfirm }) {
             <input value={name} onChange={(e) => setName(e.target.value)} autoFocus placeholder="e.g. Ravi Kumar" />
           </div>
           <div className="sm-form-group">
-            <label>Role</label>
+            <label>Access Level</label>
             <select value={role} onChange={(e) => setRole(e.target.value)}>
               {ROLES.map((r) => (
                 <option key={r} value={r}>
@@ -125,15 +133,40 @@ function StaffFormModal({ onClose, onConfirm }) {
               ))}
             </select>
           </div>
+          <div className="sm-form-row">
+            <div className="sm-form-group">
+              <label>Zone</label>
+              <select value={zone} onChange={(e) => setZone(e.target.value)}>
+                {ZONES.map((z) => (
+                  <option key={z} value={z}>
+                    {z}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="sm-form-group">
+              <label>Team</label>
+              <select value={team} onChange={(e) => setTeam(e.target.value)}>
+                {TEAMS.map((t) => (
+                  <option key={t} value={t}>
+                    {t}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <div className="sm-form-group">
+            <label>Job Role <span className="sm-optional">(optional)</span></label>
+            <input value={jobRole} onChange={(e) => setJobRole(e.target.value)} placeholder="e.g. Sous Chef" />
+          </div>
           <div className="sm-form-group">
             <label>Phone</label>
             <input
               type="tel"
-              inputMode="numeric"
-              maxLength={10}
+              maxLength={20}
               value={phone}
-              onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
-              placeholder="e.g. 9876543210"
+              onChange={(e) => setPhone(sanitizePhoneInput(e.target.value))}
+              placeholder="e.g. +1 (555) 123-4567"
             />
           </div>
           <div className="sm-form-group">
@@ -296,6 +329,13 @@ function StaffTab({ staffList }) {
                   <span>
                     <span className="sm-emp-name">{s.name}</span>
                     <span className="sm-emp-email">{s.email || "No email on file"}</span>
+                    {(s.zone || s.team || s.jobRole) && (
+                      <span className="sm-emp-tags">
+                        {s.zone && <span className="sm-tag sm-tag-zone">{s.zone}</span>}
+                        {s.team && <span className="sm-tag sm-tag-team">{s.team}</span>}
+                        {s.jobRole && <span className="sm-tag sm-tag-jobrole">{s.jobRole}</span>}
+                      </span>
+                    )}
                   </span>
                 </span>
                 <span>
@@ -369,8 +409,8 @@ function StaffTab({ staffList }) {
       {showAdd && (
         <StaffFormModal
           onClose={() => setShowAdd(false)}
-          onConfirm={async ({ name, role, phone, email, pin }) => {
-            await addStaff({ name, role, phone, email, pin });
+          onConfirm={async ({ name, role, phone, email, pin, zone, team, jobRole }) => {
+            await addStaff({ name, role, phone, email, pin, zone, team, jobRole });
             setShowAdd(false);
           }}
         />
@@ -981,6 +1021,223 @@ function AttendanceTab({ staffList }) {
   );
 }
 
+/* ======================= Day attendance modal (Calendar tab) ======================= */
+function DayAttendanceModal({ dateLabel, records, onClose }) {
+  return (
+    <div className="sm-overlay" onClick={onClose}>
+      <div className="sm-modal sm-modal-cal-day" onClick={(e) => e.stopPropagation()}>
+        <div className="sm-modal-head">
+          <h3>Attendance · {dateLabel}</h3>
+          <button className="sm-icon-btn" onClick={onClose}>
+            <X size={18} />
+          </button>
+        </div>
+        <div className="sm-modal-body">
+          {records.length === 0 ? (
+            <div className="sm-state-msg">No attendance recorded for this day.</div>
+          ) : (
+            <div className="sm-table sm-cal-day-table">
+              <div className="sm-thead sm-thead-caldot">
+                <span>Employee</span>
+                <span>Clock in</span>
+                <span>Clock out</span>
+                <span>Break</span>
+                <span>Hours</span>
+                <span>Status</span>
+              </div>
+              {records.map((r) => {
+                const status = attendanceStatus(r);
+                return (
+                  <div className="sm-trow sm-trow-caldot" key={r.id}>
+                    <span className="sm-att-field">
+                      <span className="sm-cell-label">Employee</span>
+                      <span>{r.staffName}</span>
+                    </span>
+                    <span className="sm-att-field">
+                      <span className="sm-cell-label">Clock in</span>
+                      <span>{fmtClock(r.clockInAt)}</span>
+                    </span>
+                    <span className="sm-att-field">
+                      <span className="sm-cell-label">Clock out</span>
+                      <span>{fmtClock(r.clockOutAt)}</span>
+                    </span>
+                    <span className="sm-att-field">
+                      <span className="sm-cell-label">Break</span>
+                      <span>{r.breakMinutes || 0}m</span>
+                    </span>
+                    <span className="sm-att-field">
+                      <span className="sm-cell-label">Hours</span>
+                      <span>{hoursOf(r).toFixed(2)}</span>
+                    </span>
+                    <span className="sm-att-field">
+                      <span className="sm-cell-label">Status</span>
+                      <span className={`sm-att-status sm-att-status-${status}`}>
+                        {status === "on-shift" && "On shift"}
+                        {status === "on-break" && "On break"}
+                        {status === "clocked-out" && "Clocked out"}
+                        {status === "not-in" && "Not in"}
+                      </span>
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+        <div className="sm-modal-foot">
+          <button className="sm-btn sm-btn-gold" onClick={onClose}>
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** yyyy-mm-dd for a Date, local time — matches staffService's dateKey format. */
+const dateKeyOf = (d) => {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+};
+
+/* ======================= Tab 4: Calendar ======================= */
+function CalendarTab() {
+  // `monthAnchor` is always the 1st of the displayed month.
+  const [monthAnchor, setMonthAnchor] = useState(() => {
+    const d = new Date();
+    d.setDate(1);
+    d.setHours(0, 0, 0, 0);
+    return d;
+  });
+  const [attendanceByDay, setAttendanceByDay] = useState(new Map());
+  const [loading, setLoading] = useState(true);
+  const [selectedDay, setSelectedDay] = useState(null); // { dateKey, dateLabel }
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    const startOfMonth = new Date(monthAnchor);
+    const endOfMonth = new Date(monthAnchor.getFullYear(), monthAnchor.getMonth() + 1, 0);
+    const startKey = dateKeyOf(startOfMonth);
+    const endKey = dateKeyOf(endOfMonth);
+    getAttendanceForDateRange(startKey, endKey).then((records) => {
+      if (cancelled) return;
+      const map = new Map();
+      records.forEach((r) => {
+        const list = map.get(r.dateKey) || [];
+        list.push(r);
+        map.set(r.dateKey, list);
+      });
+      setAttendanceByDay(map);
+      setLoading(false);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [monthAnchor]);
+
+  const monthLabel = monthAnchor.toLocaleDateString(undefined, { month: "long", year: "numeric" });
+
+  // Build a Mon..Sun grid of cells covering the full month, padded with
+  // leading/trailing days from adjacent months so every week row is full.
+  const gridDays = useMemo(() => {
+    const firstOfMonth = new Date(monthAnchor);
+    const firstDow = firstOfMonth.getDay(); // 0 = Sun .. 6 = Sat
+    const leadingBlanks = firstDow === 0 ? 6 : firstDow - 1; // days before Monday
+    const gridStart = new Date(firstOfMonth);
+    gridStart.setDate(gridStart.getDate() - leadingBlanks);
+
+    const lastOfMonth = new Date(monthAnchor.getFullYear(), monthAnchor.getMonth() + 1, 0);
+    const lastDow = lastOfMonth.getDay();
+    const trailingBlanks = lastDow === 0 ? 0 : 7 - lastDow;
+    const gridEnd = new Date(lastOfMonth);
+    gridEnd.setDate(gridEnd.getDate() + trailingBlanks);
+
+    const days = [];
+    const cursor = new Date(gridStart);
+    while (cursor <= gridEnd) {
+      days.push({
+        date: new Date(cursor),
+        inMonth: cursor.getMonth() === monthAnchor.getMonth(),
+      });
+      cursor.setDate(cursor.getDate() + 1);
+    }
+    return days;
+  }, [monthAnchor]);
+
+  const todayStr = dateKeyOf(new Date());
+
+  return (
+    <div className="sm-panel">
+      <div className="sm-toolbar">
+        <button className="sm-icon-btn sm-week-nav" onClick={() => setMonthAnchor((d) => {
+          const next = new Date(d);
+          next.setMonth(next.getMonth() - 1);
+          return next;
+        })}>
+          <ArrowLeft size={16} />
+        </button>
+        <span className="sm-week-label">{monthLabel}</span>
+        <button className="sm-icon-btn sm-week-nav" onClick={() => setMonthAnchor((d) => {
+          const next = new Date(d);
+          next.setMonth(next.getMonth() + 1);
+          return next;
+        })}>
+          <ArrowRight size={16} />
+        </button>
+        <div className="sm-spacer" />
+        {loading && <span className="sm-hint">Loading…</span>}
+      </div>
+
+      <div className="sm-cal-grid">
+        {DAY_LABELS.map((d) => (
+          <div className="sm-cal-headcell" key={d}>
+            {d}
+          </div>
+        ))}
+        {gridDays.map(({ date, inMonth }) => {
+          const dateKey = dateKeyOf(date);
+          const records = attendanceByDay.get(dateKey) || [];
+          const clockedInCount = new Set(
+            records.filter((r) => r.clockInAt).map((r) => r.staffId),
+          ).size;
+          const isToday = dateKey === todayStr;
+          return (
+            <div
+              key={dateKey}
+              className={`sm-cal-cell ${inMonth ? "" : "sm-cal-cell-out"} ${isToday ? "sm-cal-cell-today" : ""}`}
+              onClick={() =>
+                setSelectedDay({
+                  dateKey,
+                  dateLabel: date.toLocaleDateString(undefined, {
+                    weekday: "short",
+                    month: "short",
+                    day: "numeric",
+                    year: "numeric",
+                  }),
+                })
+              }
+            >
+              <span className="sm-cal-daynum">{date.getDate()}</span>
+              {clockedInCount > 0 && <span className="sm-cal-badge">{clockedInCount} in</span>}
+            </div>
+          );
+        })}
+      </div>
+
+      {selectedDay && (
+        <DayAttendanceModal
+          dateLabel={selectedDay.dateLabel}
+          records={attendanceByDay.get(selectedDay.dateKey) || []}
+          onClose={() => setSelectedDay(null)}
+        />
+      )}
+    </div>
+  );
+}
+
 /* ======================= Main page ======================= */
 function StaffManagement() {
   const navigate = useNavigate();
@@ -1062,6 +1319,10 @@ function StaffManagement() {
         <button className={`sm-tab ${tab === "att" ? "on" : ""}`} onClick={() => setTab("att")}>
           Attendance &amp; Timecards
         </button>
+        <button className={`sm-tab ${tab === "calendar" ? "on" : ""}`} onClick={() => setTab("calendar")}>
+          <CalendarIcon size={14} style={{ verticalAlign: "-2px", marginRight: 4 }} />
+          Calendar
+        </button>
       </div>
 
       {loading ? (
@@ -1071,6 +1332,7 @@ function StaffManagement() {
           {tab === "staff" && <StaffTab staffList={staffList} />}
           {tab === "roster" && <RosterTab staffList={staffList} />}
           {tab === "att" && <AttendanceTab staffList={staffList} />}
+          {tab === "calendar" && <CalendarTab />}
         </>
       )}
     </div>

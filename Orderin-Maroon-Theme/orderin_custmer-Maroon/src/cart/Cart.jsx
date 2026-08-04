@@ -422,15 +422,6 @@ function Cart({ onBackClick }) {
 </div>
         ) : (
           <div className="cart-content">
-            <section className="status-banner">
-              <div>
-                <p className="status-label">Delivery status</p>
-                <h2>Preparing now</h2>
-                <p>Estimated time: 15–20 min • Freshly cooked and packed</p>
-              </div>
-              <div className="status-pill">⭐ 4.8 Rated</div>
-            </section>
-
             <div className="cart-list">
               {cartItems.map((item, index) => {
                 const itemPrice = item.effectivePrice ?? parsePriceValue(item.price);
@@ -638,6 +629,16 @@ function Cart({ onBackClick }) {
                 </button>
               </div>
             </section>
+
+            <button
+              type="button"
+              className="clear-cart-fab"
+              aria-label="Clear cart"
+              onClick={() => setShowClearConfirm(true)}
+            >
+              <Trash2 size={18} />
+              <span>Clear</span>
+            </button>
           </div>
         )
       ) : (
@@ -667,18 +668,6 @@ function Cart({ onBackClick }) {
             )}
           </div>
         </div>
-      )}
-
-      {activeTab === "Current Order" && cartItems.length > 0 && (
-        <button
-          type="button"
-          className="clear-cart-fab"
-          aria-label="Clear cart"
-          onClick={() => setShowClearConfirm(true)}
-        >
-          <Trash2 size={18} />
-          <span>Clear Cart</span>
-        </button>
       )}
 
       {showClearConfirm && (

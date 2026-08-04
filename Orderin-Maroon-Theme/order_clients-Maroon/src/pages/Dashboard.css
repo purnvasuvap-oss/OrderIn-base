@@ -113,6 +113,70 @@
   left:20px;
 }
 
+.dash-confirm-overlay{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,0.6);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  z-index:1000;
+  padding:16px;
+}
+.dash-confirm-modal{
+  background:#261013;
+  border:1px solid rgba(242,187,70,0.24);
+  border-radius:16px;
+  width:100%;
+  max-width:400px;
+  padding:22px;
+  box-shadow:0 20px 60px rgba(0,0,0,0.5);
+}
+.dash-confirm-modal h3{
+  margin:0 0 10px;
+  color:#F5DFBB;
+  font-size:18px;
+  font-weight:700;
+}
+.dash-confirm-modal p{
+  margin:0 0 20px;
+  color:#B5823F;
+  font-size:13.5px;
+  line-height:1.5;
+}
+.dash-confirm-actions{
+  display:flex;
+  gap:10px;
+}
+.dash-confirm-btn{
+  flex:1;
+  padding:11px 14px;
+  border-radius:10px;
+  font-size:13.5px;
+  font-weight:700;
+  cursor:pointer;
+  border:1px solid transparent;
+}
+.dash-confirm-btn-ghost{
+  background:transparent;
+  border-color:rgba(242,187,70,0.3);
+  color:#F5DFBB;
+}
+.dash-confirm-btn-ghost:hover{
+  background:rgba(242,187,70,0.1);
+}
+.dash-confirm-btn-danger{
+  background:#e53935;
+  color:#fff;
+}
+.dash-confirm-btn-danger:hover{
+  background:#c62828;
+}
+.dash-confirm-btn:disabled{
+  opacity:0.6;
+  cursor:not-allowed;
+}
+
 /* ===========================
    Section labels
 =========================== */

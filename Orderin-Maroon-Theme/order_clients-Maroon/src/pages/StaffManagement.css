@@ -394,6 +394,37 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.sm-emp-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}
+.sm-tag {
+  display: inline-flex;
+  align-items: center;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: var(--sm-panel-2);
+  border: 1px solid var(--sm-line);
+  color: var(--sm-text-2);
+  white-space: nowrap;
+}
+.sm-tag-zone {
+  color: var(--sm-gm);
+  border-color: rgba(95, 151, 221, 0.3);
+}
+.sm-tag-team {
+  color: var(--sm-floor);
+  border-color: rgba(84, 190, 125, 0.3);
+}
+.sm-tag-jobrole {
+  color: var(--sm-gold);
+  border-color: rgba(242, 187, 70, 0.3);
+}
 
 .sm-rolebadge {
   display: inline-flex;
@@ -958,5 +989,96 @@
   .sm-key {
     padding: 12px 0;
     font-size: 15px;
+  }
+  .sm-cal-grid {
+    gap: 3px;
+  }
+  .sm-cal-cell {
+    min-height: 52px;
+    padding: 4px;
+  }
+  .sm-cal-badge {
+    font-size: 9px;
+    padding: 1px 5px;
+  }
+}
+
+/* ---- Calendar tab ---- */
+.sm-cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+}
+.sm-cal-headcell {
+  text-align: center;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--sm-text-3);
+  font-weight: 700;
+  padding: 4px 0 8px;
+}
+.sm-cal-cell {
+  background: var(--sm-panel);
+  border: 1px solid var(--sm-line);
+  border-radius: 10px;
+  min-height: 76px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.sm-cal-cell:hover {
+  background: rgba(245, 223, 187, 0.06);
+  border-color: var(--sm-line-2);
+}
+.sm-cal-cell-out {
+  opacity: 0.35;
+}
+.sm-cal-cell-today {
+  border-color: var(--sm-gold);
+}
+.sm-cal-daynum {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--sm-text);
+}
+.sm-cal-badge {
+  align-self: flex-start;
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--sm-success-t);
+  color: var(--sm-success);
+}
+.sm-cal-day-table {
+  max-height: 55vh;
+  overflow-y: auto;
+}
+.sm-modal-cal-day {
+  max-width: 620px;
+}
+.sm-thead-caldot,
+.sm-trow-caldot {
+  grid-template-columns: 1.6fr 1fr 1fr 0.7fr 0.7fr 1fr;
+}
+@media (max-width: 1000px) {
+  .sm-thead-caldot {
+    display: none;
+  }
+  .sm-trow-caldot {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    grid-template-columns: unset;
+    background: var(--sm-panel-2);
+    border-radius: 10px;
+    margin: 10px;
+    padding: 12px 14px;
+    border-top: none;
+    border: 1px solid var(--sm-line);
   }
 }
