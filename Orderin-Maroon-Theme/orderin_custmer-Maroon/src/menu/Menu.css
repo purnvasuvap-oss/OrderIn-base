@@ -733,15 +733,15 @@
 .filter-toggle-btn:hover { border-color: var(--color-accent); color: var(--color-text); }
 
 .filter-toggle-btn.active-veg {
-  background: rgba(255, 90, 69, 0.15);
-  border-color: var(--color-chili);
-  color: var(--color-chili);
+  background: rgba(103, 244, 21, 0.15);
+  border-color: var(--color-veg);
+  color: var(--color-veg);
 }
 
 .filter-toggle-btn.active-nonveg {
-  background: rgba(61, 220, 132, 0.15);
-  border-color: var(--color-veg);
-  color: var(--color-veg);
+  background: rgba(222, 40, 40, 0.15);
+  border-color: var(--color-chili);
+  color: var(--color-chili);
 }
 
 .filter-sheet-actions { display: flex; gap: 12px; }
