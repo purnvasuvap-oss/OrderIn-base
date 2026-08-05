@@ -1,3 +1,5 @@
+import { usesRoundedCollection, roundTaxForCollection } from "./billing";
+
 export const parsePriceValue = (value) =>
   parseFloat(String(value ?? "").replace(/[^0-9.\-]/g, "")) || 0;
 
@@ -75,4 +77,20 @@ export const calculateOrderTotals = (
   const packing = subtotal > 0 ? packingFee : 0;
   const discount = subtotal > 0 ? Math.min(discountCap, Math.round(subtotal * discountRate)) : 0;
   return { subtotal, gst, packing, discount, total: subtotal + gst + packing - discount };
+};
+
+// The ONE function both order creation (Cart.jsx, before a payment method is
+// known) and payment-method-aware recalculation (Payments.jsx) must use for
+// the order's committed monetary fields. Payments.jsx previously recomputed
+// totals with billing.js's calculateBilling instead, which only applies GST
+// (no packing fee, no discount) — that silently dropped the packing
+// fee/discount the customer saw on Cart from the amount actually saved to
+// Firestore and charged. This wraps calculateOrderTotals (so packing fee and
+// discount are always included) and additionally applies billing.js's
+// nearest-rupee GST rounding for Cash/Card collection, preserving that
+// existing behavior for those payment methods.
+export const calculateFinalBilling = (subtotal, paymentMethod) => {
+  const { gst, packing, discount } = calculateOrderTotals(subtotal);
+  const taxes = usesRoundedCollection(paymentMethod) ? roundTaxForCollection(gst) : gst;
+  return { subtotal, taxes, packing, discount, total: subtotal + taxes + packing - discount };
 };

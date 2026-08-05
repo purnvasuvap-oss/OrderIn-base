@@ -5,6 +5,7 @@ import { useCart } from "../context/CartContext";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db } from "../firebaseConfig";
 import { X } from "lucide-react";
+import { safeGetUser } from "../utils/userStorage";
 import "./OnlinePayment.css";
 
 const idsMatch = (left, right) => String(left) === String(right);
@@ -93,7 +94,7 @@ function OnlinePayment() {
         
         // Update Firestore order with the selected payment method
         try {
-          const user = JSON.parse(localStorage.getItem('user'));
+          const user = safeGetUser();
           if (user && user.phone) {
             const customerRef = doc(db, "Restaurant", "orderin_restaurant_4", "customers", user.phone);
             const customerSnap = await getDoc(customerRef);

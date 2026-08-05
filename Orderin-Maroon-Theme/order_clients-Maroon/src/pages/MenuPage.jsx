@@ -143,22 +143,22 @@ const MenuPage = () => {
   };
 
   const handleAllVegToggle = async (checked) => {
-    setAllVegMode(checked);
-
-    if (!checked) return;
-
-    setMenuItems((current) =>
-      current.map((item) => ({ ...item, type: TYPE_VEG })),
-    );
-    setEditedItems((current) =>
-      current.map((item) => ({ ...item, type: TYPE_VEG })),
-    );
+    if (!checked) {
+      setAllVegMode(false);
+      return;
+    }
 
     const itemsToUpdate = menuItems.filter(
       (item) => item.id && normalizeMenuType(item.type) !== TYPE_VEG,
     );
-    if (itemsToUpdate.length === 0) return;
+    if (itemsToUpdate.length === 0) {
+      setAllVegMode(true);
+      return;
+    }
 
+    // Don't flip local state until the writes are known to have succeeded —
+    // this is a destructive bulk mutation, so the UI shouldn't claim "All Veg"
+    // is applied for items whose Firestore write actually failed.
     setIsApplyingAllVeg(true);
     try {
       const menuCollection = collection(
@@ -167,16 +167,43 @@ const MenuPage = () => {
         "orderin_restaurant_4",
         "menu",
       );
-      await Promise.all(
+      const results = await Promise.allSettled(
         itemsToUpdate.map((item) =>
           updateDoc(doc(menuCollection, item.id), { type: TYPE_VEG }),
         ),
       );
-      setSaveStatus({
-        type: "success",
-        message: "All menu items are set to Veg.",
-      });
-      setTimeout(() => setSaveStatus(null), 4000);
+      const succeededIds = new Set(
+        itemsToUpdate
+          .filter((_, i) => results[i].status === "fulfilled")
+          .map((item) => item.id),
+      );
+      const failedCount = itemsToUpdate.length - succeededIds.size;
+
+      setMenuItems((current) =>
+        current.map((item) =>
+          succeededIds.has(item.id) ? { ...item, type: TYPE_VEG } : item,
+        ),
+      );
+      setEditedItems((current) =>
+        current.map((item) =>
+          succeededIds.has(item.id) ? { ...item, type: TYPE_VEG } : item,
+        ),
+      );
+      setAllVegMode(failedCount === 0);
+
+      if (failedCount === 0) {
+        setSaveStatus({
+          type: "success",
+          message: "All menu items are set to Veg.",
+        });
+        setTimeout(() => setSaveStatus(null), 4000);
+      } else {
+        setSaveStatus({
+          type: "error",
+          message: `${failedCount} item(s) failed to update to Veg. The rest were applied — please retry.`,
+        });
+        setTimeout(() => setSaveStatus(null), 6000);
+      }
     } catch (error) {
       console.error("Error setting all menu items to veg:", error);
       setSaveStatus({
@@ -224,8 +251,13 @@ const MenuPage = () => {
 
   // Batch editing has been removed. Use per-row Edit buttons instead.
 
-  // Edit a single row in-place without making all rows editable
-  const handleEditRow = (rowIndex) => {
+  // Edit a single row in-place without making all rows editable.
+  // Takes the item's Firestore doc id (not a table-row index) — the table can be
+  // showing a filtered/searched subset, whose row positions don't line up with
+  // indices into the full `menuItems` array.
+  const handleEditRow = (itemId) => {
+    const rowIndex = menuItems.findIndex((m) => m.id === itemId);
+    if (rowIndex === -1) return;
     setIsAdding(false);
     setEditingIndex(rowIndex);
     const item = menuItems[rowIndex] || {};
@@ -304,6 +336,16 @@ const MenuPage = () => {
       // Validate edited items. Only require an image for NEW items (no id).
       // For existing items, allow partial updates (updating fields without providing an image).
       for (const [idx, item] of itemsToProcess.entries()) {
+        if (!String(item.name || "").trim()) {
+          setSaveStatus({
+            type: "error",
+            message: "Item name is required.",
+          });
+          setIsSaving(false);
+          setTimeout(() => setSaveStatus(null), 6000);
+          return;
+        }
+
         const isNew = !item.id;
         const hasNewFile = Boolean(item.imageFile);
         const hasDataUrl =
@@ -822,10 +864,13 @@ const MenuPage = () => {
     }
   };
 
-  const handleDelete = async (index) => {
+  // Takes the item's Firestore doc id (not a table-row index) — see handleEditRow
+  // for why: the table can be showing a filtered/searched subset.
+  const handleDelete = async (itemId) => {
     if (isEditingMenu) return;
 
     try {
+      const index = menuItems.findIndex((m) => m.id === itemId);
       const itemToDelete = menuItems[index];
       if (!itemToDelete) return;
 
@@ -1467,11 +1512,17 @@ const MenuPage = () => {
               </thead>
 
               <tbody>
-                {filteredItems.map((item, index) => {
-                  const rowIsEditing = editingIndex === index;
+                {filteredItems.map((item) => {
+                  // editingIndex/handleEditRow/handleDelete all key off the item's
+                  // Firestore doc id, not this row's position in filteredItems —
+                  // filteredItems is a search/category subset whose positions
+                  // don't line up with indices into the full menuItems array.
+                  const rowIsEditing =
+                    editingIndex !== null &&
+                    menuItems[editingIndex]?.id === item.id;
                   return (
                     <tr
-                      key={index}
+                      key={item.id}
                       className={rowIsEditing ? "menu-row-editing" : ""}
                     >
                       <td>{item.category}</td>
@@ -1500,7 +1551,11 @@ const MenuPage = () => {
                             onChange={(e) => {
                               const value = e.target.checked;
                               const updatedItems = [...menuItems];
-                              updatedItems[index].promotions = value;
+                              const realIndex = updatedItems.findIndex(
+                                (m) => m.id === item.id,
+                              );
+                              if (realIndex === -1) return;
+                              updatedItems[realIndex].promotions = value;
                               setMenuItems(updatedItems);
                             }}
                             disabled={isEditingMenu}
@@ -1555,14 +1610,14 @@ const MenuPage = () => {
                       <td className="menu-actions-cell">
                         <button
                           className="btn-primary"
-                          onClick={() => handleEditRow(index)}
+                          onClick={() => handleEditRow(item.id)}
                           disabled={isEditingMenu}
                         >
                           {rowIsEditing ? "Editing" : "Edit"}
                         </button>
                         <button
                           className="btn-primary"
-                          onClick={() => handleDelete(index)}
+                          onClick={() => handleDelete(item.id)}
                           disabled={isEditingMenu}
                           aria-disabled={isEditingMenu}
                         >

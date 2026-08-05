@@ -7,6 +7,7 @@ import { db } from "../firebaseConfig";
 import "./PaymentSuccess.css";
 import "../Bill.css";
 import { parseOrderTimestamp } from "../utils/orderDateTime";
+import { safeGetUser } from "../utils/userStorage";
 
 function PaymentSuccess() {
   const navigate = useNavigate();
@@ -45,7 +46,7 @@ function PaymentSuccess() {
       }
 
       try {
-        const user = JSON.parse(localStorage.getItem("user"));
+        const user = safeGetUser();
         if (!user || !user.phone) {
           console.log('PaymentSuccess: User not logged in, using fallback');
           setDisplayOrderId(immediateOrderId);
@@ -165,7 +166,7 @@ function PaymentSuccess() {
                 setSavingFeedback(true);
                 let errorOccurred = false;
                 try {
-                  const user = JSON.parse(localStorage.getItem('user'));
+                  const user = safeGetUser();
                   console.log('PaymentSuccess submitFeedback: user from localStorage=', user);
                   if (!user || !user.phone) {
                     const msg = 'No logged-in user (missing phone). Please log in to save feedback.';

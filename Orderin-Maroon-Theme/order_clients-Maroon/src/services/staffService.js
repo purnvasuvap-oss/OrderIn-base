@@ -66,6 +66,21 @@ export const TEAMS = [
 /** Auto-generate a 4-digit PIN, same shape as the demo's random-PIN default. */
 export const generatePin = () => String(1000 + Math.floor(Math.random() * 9000));
 
+/** Throws if `pin` is already assigned to another staff member. `punchPin`
+ * resolves a PIN to a staff record via a plain first-match find(), so two
+ * staff sharing a PIN means punching it always clocks the wrong (first
+ * matched) one in/out — this is the guard that keeps that from happening,
+ * called from both addStaff and resetStaffPin. `excludeId` lets
+ * resetStaffPin re-assign a staff member their own current PIN without
+ * tripping on itself. */
+const assertPinAvailable = async (pin, excludeId = null) => {
+  const snap = await getDocs(query(staffCollectionRef(), where("pin", "==", pin)));
+  const collision = snap.docs.find((d) => d.id !== excludeId);
+  if (collision) {
+    throw new Error(`PIN ${pin} is already assigned to another staff member.`);
+  }
+};
+
 /** ISO yyyy-mm-dd for a Date, in local time. */
 const isoDate = (d) => {
   const y = d.getFullYear();
@@ -143,12 +158,31 @@ export const subscribeStaff = (onUpdate) => {
 /** Add a staff member. Email, zone, team, jobRole are all OPTIONAL — pass
  * null/"" if not provided. PIN auto-generates (4-digit) if left blank. */
 export const addStaff = async ({ name, role, phone, email, pin, status = "active", zone, team, jobRole }) => {
+  let finalPin;
+  if (pin && String(pin).trim()) {
+    finalPin = String(pin).trim();
+    await assertPinAvailable(finalPin);
+  } else {
+    // Auto-generated PIN: retry on the rare collision instead of erroring.
+    for (let attempt = 0; attempt < 10; attempt++) {
+      const candidate = generatePin();
+      const snap = await getDocs(query(staffCollectionRef(), where("pin", "==", candidate)));
+      if (snap.empty) {
+        finalPin = candidate;
+        break;
+      }
+    }
+    if (!finalPin) {
+      throw new Error("Could not generate a unique PIN — please try again.");
+    }
+  }
+
   const payload = {
     name: (name || "").trim(),
     role: role || "Floor",
     phone: (phone || "").trim(),
     email: email && email.trim() ? email.trim() : null,
-    pin: pin && String(pin).trim() ? String(pin).trim() : generatePin(),
+    pin: finalPin,
     status,
     zone: zone && zone.trim() ? zone.trim() : null,
     team: team && team.trim() ? team.trim() : null,
@@ -189,7 +223,24 @@ export const restoreStaff = async (id) => {
 /** Reset a staff member's login PIN. Generates a new random 4-digit PIN
  * unless an explicit one is passed. Returns the new PIN. */
 export const resetStaffPin = async (id, newPin) => {
-  const pin = newPin && String(newPin).trim() ? String(newPin).trim() : generatePin();
+  let pin;
+  if (newPin && String(newPin).trim()) {
+    pin = String(newPin).trim();
+    await assertPinAvailable(pin, id);
+  } else {
+    for (let attempt = 0; attempt < 10; attempt++) {
+      const candidate = generatePin();
+      const snap = await getDocs(query(staffCollectionRef(), where("pin", "==", candidate)));
+      const collision = snap.docs.find((d) => d.id !== id);
+      if (!collision) {
+        pin = candidate;
+        break;
+      }
+    }
+    if (!pin) {
+      throw new Error("Could not generate a unique PIN — please try again.");
+    }
+  }
   await updateDoc(staffDocRef(id), { pin, updatedAt: serverTimestamp() });
   return pin;
 };
@@ -420,7 +471,12 @@ export const hoursOf = (record) => {
     : Date.now();
   const breakMs = (record.breakMinutes || 0) * 60000;
   const workedMs = Math.max(0, outMs - inMs - breakMs);
-  return workedMs / 3600000;
+  // Earlier clock-in/out sessions from the same day, folded in by punchPin
+  // when a staff member clocks in again after already completing a shift
+  // that day — without this, a second session overwriting the doc would
+  // silently drop the first session's hours from every report.
+  const priorMs = (record.priorSessionsMinutes || 0) * 60000;
+  return (workedMs + priorMs) / 3600000;
 };
 
 /** Derive a display status for an attendance row. */
@@ -459,7 +515,16 @@ export const punchPin = async (pin) => {
 
   if (!data || !data.clockInAt || data.clockOutAt) {
     // Not clocked in yet today (or already completed a shift) -> clock IN,
-    // resetting the record for a fresh shift.
+    // resetting the record for a fresh shift. If a prior session already
+    // completed today (data.clockOutAt set), fold its worked minutes into
+    // priorSessionsMinutes first — otherwise this `merge: false` write would
+    // silently discard that earlier session's hours, so a staff member who
+    // clocks out for a break and back in loses their morning hours from
+    // reports (hoursOf() below adds priorSessionsMinutes back in).
+    let priorSessionsMinutes = data?.priorSessionsMinutes || 0;
+    if (data && data.clockInAt && data.clockOutAt) {
+      priorSessionsMinutes += Math.round(hoursOf(data) * 60);
+    }
     await setDoc(
       ref,
       {
@@ -471,6 +536,7 @@ export const punchPin = async (pin) => {
         breakMinutes: 0,
         onBreak: false,
         breakStartAt: null,
+        priorSessionsMinutes,
         updatedAt: serverTimestamp(),
       },
       { merge: false },

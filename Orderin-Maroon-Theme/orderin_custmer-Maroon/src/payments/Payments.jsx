@@ -12,7 +12,9 @@ import { safeDeleteUnpaidOrders } from "../utils/orderCleanupUtils";
 import { getPlaceholder } from "../utils/placeholder";
 import resolveImageUrl from "../utils/storageResolver";
 import { createOrderTimestamp } from "../utils/orderDateTime";
-import { calculateBilling, TAX_RATE } from "../utils/billing";
+import { TAX_RATE } from "../utils/billing";
+import { calculateFinalBilling } from "../utils/pricing";
+import { safeGetUser } from "../utils/userStorage";
 import "./Payments.css";
 
 function Payments({ onBackClick }) {
@@ -50,7 +52,7 @@ function Payments({ onBackClick }) {
   const handleBackClick = async () => {
     // Step 1: Delete unpaid orders from Firestore BEFORE navigating back
     try {
-      const user = JSON.parse(localStorage.getItem("user"));
+      const user = safeGetUser();
       if (user && user.phone) {
         // Delete all unpaid orders for this user
         // This is called when user navigates BACK from Payments page
@@ -83,6 +85,10 @@ function Payments({ onBackClick }) {
   };
 
   const [isSaving, setIsSaving] = useState(false);
+  // setIsSaving(true) doesn't take effect until the next render, so two fast
+  // clicks/taps before that render both slip through and each create a
+  // separate Firestore order. This ref is checked/set synchronously.
+  const isSavingRef = React.useRef(false);
   const [resolvedImages, setResolvedImages] = useState({});
 
   useEffect(() => {
@@ -119,7 +125,7 @@ function Payments({ onBackClick }) {
     return () => { cancelled = true; };
   }, [cartItems]);
   const subtotal = parseFloat(getTotalPrice());
-  const displayedBilling = calculateBilling(subtotal, selectedPayment);
+  const displayedBilling = calculateFinalBilling(subtotal, selectedPayment);
 
   const handlePaymentSelect = (method) => {
     setSelectedPayment(method);
@@ -130,6 +136,8 @@ function Payments({ onBackClick }) {
       alert("Please select a payment method");
       return;
     }
+    if (isSavingRef.current) return;
+    isSavingRef.current = true;
 
     // --- Firestore order saving logic with human-readable order ID ---
     let order; // declared here so it's available after the try/catch
@@ -139,7 +147,7 @@ function Payments({ onBackClick }) {
     try {
       setIsSaving(true);
       // Get user info from localStorage
-      const user = JSON.parse(localStorage.getItem("user"));
+      const user = safeGetUser();
       const tableNumber = localStorage.getItem("tableNumber") || "1";
       if (!user || !user.phone) {
         throw new Error("User not logged in or phone number missing");
@@ -176,7 +184,7 @@ function Payments({ onBackClick }) {
       }
 
       const calculatedSubtotal = parseFloat(getTotalPrice());
-      const calculatedBilling = calculateBilling(calculatedSubtotal, selectedPayment);
+      const calculatedBilling = calculateFinalBilling(calculatedSubtotal, selectedPayment);
 
       console.log('Calculated - Subtotal:', calculatedBilling.subtotal, 'Tax:', calculatedBilling.taxes, 'Total:', calculatedBilling.total);
 
@@ -195,6 +203,8 @@ function Payments({ onBackClick }) {
             paymentMethod: selectedPayment,
             subtotal: calculatedBilling.subtotal,
             taxes: calculatedBilling.taxes,
+            packing: calculatedBilling.packing,
+            discount: calculatedBilling.discount,
             total: calculatedBilling.total,
             verificationCode: verificationCode,
             paymentStatus: 'unpaid',
@@ -213,6 +223,8 @@ function Payments({ onBackClick }) {
             paymentMethod: selectedPayment,
             subtotal: calculatedBilling.subtotal,
             taxes: calculatedBilling.taxes,
+            packing: calculatedBilling.packing,
+            discount: calculatedBilling.discount,
             total: calculatedBilling.total,
             verificationCode: verificationCode,
             paymentStatus: 'unpaid',
@@ -265,6 +277,8 @@ function Payments({ onBackClick }) {
         // Override with exact calculated values to ensure consistency
         order.subtotal = calculatedBilling.subtotal;
         order.taxes = calculatedBilling.taxes;
+        order.packing = calculatedBilling.packing;
+        order.discount = calculatedBilling.discount;
         order.total = calculatedBilling.total;
         console.log('Order updated with calculated values - Subtotal:', order.subtotal, 'Taxes:', order.taxes, 'Total:', order.total);
 
@@ -281,6 +295,8 @@ function Payments({ onBackClick }) {
           })),
           subtotal: order.subtotal,
           taxes: order.taxes,
+          packing: order.packing,
+          discount: order.discount,
           total: order.total,
           paymentMethod: order.paymentMethod,
           status: order.status,
@@ -316,6 +332,8 @@ function Payments({ onBackClick }) {
       const billing = {
         subtotal: calculatedBilling.subtotal,
         taxes: calculatedBilling.taxes,
+        packing: calculatedBilling.packing,
+        discount: calculatedBilling.discount,
         total: calculatedBilling.total
       };
       saveOrderTempState(order.id, cartItems, billing, 'unpaid');
@@ -328,6 +346,7 @@ function Payments({ onBackClick }) {
       // Don't show alert yet - check if order was actually saved and has an ID
     } finally {
       setIsSaving(false);
+      isSavingRef.current = false;
     }
 
     // Only show error alert if order creation completely failed
@@ -441,19 +460,20 @@ function Payments({ onBackClick }) {
 
             <div className="quantity-controls">
               <button
-                onClick={() => updateQuantity(item.name, item.quantity - 1)}
+                onClick={() => updateQuantity(item.cartKey || item.name, item.quantity - 1)}
                 className="qty-button"
+                disabled={item.quantity <= 1}
               >
                 <Minus size={14} />
               </button>
               <span className="qty-value">{item.quantity}</span>
               <button
-                onClick={() => updateQuantity(item.name, item.quantity + 1)}
+                onClick={() => updateQuantity(item.cartKey || item.name, item.quantity + 1)}
                 className="qty-button"
               >
                 <Plus size={14} />
               </button>
-              <button className="remove-button" onClick={() => removeFromCart(item.name)}>
+              <button className="remove-button" onClick={() => removeFromCart(item.cartKey || item.name)}>
                 <Trash2 size={16} />
               </button>
             </div>
@@ -506,8 +526,8 @@ function Payments({ onBackClick }) {
         </div>
 
         {/* Place Order Button */}
-        <button className="place-order-btn" onClick={handlePlaceOrder}>
-          Place Order
+        <button className="place-order-btn" onClick={handlePlaceOrder} disabled={isSaving}>
+          {isSaving ? "Placing Order…" : "Place Order"}
         </button>
       </div>
     </div>

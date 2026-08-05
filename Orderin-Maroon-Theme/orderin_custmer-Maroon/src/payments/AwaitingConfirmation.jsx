@@ -7,6 +7,7 @@ import { doc, onSnapshot } from "firebase/firestore";
 import { db } from "../firebaseConfig";
 import { useCart } from "../context/CartContext";
 import { safeDeleteUnpaidOrders } from "../utils/orderCleanupUtils";
+import { safeGetUser } from "../utils/userStorage";
 import "./AwaitingConfirmation.css";
 
 const AWAITING_CONFIRMATION_TIMEOUT_SECONDS = 90;
@@ -35,7 +36,7 @@ function AwaitingConfirmation() {
 
   const handleBackToMenu = async () => {
     try {
-      const user = JSON.parse(localStorage.getItem("user"));
+      const user = safeGetUser();
       if (user && user.phone && pendingOrderId) {
         await safeDeleteUnpaidOrders(user.phone, pendingOrderId);
       }
@@ -48,7 +49,7 @@ function AwaitingConfirmation() {
   };
   const handleViewCart = async () => {
     try {
-      const user = JSON.parse(localStorage.getItem("user"));
+      const user = safeGetUser();
 
       if (user?.phone && pendingOrderId) {
         await safeDeleteUnpaidOrders(user.phone, pendingOrderId);
@@ -89,8 +90,13 @@ function AwaitingConfirmation() {
       });
     }, 1000);
 
-    const user = JSON.parse(localStorage.getItem("user"));
-    if (!user || !user.phone) return;
+    const user = safeGetUser();
+    if (!user || !user.phone) {
+      // `timer` was already started above — without an explicit cleanup
+      // here, this early return skips the effect's own `return () => {...}`
+      // cleanup entirely, leaking the interval for the life of this mount.
+      return () => clearInterval(timer);
+    }
 
     const customerRef = doc(db, "Restaurant", "orderin_restaurant_4", "customers", user.phone);
 

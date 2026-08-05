@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { safeDeleteUnpaidOrders } from '../utils/orderCleanupUtils';
+import { safeGetUser } from '../utils/userStorage';
 
 /**
  * STRICT back-button control for OrderIn SPA with ORDER CLEANUP
@@ -96,7 +97,7 @@ export const useGlobalBackButton = () => {
           // This ensures navigation happens immediately on mobile
           const cleanupAsync = async () => {
             try {
-              const user = JSON.parse(localStorage.getItem("user"));
+              const user = safeGetUser();
               if (user && user.phone) {
                 console.log('Global back handler: Starting cleanup for', user.phone);
                 

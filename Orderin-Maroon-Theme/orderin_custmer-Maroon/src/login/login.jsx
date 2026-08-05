@@ -5,7 +5,7 @@ import { db, auth, subscribeAcceptingOrders } from "../firebaseConfig";
 import { onAuthStateChanged } from "firebase/auth";
 import "./login.css";
 import { FiUser } from "react-icons/fi";
-import { sanitizePhoneInput } from "../utils/phoneValidation";
+import { sanitizePhoneInput, isValidPhoneNumber } from "../utils/phoneValidation";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -226,6 +226,10 @@ const Login = () => {
     }
     if (phone.trim() === "") {
       setErrorMessage("Please enter phone number");
+      return;
+    }
+    if (!isValidPhoneNumber(phone)) {
+      setErrorMessage("Please enter a valid phone number");
       return;
     }
     if (username.trim() === "") {

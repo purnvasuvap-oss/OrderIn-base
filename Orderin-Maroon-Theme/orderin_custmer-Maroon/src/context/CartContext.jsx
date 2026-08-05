@@ -4,8 +4,8 @@ import { db } from '../firebaseConfig';
 import { getPlaceholder } from '../utils/placeholder';
 import { resolveImageUrl } from '../utils/storageResolver';
 import { createOrderTimestamp } from '../utils/orderDateTime';
-import { calculateBilling } from '../utils/billing';
-import { parsePriceValue, sumOptionPrices, buildCartKey } from '../utils/pricing';
+import { parsePriceValue, sumOptionPrices, buildCartKey, calculateFinalBilling } from '../utils/pricing';
+import { safeGetUser } from '../utils/userStorage';
 import { menuStore } from '../menu/menuStore';
 
 // Menu products list, preferring the reactive menuStore (populated the same
@@ -396,7 +396,7 @@ export const CartProvider = ({ children, tableNo = '1' }) => {
       const num = parseFloat(String(item.price || '').replace(/[^0-9.\-]/g, '')) || 0;
       return sum + (num * item.quantity);
     }, 0);
-    const billing = calculateBilling(subtotal, paymentMethod);
+    const billing = calculateFinalBilling(subtotal, paymentMethod);
 
     const orderTimestamp = createOrderTimestamp();
 
@@ -406,6 +406,8 @@ export const CartProvider = ({ children, tableNo = '1' }) => {
       items: cartItems,
       subtotal: billing.subtotal.toFixed(2),
       taxes: billing.taxes.toFixed(2),
+      packing: billing.packing,
+      discount: billing.discount,
       total: billing.total.toFixed(2),
       paymentMethod,
       status: 'Pending',
@@ -442,7 +444,7 @@ export const CartProvider = ({ children, tableNo = '1' }) => {
     // Update Firestore to mark order as paid
     const updateOrderInFirestore = async () => {
       try {
-        const user = JSON.parse(localStorage.getItem("user"));
+        const user = safeGetUser();
         if (!user || !user.phone) return;
         const phoneNumber = user.phone;
 

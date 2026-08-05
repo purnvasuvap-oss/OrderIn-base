@@ -8,7 +8,8 @@ import "./Bill.css";
 import { doc, getDoc, setDoc, updateDoc, arrayUnion, serverTimestamp } from "firebase/firestore";
 import { db } from "./firebaseConfig";
 import { parseOrderTimestamp } from "./utils/orderDateTime";
-import { calculateBilling } from "./utils/billing";
+import { calculateFinalBilling } from "./utils/pricing";
+import { safeGetUser } from "./utils/userStorage";
 
 function Bill() {
   const navigate = useNavigate();
@@ -86,7 +87,7 @@ function Bill() {
     return acc + unit * qty;
   }, 0);
   const safeSubtotal = subtotal != null ? (parseFloat(subtotal) || computedSubtotal) : computedSubtotal;
-  const computedBilling = calculateBilling(safeSubtotal, paymentMethod);
+  const computedBilling = calculateFinalBilling(safeSubtotal, paymentMethod);
   const safeTaxes = (parsedTaxes || parsedTaxes === 0) ? parsedTaxes : computedBilling.taxes;
   const safeTotal = parsedTotal || computedBilling.total;
 
@@ -133,7 +134,7 @@ function Bill() {
       try {
         setFeedbackError('');
         setSavingFeedback(true);
-        const user = JSON.parse(localStorage.getItem('user'));
+        const user = safeGetUser();
         if (!user || !user.phone) {
           const msg = 'No logged-in user (missing phone). Please log in to save feedback.';
           console.warn('submitFeedback:', msg);

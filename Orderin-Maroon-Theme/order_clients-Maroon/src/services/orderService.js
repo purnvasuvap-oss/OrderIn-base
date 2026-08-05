@@ -1,5 +1,5 @@
 import { db } from "../firebase";
-import { collection, getDocs, doc, updateDoc, getDoc, onSnapshot } from "firebase/firestore";
+import { collection, getDocs, doc, updateDoc, getDoc, onSnapshot, runTransaction } from "firebase/firestore";
 import { parseOrderTimestamp } from "../utils/orderDateTime";
 
 const RESTAURANT_ID = "orderin_restaurant_4";
@@ -871,27 +871,29 @@ export const subscribeOnlineCustomerOrders = (onUpdate) => {
 };
 
 /**
- * Update order status in Firebase
- * Updates the status field in pastOrders array for a specific customer
- * Fix: previously looked orders up by their raw array index
- * (`order.orderIndex`), which is fragile — it silently updates the wrong
- * order whenever pastOrders shifts (e.g. another reject/delete happens in
- * between). Now looks the order up by its stable `id` first, falling back
- * to treating the argument as a raw index only for legacy callers that
- * don't have an id to pass.
+ * Shared core for updateOrderStatus/acceptOrder/rejectOrder. Two fixes over
+ * the old per-function copies of this logic:
+ *
+ * 1. Race condition: each of those functions used to do a plain
+ *    getDoc -> mutate local array -> updateDoc, with no transaction. Two
+ *    staff acting on different orders for the SAME customer at nearly the
+ *    same time could both read pastOrders before either write landed, and
+ *    whichever updateDoc finished last silently overwrote the other's
+ *    change. `runTransaction` makes the read+write atomic and retries on
+ *    conflicting concurrent writes instead of losing one.
+ * 2. Silent no-op: if `orderIdOrIndex` didn't match any order by id and
+ *    `Number(orderIdOrIndex)` was NaN (e.g. a "MANUAL-..." id) or otherwise
+ *    out of range, the old code just returned without writing OR throwing —
+ *    callers (Orders.jsx) then optimistically updated local UI state as if
+ *    it had succeeded, so staff would see a status that reverted on refresh.
+ *    This now always throws when the order can't be resolved.
  */
-export const updateOrderStatus = async (phoneNumber, orderIdOrIndex, newStatus, restaurantId = RESTAURANT_ID) => {
-  try {
-    const customerRef = doc(
-      db,
-      "Restaurant",
-      restaurantId,
-      "customers",
-      phoneNumber
-    );
+const mutateOrderByIdOrIndex = async (phoneNumber, orderIdOrIndex, restaurantId, mutate) => {
+  const customerRef = doc(db, "Restaurant", restaurantId, "customers", phoneNumber);
+  const idsMatch = (a, b) => String(a) === String(b);
 
-    // Use getDoc instead of getDocs for a single document
-    const customerSnap = await getDoc(customerRef);
+  await runTransaction(db, async (tx) => {
+    const customerSnap = await tx.get(customerRef);
     if (!customerSnap.exists()) {
       throw new Error("Customer not found");
     }
@@ -901,21 +903,30 @@ export const updateOrderStatus = async (phoneNumber, orderIdOrIndex, newStatus, 
 
     // Try to find the order by its stable ID first (robust), falling back
     // to using the argument as a raw array index for backward compatibility.
-    const idsMatch = (a, b) => String(a) === String(b);
     let foundIndex = pastOrders.findIndex((o) => idsMatch(o.id, orderIdOrIndex));
     if (foundIndex === -1) {
-      foundIndex = Number(orderIdOrIndex);
+      const asIndex = Number(orderIdOrIndex);
+      foundIndex = Number.isInteger(asIndex) && asIndex >= 0 && asIndex < pastOrders.length ? asIndex : -1;
     }
 
-    // Update the status of the specific order
-    if (foundIndex >= 0 && pastOrders[foundIndex]) {
-      pastOrders[foundIndex].status = newStatus;
-
-      // Update the document
-      await updateDoc(customerRef, {
-        pastOrders: pastOrders,
-      });
+    if (foundIndex === -1 || !pastOrders[foundIndex]) {
+      throw new Error(`Order not found: ${orderIdOrIndex}`);
     }
+
+    mutate(pastOrders[foundIndex]);
+    tx.update(customerRef, { pastOrders });
+  });
+};
+
+/**
+ * Update order status in Firebase
+ * Updates the status field in pastOrders array for a specific customer
+ */
+export const updateOrderStatus = async (phoneNumber, orderIdOrIndex, newStatus, restaurantId = RESTAURANT_ID) => {
+  try {
+    await mutateOrderByIdOrIndex(phoneNumber, orderIdOrIndex, restaurantId, (order) => {
+      order.status = newStatus;
+    });
   } catch (error) {
     console.error("Error updating order status:", error);
     throw error;
@@ -931,25 +942,9 @@ export const updateOrderStatus = async (phoneNumber, orderIdOrIndex, newStatus, 
  */
 export const acceptOrder = async (phoneNumber, orderIdOrIndex, restaurantId = RESTAURANT_ID) => {
   try {
-    const customerRef = doc(db, "Restaurant", restaurantId, "customers", phoneNumber);
-    const customerSnap = await getDoc(customerRef);
-    if (!customerSnap.exists()) {
-      throw new Error("Customer not found");
-    }
-
-    const customerData = customerSnap.data();
-    const pastOrders = [...(customerData.pastOrders || [])];
-
-    const idsMatch = (a, b) => String(a) === String(b);
-    let foundIndex = pastOrders.findIndex((o) => idsMatch(o.id, orderIdOrIndex));
-    if (foundIndex === -1) {
-      foundIndex = Number(orderIdOrIndex);
-    }
-
-    if (foundIndex >= 0 && pastOrders[foundIndex]) {
-      pastOrders[foundIndex].status = "Preparing";
-      await updateDoc(customerRef, { pastOrders });
-    }
+    await mutateOrderByIdOrIndex(phoneNumber, orderIdOrIndex, restaurantId, (order) => {
+      order.status = "Preparing";
+    });
   } catch (error) {
     console.error("Error accepting order:", error);
     throw error;
@@ -971,28 +966,12 @@ export const acceptOrder = async (phoneNumber, orderIdOrIndex, restaurantId = RE
  */
 export const rejectOrder = async (phoneNumber, orderIdOrIndex, reason = null, restaurantId = RESTAURANT_ID) => {
   try {
-    const customerRef = doc(db, "Restaurant", restaurantId, "customers", phoneNumber);
-    const customerSnap = await getDoc(customerRef);
-    if (!customerSnap.exists()) {
-      throw new Error("Customer not found");
-    }
-
-    const customerData = customerSnap.data();
-    const pastOrders = [...(customerData.pastOrders || [])];
-
-    const idsMatch = (a, b) => String(a) === String(b);
-    let foundIndex = pastOrders.findIndex((o) => idsMatch(o.id, orderIdOrIndex));
-    if (foundIndex === -1) {
-      foundIndex = Number(orderIdOrIndex);
-    }
-
-    if (foundIndex >= 0 && pastOrders[foundIndex]) {
-      pastOrders[foundIndex].status = "Rejected";
+    await mutateOrderByIdOrIndex(phoneNumber, orderIdOrIndex, restaurantId, (order) => {
+      order.status = "Rejected";
       if (reason) {
-        pastOrders[foundIndex].rejectionReason = reason;
+        order.rejectionReason = reason;
       }
-      await updateDoc(customerRef, { pastOrders });
-    }
+    });
   } catch (error) {
     console.error("Error rejecting order:", error);
     throw error;

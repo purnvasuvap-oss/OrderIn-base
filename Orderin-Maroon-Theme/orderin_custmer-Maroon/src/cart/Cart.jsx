@@ -4,13 +4,14 @@ import Footer from "../Footer/Footer";
 import { useCart } from "../context/CartContext";
 import { useNavigate } from "react-router-dom";
 import { useTableNumber } from "../hooks/useTableNumber";
-import { doc, getDoc, setDoc, onSnapshot, serverTimestamp } from "firebase/firestore";
+import { doc, getDoc, setDoc, onSnapshot, serverTimestamp, collection, getDocs } from "firebase/firestore";
 import { db, subscribeAcceptingOrders } from "../firebaseConfig";
 import "./Cart.css";
 import { getPlaceholder } from "../utils/placeholder";
 import resolveImageUrl from "../utils/storageResolver";
 import { parseOrderTimestamp, createOrderTimestamp } from "../utils/orderDateTime";
 import { generateDisplayOrderId } from "../utils/displayOrderIdGenerator";
+import { safeGetUser } from "../utils/userStorage";
 import Loading from "../Loading";
 import { HiOutlineShoppingCart } from "react-icons/hi2";
 import {
@@ -61,6 +62,10 @@ function Cart({ onBackClick }) {
   const [tempInstructions, setTempInstructions] = useState("");
   const [resolvedImages, setResolvedImages] = useState({});
   const [isSavingCart, setIsSavingCart] = useState(false);
+  // setIsSavingCart(true) doesn't take effect until the next render, so a
+  // double-tap on a slow connection can slip two calls through before the
+  // Checkout button actually disables. This ref is checked/set synchronously.
+  const isSavingCartRef = useRef(false);
   const [acceptingOrders, setAcceptingOrders] = useState(true);
   const [checkoutBlockedMessage, setCheckoutBlockedMessage] = useState("");
   const navigate = useNavigate();
@@ -226,13 +231,43 @@ function Cart({ onBackClick }) {
       );
       return;
     }
+    if (isSavingCartRef.current) return;
+    isSavingCartRef.current = true;
     setCheckoutBlockedMessage("");
+
+    // Re-validate against the live menu before writing an order — a cart
+    // can sit around for a while (saved to localStorage, restored after a
+    // refresh) and nothing else guarantees an item that got deleted or
+    // marked unavailable in the meantime is caught before checkout.
+    try {
+      const menuSnap = await getDocs(collection(db, "Restaurant", "orderin_restaurant_4", "menu"));
+      const liveItemsByName = new Map(
+        menuSnap.docs.map((d) => [String(d.data().name || "").trim().toLowerCase(), d.data()])
+      );
+      const unavailableNames = cartItems
+        .filter((ci) => {
+          const live = liveItemsByName.get(String(ci.name || "").trim().toLowerCase());
+          return !live || live.availability === "No";
+        })
+        .map((ci) => ci.name);
+      if (unavailableNames.length > 0) {
+        setCheckoutBlockedMessage(
+          `No longer available: ${unavailableNames.join(", ")}. Please remove ${unavailableNames.length > 1 ? "these items" : "this item"} from your cart to continue.`
+        );
+        isSavingCartRef.current = false;
+        return;
+      }
+    } catch (err) {
+      // Don't block checkout on a failed availability check itself (e.g.
+      // transient network issue) — only on a confirmed unavailable item.
+      console.warn("Cart: menu availability check failed, proceeding without it", err);
+    }
 
     setIsSavingCart(true);
     let orderId = null;
 
     try {
-      const user = JSON.parse(localStorage.getItem("user"));
+      const user = safeGetUser();
       const tableNumber = localStorage.getItem("tableNumber") || "1";
       if (!user || !user.phone) {
         throw new Error("User not logged in or phone number missing");
@@ -347,10 +382,14 @@ function Cart({ onBackClick }) {
       // Use replace:true to prevent going back to checkout state
       setTimeout(() => {
         navigate(getPathWithTable("/awaiting-confirmation"), { replace: true });
-        setTimeout(() => setIsSavingCart(false), 100);
+        setTimeout(() => {
+          setIsSavingCart(false);
+          isSavingCartRef.current = false;
+        }, 100);
       }, 100);
     } catch (err) {
       setIsSavingCart(false);
+      isSavingCartRef.current = false;
       console.error("Error sending order to restaurant:", err);
       alert("Failed to send order: " + err.message);
     }
@@ -474,7 +513,12 @@ function Cart({ onBackClick }) {
 
                       <div className="cart-item-actions">
                         <div className="quantity-controls" aria-label={`${item.name} quantity`}>
-                          <button className="qty-btn" aria-label={`Decrease ${item.name} quantity`} onClick={() => updateQuantity(cartKey, item.quantity - 1)}>
+                          <button
+                            className="qty-btn"
+                            aria-label={`Decrease ${item.name} quantity`}
+                            disabled={item.quantity <= 1}
+                            onClick={() => updateQuantity(cartKey, item.quantity - 1)}
+                          >
                             <Minus size={16} />
                           </button>
                           <span className="qty-value">{quantity}</span>
@@ -622,10 +666,10 @@ function Cart({ onBackClick }) {
                 <button
                   className="checkout-btn"
                   onClick={handleCheckout}
-                  disabled={!acceptingOrders}
+                  disabled={!acceptingOrders || isSavingCart}
                   title={!acceptingOrders ? "Restaurant is not accepting orders right now" : undefined}
                 >
-                  Checkout
+                  {isSavingCart ? "Placing Order…" : "Checkout"}
                 </button>
               </div>
             </section>

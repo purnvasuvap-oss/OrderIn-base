@@ -25,6 +25,10 @@ function ManualOrderModal({ isOpen, onClose, menuItems, onOrderCreated, initialT
   const [menuSearch, setMenuSearch] = useState("");
   const [selectedItems, setSelectedItems] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // setIsSubmitting(true) doesn't take effect until the next render, so two
+  // fast clicks on "Create Order" before that render both call handleSubmit,
+  // each writing its own MANUAL-${Date.now()} order. Checked/set synchronously.
+  const isSubmittingRef = React.useRef(false);
   const [error, setError] = useState("");
 
   // Re-seed the table number whenever the modal is (re)opened with a
@@ -56,7 +60,9 @@ function ManualOrderModal({ isOpen, onClose, menuItems, onOrderCreated, initialT
 
   const updateItemQuantity = (index, quantity) => {
     const updated = [...selectedItems];
-    updated[index].quantity = parseInt(quantity) || 0;
+    // The <input type="number" min="1"> is a UI hint only — clamp here so a
+    // typed/pasted negative or zero value can't reach submission.
+    updated[index].quantity = Math.max(1, parseInt(quantity) || 0);
     setSelectedItems(updated);
   };
 
@@ -71,6 +77,7 @@ function ManualOrderModal({ isOpen, onClose, menuItems, onOrderCreated, initialT
   };
 
   const handleSubmit = async () => {
+    if (isSubmittingRef.current) return;
     try {
       setError("");
       if (!customerName.trim()) {
@@ -98,6 +105,7 @@ function ManualOrderModal({ isOpen, onClose, menuItems, onOrderCreated, initialT
         return;
       }
 
+      isSubmittingRef.current = true;
       setIsSubmitting(true);
 
       // Store manual order in customers collection (same as regular orders)
@@ -171,6 +179,7 @@ function ManualOrderModal({ isOpen, onClose, menuItems, onOrderCreated, initialT
       console.error("Error creating manual order:", err);
       setError("Failed to create order: " + err.message);
     } finally {
+      isSubmittingRef.current = false;
       setIsSubmitting(false);
     }
   };

@@ -6,6 +6,7 @@ import { useTableNumber } from "../hooks/useTableNumber";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db } from "../firebaseConfig";
 import { safeDeleteUnpaidOrders } from "../utils/orderCleanupUtils";
+import { safeGetUser } from "../utils/userStorage";
 import "./CounterCode.css";
 
 const idsMatch = (left, right) => String(left) === String(right);
@@ -13,6 +14,8 @@ const idsMatch = (left, right) => String(left) === String(right);
 function CounterCode({ onBackClick }) {
   const [counterCode, setCounterCode] = useState(["", "", "", ""]);
   const [restoredOrderId, setRestoredOrderId] = useState(null); // For displaying restored order ID
+  const [isVerifying, setIsVerifying] = useState(false);
+  const isVerifyingRef = React.useRef(false);
   const navigate = useNavigate();
   const { getPathWithTable } = useTableNumber();
   const { markPaymentSuccessful, orderHistory } = useCart();
@@ -33,7 +36,7 @@ function CounterCode({ onBackClick }) {
   const handleBackClick = async () => {
     // Step 1: Delete unpaid orders from Firestore BEFORE navigating back
     try {
-      const user = JSON.parse(localStorage.getItem("user"));
+      const user = safeGetUser();
       if (user && user.phone) {
         // Delete all unpaid orders for this user
         // This is called when user navigates BACK from Counter Code page
@@ -130,9 +133,12 @@ function CounterCode({ onBackClick }) {
       alert("No order found to verify");
       return;
     }
+    if (isVerifyingRef.current) return;
+    isVerifyingRef.current = true;
+    setIsVerifying(true);
 
     try {
-      const user = JSON.parse(localStorage.getItem("user"));
+      const user = safeGetUser();
       if (!user || !user.phone) {
         alert("User not logged in");
         return;
@@ -207,7 +213,7 @@ function CounterCode({ onBackClick }) {
       if (enteredNorm === expectedToCompare && enteredNorm.length === 4) {
         // Payment verified! Update order status from 'unpaid' to 'paid'
         try {
-          const user = JSON.parse(localStorage.getItem("user"));
+          const user = safeGetUser();
           if (user && user.phone) {
             const phoneNumber = user.phone;
             const customerRef = doc(db, "Restaurant", "orderin_restaurant_4", "customers", phoneNumber);
@@ -248,6 +254,9 @@ function CounterCode({ onBackClick }) {
     } catch (err) {
       console.error("Error verifying counter code:", err);
       alert("Error verifying code: " + err.message);
+    } finally {
+      isVerifyingRef.current = false;
+      setIsVerifying(false);
     }
   };
 
@@ -308,8 +317,8 @@ function CounterCode({ onBackClick }) {
           <p className="instruction-text">The code is used only to confirm this counter payment.</p>
 
           <div className="counter-actions">
-            <button className="verify-button" onClick={handleSubmit}>
-              Verify Payment
+            <button className="verify-button" onClick={handleSubmit} disabled={isVerifying}>
+              {isVerifying ? "Verifying…" : "Verify Payment"}
             </button>
             <button className="counter-back-button" onClick={handleBackClick}>
               Back to Cart

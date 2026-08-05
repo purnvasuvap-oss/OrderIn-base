@@ -78,6 +78,12 @@ function StatusPill({ status, onStatusChange, onAccept, onReject, orderId, isLoa
   }
 
   if (isEditing) {
+    // Forward-only: only the current status and its later stages are
+    // selectable, so this dropdown can't be used to accidentally regress an
+    // already-cooking order (e.g. "Ready" back to "Pending"), which would
+    // silently re-queue it in the kitchen board.
+    const currentLaneIndex = LANES.indexOf(normalizedStatus);
+    const selectableStatuses = currentLaneIndex === -1 ? LANES : LANES.slice(currentLaneIndex);
     return (
       <select
         value={normalizedStatus}
@@ -87,10 +93,11 @@ function StatusPill({ status, onStatusChange, onAccept, onReject, orderId, isLoa
         className="status-select"
         disabled={isLoading}
       >
-        <option value="Pending">Pending</option>
-        <option value="Preparing">Preparing</option>
-        <option value="Ready">Ready</option>
-        <option value="Delivered">Delivered</option>
+        {selectableStatuses.map((s) => (
+          <option key={s} value={s}>
+            {s}
+          </option>
+        ))}
       </select>
     );
   }

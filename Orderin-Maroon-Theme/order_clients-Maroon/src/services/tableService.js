@@ -2,6 +2,7 @@ import { db } from "../firebase";
 import {
   collection,
   doc,
+  getDoc,
   getDocs,
   onSnapshot,
   writeBatch,
@@ -103,8 +104,15 @@ export const subscribeTables = (onUpdate) => {
   }
 };
 
-/** Add a new table doc — used by "Add Table" for a staff-added 26th+ table. */
+/** Add a new table doc — used by "Add Table" for a staff-added 26th+ table.
+ * Throws if a table with this number already exists — `setDoc` below is a
+ * full overwrite, so writing over an existing doc would silently wipe out
+ * its live status/reservation/occupancy data. */
 export const addTable = async (num, capacity = DEFAULT_CAPACITY) => {
+  const existing = await getDoc(tableDocRef(num));
+  if (existing.exists()) {
+    throw new Error(`Table ${num} already exists.`);
+  }
   await setDoc(tableDocRef(num), {
     num: Number(num),
     capacity: Number(capacity) || DEFAULT_CAPACITY,
@@ -232,10 +240,35 @@ export const reconcileOccupiedTables = async (rawTables, orders) => {
     if (!t || t.status === "occupied" || promotingInFlight.has(numStr)) continue;
     promotingInFlight.add(numStr);
     try {
+      // A live order landing on a table that still has an active reservation
+      // means a walk-in was seated there ahead of the reserved party — clear
+      // the reservation fields explicitly (rather than leaving them behind
+      // under an "occupied" status, where they'd look like a still-pending
+      // booking to any code checking `reservedAt`) and log it so staff have
+      // a record that the original reservation was displaced.
+      const hadReservation = t.status === "reserved" && (t.reservedName || t.reservedAt);
       await updateDoc(tableDocRef(t.num), {
         status: "occupied",
+        ...(hadReservation
+          ? { reservedName: null, reservedAt: null, reservedTime: null, reservationAlerted: false }
+          : {}),
         updatedAt: serverTimestamp(),
       });
+      if (hadReservation) {
+        console.warn(
+          `Table ${t.num}: walk-in order seated over an active reservation for "${t.reservedName || "unknown"}" — reservation cleared.`,
+        );
+        await addDoc(collection(db, "Restaurant", RESTAURANT_ID, "notifications"), {
+          message: `Table ${t.num} had a reservation for ${t.reservedName || "a guest"}${
+            t.reservedAt ? ` at ${formatReservedAt(t.reservedAt)}` : ""
+          } — a walk-in order was seated there first and the reservation was cleared.`,
+          type: "reservation-displaced",
+          source: "table-management",
+          tableNum: t.num,
+          timestamp: serverTimestamp(),
+          createdAt: serverTimestamp(),
+        });
+      }
     } catch (error) {
       console.error("Error auto-promoting table to occupied:", error);
     } finally {

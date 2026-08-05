@@ -356,8 +356,12 @@ function StaffTab({ staffList }) {
                   <button
                     className="sm-btn sm-btn-ghost sm-btn-xs"
                     onClick={async () => {
-                      const newPin = await resetStaffPin(s.id);
-                      setResetResult({ staff: s, newPin });
+                      try {
+                        const newPin = await resetStaffPin(s.id);
+                        setResetResult({ staff: s, newPin });
+                      } catch (err) {
+                        alert("Failed to reset PIN: " + err.message);
+                      }
                     }}
                   >
                     Reset PIN
