@@ -7,7 +7,9 @@
   background-size: cover;
   background-position: center bottom;
   background-attachment: fixed;
-}\n\n.page-title {
+}
+
+.page-title {
   text-align: center;
   margin-bottom: 16px;
   font-size: 1.4rem;

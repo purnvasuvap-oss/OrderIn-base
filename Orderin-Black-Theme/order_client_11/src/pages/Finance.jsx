@@ -5,6 +5,9 @@ import routes from "../routes";
 import "./Finance.css";
 import { formatTime, subscribeTodaysOrders, subscribeAllCustomerOrders, subscribeOnlineCustomerOrders } from "../services/orderService";
 import BillModal from "../components/BillModal";
+import SalesTrendsPanel from "../components/SalesTrends/SalesTrendsPanel";
+import OrderAnalyticsPanel from "../components/OrderAnalytics/OrderAnalyticsPanel";
+import CustomerLoyaltyPanel from "../components/CustomerLoyalty/CustomerLoyaltyPanel";
 
 function App() {
   const navigate = useNavigate();
@@ -303,7 +306,7 @@ function App() {
   };
 
   const earningsData = calculateEarnings();
-  const financeTabs = ["DAILY TRANSIT", "ACCOUNTS", "EARNINGS CALCULATION", "LEDGER"];
+  const financeTabs = ["DAILY TRANSIT", "ACCOUNTS", "EARNINGS CALCULATION", "LEDGER", "SALES TRENDS", "ORDER ANALYTICS", "CUSTOMER LOYALTY"];
 
   const getOrderTimeValue = (order) => {
     try {
@@ -982,6 +985,24 @@ function App() {
               </>
             )}
           </div>
+        </div>
+      )}
+
+      {activeTab === "SALES TRENDS" && (
+        <div className="fin-orders-container">
+          <SalesTrendsPanel />
+        </div>
+      )}
+
+      {activeTab === "ORDER ANALYTICS" && (
+        <div className="fin-orders-container">
+          <OrderAnalyticsPanel />
+        </div>
+      )}
+
+      {activeTab === "CUSTOMER LOYALTY" && (
+        <div className="fin-orders-container">
+          <CustomerLoyaltyPanel />
         </div>
       )}
 

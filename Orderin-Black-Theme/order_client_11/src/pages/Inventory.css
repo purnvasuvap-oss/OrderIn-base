@@ -204,7 +204,7 @@
 
 .Inventory-card-activity{
 
-    width:380px;
+    width:360px !important; 
     min-height:180px;
 
     background:#fff;
@@ -215,6 +215,8 @@
 
     display:flex;
     flex-direction:column;
+    align-items:stretch;
+    gap:0;
 
     border:1px solid #ececec;
 
@@ -248,6 +250,22 @@
     font-weight:700;
 
     color:#222;
+}
+
+.Inventory-activity-viewall {
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 0;
+    font-size: 12px;
+    font-weight: 600;
+    color: #111;
+    text-decoration: underline;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+.Inventory-activity-viewall:hover {
+    color: #555;
 }
 
 .Inventory-activity-count{
@@ -811,13 +829,7 @@
 
 .Inventory-btn{
 
-    flex:1;
-
-    height:48px;
-
     border:none;
-
-    border-radius:14px;
 
     font-weight:600;
 
@@ -937,6 +949,7 @@
 }
 
 .Inventory-btn.Inventory-full {
+  display: block;
   width: 50%;
   margin: 10px auto;
 }
@@ -1227,15 +1240,21 @@
 
     grid-column:1/-1;
 
-    width:100%;
+    width:100% !important;
+
+    height:auto;
 
     margin-top:6px;
 
-    min-height:110px;
+    min-height:180px;
 
     padding:12px;
 
     border-radius:12px;
+
+    display:flex;
+    flex-direction:column;
+    align-items:stretch;
   }
 
   .Inventory-activity-header{
@@ -1446,7 +1465,7 @@
   .Inventory-card-activity{
 
       padding:10px;
-      min-height:100px;
+      min-height:140px;
   }
 
   .Inventory-activity-heading{
@@ -1469,4 +1488,225 @@
       font-size:11px;
   }
 
+}
+
+/* ── Rot Index / Item Manager additions ── */
+/* Red Zone band colors (Green/Amber/Red) are semantic status colors and are
+   intentionally NOT re-themed — they stay red regardless of the app's palette. */
+.Inventory-redzone-banner {
+  background: rgba(220, 38, 38, 0.08);
+  border: 1px solid rgba(220, 38, 38, 0.3);
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin: 0 24px 16px;
+}
+.Inventory-redzone-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  color: #dc2626;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+.Inventory-redzone-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.Inventory-redzone-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #fff;
+  border: 1px solid rgba(220, 38, 38, 0.3);
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 12px;
+  color: #1f2937;
+}
+.Inventory-redzone-chip button {
+  background: #dc2626;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 5px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.Inventory-redzone-chip button:hover { background: #b91c1c; }
+
+.Inventory-tabs {
+  display: flex;
+  gap: 8px;
+  margin: 0 24px 16px;
+  border-bottom: 1px solid #e5e7eb;
+}
+.Inventory-tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  padding: 10px 14px;
+  font-weight: 600;
+  color: #9ca3af;
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+}
+.Inventory-tab-btn.is-active {
+  color: #ef4444;
+  border-bottom-color: #ef4444;
+}
+
+@media (max-width: 640px) {
+  .Inventory-redzone-banner, .Inventory-tabs { margin-left: 12px; margin-right: 12px; }
+}
+
+.Inventory-expiry-field input,
+.Inventory-form-group input {
+  width: 100%;
+}
+.Inventory-form-group label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+  margin: 8px 0 4px;
+}
+
+.Inventory-batch-selector {
+  border: 1.8px solid #d1d5db;
+  border-radius: 10px;
+  max-height: 180px;
+  overflow-y: auto;
+  padding: 8px 10px;
+  background: #f9fafb;
+}
+.Inventory-batch-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 4px;
+  font-size: 13px;
+  color: #1f2937;
+  cursor: pointer;
+}
+.Inventory-batch-option input[type="checkbox"] {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  cursor: pointer;
+}
+.Inventory-batch-option span {
+  line-height: 1.3;
+}
+.Inventory-batch-option + .Inventory-batch-option {
+  border-top: 1px solid #e5e7eb;
+}
+.Inventory-batch-selectall {
+  font-weight: 700;
+  border-bottom: 1px solid #e5e7eb;
+  padding-bottom: 8px;
+  margin-bottom: 4px;
+}
+.Inventory-batch-empty {
+  font-size: 13px;
+  color: #9ca3af;
+  font-style: italic;
+  margin: 0;
+}
+
+.Inventory-btn-actions-cell {
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  background: #fff;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  color: #1f2937;
+  white-space: nowrap;
+}
+.Inventory-btn-actions-cell:hover {
+  background: #f9fafb;
+  border-color: #ef4444;
+}
+
+.Inventory-actions-modal {
+  background-color: #ffffff;
+  width: 640px;
+  max-width: 90vw;
+  max-height: 80vh;
+  border-radius: 16px;
+  padding: 20px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 4px 25px rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+}
+.Inventory-expiry-chips-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+.Inventory-expiry-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border: 1px solid #e5e7eb;
+  border-radius: 999px;
+  background: #f9fafb;
+  color: #1f2937;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.Inventory-actions-modal-content {
+  margin-top: 16px;
+  overflow-y: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.Inventory-actions-entry {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1.4fr 1.6fr;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 8px;
+  border-bottom: 1px solid #e5e7eb;
+  font-size: 13px;
+  color: #374151;
+}
+.Inventory-activity-entry-full {
+  margin-bottom: 0;
+}
+.Inventory-activity-entry-full p,
+.Inventory-activity-entry-full span {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+}
+
+.Inventory-actions-entry-type {
+  font-weight: 700;
+  color: #ef4444;
+}
+
+@media (max-width: 640px) {
+  .Inventory-actions-modal {
+    width: 95%;
+    padding: 14px;
+  }
+  .Inventory-actions-entry {
+    grid-template-columns: 1fr 1fr;
+    row-gap: 4px;
+  }
 }

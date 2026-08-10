@@ -17,9 +17,6 @@ body{
 
 /* Back button matching other pages' design */
 .fin-back-btn {
-  position: absolute;
-  top: 70px;
-  left: 12px;
   background: linear-gradient(135deg, #f87171 0%, #ef4444 100%);
   color: white;
   padding: 8px 12px;
@@ -28,9 +25,9 @@ body{
   cursor: pointer;
   font-size: 12px;
   font-weight: 600;
-  z-index: 50;
   box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3);
   transition: all 0.2s ease;
+  white-space: nowrap;
 }
 
 .fin-back-btn:active {
@@ -43,6 +40,25 @@ body{
   margin: 16px 0 16px;
   font-weight: 700;
   color: #1f2937;
+}
+
+/* Row that holds the back button alongside the tab nav — keeps the back
+   button from overlapping the tabs now that they share a flex row instead
+   of the back button floating via position:absolute over the page. */
+.fin-top-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.fin-back-col {
+  flex: 0 0 auto;
+}
+
+.fin-nav-center {
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .fin-nav-buttons {
@@ -895,8 +911,6 @@ td {
   }
 
   .fin-back-btn {
-    top: 70px;
-    left: 12px;
     padding: 8px 12px;
     font-size: 12px;
     border-radius: 8px;
@@ -1031,8 +1045,6 @@ td {
   }
 
   .fin-back-btn {
-    top: 80px;
-    left: 16px;
     padding: 8px 12px;
     font-size: 12px;
   }
@@ -1071,10 +1083,6 @@ td {
     padding: 20px;
   }
 
-  .fin-back-btn {
-    top: 90px;
-    left: 20px;
-  }
 
   .fin-page-title {
     font-size: 26px;
@@ -1117,8 +1125,6 @@ td {
   }
 
   .fin-back-btn {
-    top: 100px;
-    left: 20px;
     padding: 8px 16px;
     font-size: 14px;
   }
@@ -1163,7 +1169,7 @@ td {
 /* Large Desktop (1440px and up) */
 @media (min-width: 1440px) {
   .fin-nav-buttons {
-    gap: 40px;
+    gap: 10px;
   }
 
   .graph-area1,
@@ -1686,5 +1692,87 @@ td {
 
   .fin-ledger-table {
     min-width: 900px;
+  }
+}
+
+/* === Customer Loyalty tab === */
+.fin-loyalty-section {
+  padding: 24px;
+}
+
+.fin-loyalty-section h3 {
+  margin: 0 0 4px 0;
+  color: #ef4444;
+}
+
+.fin-loyalty-subtitle {
+  margin: 0 0 20px 0;
+  color: #6b7280;
+  font-size: 13px;
+}
+
+.fin-loyalty-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.fin-loyalty-table thead {
+  background: #f8fafc;
+}
+
+.fin-loyalty-table th {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #475569;
+  padding: 14px 16px;
+  text-align: left;
+}
+
+.fin-loyalty-table td {
+  padding: 14px 16px;
+  border-bottom: 1px solid #e5e7eb;
+  font-size: 13px;
+  color: #334155;
+}
+
+.fin-loyalty-rank {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  font-weight: 800;
+  font-size: 13px;
+}
+
+.fin-loyalty-rank.gold {
+  background: #fef3c7;
+  color: #b45309;
+  box-shadow: 0 0 0 2px #f59e0b inset;
+}
+
+.fin-loyalty-rank.silver {
+  background: #f1f5f9;
+  color: #475569;
+  box-shadow: 0 0 0 2px #94a3b8 inset;
+}
+
+.fin-loyalty-rank.bronze {
+  background: #ffedd5;
+  color: #9a3412;
+  box-shadow: 0 0 0 2px #c2703d inset;
+}
+
+.fin-loyalty-rank.default {
+  background: #f1f5f9;
+  color: #334155;
+}
+
+@media (max-width: 768px) {
+  .fin-loyalty-table {
+    min-width: 720px;
   }
 }

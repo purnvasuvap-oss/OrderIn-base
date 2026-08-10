@@ -1,26 +1,43 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import routes from "../routes";
 import { db, getAuthInfo, trySignInAnonymously } from "../firebase";
-import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, deleteField } from "firebase/firestore";
+import {
+  collection,
+  getDocs,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  doc,
+  deleteField,
+} from "firebase/firestore";
 import storageService from "../services/storageService";
 import { useNotification } from "../hooks/useNotification";
-
-const RESTAURANT_NUMBER = import.meta.env.VITE_RESTAURANT_NUMBER || '0';
+const RESTAURANT_NUMBER = import.meta.env.VITE_RESTAURANT_NUMBER || "0";
 
 import "./MenuPage.css";
+// Placeholder images for the item images (use actual image paths or URLs)
+const imageBase64 = {
+  biryani: "/images/placeholder.jpg", // Replace with actual image path
+  chickenBurger: "/images/placeholder.jpg",
+  vegFriedRice: "/images/placeholder.jpg",
+  chickenManchuria: "/images/placeholder.jpg",
+  gobiManchuria: "/images/placeholder.jpg",
+  redVelvetCake: "/images/placeholder.jpg",
+  splDumBiryani: "/images/placeholder.jpg",
+  gobiRice: "/images/placeholder.jpg",
+  chocolateDessert: "/images/placeholder.jpg",
+};
 
 const TYPE_VEG = "Veg";
 const TYPE_NON_VEG = "Non-Veg";
-const ALL_CATEGORIES = "All Categories";
-const ALL_AVAILABILITY = "All";
 
 const normalizeMenuType = (value) => {
-  const normalized = String(value || "").trim().toLowerCase();
+  const normalized = String(value || "")
+    .trim()
+    .toLowerCase();
   return normalized.includes("non") ? TYPE_NON_VEG : TYPE_VEG;
 };
-
-const normalizeAvailability = (value) => String(value || "").trim().toLowerCase();
 
 const sanitizePriceInput = (value) => {
   const raw = String(value ?? "");
@@ -54,90 +71,42 @@ const formatSteppedPrice = (value) => {
   return rounded.toFixed(2);
 };
 
-/* --- Small inline icons (no external icon package needed) --- */
-const IconForkKnife = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M6 3v7a2 2 0 0 0 2 2 2 2 0 0 0 2-2V3" />
-    <path d="M8 12v9" />
-    <path d="M17 3c-1.4 0-2.5 1.6-2.5 4.5S15.6 12 17 12s2.5-1.6 2.5-4.5S18.4 3 17 3z" />
-    <path d="M17 12v9" />
-  </svg>
-);
+const generateCustomizationId = () =>
+  `custom-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
 
-const IconCart = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="9" cy="20" r="1.4" />
-    <circle cx="18" cy="20" r="1.4" />
-    <path d="M3 4h2l2.4 11.4A2 2 0 0 0 9.35 17h8.3a2 2 0 0 0 1.95-1.57L21 8H6" />
-  </svg>
-);
-
-const IconMegaphone = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M3 11v2a2 2 0 0 0 2 2h1l2 5h2l-1.2-5H12l7 4V6l-7 4H6a2 2 0 0 0-2 2z" />
-    <path d="M12 6v10" />
-  </svg>
-);
-
-const IconPlate = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="12" r="9" />
-    <circle cx="12" cy="12" r="4" />
-  </svg>
-);
-
-const IconSearch = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="11" cy="11" r="7" />
-    <path d="M21 21l-4.3-4.3" />
-  </svg>
-);
-
-const IconReset = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M3 12a9 9 0 1 0 3-6.7" />
-    <path d="M3 4v5h5" />
-  </svg>
-);
-
-const IconPlus = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M12 5v14M5 12h14" />
-  </svg>
-);
-
-const StatCard = ({ icon, iconClass, label, value, subtitle }) => (
-  <div className="stat-card">
-    <div className={`stat-icon ${iconClass}`}>{icon}</div>
-    <div className="stat-body">
-      <div className="stat-label">{label}</div>
-      <div className="stat-value">{value}</div>
-      <div className="stat-subtitle">{subtitle}</div>
-    </div>
-  </div>
-);
+const generateOptionId = () =>
+  `opt-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
 
 const MenuPage = () => {
   const navigate = useNavigate();
   const { addActivity } = useNotification();
   const [menuItems, setMenuItems] = useState([]);
   const [isAdding, setIsAdding] = useState(false);
-  const [editingId, setEditingId] = useState(null); // id (or __tempId for a new unsaved row) of the row being edited
-  const [editedItem, setEditedItem] = useState(null);
+  const [editingIndex, setEditingIndex] = useState(null); // single-row edit index (null = none)
+  const [editedItems, setEditedItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState(null); // { type: 'success'|'error', message: string }
   const [menuNotice, setMenuNotice] = useState(null);
   const [allVegMode, setAllVegMode] = useState(false);
   const [isApplyingAllVeg, setIsApplyingAllVeg] = useState(false);
-
-  // --- Search / filter bar state ---
+  const isEditingMenu = isAdding || editingIndex !== null || isSaving;
+  const editModeLabel = isAdding
+    ? "Adding new menu item"
+    : editingIndex !== null
+      ? "Editing menu item"
+      : "";
+  const activeEditItem = editedItems[0] || {};
+  const activeEditorImage =
+    activeEditItem.image ||
+    activeEditItem.image_url ||
+    activeEditItem.oldImage ||
+    "";
   const [searchTerm, setSearchTerm] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState(ALL_CATEGORIES);
-  const [availabilityFilter, setAvailabilityFilter] = useState(ALL_AVAILABILITY);
-
-  const isEditingMenu = isAdding || editingId !== null || isSaving;
-
+  const [selectedCategory, setSelectedCategory] = useState("All");
+  const [selectedAvailability, setSelectedAvailability] = useState("All");
+  const [vegOnlyFilter, setVegOnlyFilter] = useState(false);
+  const [showAllVegConfirm, setShowAllVegConfirm] = useState(false);
   useEffect(() => {
     if (!menuNotice) return undefined;
 
@@ -152,46 +121,121 @@ const MenuPage = () => {
     setMenuNotice({ id: Date.now(), message, type });
   };
 
+  const handlePriceChange = (value) => {
+    handleDraftChange("price", sanitizePriceInput(value));
+  };
+
+  const handlePriceStep = (direction) => {
+    const nextPrice = priceToNumber(activeEditItem.price) + direction;
+    handleDraftChange("price", formatSteppedPrice(nextPrice));
+  };
+
+  const handleTypeToggle = () => {
+    const currentType = normalizeMenuType(activeEditItem.type);
+    handleDraftChange(
+      "type",
+      currentType === TYPE_NON_VEG ? TYPE_VEG : TYPE_NON_VEG,
+    );
+  };
+
   const handleAllVegToggle = async (checked) => {
-    setAllVegMode(checked);
+    if (!checked) {
+      setAllVegMode(false);
+      return;
+    }
 
-    if (!checked) return;
+    const itemsToUpdate = menuItems.filter(
+      (item) => item.id && normalizeMenuType(item.type) !== TYPE_VEG,
+    );
+    if (itemsToUpdate.length === 0) {
+      setAllVegMode(true);
+      return;
+    }
 
-    setMenuItems((current) => current.map((item) => ({ ...item, type: TYPE_VEG })));
-    setEditedItem((current) => (current ? { ...current, type: TYPE_VEG } : current));
-
-    const itemsToUpdate = menuItems.filter((item) => item.id && normalizeMenuType(item.type) !== TYPE_VEG);
-    if (itemsToUpdate.length === 0) return;
-
+    // Don't flip local state until the writes are known to have succeeded —
+    // this is a destructive bulk mutation, so the UI shouldn't claim "All Veg"
+    // is applied for items whose Firestore write actually failed.
     setIsApplyingAllVeg(true);
     try {
-      const menuCollection = collection(db, "Restaurant", "orderin_restaurant_2", "menu");
-      await Promise.all(
-        itemsToUpdate.map((item) => updateDoc(doc(menuCollection, item.id), { type: TYPE_VEG }))
+      const menuCollection = collection(
+        db,
+        "Restaurant",
+        "orderin_restaurant_2",
+        "menu",
       );
-      setSaveStatus({ type: "success", message: "All menu items are set to Veg." });
-      setTimeout(() => setSaveStatus(null), 4000);
+      const results = await Promise.allSettled(
+        itemsToUpdate.map((item) =>
+          updateDoc(doc(menuCollection, item.id), { type: TYPE_VEG }),
+        ),
+      );
+      const succeededIds = new Set(
+        itemsToUpdate
+          .filter((_, i) => results[i].status === "fulfilled")
+          .map((item) => item.id),
+      );
+      const failedCount = itemsToUpdate.length - succeededIds.size;
+
+      setMenuItems((current) =>
+        current.map((item) =>
+          succeededIds.has(item.id) ? { ...item, type: TYPE_VEG } : item,
+        ),
+      );
+      setEditedItems((current) =>
+        current.map((item) =>
+          succeededIds.has(item.id) ? { ...item, type: TYPE_VEG } : item,
+        ),
+      );
+      setAllVegMode(failedCount === 0);
+
+      if (failedCount === 0) {
+        setSaveStatus({
+          type: "success",
+          message: "All menu items are set to Veg.",
+        });
+        setTimeout(() => setSaveStatus(null), 4000);
+      } else {
+        setSaveStatus({
+          type: "error",
+          message: `${failedCount} item(s) failed to update to Veg. The rest were applied — please retry.`,
+        });
+        setTimeout(() => setSaveStatus(null), 6000);
+      }
     } catch (error) {
       console.error("Error setting all menu items to veg:", error);
-      setSaveStatus({ type: "error", message: "Error setting all menu items to Veg: " + error.message });
+      setSaveStatus({
+        type: "error",
+        message: "Error setting all menu items to Veg: " + error.message,
+      });
       setTimeout(() => setSaveStatus(null), 6000);
     } finally {
       setIsApplyingAllVeg(false);
     }
   };
 
+  const handleBackToDashboard = () => {
+    sessionStorage.removeItem("menuAuth");
+    navigate(routes.dashboard, { replace: true });
+  };
+
   // Fetch menu items from Firestore on component mount
   useEffect(() => {
     const fetchMenuItems = async () => {
       try {
-        const menuCollection = collection(db, "Restaurant", "orderin_restaurant_2", "menu");
+        const menuCollection = collection(
+          db,
+          "Restaurant",
+          "orderin_restaurant_2",
+          "menu",
+        );
         const menuSnapshot = await getDocs(menuCollection);
-        const items = menuSnapshot.docs.map(doc => ({
+        const items = menuSnapshot.docs.map((doc) => ({
           id: doc.id,
-          ...doc.data()
+          ...doc.data(),
         }));
         setMenuItems(items);
-        setAllVegMode(items.every((item) => normalizeMenuType(item.type) === TYPE_VEG));
+        setAllVegMode(
+          items.every((item) => normalizeMenuType(item.type) === TYPE_VEG),
+        );
       } catch (error) {
         console.error("Error fetching menu items:", error);
       } finally {
@@ -201,144 +245,152 @@ const MenuPage = () => {
     fetchMenuItems();
   }, []);
 
-  // --- Derived data: stats (always over the full menu, not the filtered view) ---
-  const stats = useMemo(() => {
-    const totalDishes = menuItems.length;
-    const categories = new Set(
-      menuItems.map((item) => String(item.category || "").trim()).filter(Boolean)
-    );
-    const activePromotions = menuItems.filter((item) => Boolean(item.promotions)).length;
-    const availableDishes = menuItems.filter((item) => normalizeAvailability(item.availability) === "yes").length;
-    return {
-      totalDishes,
-      categoryCount: categories.size,
-      activePromotions,
-      availableDishes,
-    };
-  }, [menuItems]);
+  // Batch editing has been removed. Use per-row Edit buttons instead.
 
-  // --- Derived data: category options for the filter dropdown ---
-  const categoryOptions = useMemo(() => {
-    const categories = new Set(
-      menuItems.map((item) => String(item.category || "").trim()).filter(Boolean)
-    );
-    return [ALL_CATEGORIES, ...Array.from(categories).sort((a, b) => a.localeCompare(b))];
-  }, [menuItems]);
-
-  const hasActiveFilters =
-    searchTerm.trim() !== "" ||
-    categoryFilter !== ALL_CATEGORIES ||
-    availabilityFilter !== ALL_AVAILABILITY;
-
-  const handleResetFilters = () => {
-    setSearchTerm("");
-    setCategoryFilter(ALL_CATEGORIES);
-    setAvailabilityFilter(ALL_AVAILABILITY);
-    // Note: "All Veg" / "Veg Only" is intentionally left untouched here — it isn't a
-    // display-only filter, it's the same control as the header's "All Veg" checkbox,
-    // and it actually updates the saved menu data. Resetting search/category/availability
-    // shouldn't silently undo that.
-  };
-
-  // --- Derived data: the rows to actually render, after search + filters ---
-  const filteredItems = useMemo(() => {
-    const term = searchTerm.trim().toLowerCase();
-    return menuItems.filter((item) => {
-      // Never hide the row currently being added/edited, even if it doesn't match filters yet
-      if (item.__tempId && item.__tempId === editingId) return true;
-
-      if (term && !String(item.name || "").toLowerCase().includes(term)) return false;
-
-      if (categoryFilter !== ALL_CATEGORIES && String(item.category || "").trim() !== categoryFilter) return false;
-
-      if (availabilityFilter !== ALL_AVAILABILITY) {
-        if (normalizeAvailability(item.availability) !== availabilityFilter.toLowerCase()) return false;
-      }
-
-      // "Veg Only" (filter bar) and "All Veg" (header) are the same control — both are
-      // driven by allVegMode, so this stays in sync with whichever one was clicked.
-      if (allVegMode && normalizeMenuType(item.type) !== TYPE_VEG) return false;
-
-      return true;
-    });
-  }, [menuItems, searchTerm, categoryFilter, availabilityFilter, allVegMode, editingId]);
-
-  // Edit a single row in-place without making all rows editable
-  const handleEditRow = (item) => {
+  // Edit a single row in-place without making all rows editable.
+  // Takes the item's Firestore doc id (not a table-row index) — the table can be
+  // showing a filtered/searched subset, whose row positions don't line up with
+  // indices into the full `menuItems` array.
+  const handleEditRow = (itemId) => {
+    const rowIndex = menuItems.findIndex((m) => m.id === itemId);
+    if (rowIndex === -1) return;
     setIsAdding(false);
+    setEditingIndex(rowIndex);
+    const item = menuItems[rowIndex] || {};
     const single = {
       ...item,
       type: normalizeMenuType(item.type),
       price: normalizePrice(item.price),
       oldImage: item.image_url || item.image || null,
       // store previous firebase storage path (if any) so we can delete on replace
-      oldImagePath: item.image_path || null
+      oldImagePath: item.image_path || null,
+      customizations: Array.isArray(item.customizations)
+        ? item.customizations.map((group) => ({
+            id: group.id || generateCustomizationId(),
+            label: group.label || "",
+            options: (group.options || []).map((opt) =>
+              typeof opt === "string"
+                ? { id: generateOptionId(), name: opt, price: "0" }
+                : {
+                    id: generateOptionId(),
+                    name: opt.name ?? opt.label ?? "",
+                    price: sanitizePriceInput(opt.price ?? 0) || "0",
+                  },
+            ),
+          }))
+        : [],
     };
-    setEditingId(item.id || item.__tempId);
-    setEditedItem(single);
+    setEditedItems([single]);
   };
 
   const handleAdd = () => {
-    const tempId = `temp-${Date.now()}`;
     const newItem = {
-      __tempId: tempId,
       category: "",
       name: "",
-      image: null,
+      image: "",
       price: "",
       promotions: false,
       availability: "Yes",
       description: "",
       type: TYPE_VEG,
+      customizations: [],
     };
-    // Insert placeholder at top and start single-row edit for it
-    setMenuItems((current) => [newItem, ...current]);
     setIsAdding(true);
-    setEditingId(tempId);
-    setEditedItem(newItem);
+    setEditingIndex(null);
+    setEditedItems([newItem]);
   };
+
+  // Video uploads are no longer supported in the project. Removed uploadWithRetry and all video handling.
 
   const handleSave = async () => {
     setIsSaving(true);
     setSaveStatus(null);
     try {
       console.log("Starting save process...");
-      // Prepare a local copy of the edited item so we can adjust behavior (image uploads only)
-      let itemsToProcess = [{ ...editedItem }];
+      // Prepare a local copy of edited items so we can adjust behavior (image uploads only)
+      let itemsToProcess = editedItems.map((i) => ({ ...i }));
       itemsToProcess = itemsToProcess.map((item) => ({
         ...item,
         price: normalizePrice(item.price),
-        type: allVegMode ? TYPE_VEG : normalizeMenuType(item.type)
+        type: allVegMode ? TYPE_VEG : normalizeMenuType(item.type),
+        customizations: Array.isArray(item.customizations)
+          ? item.customizations
+              .map((group) => ({
+                id: group.id || generateCustomizationId(),
+                label: String(group.label || "").trim(),
+                options: (group.options || [])
+                  .map((opt) => ({
+                    name: String(opt.name || "").trim(),
+                    price: priceToNumber(opt.price),
+                  }))
+                  .filter((opt) => opt.name),
+              }))
+              .filter((group) => group.label && group.options.length > 0)
+          : [],
       }));
 
       // Validate edited items. Only require an image for NEW items (no id).
       // For existing items, allow partial updates (updating fields without providing an image).
-      for (const item of itemsToProcess) {
+      for (const [idx, item] of itemsToProcess.entries()) {
+        if (!String(item.name || "").trim()) {
+          setSaveStatus({
+            type: "error",
+            message: "Item name is required.",
+          });
+          setIsSaving(false);
+          setTimeout(() => setSaveStatus(null), 6000);
+          return;
+        }
+
         const isNew = !item.id;
         const hasNewFile = Boolean(item.imageFile);
-        const hasDataUrl = item.image && typeof item.image === 'string' && item.image.startsWith('data:');
-        const hasHttpUrl = item.image_url || (item.image && typeof item.image === 'string' && item.image.startsWith('http'));
-        let hasExistingImage = hasHttpUrl || hasDataUrl;
+        const hasDataUrl =
+          item.image &&
+          typeof item.image === "string" &&
+          item.image.startsWith("data:");
+        let hasExistingImage =
+          Boolean(item.image_url) ||
+          (item.image &&
+            typeof item.image === "string" &&
+            item.image.startsWith("http")) ||
+          hasDataUrl;
 
         // If this is a single-row edit, fallback to the original menuItems entry for the image if needed
-        if (!hasExistingImage && editingId !== null) {
-          const original = menuItems.find((m) => (m.id || m.__tempId) === editingId);
-          if (original && (original.image_url || (original.image && typeof original.image === 'string' && (original.image.startsWith('http') || original.image.startsWith('data:'))))) {
+        if (!hasExistingImage && editingIndex !== null) {
+          const original = menuItems[editingIndex];
+          if (
+            original &&
+            (original.image_url ||
+              (original.image &&
+                typeof original.image === "string" &&
+                (original.image.startsWith("http") ||
+                  original.image.startsWith("data:"))))
+          ) {
             hasExistingImage = true;
           }
         }
 
         // Secondary fallback: find original by id
         if (!hasExistingImage && item.id) {
-          const originalById = menuItems.find(m => m.id === item.id);
-          if (originalById && (originalById.image_url || (originalById.image && typeof originalById.image === 'string' && (originalById.image.startsWith('http') || originalById.image.startsWith('data:'))))) {
+          const originalById = menuItems.find((m) => m.id === item.id);
+          if (
+            originalById &&
+            (originalById.image_url ||
+              (originalById.image &&
+                typeof originalById.image === "string" &&
+                (originalById.image.startsWith("http") ||
+                  originalById.image.startsWith("data:"))))
+          ) {
             hasExistingImage = true;
           }
         }
 
-        // Enforce image only for new items - accept imageFile OR data URL OR http URL
+        // Enforce image only for new items
         if (isNew && !hasExistingImage && !hasNewFile) {
-          setSaveStatus({ type: 'error', message: 'Image is required for new items.' });
+          setSaveStatus({
+            type: "error",
+            message: "Image is required for new items.",
+          });
           setIsSaving(false);
           setTimeout(() => setSaveStatus(null), 6000);
           return;
@@ -347,49 +399,80 @@ const MenuPage = () => {
         // For existing items: do not require image; proceed with partial updates
       }
 
-      const menuCollection = collection(db, "Restaurant", "orderin_restaurant_2", "menu");
+      const menuCollection = collection(
+        db,
+        "Restaurant",
+        "orderin_restaurant_2",
+        "menu",
+      );
       console.log("Menu collection:", menuCollection);
       const savedMenuActivities = [];
 
       for (const item of itemsToProcess) {
         console.log("Processing item:", item);
-        const { id, __tempId, imageFile, image, ...data } = item;
+        const { id, imageFile, image, ...data } = item;
         let imageUrl = item.image_url || image || null; // prefer canonical field for display
-
 
         // Do NOT delete the old storage image before uploading the new one.
         // We'll delete the previous image only after a successful upload below to avoid data loss on upload failure.
         if (imageFile && (item.oldImageDeleteHash || item.oldImageId)) {
           // Legacy external image metadata found — automatic deletion is skipped for safety
-          console.warn("Legacy external image metadata present on item; automatic deletion is skipped.");
+          console.warn(
+            "Legacy external image metadata present on item; automatic deletion is skipped.",
+          );
         }
-
-
 
         // Prepare canonical image metadata placeholders
         let image_id = data.image_id || data.imageId || null;
-        let image_delete_hash = data.image_delete_hash || data.imageDeleteUrl || null;
+        let image_delete_hash =
+          data.image_delete_hash || data.imageDeleteUrl || null;
         let image_name = data.image_name || data.imageName || null;
         let image_url = data.image_url || data.image || null;
 
         // Accept File object or data URL (base64) for uploading
-        const uploadInput = imageFile || (typeof item.image === 'string' && item.image.startsWith('data:') ? item.image : null);
+        const uploadInput =
+          imageFile ||
+          (typeof item.image === "string" && item.image.startsWith("data:")
+            ? item.image
+            : null);
         if (uploadInput) {
           try {
-            console.log("Uploading image to Firebase Storage (menu/images):", uploadInput && uploadInput.name ? `${uploadInput.name} (${(uploadInput.size/1024).toFixed(2)}KB)` : (typeof uploadInput === 'string' ? '(data-url or url)' : uploadInput));
-            const result = await storageService.uploadFile(uploadInput, 'menu/images', RESTAURANT_NUMBER);
+            console.log(
+              "Uploading image to Firebase Storage (menu/images):",
+              uploadInput && uploadInput.name
+                ? `${uploadInput.name} (${(uploadInput.size / 1024).toFixed(2)}KB)`
+                : typeof uploadInput === "string"
+                  ? "(data-url or url)"
+                  : uploadInput,
+            );
+            const result = await storageService.uploadFile(
+              uploadInput,
+              "menu/images",
+              RESTAURANT_NUMBER,
+            );
             image_url = result.image_url || null;
             const image_path = result.image_path || null;
             image_name = result.image_name || null;
-            console.log("Firebase upload success:", image_url, image_path, image_name);
+            console.log(
+              "Firebase upload success:",
+              image_url,
+              image_path,
+              image_name,
+            );
 
             // Delete old firebase image if present and replaced
             if (item.oldImagePath) {
               try {
                 await storageService.deleteFileByPath(item.oldImagePath);
-                console.log('Deleted old firebase image at path:', item.oldImagePath);
+                console.log(
+                  "Deleted old firebase image at path:",
+                  item.oldImagePath,
+                );
               } catch (delErr) {
-                console.warn('Failed to delete previous firebase image (not fatal):', delErr);
+                console.warn(
+                  "Failed to delete previous firebase image (not fatal):",
+                  delErr,
+                );
               }
             }
 
@@ -403,57 +486,113 @@ const MenuPage = () => {
 
             // If the upload didn't produce a URL, treat as error
             if (!image_url) {
-              console.error('Firebase upload completed but returned no image URL:', result);
-              setSaveStatus({ type: 'error', message: 'Image upload did not return a URL. Please try a different file.' });
+              console.error(
+                "Firebase upload completed but returned no image URL:",
+                result,
+              );
+              setSaveStatus({
+                type: "error",
+                message:
+                  "Image upload did not return a URL. Please try a different file.",
+              });
               setIsSaving(false);
               return;
             }
           } catch (uploadError) {
-            console.error("Error uploading image to Firebase Storage:", uploadError);
+            console.error(
+              "Error uploading image to Firebase Storage:",
+              uploadError,
+            );
 
             // If unauthorized, attempt a one-time anonymous sign-in (dev-friendly) and retry once
-            const isAuthError = (uploadError && (uploadError.code === 'storage/unauthorized' || (uploadError.message || '').toLowerCase().includes('permission')));
+            const isAuthError =
+              uploadError &&
+              (uploadError.code === "storage/unauthorized" ||
+                (uploadError.message || "")
+                  .toLowerCase()
+                  .includes("permission"));
             if (isAuthError) {
-              console.warn('Upload failed due to authorization; attempting anonymous sign-in and retry...');
+              console.warn(
+                "Upload failed due to authorization; attempting anonymous sign-in and retry...",
+              );
               try {
                 const res = await trySignInAnonymously();
                 if (res && res.success) {
-                  console.log('Anonymous sign-in succeeded; retrying upload once...');
+                  console.log(
+                    "Anonymous sign-in succeeded; retrying upload once...",
+                  );
                   try {
-                    const retryResult = await storageService.uploadFile(uploadInput, 'menu/images', RESTAURANT_NUMBER);
+                    const retryResult = await storageService.uploadFile(
+                      uploadInput,
+                      "menu/images",
+                      RESTAURANT_NUMBER,
+                    );
                     image_url = retryResult.image_url || null;
                     const image_path = retryResult.image_path || null;
                     image_name = retryResult.image_name || null;
-                    console.log('Retry upload success:', image_url, image_path, image_name);
+                    console.log(
+                      "Retry upload success:",
+                      image_url,
+                      image_path,
+                      image_name,
+                    );
                     item._image_path_for_save = image_path;
                   } catch (retryErr) {
-                    console.error('Retry upload failed:', retryErr);
-                    const msg = retryErr && retryErr.message ? retryErr.message : 'Image upload failed. Please try again.';
-                    setSaveStatus({ type: 'error', message: 'Image upload failed: ' + msg });
+                    console.error("Retry upload failed:", retryErr);
+                    const msg =
+                      retryErr && retryErr.message
+                        ? retryErr.message
+                        : "Image upload failed. Please try again.";
+                    setSaveStatus({
+                      type: "error",
+                      message: "Image upload failed: " + msg,
+                    });
                     setIsSaving(false);
                     return;
                   }
                 } else {
-                  console.warn('Anonymous sign-in attempt failed:', res && res.error);
+                  console.warn(
+                    "Anonymous sign-in attempt failed:",
+                    res && res.error,
+                  );
                 }
               } catch (signErr) {
-                console.warn('Anonymous sign-in attempt threw an error:', signErr);
+                console.warn(
+                  "Anonymous sign-in attempt threw an error:",
+                  signErr,
+                );
               }
             }
 
-            const msg = uploadError && uploadError.message ? uploadError.message : 'Image upload failed. Please try again.';
-            setSaveStatus({ type: 'error', message: 'Image upload failed: ' + msg });
+            const msg =
+              uploadError && uploadError.message
+                ? uploadError.message
+                : "Image upload failed. Please try again.";
+            setSaveStatus({
+              type: "error",
+              message: "Image upload failed: " + msg,
+            });
             setIsSaving(false);
             return; // abort save on upload failure to avoid saving without an image
           }
         }
 
         // Videos are not supported. Construct item data with canonical image fields only.
-        const itemData = { ...data, image_id, image_url, image_delete_hash, image_name, image_path: (item._image_path_for_save || data.image_path || null) };
+        const itemData = {
+          ...data,
+          image_id,
+          image_url,
+          image_delete_hash,
+          image_name,
+          image_path: item._image_path_for_save || data.image_path || null,
+        };
         itemData.price = normalizePrice(itemData.price);
-        itemData.type = allVegMode ? TYPE_VEG : normalizeMenuType(itemData.type);
+        itemData.type = allVegMode
+          ? TYPE_VEG
+          : normalizeMenuType(itemData.type);
         // Remove legacy external-only fields if present (cleanup on write)
-        delete itemData.imageDeleteUrl; delete itemData.imageId;
+        delete itemData.imageDeleteUrl;
+        delete itemData.imageId;
         console.log("Item data to save:", itemData);
 
         // Estimate final document size in bytes and abort early if it would exceed Firestore's limit
@@ -463,7 +602,9 @@ const MenuPage = () => {
         const estimateBytes = (obj) => {
           try {
             const str = JSON.stringify(obj);
-            return typeof TextEncoder !== 'undefined' ? new TextEncoder().encode(str).length : str.length;
+            return typeof TextEncoder !== "undefined"
+              ? new TextEncoder().encode(str).length
+              : str.length;
           } catch (e) {
             return 0;
           }
@@ -473,8 +614,13 @@ const MenuPage = () => {
         if (docSize > MAX_DOC_BYTES) {
           const sizeMB = (docSize / (1024 * 1024)).toFixed(2);
           const maxMB = (MAX_DOC_BYTES / (1024 * 1024)).toFixed(2);
-          console.error(`Estimated document size ${sizeMB} MB exceeds allowed ${maxMB} MB`);
-          setSaveStatus({ type: 'error', message: `Document too large to save (${sizeMB} MB). Use smaller images.` });
+          console.error(
+            `Estimated document size ${sizeMB} MB exceeds allowed ${maxMB} MB`,
+          );
+          setSaveStatus({
+            type: "error",
+            message: `Document too large to save (${sizeMB} MB). Use smaller images.`,
+          });
           setIsSaving(false);
           return;
         }
@@ -493,10 +639,13 @@ const MenuPage = () => {
                 imageDeleteUrl: deleteField(),
                 imageName: deleteField(),
                 videos: deleteField(),
-                oldVideos: deleteField()
+                oldVideos: deleteField(),
               });
             } catch (cleanupErr) {
-              console.warn('Failed to remove legacy fields from document:', cleanupErr);
+              console.warn(
+                "Failed to remove legacy fields from document:",
+                cleanupErr,
+              );
             }
           } else {
             console.log("Adding new item");
@@ -506,15 +655,20 @@ const MenuPage = () => {
               message: `${addedItemName} has been added to menu.`,
               type: "menu_add",
               itemId: addedDocRef.id,
-              itemName: addedItemName
+              itemName: addedItemName,
             });
           }
         } catch (fireErr) {
           console.error("Firestore write error:", fireErr);
-          const serverMsg = fireErr && fireErr.message ? fireErr.message : String(fireErr);
-          const isSizeError = serverMsg.includes('exceeds the maximum allowed size') || serverMsg.includes('TOO_LARGE');
-          const friendlyMsg = isSizeError ? 'Document too large to write to Firestore. Use smaller images.' : 'Error writing to Firestore: ' + serverMsg;
-          setSaveStatus({ type: 'error', message: friendlyMsg });
+          const serverMsg =
+            fireErr && fireErr.message ? fireErr.message : String(fireErr);
+          const isSizeError =
+            serverMsg.includes("exceeds the maximum allowed size") ||
+            serverMsg.includes("TOO_LARGE");
+          const friendlyMsg = isSizeError
+            ? "Document too large to write to Firestore. Use smaller images."
+            : "Error writing to Firestore: " + serverMsg;
+          setSaveStatus({ type: "error", message: friendlyMsg });
           setIsSaving(false);
           throw new Error(friendlyMsg);
         }
@@ -522,19 +676,19 @@ const MenuPage = () => {
       // Refetch to get updated data with IDs
       console.log("Refetching items...");
       const menuSnapshot = await getDocs(menuCollection);
-      const updatedItems = menuSnapshot.docs.map(doc => ({
+      const updatedItems = menuSnapshot.docs.map((doc) => ({
         id: doc.id,
-        ...doc.data()
+        ...doc.data(),
       }));
       console.log("Updated items:", updatedItems);
       setMenuItems(updatedItems);
       setIsAdding(false);
-      setEditingId(null);
-      setEditedItem(null);
+      setEditingIndex(null);
       if (savedMenuActivities.length > 0) {
-        const noticeMessage = savedMenuActivities.length === 1
-          ? savedMenuActivities[0].message
-          : `${savedMenuActivities.length} menu items have been added to menu.`;
+        const noticeMessage =
+          savedMenuActivities.length === 1
+            ? savedMenuActivities[0].message
+            : `${savedMenuActivities.length} menu items have been added to menu.`;
         showMenuNotice(noticeMessage, "menu_add");
 
         for (const activity of savedMenuActivities) {
@@ -543,17 +697,23 @@ const MenuPage = () => {
             type: activity.type,
             source: "menu",
             itemId: activity.itemId,
-            itemName: activity.itemName
+            itemName: activity.itemName,
           });
         }
       }
-      setSaveStatus({ type: 'success', message: 'Menu items saved successfully.' });
+      setSaveStatus({
+        type: "success",
+        message: "Menu items saved successfully.",
+      });
       // clear success message after a short delay
       setTimeout(() => setSaveStatus(null), 4000);
       setIsSaving(false);
     } catch (error) {
       console.error("Error saving menu items:", error);
-      setSaveStatus({ type: 'error', message: 'Error saving menu items: ' + error.message });
+      setSaveStatus({
+        type: "error",
+        message: "Error saving menu items: " + error.message,
+      });
       setIsSaving(false);
       setTimeout(() => setSaveStatus(null), 6000);
     } finally {
@@ -562,209 +722,754 @@ const MenuPage = () => {
   };
 
   const handleCancel = () => {
-    if (isAdding) {
-      setMenuItems((current) => current.filter((item) => item.__tempId !== editingId));
-    }
     setIsAdding(false);
-    setEditingId(null);
-    setEditedItem(null);
+    setEditingIndex(null);
+    setEditedItems([]);
   };
 
-  const handleInputChange = (rowId, field, value) => {
-    if (editingId === null || rowId !== editingId) return;
-    setEditedItem((current) => ({ ...(current || {}), [field]: value }));
+  const handleDraftChange = (field, value) => {
+    setEditedItems((current) => [{ ...(current[0] || {}), [field]: value }]);
   };
 
-  const handleFileChange = (rowId, field, file) => {
-    if (editingId === null || rowId !== editingId) return;
-    setEditedItem((current) => ({ ...(current || {}), [`${field}File`]: file }));
+  const handleAddCustomizationGroup = () => {
+    setEditedItems((current) => {
+      const draft = current[0] || {};
+      const groups = Array.isArray(draft.customizations)
+        ? draft.customizations
+        : [];
+      return [
+        {
+          ...draft,
+          customizations: [
+            ...groups,
+            { id: generateCustomizationId(), label: "", options: [] },
+          ],
+        },
+      ];
+    });
   };
 
-  const handleDelete = async (item) => {
+  const handleRemoveCustomizationGroup = (groupIndex) => {
+    setEditedItems((current) => {
+      const draft = current[0] || {};
+      const groups = Array.isArray(draft.customizations)
+        ? draft.customizations
+        : [];
+      return [
+        {
+          ...draft,
+          customizations: groups.filter((_, idx) => idx !== groupIndex),
+        },
+      ];
+    });
+  };
+
+  const handleCustomizationGroupChange = (groupIndex, field, value) => {
+    setEditedItems((current) => {
+      const draft = current[0] || {};
+      const groups = Array.isArray(draft.customizations)
+        ? draft.customizations
+        : [];
+      const nextGroups = groups.map((group, idx) =>
+        idx === groupIndex ? { ...group, [field]: value } : group,
+      );
+      return [{ ...draft, customizations: nextGroups }];
+    });
+  };
+
+  const handleAddOption = (groupIndex) => {
+    setEditedItems((current) => {
+      const draft = current[0] || {};
+      const groups = Array.isArray(draft.customizations)
+        ? draft.customizations
+        : [];
+      const nextGroups = groups.map((group, idx) =>
+        idx === groupIndex
+          ? {
+              ...group,
+              options: [
+                ...(group.options || []),
+                { id: generateOptionId(), name: "", price: "0" },
+              ],
+            }
+          : group,
+      );
+      return [{ ...draft, customizations: nextGroups }];
+    });
+  };
+
+  const handleRemoveOption = (groupIndex, optionIndex) => {
+    setEditedItems((current) => {
+      const draft = current[0] || {};
+      const groups = Array.isArray(draft.customizations)
+        ? draft.customizations
+        : [];
+      const nextGroups = groups.map((group, idx) =>
+        idx === groupIndex
+          ? {
+              ...group,
+              options: (group.options || []).filter(
+                (_, oIdx) => oIdx !== optionIndex,
+              ),
+            }
+          : group,
+      );
+      return [{ ...draft, customizations: nextGroups }];
+    });
+  };
+
+  const handleOptionChange = (groupIndex, optionIndex, field, value) => {
+    setEditedItems((current) => {
+      const draft = current[0] || {};
+      const groups = Array.isArray(draft.customizations)
+        ? draft.customizations
+        : [];
+      const nextGroups = groups.map((group, idx) => {
+        if (idx !== groupIndex) return group;
+        const nextOptions = (group.options || []).map((opt, oIdx) =>
+          oIdx === optionIndex
+            ? {
+                ...opt,
+                [field]: field === "price" ? sanitizePriceInput(value) : value,
+              }
+            : opt,
+        );
+        return { ...group, options: nextOptions };
+      });
+      return [{ ...draft, customizations: nextGroups }];
+    });
+  };
+
+  const handleDraftFileChange = (field, file) => {
+    setEditedItems((current) => [
+      { ...(current[0] || {}), [`${field}File`]: file },
+    ]);
+  };
+
+  const handleInputChange = (rowIndex, field, value) => {
+    if (editingIndex !== null) {
+      if (rowIndex !== editingIndex) return;
+      handleDraftChange(field, value);
+    }
+  };
+
+  const handleFileChange = (rowIndex, field, file) => {
+    if (editingIndex !== null) {
+      if (rowIndex !== editingIndex) return;
+      handleDraftFileChange(field, file);
+    }
+  };
+
+  // Takes the item's Firestore doc id (not a table-row index) — see handleEditRow
+  // for why: the table can be showing a filtered/searched subset.
+  const handleDelete = async (itemId) => {
     if (isEditingMenu) return;
 
     try {
-      if (!item) return;
+      const index = menuItems.findIndex((m) => m.id === itemId);
+      const itemToDelete = menuItems[index];
+      if (!itemToDelete) return;
 
-      if (item.id) {
+      if (itemToDelete.id) {
         // Delete associated image if it's stored on Firebase Storage
-        if (item.image_path) {
+        if (itemToDelete.image_path) {
           try {
-            await storageService.deleteFileByPath(item.image_path);
-            console.log("Deleted firebase image via stored path:", item.image_path);
+            await storageService.deleteFileByPath(itemToDelete.image_path);
+            console.log(
+              "Deleted firebase image via stored path:",
+              itemToDelete.image_path,
+            );
           } catch (err) {
-            console.error("Error deleting firebase image via stored path:", err);
+            console.error(
+              "Error deleting firebase image via stored path:",
+              err,
+            );
           }
-        } else if (item.image && item.image.startsWith('https://firebasestorage.googleapis.com')) {
-          console.warn('Found a legacy Firebase-hosted image URL; automatic deletion is disabled unless storage path is known.');
+        } else if (
+          itemToDelete.image &&
+          itemToDelete.image.startsWith(
+            "https://firebasestorage.googleapis.com",
+          )
+        ) {
+          console.warn(
+            "Found a legacy Firebase-hosted image URL; automatic deletion is disabled unless storage path is known.",
+          );
         }
 
-        const menuCollection = collection(db, "Restaurant", "orderin_restaurant_2", "menu");
-        await deleteDoc(doc(menuCollection, item.id));
+        const menuCollection = collection(
+          db,
+          "Restaurant",
+          "orderin_restaurant_2",
+          "menu",
+        );
+        await deleteDoc(doc(menuCollection, itemToDelete.id));
+      }
+      const updatedItems = [...menuItems];
+      updatedItems.splice(index, 1);
+      setMenuItems(updatedItems);
+      // Adjust single-row edit index if necessary
+      if (editingIndex !== null) {
+        if (index === editingIndex) {
+          // Deleted the row being edited — clear edit state
+          setEditingIndex(null);
+          setEditedItems([]);
+          setIsAdding(false);
+        } else if (index < editingIndex) {
+          // Row removed above the editing index — shift the index down
+          setEditingIndex(editingIndex - 1);
+        }
       }
 
-      setMenuItems((current) => current.filter((m) => (m.id || m.__tempId) !== (item.id || item.__tempId)));
-
-      const deletedItemName = item.name || "Item";
+      const deletedItemName = itemToDelete.name || "Item";
       const deletionMessage = `${deletedItemName} has been deleted from menu.`;
       showMenuNotice(deletionMessage, "menu_delete");
       await addActivity(deletionMessage, {
         persist: true,
         type: "menu_delete",
         source: "menu",
-        itemId: item.id || null,
-        itemName: deletedItemName
+        itemId: itemToDelete.id || null,
+        itemName: deletedItemName,
       });
     } catch (error) {
       console.error("Error deleting menu item:", error);
     }
   };
+  const filteredItems = menuItems.filter((item) => {
+    const matchesSearch =
+      item.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.category?.toLowerCase().includes(searchTerm.toLowerCase());
 
+    const matchesCategory =
+      selectedCategory === "All" || item.category === selectedCategory;
+
+    const matchesAvailability =
+      selectedAvailability === "All" ||
+      item.availability === selectedAvailability;
+
+    const matchesVeg =
+      !vegOnlyFilter || normalizeMenuType(item.type) === TYPE_VEG;
+
+    return matchesSearch && matchesCategory && matchesAvailability && matchesVeg;
+  });
   return (
     <div className="menu-management-container">
       {/* --- TOP HEADER ROW: Back Button and Title --- */}
-      <div className="menu-header-bar header-top-row">
-        <button className="btn-back" onClick={() => navigate(routes.dashboard)}>Back</button>
+      <div className="menu-header">
+        {/* TOP ROW */}
+        <div className="menu-header-bar">
+          <button className="btn-back" onClick={handleBackToDashboard}>
+            Back
+          </button>
 
-        <h1 className="h1-page-title">Menu Management</h1>
+          <h1 className="h1-page-title">Menu Management</h1>
 
-        {/* Action Buttons */}
-        <div className="menu-header-actions-group">
-          <div className="header-actions">
-            {isEditingMenu ? (
-              <>
-                <button className="btn-primary btn-save" onClick={handleSave} disabled={isSaving}>{isSaving ? 'SAVING...' : 'SAVE'}</button>
-                <button className="btn-primary btn-cancel" onClick={handleCancel} disabled={isSaving}>CANCEL</button>
-              </>
-            ) : (
-              <>
-                <button className="btn-primary btn-add" onClick={handleAdd}><IconPlus /> Add Menu Item</button>
-                <button className="btn-primary btn-promotions" onClick={() => navigate(routes.promotions)}>Create Promotions</button>
-              </>
-            )}
+          <div style={{ display: "flex", alignItems: "start", gap: 10 }}>
+            <div className="header-actions">
+              {isEditingMenu ? (
+                <>
+                  <button
+                    className="btn-primary menu-save-btn"
+                    onClick={handleSave}
+                    disabled={isSaving}
+                  >
+                    {isSaving ? "SAVING..." : "SAVE"}
+                  </button>
+                  <button
+                    className="btn-primary menu-cancel-btn"
+                    onClick={handleCancel}
+                    disabled={isSaving}
+                  >
+                    CANCEL
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button className="btn-primary" onClick={handleAdd}>
+                    + Add Menu Item
+                  </button>
+                  <button
+                    className="btn-primary"
+                    onClick={() => navigate(routes.promotions)}
+                  >
+                    Create Promotions
+                  </button>
+                </>
+              )}
+            </div>
+
+            <label className="menu-all-veg-control">
+              <input
+                type="checkbox"
+                checked={allVegMode}
+                onChange={(e) => {
+                  if (e.target.checked) {
+                    // Marking everything Veg overwrites every non-veg item
+                    // in the database — confirm first so an accidental
+                    // click can't do this. Un-checking has no destructive
+                    // effect (it never reverted items), so it applies
+                    // immediately.
+                    setShowAllVegConfirm(true);
+                  } else {
+                    handleAllVegToggle(false);
+                  }
+                }}
+                disabled={isSaving || isApplyingAllVeg}
+              />
+              <span>All Veg</span>
+            </label>
           </div>
-          <label className="menu-all-veg-control">
-            <input
-              type="checkbox"
-              checked={allVegMode}
-              onChange={(e) => handleAllVegToggle(e.target.checked)}
-              disabled={isSaving || isApplyingAllVeg}
-            />
-            <span>All Veg</span>
-          </label>
         </div>
       </div>
 
       {saveStatus && (
-        <div className={`menu-save-status menu-save-status--${saveStatus.type}`}>
+        <div
+          style={{
+            margin: "8px 0",
+            color: saveStatus.type === "success" ? "#155724" : "#721c24",
+            background: saveStatus.type === "success" ? "#d4edda" : "#f8d7da",
+            padding: "8px 12px",
+            borderRadius: 4,
+          }}
+        >
           {saveStatus.message}
         </div>
       )}
 
       {menuNotice && (
-        <div className={`menu-action-toast menu-action-toast--${menuNotice.type === "menu_delete" ? "delete" : "add"}`} role="status" aria-live="polite">
+        <div
+          className={`menu-action-toast menu-action-toast--${menuNotice.type === "menu_delete" ? "delete" : "add"}`}
+          role="status"
+          aria-live="polite"
+        >
           <strong>Menu updated</strong>
           <span>{menuNotice.message}</span>
         </div>
       )}
 
-      {/* --- Stat cards --- */}
-      <div className="menu-stats-grid">
-        <StatCard
-          icon={<IconForkKnife />}
-          iconClass="stat-icon--green"
-          label="Total Dishes"
-          value={stats.totalDishes}
-          subtitle={`Across ${stats.categoryCount} categories`}
-        />
-        <StatCard
-          icon={<IconCart />}
-          iconClass="stat-icon--red"
-          label="Category Count"
-          value={stats.categoryCount}
-          subtitle="Active categories"
-        />
-        <StatCard
-          icon={<IconMegaphone />}
-          iconClass="stat-icon--amber"
-          label="Active Promotions"
-          value={stats.activePromotions}
-          subtitle="Running promotions"
-        />
-        <StatCard
-          icon={<IconPlate />}
-          iconClass="stat-icon--blue"
-          label="Available dishes"
-          value={stats.availableDishes}
-          subtitle="Are ready to serve/available"
-        />
-      </div>
-
-      <div className="menu-content-area">
-        {isEditingMenu && (
-          <div className="menu-edit-banner" role="status">
+      {isEditingMenu && (
+        <section className="menu-editor-panel" aria-label={editModeLabel}>
+          <div className="menu-editor-header">
             <div>
-              <strong>{isAdding ? "Adding new item" : "Editing menu item"}</strong>
-              <span>Update the highlighted row, then save or cancel from the top right.</span>
+              <span className="menu-editor-kicker">
+                {isAdding ? "New item" : "Selected item"}
+              </span>
+              <h2>
+                {isAdding
+                  ? "Add Menu Item"
+                  : activeEditItem.name
+                    ? `Edit ${activeEditItem.name}`
+                    : "Edit Menu Item"}
+              </h2>
+            </div>
+            <span className="menu-editor-state">
+              {isSaving
+                ? "Saving"
+                : isAdding
+                  ? "Draft"
+                  : `Row ${editingIndex + 1}`}
+            </span>
+          </div>
+
+          <div className="menu-editor-grid">
+            <label className="menu-editor-field">
+              <span>Category</span>
+              <input
+                className="menu-editor-control"
+                type="text"
+                value={activeEditItem.category || ""}
+                onChange={(e) => handleDraftChange("category", e.target.value)}
+                placeholder="Starters"
+              />
+            </label>
+
+            <label className="menu-editor-field">
+              <span>Item Name</span>
+              <input
+                className="menu-editor-control"
+                type="text"
+                value={activeEditItem.name || ""}
+                onChange={(e) => handleDraftChange("name", e.target.value)}
+                placeholder="Paneer Tikka"
+              />
+            </label>
+
+            <label className="menu-editor-field">
+              <span>Price</span>
+              <div className="menu-price-stepper">
+                <button
+                  type="button"
+                  onClick={() => handlePriceStep(-0.01)}
+                  disabled={isSaving}
+                >
+                  -
+                </button>
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  value={sanitizePriceInput(activeEditItem.price)}
+                  onChange={(e) => handlePriceChange(e.target.value)}
+                />
+                <button
+                  type="button"
+                  onClick={() => handlePriceStep(0.01)}
+                  disabled={isSaving}
+                >
+                  +
+                </button>
+              </div>
+            </label>
+
+            {!allVegMode && (
+              <div className="menu-editor-field">
+                <span>Type</span>
+                <div className="menu-type-toggle">
+                  <span
+                    className={
+                      normalizeMenuType(activeEditItem.type) === TYPE_VEG
+                        ? "active"
+                        : ""
+                    }
+                  >
+                    Veg
+                  </span>
+                  <button
+                    type="button"
+                    className={`menu-type-switch ${normalizeMenuType(activeEditItem.type) === TYPE_NON_VEG ? "is-nonveg" : ""}`}
+                    role="switch"
+                    aria-checked={
+                      normalizeMenuType(activeEditItem.type) === TYPE_NON_VEG
+                    }
+                    onClick={handleTypeToggle}
+                    disabled={isSaving}
+                  >
+                    <span></span>
+                  </button>
+                  <span
+                    className={
+                      normalizeMenuType(activeEditItem.type) === TYPE_NON_VEG
+                        ? "active"
+                        : ""
+                    }
+                  >
+                    Non-Veg
+                  </span>
+                </div>
+              </div>
+            )}
+
+            <label className="menu-editor-field">
+              <span>Availability</span>
+              <select
+                className="menu-editor-control"
+                value={activeEditItem.availability || ""}
+                onChange={(e) =>
+                  handleDraftChange("availability", e.target.value)
+                }
+              >
+                <option value="">Select</option>
+                <option value="Yes">Yes</option>
+                <option value="No">No</option>
+              </select>
+            </label>
+
+            <div className="menu-editor-field menu-editor-toggle-field">
+              <span>Promotions</span>
+              <div className="menu-editor-toggle-row">
+                <strong>
+                  {activeEditItem.promotions ? "Enabled" : "Disabled"}
+                </strong>
+                <label className="switch">
+                  <input
+                    type="checkbox"
+                    checked={Boolean(activeEditItem.promotions)}
+                    onChange={(e) =>
+                      handleDraftChange("promotions", e.target.checked)
+                    }
+                  />
+                  <span className="slider round"></span>
+                </label>
+              </div>
+            </div>
+
+            <div className="menu-editor-field menu-editor-image-field">
+              <span>Item Image</span>
+              <div className="menu-editor-image-card">
+                {activeEditorImage ? (
+                  <img
+                    src={activeEditorImage}
+                    alt=""
+                    className="menu-editor-image-preview"
+                  />
+                ) : (
+                  <div className="menu-editor-image-empty">Image</div>
+                )}
+                <div className="menu-editor-image-meta">
+                  <label className="menu-editor-upload">
+                    Choose Image
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.target.files[0];
+                        if (file) {
+                          handleDraftFileChange("image", file);
+                          const reader = new FileReader();
+                          reader.onload = (event) => {
+                            handleDraftChange("image", event.target.result);
+                          };
+                          reader.readAsDataURL(file);
+                        }
+                      }}
+                    />
+                  </label>
+                  {activeEditItem.imageFile && (
+                    <small>{activeEditItem.imageFile.name}</small>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <label className="menu-editor-field menu-editor-description-field">
+              <span>Description</span>
+              <textarea
+                className="menu-editor-control menu-editor-textarea"
+                value={activeEditItem.description || ""}
+                onChange={(e) =>
+                  handleDraftChange("description", e.target.value)
+                }
+                rows="4"
+                placeholder="Short item description"
+              />
+            </label>
+
+            <div className="menu-editor-field menu-customizations-field">
+              <span>Customizations / Specializations</span>
+              <div className="menu-customizations-builder">
+                {(activeEditItem.customizations || []).length === 0 && (
+                  <p className="menu-customizations-empty">
+                    No customizations yet. Customers will see generic
+                    defaults based on category until you add one.
+                  </p>
+                )}
+                {(activeEditItem.customizations || []).map((group, idx) => (
+                  <div className="menu-customization-group" key={group.id}>
+                    <div className="menu-customization-group-header">
+                      <input
+                        className="menu-editor-control menu-customization-label"
+                        type="text"
+                        value={group.label}
+                        onChange={(e) =>
+                          handleCustomizationGroupChange(
+                            idx,
+                            "label",
+                            e.target.value,
+                          )
+                        }
+                        placeholder="e.g. Spice Level"
+                      />
+                      <button
+                        type="button"
+                        className="menu-customization-remove"
+                        onClick={() => handleRemoveCustomizationGroup(idx)}
+                        aria-label="Remove customization group"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                    <div className="menu-customization-options-list">
+                      {(group.options || []).map((opt, oIdx) => (
+                        <div
+                          className="menu-customization-option-row"
+                          key={opt.id}
+                        >
+                          <input
+                            className="menu-editor-control menu-customization-option-name"
+                            type="text"
+                            value={opt.name}
+                            onChange={(e) =>
+                              handleOptionChange(
+                                idx,
+                                oIdx,
+                                "name",
+                                e.target.value,
+                              )
+                            }
+                            placeholder="e.g. Large"
+                          />
+                          <div className="menu-customization-option-price">
+                            <span>+₹</span>
+                            <input
+                              type="text"
+                              inputMode="decimal"
+                              value={opt.price}
+                              onChange={(e) =>
+                                handleOptionChange(
+                                  idx,
+                                  oIdx,
+                                  "price",
+                                  e.target.value,
+                                )
+                              }
+                              placeholder="0"
+                            />
+                          </div>
+                          <button
+                            type="button"
+                            className="menu-customization-option-remove"
+                            onClick={() => handleRemoveOption(idx, oIdx)}
+                            aria-label="Remove option"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ))}
+                      <button
+                        type="button"
+                        className="menu-customization-add-option"
+                        onClick={() => handleAddOption(idx)}
+                      >
+                        + Add Option
+                      </button>
+                    </div>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  className="menu-customization-add"
+                  onClick={handleAddCustomizationGroup}
+                >
+                  + Add Customization Group
+                </button>
+              </div>
             </div>
           </div>
-        )}
 
-        {/* --- Search + filter bar --- */}
-        <div className="menu-filter-bar">
-          <div className="menu-search-field">
-            <span className="menu-search-icon"><IconSearch /></span>
-            <input
-              type="text"
-              placeholder="Search dish name..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
+          <div className="menu-editor-footer">
+            <span>{isAdding ? "New item draft" : "Unsaved item changes"}</span>
+            <div className="menu-editor-actions">
+              <button
+                className="btn-primary menu-cancel-btn"
+                onClick={handleCancel}
+                disabled={isSaving}
+              >
+                CANCEL
+              </button>
+              <button
+                className="btn-primary menu-save-btn"
+                onClick={handleSave}
+                disabled={isSaving}
+              >
+                {isSaving ? "SAVING..." : "SAVE ITEM"}
+              </button>
+            </div>
           </div>
-
-          <select
-            className="menu-filter-select"
-            value={categoryFilter}
-            onChange={(e) => setCategoryFilter(e.target.value)}
-          >
-            {categoryOptions.map((category) => (
-              <option key={category} value={category}>{category}</option>
-            ))}
-          </select>
-
-          <select
-            className="menu-filter-select"
-            value={availabilityFilter}
-            onChange={(e) => setAvailabilityFilter(e.target.value)}
-          >
-            <option value="All">Availability: All</option>
-            <option value="Yes">Availability: Yes</option>
-            <option value="No">Availability: No</option>
-          </select>
-
-          <label className="menu-veg-only-toggle">
-            <span className="switch switch--small">
-              <input
-                type="checkbox"
-                checked={allVegMode}
-                onChange={(e) => handleAllVegToggle(e.target.checked)}
-                disabled={isSaving || isApplyingAllVeg}
-              />
-              <span className="slider round"></span>
+        </section>
+      )}
+      <div className="stats-container">
+        <div className="stat-card">
+          <div className="stat-icon stat-icon--red" />
+          <div className="stat-body">
+            <p className="stat-label">Total Dishes</p>
+            <h2 className="stat-value">{menuItems.length}</h2>
+            <span className="stat-subtitle">
+              Across {new Set(menuItems.map((i) => i.category)).size} categories
             </span>
-            <span>{isApplyingAllVeg ? "Applying..." : "Veg Only"}</span>
-          </label>
-
-          <button
-            type="button"
-            className="menu-reset-filters"
-            onClick={handleResetFilters}
-            disabled={!hasActiveFilters}
-          >
-            <IconReset /> Reset Filters
-          </button>
+          </div>
         </div>
 
+        <div className="stat-card">
+          <div className="stat-icon stat-icon--green" />
+          <div className="stat-body">
+            <p className="stat-label">Category Count</p>
+            <h2 className="stat-value">{new Set(menuItems.map((i) => i.category)).size}</h2>
+            <span className="stat-subtitle">Active categories</span>
+          </div>
+        </div>
+
+        <div className="stat-card">
+          <div className="stat-icon stat-icon--amber" />
+          <div className="stat-body">
+            <p className="stat-label">Active Promotions</p>
+            <h2 className="stat-value">{menuItems.filter((i) => i.promotions).length}</h2>
+            <span className="stat-subtitle">Running Promotions</span>
+          </div>
+        </div>
+
+        <div className="stat-card">
+          <div className="stat-icon stat-icon--blue" />
+          <div className="stat-body">
+            <p className="stat-label">Available dishes</p>
+            <h2 className="stat-value">{menuItems.filter((i) => i.availability === "Yes").length}</h2>
+            <span className="stat-subtitle">Are ready to serve/available</span>
+          </div>
+        </div>
+      </div>
+
+      {/* ================= FILTER BAR ================= */}
+      <div className="filters-bar">
+        {/* Search */}
+        <div className="search-box">
+          <span className="search-icon">🔍</span>
+          <input
+            type="text"
+            placeholder="Search dish name..."
+            value={searchTerm}
+            className="search-input"
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+
+        {/* Category */}
+        <select
+          className="filter-dropdown"
+          value={selectedCategory}
+          onChange={(e) => setSelectedCategory(e.target.value)}
+        >
+          <option value="All">All Categories</option>
+          {[...new Set(menuItems.map((i) => i.category))].map((cat, i) => (
+            <option key={i} value={cat}>
+              {cat}
+            </option>
+          ))}
+        </select>
+
+        {/* Availability */}
+        <select
+          className="filter-dropdown"
+          value={selectedAvailability}
+          onChange={(e) => setSelectedAvailability(e.target.value)}
+        >
+          <option value="All">Availability: All</option>
+          <option value="Yes">Yes</option>
+          <option value="No">No</option>
+        </select>
+        {/* Veg Only filter — display-only, does NOT change any data.
+            (Previously this accidentally reused handleAllVegToggle, which
+            bulk-overwrote every menu item's type to Veg in Firestore just
+            from filtering the list — that bulk action now lives only on the
+            standalone "All Veg" control below, behind a confirmation.) */}
+        <label className="veg-toggle-ui">
+          <input
+            type="checkbox"
+            checked={vegOnlyFilter}
+            onChange={(e) => setVegOnlyFilter(e.target.checked)}
+          />
+          <span></span>
+          <p>Veg Only</p>
+        </label>
+
+        {/* Reset */}
+        <button
+          className="reset-btn"
+          onClick={() => {
+            setSelectedCategory("All");
+            setSelectedAvailability("All");
+          }}
+        >
+          ⟳ Reset Filters
+        </button>
+      </div>
+      <div className="menu-content-area">
         <div className="menu-table-wrapper">
           <div className="table-scroll-container">
             <table className="menu-table">
@@ -786,205 +1491,132 @@ const MenuPage = () => {
 
                   <th>Description</th>
 
+                  <th>Customizations</th>
+
                   {!allVegMode && <th>Type</th>}
 
-                  <th>Delete</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
 
               <tbody>
-                {filteredItems.length === 0 && (
-                  <tr className="menu-empty-row">
-                    <td colSpan={allVegMode ? 7 : 8}>
-                      No dishes match your search and filters.
-                    </td>
-                  </tr>
-                )}
-
                 {filteredItems.map((item) => {
-                  const rowId = item.id || item.__tempId;
-                  const rowIsEditing = editingId === rowId;
-                  const rowItem = rowIsEditing ? (editedItem || {}) : item;
+                  // editingIndex/handleEditRow/handleDelete all key off the item's
+                  // Firestore doc id, not this row's position in filteredItems —
+                  // filteredItems is a search/category subset whose positions
+                  // don't line up with indices into the full menuItems array.
+                  const rowIsEditing =
+                    editingIndex !== null &&
+                    menuItems[editingIndex]?.id === item.id;
                   return (
-                    <tr key={rowId} data-editing={rowIsEditing ? "true" : "false"}>
-                      <td data-label="Category">
-                        {rowIsEditing ? (
-                          <textarea
-                            className="menu-edit-field"
-                            value={rowItem.category || ''}
-                            onChange={(e) => handleInputChange(rowId, 'category', e.target.value)}
-                            rows="1"
-                          />
-                        ) : (
-                          item.category
-                        )}
-                      </td>
+                    <tr
+                      key={item.id}
+                      className={rowIsEditing ? "menu-row-editing" : ""}
+                    >
+                      <td data-label="Category">{item.category}</td>
 
                       <td data-label="Name">
-                        {rowIsEditing ? (
-                          <textarea
-                            className="menu-edit-field"
-                            value={rowItem.name || ''}
-                            onChange={(e) => handleInputChange(rowId, 'name', e.target.value)}
-                            rows="1"
-                          />
-                        ) : (
-                          item.name && item.name.length > 10 ? item.name.substring(0, 10) + '...' : item.name
-                        )}
+                        {item.name && item.name.length > 18
+                          ? item.name.substring(0, 18) + "..."
+                          : item.name}
                       </td>
 
                       <td data-label="Item Image">
-                        {rowIsEditing ? (
-                          <div className="menu-image-edit">
-                            <input
-                              className="menu-file-input"
-                              type="file"
-                              accept="image/*"
-                              onChange={(e) => {
-                                const file = e.target.files[0];
-                                if (file) {
-                                  handleFileChange(rowId, 'image', file);
-                                  const reader = new FileReader();
-                                  reader.onload = (event) => {
-                                    handleInputChange(rowId, 'image', event.target.result);
-                                  };
-                                  reader.readAsDataURL(file);
-                                }
-                              }}
-                            />
-                            {(rowItem.image_url || rowItem.image) && (
-                              <img
-                                src={rowItem.image_url || rowItem.image}
-                                alt="Preview"
-                                className="item-img"
-                              />
-                            )}
-                            {rowItem.imageFile && (
-                              <div className="menu-file-selected">Selected file: {rowItem.imageFile.name}</div>
-                            )}
-                          </div>
-                        ) : (
-                          (item.image_url || item.image) && (
-                            <img
-                              src={item.image_url || item.image}
-                              alt={item.name}
-                              className="item-img"
-                            />
-                          )
-                        )}
+                        <img
+                          src={item.image_url || item.image}
+                          alt={item.name}
+                          className="item-img"
+                        />
                       </td>
 
-                      <td data-label="Price">
-                        {rowIsEditing ? (
-                          <div className="menu-price-stepper menu-price-stepper--inline">
-                            <button
-                              type="button"
-                              onClick={() => handleInputChange(rowId, 'price', formatSteppedPrice(priceToNumber(rowItem.price) - 0.01))}
-                              disabled={isSaving}
-                            >
-                              -
-                            </button>
-                            <input
-                              type="text"
-                              inputMode="decimal"
-                              value={sanitizePriceInput(rowItem.price)}
-                              onChange={(e) => handleInputChange(rowId, 'price', sanitizePriceInput(e.target.value))}
-                            />
-                            <button
-                              type="button"
-                              onClick={() => handleInputChange(rowId, 'price', formatSteppedPrice(priceToNumber(rowItem.price) + 0.01))}
-                              disabled={isSaving}
-                            >
-                              +
-                            </button>
-                          </div>
-                        ) : (
-                          item.price
-                        )}
-                      </td>
+                      <td data-label="Price">{item.price}</td>
 
                       <td data-label="Promotions">
                         <label className="switch">
                           <input
                             type="checkbox"
-                            checked={Boolean(rowItem.promotions)}
+                            checked={Boolean(item.promotions)}
                             onChange={(e) => {
                               const value = e.target.checked;
-                              if (rowIsEditing) {
-                                handleInputChange(rowId, 'promotions', value);
-                              } else {
-                                setMenuItems((current) =>
-                                  current.map((m) => ((m.id || m.__tempId) === rowId ? { ...m, promotions: value } : m))
-                                );
-                              }
+                              const updatedItems = [...menuItems];
+                              const realIndex = updatedItems.findIndex(
+                                (m) => m.id === item.id,
+                              );
+                              if (realIndex === -1) return;
+                              updatedItems[realIndex].promotions = value;
+                              setMenuItems(updatedItems);
                             }}
+                            disabled={isEditingMenu}
                           />
 
                           <span className="slider round"></span>
                         </label>
                       </td>
 
-                      <td data-label="Availability">
-                        {rowIsEditing ? (
-                          <textarea
-                            className="menu-edit-field"
-                            value={rowItem.availability || ''}
-                            onChange={(e) => handleInputChange(rowId, 'availability', e.target.value)}
-                            rows="1"
-                          />
-                        ) : (
-                          item.availability
-                        )}
-                      </td>
+                      <td data-label="Availability">{item.availability}</td>
 
                       <td data-label="Description">
-                        {rowIsEditing ? (
-                          <textarea
-                            className="menu-edit-field menu-edit-field--long"
-                            value={rowItem.description || ''}
-                            onChange={(e) => handleInputChange(rowId, 'description', e.target.value)}
-                            rows="3"
-                          />
+                        {item.description && item.description.length > 24
+                          ? item.description.substring(0, 24) + "..."
+                          : item.description}
+                      </td>
+
+                      <td data-label="Customizations">
+                        {Array.isArray(item.customizations) &&
+                        item.customizations.length > 0 ? (
+                          <span
+                            className="menu-customizations-badge"
+                            title={item.customizations
+                              .map(
+                                (g) =>
+                                  `${g.label}: ${(g.options || [])
+                                    .map((o) =>
+                                      typeof o === "string"
+                                        ? o
+                                        : o.price
+                                          ? `${o.name} (+₹${o.price})`
+                                          : o.name,
+                                    )
+                                    .join(", ")}`,
+                              )
+                              .join(" • ")}
+                          >
+                            {item.customizations
+                              .map((g) => g.label)
+                              .filter(Boolean)
+                              .join(", ")}
+                          </span>
                         ) : (
-                          item.description && item.description.length > 10 ? item.description.substring(0, 10) + '...' : item.description
+                          <span className="menu-customizations-badge menu-customizations-badge--none">
+                            Default
+                          </span>
                         )}
                       </td>
 
                       {!allVegMode && (
                         <td data-label="Type">
-                          {rowIsEditing ? (
-                            <div className="menu-type-toggle menu-type-toggle--inline">
-                              <span className={normalizeMenuType(rowItem.type) === TYPE_VEG ? "active" : ""}>Veg</span>
-                              <button
-                                type="button"
-                                className={`menu-type-switch ${normalizeMenuType(rowItem.type) === TYPE_NON_VEG ? "is-nonveg" : ""}`}
-                                role="switch"
-                                aria-checked={normalizeMenuType(rowItem.type) === TYPE_NON_VEG}
-                                onClick={() => handleInputChange(rowId, 'type', normalizeMenuType(rowItem.type) === TYPE_NON_VEG ? TYPE_VEG : TYPE_NON_VEG)}
-                                disabled={isSaving}
-                              >
-                                <span></span>
-                              </button>
-                              <span className={normalizeMenuType(rowItem.type) === TYPE_NON_VEG ? "active" : ""}>Non-Veg</span>
-                            </div>
-                          ) : (
-                            normalizeMenuType(item.type)
-                          )}
+                          {normalizeMenuType(item.type)}
                         </td>
                       )}
 
-                      <td className="menu-row-actions" data-label="Actions">
-                        {!rowIsEditing && editingId === null && (
-                          <button className="btn-primary btn-row-edit" onClick={() => handleEditRow(item)} disabled={isEditingMenu}>Edit</button>
-                        )}
-                        <button
-                          className="btn-primary btn-row-delete"
-                          onClick={() => handleDelete(item)}
-                          disabled={isEditingMenu}
-                          aria-disabled={isEditingMenu}
-                        >
-                          Delete
-                        </button>
+                      <td className="menu-actions-cell" data-label="Actions">
+                        <div className="menu-row-actions">
+                          <button
+                            className="btn-primary"
+                            onClick={() => handleEditRow(item.id)}
+                            disabled={isEditingMenu}
+                          >
+                            {rowIsEditing ? "Editing" : "Edit"}
+                          </button>
+                          <button
+                            className="btn-primary"
+                            onClick={() => handleDelete(item.id)}
+                            disabled={isEditingMenu}
+                            aria-disabled={isEditingMenu}
+                          >
+                            Delete
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -994,6 +1626,46 @@ const MenuPage = () => {
           </div>
         </div>
       </div>
+
+      {showAllVegConfirm && (
+        <div
+          className="menu-allveg-confirm-overlay"
+          onClick={() => setShowAllVegConfirm(false)}
+        >
+          <div
+            className="menu-allveg-confirm-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3>Mark every item as Veg?</h3>
+            <p>
+              This will overwrite every non-veg item on the menu to Veg. This
+              can't be undone automatically — items would need to be switched
+              back individually.
+            </p>
+            <div className="menu-allveg-confirm-actions">
+              <button
+                type="button"
+                className="menu-allveg-confirm-btn menu-allveg-confirm-btn-ghost"
+                onClick={() => setShowAllVegConfirm(false)}
+                disabled={isApplyingAllVeg}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="menu-allveg-confirm-btn menu-allveg-confirm-btn-danger"
+                onClick={() => {
+                  setShowAllVegConfirm(false);
+                  handleAllVegToggle(true);
+                }}
+                disabled={isApplyingAllVeg}
+              >
+                {isApplyingAllVeg ? "Applying…" : "Yes, mark all as Veg"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

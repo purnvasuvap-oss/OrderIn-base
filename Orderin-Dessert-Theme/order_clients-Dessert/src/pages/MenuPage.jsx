@@ -75,6 +75,12 @@ const formatSteppedPrice = (value) => {
   return rounded.toFixed(2);
 };
 
+const generateCustomizationId = () =>
+  `custom-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+
+const generateOptionId = () =>
+  `opt-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+
 const MenuPage = () => {
   const navigate = useNavigate();
   const { addActivity } = useNotification();
@@ -103,6 +109,8 @@ const MenuPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [selectedAvailability, setSelectedAvailability] = useState("All");
+  const [vegOnlyFilter, setVegOnlyFilter] = useState(false);
+  const [showAllVegConfirm, setShowAllVegConfirm] = useState(false);
   useEffect(() => {
     if (!menuNotice) return undefined;
 
@@ -135,22 +143,22 @@ const MenuPage = () => {
   };
 
   const handleAllVegToggle = async (checked) => {
-    setAllVegMode(checked);
-
-    if (!checked) return;
-
-    setMenuItems((current) =>
-      current.map((item) => ({ ...item, type: TYPE_VEG })),
-    );
-    setEditedItems((current) =>
-      current.map((item) => ({ ...item, type: TYPE_VEG })),
-    );
+    if (!checked) {
+      setAllVegMode(false);
+      return;
+    }
 
     const itemsToUpdate = menuItems.filter(
       (item) => item.id && normalizeMenuType(item.type) !== TYPE_VEG,
     );
-    if (itemsToUpdate.length === 0) return;
+    if (itemsToUpdate.length === 0) {
+      setAllVegMode(true);
+      return;
+    }
 
+    // Don't flip local state until the writes are known to have succeeded —
+    // this is a destructive bulk mutation, so the UI shouldn't claim "All Veg"
+    // is applied for items whose Firestore write actually failed.
     setIsApplyingAllVeg(true);
     try {
       const menuCollection = collection(
@@ -159,16 +167,43 @@ const MenuPage = () => {
         "orderin_restaurant_3",
         "menu",
       );
-      await Promise.all(
+      const results = await Promise.allSettled(
         itemsToUpdate.map((item) =>
           updateDoc(doc(menuCollection, item.id), { type: TYPE_VEG }),
         ),
       );
-      setSaveStatus({
-        type: "success",
-        message: "All menu items are set to Veg.",
-      });
-      setTimeout(() => setSaveStatus(null), 4000);
+      const succeededIds = new Set(
+        itemsToUpdate
+          .filter((_, i) => results[i].status === "fulfilled")
+          .map((item) => item.id),
+      );
+      const failedCount = itemsToUpdate.length - succeededIds.size;
+
+      setMenuItems((current) =>
+        current.map((item) =>
+          succeededIds.has(item.id) ? { ...item, type: TYPE_VEG } : item,
+        ),
+      );
+      setEditedItems((current) =>
+        current.map((item) =>
+          succeededIds.has(item.id) ? { ...item, type: TYPE_VEG } : item,
+        ),
+      );
+      setAllVegMode(failedCount === 0);
+
+      if (failedCount === 0) {
+        setSaveStatus({
+          type: "success",
+          message: "All menu items are set to Veg.",
+        });
+        setTimeout(() => setSaveStatus(null), 4000);
+      } else {
+        setSaveStatus({
+          type: "error",
+          message: `${failedCount} item(s) failed to update to Veg. The rest were applied — please retry.`,
+        });
+        setTimeout(() => setSaveStatus(null), 6000);
+      }
     } catch (error) {
       console.error("Error setting all menu items to veg:", error);
       setSaveStatus({
@@ -216,8 +251,13 @@ const MenuPage = () => {
 
   // Batch editing has been removed. Use per-row Edit buttons instead.
 
-  // Edit a single row in-place without making all rows editable
-  const handleEditRow = (rowIndex) => {
+  // Edit a single row in-place without making all rows editable.
+  // Takes the item's Firestore doc id (not a table-row index) — the table can be
+  // showing a filtered/searched subset, whose row positions don't line up with
+  // indices into the full `menuItems` array.
+  const handleEditRow = (itemId) => {
+    const rowIndex = menuItems.findIndex((m) => m.id === itemId);
+    if (rowIndex === -1) return;
     setIsAdding(false);
     setEditingIndex(rowIndex);
     const item = menuItems[rowIndex] || {};
@@ -228,6 +268,21 @@ const MenuPage = () => {
       oldImage: item.image_url || item.image || null,
       // store previous firebase storage path (if any) so we can delete on replace
       oldImagePath: item.image_path || null,
+      customizations: Array.isArray(item.customizations)
+        ? item.customizations.map((group) => ({
+            id: group.id || generateCustomizationId(),
+            label: group.label || "",
+            options: (group.options || []).map((opt) =>
+              typeof opt === "string"
+                ? { id: generateOptionId(), name: opt, price: "0" }
+                : {
+                    id: generateOptionId(),
+                    name: opt.name ?? opt.label ?? "",
+                    price: sanitizePriceInput(opt.price ?? 0) || "0",
+                  },
+            ),
+          }))
+        : [],
     };
     setEditedItems([single]);
   };
@@ -242,6 +297,7 @@ const MenuPage = () => {
       availability: "Yes",
       description: "",
       type: TYPE_VEG,
+      customizations: [],
     };
     setIsAdding(true);
     setEditingIndex(null);
@@ -261,11 +317,35 @@ const MenuPage = () => {
         ...item,
         price: normalizePrice(item.price),
         type: allVegMode ? TYPE_VEG : normalizeMenuType(item.type),
+        customizations: Array.isArray(item.customizations)
+          ? item.customizations
+              .map((group) => ({
+                id: group.id || generateCustomizationId(),
+                label: String(group.label || "").trim(),
+                options: (group.options || [])
+                  .map((opt) => ({
+                    name: String(opt.name || "").trim(),
+                    price: priceToNumber(opt.price),
+                  }))
+                  .filter((opt) => opt.name),
+              }))
+              .filter((group) => group.label && group.options.length > 0)
+          : [],
       }));
 
       // Validate edited items. Only require an image for NEW items (no id).
       // For existing items, allow partial updates (updating fields without providing an image).
       for (const [idx, item] of itemsToProcess.entries()) {
+        if (!String(item.name || "").trim()) {
+          setSaveStatus({
+            type: "error",
+            message: "Item name is required.",
+          });
+          setIsSaving(false);
+          setTimeout(() => setSaveStatus(null), 6000);
+          return;
+        }
+
         const isNew = !item.id;
         const hasNewFile = Boolean(item.imageFile);
         const hasDataUrl =
@@ -655,6 +735,115 @@ const MenuPage = () => {
     setEditedItems((current) => [{ ...(current[0] || {}), [field]: value }]);
   };
 
+  const handleAddCustomizationGroup = () => {
+    setEditedItems((current) => {
+      const draft = current[0] || {};
+      const groups = Array.isArray(draft.customizations)
+        ? draft.customizations
+        : [];
+      return [
+        {
+          ...draft,
+          customizations: [
+            ...groups,
+            { id: generateCustomizationId(), label: "", options: [] },
+          ],
+        },
+      ];
+    });
+  };
+
+  const handleRemoveCustomizationGroup = (groupIndex) => {
+    setEditedItems((current) => {
+      const draft = current[0] || {};
+      const groups = Array.isArray(draft.customizations)
+        ? draft.customizations
+        : [];
+      return [
+        {
+          ...draft,
+          customizations: groups.filter((_, idx) => idx !== groupIndex),
+        },
+      ];
+    });
+  };
+
+  const handleCustomizationGroupChange = (groupIndex, field, value) => {
+    setEditedItems((current) => {
+      const draft = current[0] || {};
+      const groups = Array.isArray(draft.customizations)
+        ? draft.customizations
+        : [];
+      const nextGroups = groups.map((group, idx) =>
+        idx === groupIndex ? { ...group, [field]: value } : group,
+      );
+      return [{ ...draft, customizations: nextGroups }];
+    });
+  };
+
+  const handleAddOption = (groupIndex) => {
+    setEditedItems((current) => {
+      const draft = current[0] || {};
+      const groups = Array.isArray(draft.customizations)
+        ? draft.customizations
+        : [];
+      const nextGroups = groups.map((group, idx) =>
+        idx === groupIndex
+          ? {
+              ...group,
+              options: [
+                ...(group.options || []),
+                { id: generateOptionId(), name: "", price: "0" },
+              ],
+            }
+          : group,
+      );
+      return [{ ...draft, customizations: nextGroups }];
+    });
+  };
+
+  const handleRemoveOption = (groupIndex, optionIndex) => {
+    setEditedItems((current) => {
+      const draft = current[0] || {};
+      const groups = Array.isArray(draft.customizations)
+        ? draft.customizations
+        : [];
+      const nextGroups = groups.map((group, idx) =>
+        idx === groupIndex
+          ? {
+              ...group,
+              options: (group.options || []).filter(
+                (_, oIdx) => oIdx !== optionIndex,
+              ),
+            }
+          : group,
+      );
+      return [{ ...draft, customizations: nextGroups }];
+    });
+  };
+
+  const handleOptionChange = (groupIndex, optionIndex, field, value) => {
+    setEditedItems((current) => {
+      const draft = current[0] || {};
+      const groups = Array.isArray(draft.customizations)
+        ? draft.customizations
+        : [];
+      const nextGroups = groups.map((group, idx) => {
+        if (idx !== groupIndex) return group;
+        const nextOptions = (group.options || []).map((opt, oIdx) =>
+          oIdx === optionIndex
+            ? {
+                ...opt,
+                [field]: field === "price" ? sanitizePriceInput(value) : value,
+              }
+            : opt,
+        );
+        return { ...group, options: nextOptions };
+      });
+      return [{ ...draft, customizations: nextGroups }];
+    });
+  };
+
   const handleDraftFileChange = (field, file) => {
     setEditedItems((current) => [
       { ...(current[0] || {}), [`${field}File`]: file },
@@ -675,10 +864,13 @@ const MenuPage = () => {
     }
   };
 
-  const handleDelete = async (index) => {
+  // Takes the item's Firestore doc id (not a table-row index) — see handleEditRow
+  // for why: the table can be showing a filtered/searched subset.
+  const handleDelete = async (itemId) => {
     if (isEditingMenu) return;
 
     try {
+      const index = menuItems.findIndex((m) => m.id === itemId);
       const itemToDelete = menuItems[index];
       if (!itemToDelete) return;
 
@@ -758,7 +950,10 @@ const MenuPage = () => {
       selectedAvailability === "All" ||
       item.availability === selectedAvailability;
 
-    return matchesSearch && matchesCategory && matchesAvailability;
+    const matchesVeg =
+      !vegOnlyFilter || normalizeMenuType(item.type) === TYPE_VEG;
+
+    return matchesSearch && matchesCategory && matchesAvailability && matchesVeg;
   });
   return (
     <div className="menu-management-container">
@@ -810,7 +1005,18 @@ const MenuPage = () => {
               <input
                 type="checkbox"
                 checked={allVegMode}
-                onChange={(e) => handleAllVegToggle(e.target.checked)}
+                onChange={(e) => {
+                  if (e.target.checked) {
+                    // Marking everything Veg overwrites every non-veg item
+                    // in the database — confirm first so an accidental
+                    // click can't do this. Un-checking has no destructive
+                    // effect (it never reverted items), so it applies
+                    // immediately.
+                    setShowAllVegConfirm(true);
+                  } else {
+                    handleAllVegToggle(false);
+                  }
+                }}
                 disabled={isSaving || isApplyingAllVeg}
               />
               <span>All Veg</span>
@@ -1039,6 +1245,107 @@ const MenuPage = () => {
                 placeholder="Short item description"
               />
             </label>
+
+            <div className="menu-editor-field menu-customizations-field">
+              <span>Customizations / Specializations</span>
+              <div className="menu-customizations-builder">
+                {(activeEditItem.customizations || []).length === 0 && (
+                  <p className="menu-customizations-empty">
+                    No customizations yet. Customers will see generic
+                    defaults based on category until you add one.
+                  </p>
+                )}
+                {(activeEditItem.customizations || []).map((group, idx) => (
+                  <div className="menu-customization-group" key={group.id}>
+                    <div className="menu-customization-group-header">
+                      <input
+                        className="menu-editor-control menu-customization-label"
+                        type="text"
+                        value={group.label}
+                        onChange={(e) =>
+                          handleCustomizationGroupChange(
+                            idx,
+                            "label",
+                            e.target.value,
+                          )
+                        }
+                        placeholder="e.g. Spice Level"
+                      />
+                      <button
+                        type="button"
+                        className="menu-customization-remove"
+                        onClick={() => handleRemoveCustomizationGroup(idx)}
+                        aria-label="Remove customization group"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                    <div className="menu-customization-options-list">
+                      {(group.options || []).map((opt, oIdx) => (
+                        <div
+                          className="menu-customization-option-row"
+                          key={opt.id}
+                        >
+                          <input
+                            className="menu-editor-control menu-customization-option-name"
+                            type="text"
+                            value={opt.name}
+                            onChange={(e) =>
+                              handleOptionChange(
+                                idx,
+                                oIdx,
+                                "name",
+                                e.target.value,
+                              )
+                            }
+                            placeholder="e.g. Large"
+                          />
+                          <div className="menu-customization-option-price">
+                            <span>+₹</span>
+                            <input
+                              type="text"
+                              inputMode="decimal"
+                              value={opt.price}
+                              onChange={(e) =>
+                                handleOptionChange(
+                                  idx,
+                                  oIdx,
+                                  "price",
+                                  e.target.value,
+                                )
+                              }
+                              placeholder="0"
+                            />
+                          </div>
+                          <button
+                            type="button"
+                            className="menu-customization-option-remove"
+                            onClick={() => handleRemoveOption(idx, oIdx)}
+                            aria-label="Remove option"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ))}
+                      <button
+                        type="button"
+                        className="menu-customization-add-option"
+                        onClick={() => handleAddOption(idx)}
+                      >
+                        + Add Option
+                      </button>
+                    </div>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  className="menu-customization-add"
+                  onClick={handleAddCustomizationGroup}
+                >
+                  + Add Customization Group
+                </button>
+              </div>
+            </div>
           </div>
 
           <div className="menu-editor-footer">
@@ -1148,12 +1455,16 @@ const MenuPage = () => {
           <option value="Yes">Yes</option>
           <option value="No">No</option>
         </select>
-        {/* Veg Toggle */}
+        {/* Veg Only filter — display-only, does NOT change any data.
+            (Previously this accidentally reused handleAllVegToggle, which
+            bulk-overwrote every menu item's type to Veg in Firestore just
+            from filtering the list — that bulk action now lives only on the
+            standalone "All Veg" control below, behind a confirmation.) */}
         <label className="veg-toggle-ui">
           <input
             type="checkbox"
-            checked={allVegMode}
-            onChange={(e) => handleAllVegToggle(e.target.checked)}
+            checked={vegOnlyFilter}
+            onChange={(e) => setVegOnlyFilter(e.target.checked)}
           />
           <span></span>
           <p>Veg Only</p>
@@ -1192,6 +1503,8 @@ const MenuPage = () => {
 
                   <th>Description</th>
 
+                  <th>Customizations</th>
+
                   {!allVegMode && <th>Type</th>}
 
                   <th>Delete</th>
@@ -1199,11 +1512,17 @@ const MenuPage = () => {
               </thead>
 
               <tbody>
-                {filteredItems.map((item, index) => {
-                  const rowIsEditing = editingIndex === index;
+                {filteredItems.map((item) => {
+                  // editingIndex/handleEditRow/handleDelete all key off the item's
+                  // Firestore doc id, not this row's position in filteredItems —
+                  // filteredItems is a search/category subset whose positions
+                  // don't line up with indices into the full menuItems array.
+                  const rowIsEditing =
+                    editingIndex !== null &&
+                    menuItems[editingIndex]?.id === item.id;
                   return (
                     <tr
-                      key={index}
+                      key={item.id}
                       className={rowIsEditing ? "menu-row-editing" : ""}
                     >
                       <td>{item.category}</td>
@@ -1232,7 +1551,11 @@ const MenuPage = () => {
                             onChange={(e) => {
                               const value = e.target.checked;
                               const updatedItems = [...menuItems];
-                              updatedItems[index].promotions = value;
+                              const realIndex = updatedItems.findIndex(
+                                (m) => m.id === item.id,
+                              );
+                              if (realIndex === -1) return;
+                              updatedItems[realIndex].promotions = value;
                               setMenuItems(updatedItems);
                             }}
                             disabled={isEditingMenu}
@@ -1250,19 +1573,51 @@ const MenuPage = () => {
                           : item.description}
                       </td>
 
+                      <td>
+                        {Array.isArray(item.customizations) &&
+                        item.customizations.length > 0 ? (
+                          <span
+                            className="menu-customizations-badge"
+                            title={item.customizations
+                              .map(
+                                (g) =>
+                                  `${g.label}: ${(g.options || [])
+                                    .map((o) =>
+                                      typeof o === "string"
+                                        ? o
+                                        : o.price
+                                          ? `${o.name} (+₹${o.price})`
+                                          : o.name,
+                                    )
+                                    .join(", ")}`,
+                              )
+                              .join(" • ")}
+                          >
+                            {item.customizations
+                              .map((g) => g.label)
+                              .filter(Boolean)
+                              .join(", ")}
+                          </span>
+                        ) : (
+                          <span className="menu-customizations-badge menu-customizations-badge--none">
+                            Default
+                          </span>
+                        )}
+                      </td>
+
                       {!allVegMode && <td>{normalizeMenuType(item.type)}</td>}
 
                       <td className="menu-actions-cell">
                         <button
                           className="btn-primary"
-                          onClick={() => handleEditRow(index)}
+                          onClick={() => handleEditRow(item.id)}
                           disabled={isEditingMenu}
                         >
                           {rowIsEditing ? "Editing" : "Edit"}
                         </button>
                         <button
                           className="btn-primary"
-                          onClick={() => handleDelete(index)}
+                          onClick={() => handleDelete(item.id)}
                           disabled={isEditingMenu}
                           aria-disabled={isEditingMenu}
                         >
@@ -1277,6 +1632,46 @@ const MenuPage = () => {
           </div>
         </div>
       </div>
+
+      {showAllVegConfirm && (
+        <div
+          className="menu-allveg-confirm-overlay"
+          onClick={() => setShowAllVegConfirm(false)}
+        >
+          <div
+            className="menu-allveg-confirm-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3>Mark every item as Veg?</h3>
+            <p>
+              This will overwrite every non-veg item on the menu to Veg. This
+              can't be undone automatically — items would need to be switched
+              back individually.
+            </p>
+            <div className="menu-allveg-confirm-actions">
+              <button
+                type="button"
+                className="menu-allveg-confirm-btn menu-allveg-confirm-btn-ghost"
+                onClick={() => setShowAllVegConfirm(false)}
+                disabled={isApplyingAllVeg}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="menu-allveg-confirm-btn menu-allveg-confirm-btn-danger"
+                onClick={() => {
+                  setShowAllVegConfirm(false);
+                  handleAllVegToggle(true);
+                }}
+                disabled={isApplyingAllVeg}
+              >
+                {isApplyingAllVeg ? "Applying…" : "Yes, mark all as Veg"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
