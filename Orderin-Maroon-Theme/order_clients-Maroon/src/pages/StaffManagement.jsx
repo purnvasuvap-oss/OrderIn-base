@@ -7,6 +7,8 @@ import {
   Eye,
   EyeOff,
   X,
+  Trash2,
+  Settings as SettingsIcon,
   ChevronLeft as ArrowLeft,
   ChevronRight as ArrowRight,
   Download,
@@ -17,10 +19,13 @@ import "./StaffManagement.css";
 import { sanitizePhoneInput } from "../utils/phoneValidation";
 import {
   ROLES,
-  ZONES,
-  TEAMS,
   DAY_LABELS,
   subscribeStaff,
+  subscribeStaffConfig,
+  addZone,
+  removeZone,
+  addTeam,
+  removeTeam,
   addStaff,
   pauseStaff,
   restoreStaff,
@@ -72,18 +77,57 @@ const fmtClock = (ts) => {
   return date.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
 };
 
+// Zones/Teams are free-text, restaurant-defined — there's no fixed enum to
+// key off, so we can't hard-filter the dropdown by role. Instead, picking a
+// role auto-suggests the best-matching Zone/Team by name (e.g. Role
+// "Kitchen" -> a Zone containing "kitchen"), while leaving every option
+// still pickable in case the restaurant named things differently.
+const ROLE_ZONE_HINTS = {
+  Admin: ["management", "admin"],
+  "General Manager": ["management", "admin"],
+  Kitchen: ["kitchen"],
+  Floor: ["floor", "dining", "hall"],
+};
+const ROLE_TEAM_HINTS = {
+  Admin: ["security", "finance", "management"],
+  "General Manager": ["finance", "management"],
+  Kitchen: ["cooking", "kitchen"],
+  Floor: ["serving", "cleaning", "floor"],
+};
+
+/** First option whose name contains one of the given hint keywords (case-insensitive), or null. */
+const bestHintMatch = (options, hints) => {
+  if (!hints) return null;
+  for (const hint of hints) {
+    const found = options.find((o) => o.toLowerCase().includes(hint));
+    if (found) return found;
+  }
+  return null;
+};
+
 /* ======================= Add / Edit Staff modal ======================= */
-function StaffFormModal({ onClose, onConfirm }) {
+function StaffFormModal({ zones, teams, onClose, onConfirm, onManageZonesTeams }) {
   const [name, setName] = useState("");
   const [role, setRole] = useState("Floor");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [pin, setPin] = useState("");
-  const [zone, setZone] = useState(ZONES[0]);
-  const [team, setTeam] = useState(TEAMS[0]);
+  const [zone, setZone] = useState(() => bestHintMatch(zones, ROLE_ZONE_HINTS["Floor"]) || zones[0] || "");
+  const [team, setTeam] = useState(() => bestHintMatch(teams, ROLE_TEAM_HINTS["Floor"]) || teams[0] || "");
   const [jobRole, setJobRole] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+
+  // Re-suggest Zone/Team whenever the Access Role changes, so the two stay
+  // connected the way the client expects — the admin can still override
+  // either dropdown manually afterward.
+  useEffect(() => {
+    const zoneMatch = bestHintMatch(zones, ROLE_ZONE_HINTS[role]);
+    if (zoneMatch) setZone(zoneMatch);
+    const teamMatch = bestHintMatch(teams, ROLE_TEAM_HINTS[role]);
+    if (teamMatch) setTeam(teamMatch);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [role]);
 
   const handleConfirm = async () => {
     if (!name.trim()) {
@@ -124,7 +168,7 @@ function StaffFormModal({ onClose, onConfirm }) {
             <input value={name} onChange={(e) => setName(e.target.value)} autoFocus placeholder="e.g. Ravi Kumar" />
           </div>
           <div className="sm-form-group">
-            <label>Access Level</label>
+            <label>System Access Role</label>
             <select value={role} onChange={(e) => setRole(e.target.value)}>
               {ROLES.map((r) => (
                 <option key={r} value={r}>
@@ -132,32 +176,46 @@ function StaffFormModal({ onClose, onConfirm }) {
                 </option>
               ))}
             </select>
+            <p className="sm-field-hint">Controls what this person can see and do in the app.</p>
+          </div>
+
+          <div className="sm-form-divider">
+            Organization details (for scheduling &amp; directory only)
+            <button type="button" className="sm-inline-link" onClick={onManageZonesTeams}>
+              <SettingsIcon size={11} /> Manage list
+            </button>
+          </div>
+
+          <div className="sm-form-group">
+            <label>Job Title <span className="sm-optional">(optional)</span></label>
+            <input value={jobRole} onChange={(e) => setJobRole(e.target.value)} placeholder="e.g. Sous Chef" />
+            <p className="sm-field-hint">A descriptive title — does not change app permissions.</p>
           </div>
           <div className="sm-form-row">
             <div className="sm-form-group">
               <label>Zone</label>
               <select value={zone} onChange={(e) => setZone(e.target.value)}>
-                {ZONES.map((z) => (
+                {zones.length === 0 && <option value="">No zones set up yet</option>}
+                {zones.map((z) => (
                   <option key={z} value={z}>
                     {z}
                   </option>
                 ))}
               </select>
+              <p className="sm-field-hint">Auto-suggested from Access Role — change anytime.</p>
             </div>
             <div className="sm-form-group">
               <label>Team</label>
               <select value={team} onChange={(e) => setTeam(e.target.value)}>
-                {TEAMS.map((t) => (
+                {teams.length === 0 && <option value="">No teams set up yet</option>}
+                {teams.map((t) => (
                   <option key={t} value={t}>
                     {t}
                   </option>
                 ))}
               </select>
+              <p className="sm-field-hint">Auto-suggested from Access Role — change anytime.</p>
             </div>
-          </div>
-          <div className="sm-form-group">
-            <label>Job Role <span className="sm-optional">(optional)</span></label>
-            <input value={jobRole} onChange={(e) => setJobRole(e.target.value)} placeholder="e.g. Sous Chef" />
           </div>
           <div className="sm-form-group">
             <label>Phone</label>
@@ -188,6 +246,142 @@ function StaffFormModal({ onClose, onConfirm }) {
           </button>
           <button className="sm-btn sm-btn-gold" onClick={handleConfirm} disabled={saving}>
             {saving ? "Adding…" : "Add member"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ======================= Manage Zones & Teams modal ======================= */
+function ManageZonesTeamsModal({ zones, teams, onClose }) {
+  const [newZone, setNewZone] = useState("");
+  const [newTeam, setNewTeam] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+
+  const runAction = async (fn) => {
+    setBusy(true);
+    setError("");
+    try {
+      await fn();
+    } catch (err) {
+      setError("Failed: " + err.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleAddZone = () => {
+    if (!newZone.trim()) return;
+    runAction(async () => {
+      await addZone(newZone.trim());
+      setNewZone("");
+    });
+  };
+  const handleAddTeam = () => {
+    if (!newTeam.trim()) return;
+    runAction(async () => {
+      await addTeam(newTeam.trim());
+      setNewTeam("");
+    });
+  };
+
+  return (
+    <div className="sm-overlay" onClick={onClose}>
+      <div className="sm-modal sm-modal-small" onClick={(e) => e.stopPropagation()}>
+        <div className="sm-modal-head">
+          <h3>Manage Zones &amp; Teams</h3>
+          <button className="sm-icon-btn" onClick={onClose}>
+            <X size={18} />
+          </button>
+        </div>
+        <div className="sm-modal-body">
+          {error && <div className="sm-error">{error}</div>}
+          <p className="sm-hint" style={{ marginBottom: 12 }}>
+            These are this restaurant's own Zone and Team options — shown when adding staff. Removing one here
+            doesn't change any staff member already tagged with it.
+          </p>
+
+          <div className="sm-form-group">
+            <label>Zones</label>
+            <div className="sm-manage-list">
+              {zones.length === 0 && <div className="sm-hint">No zones yet.</div>}
+              {zones.map((z) => (
+                <span className="sm-manage-chip" key={z}>
+                  {z}
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => runAction(() => removeZone(z))}
+                    aria-label={`Remove zone ${z}`}
+                  >
+                    <Trash2 size={11} />
+                  </button>
+                </span>
+              ))}
+            </div>
+            <div className="sm-manage-add">
+              <input
+                value={newZone}
+                onChange={(e) => setNewZone(e.target.value)}
+                placeholder="Add a zone…"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleAddZone();
+                }}
+              />
+              <button
+                type="button"
+                className="sm-btn sm-btn-ghost sm-btn-xs"
+                disabled={busy || !newZone.trim()}
+                onClick={handleAddZone}
+              >
+                Add
+              </button>
+            </div>
+          </div>
+
+          <div className="sm-form-group">
+            <label>Teams</label>
+            <div className="sm-manage-list">
+              {teams.length === 0 && <div className="sm-hint">No teams yet.</div>}
+              {teams.map((t) => (
+                <span className="sm-manage-chip" key={t}>
+                  {t}
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => runAction(() => removeTeam(t))}
+                    aria-label={`Remove team ${t}`}
+                  >
+                    <Trash2 size={11} />
+                  </button>
+                </span>
+              ))}
+            </div>
+            <div className="sm-manage-add">
+              <input
+                value={newTeam}
+                onChange={(e) => setNewTeam(e.target.value)}
+                placeholder="Add a team…"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleAddTeam();
+                }}
+              />
+              <button
+                type="button"
+                className="sm-btn sm-btn-ghost sm-btn-xs"
+                disabled={busy || !newTeam.trim()}
+                onClick={handleAddTeam}
+              >
+                Add
+              </button>
+            </div>
+          </div>
+        </div>
+        <div className="sm-modal-foot">
+          <button className="sm-btn sm-btn-gold" onClick={onClose}>
+            Done
           </button>
         </div>
       </div>
@@ -271,6 +465,17 @@ function StaffTab({ staffList }) {
   const [revealedPins, setRevealedPins] = useState({});
   const [confirmTarget, setConfirmTarget] = useState(null); // { staff, mode: "pause"|"restore" }
   const [resetResult, setResetResult] = useState(null);
+  const [zones, setZones] = useState([]);
+  const [teams, setTeams] = useState([]);
+  const [showManageZonesTeams, setShowManageZonesTeams] = useState(false);
+
+  useEffect(() => {
+    const unsub = subscribeStaffConfig(({ zones, teams }) => {
+      setZones(zones);
+      setTeams(teams);
+    });
+    return () => unsub();
+  }, []);
 
   const filtered = useMemo(() => {
     let list = staffList;
@@ -294,7 +499,7 @@ function StaffTab({ staffList }) {
           <input placeholder="Search name or email…" value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
         <select className="sm-select" value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)}>
-          <option value="all">All roles</option>
+          <option value="all">All access roles</option>
           {ROLES.map((r) => (
             <option key={r} value={r}>
               {r}
@@ -302,6 +507,9 @@ function StaffTab({ staffList }) {
           ))}
         </select>
         <div className="sm-spacer" />
+        <button className="sm-btn sm-btn-ghost" onClick={() => setShowManageZonesTeams(true)}>
+          <SettingsIcon size={14} /> Zones &amp; Teams
+        </button>
         <button className="sm-btn sm-btn-gold" onClick={() => setShowAdd(true)}>
           <Plus size={15} /> Add Staff
         </button>
@@ -310,7 +518,7 @@ function StaffTab({ staffList }) {
       <div className="sm-table">
         <div className="sm-thead">
           <span>Employee</span>
-          <span>Role &amp; Access</span>
+          <span>Access Role</span>
           <span>Contact</span>
           <span>Login PIN</span>
           <span>Status</span>
@@ -331,15 +539,29 @@ function StaffTab({ staffList }) {
                     <span className="sm-emp-email">{s.email || "No email on file"}</span>
                     {(s.zone || s.team || s.jobRole) && (
                       <span className="sm-emp-tags">
-                        {s.zone && <span className="sm-tag sm-tag-zone">{s.zone}</span>}
-                        {s.team && <span className="sm-tag sm-tag-team">{s.team}</span>}
-                        {s.jobRole && <span className="sm-tag sm-tag-jobrole">{s.jobRole}</span>}
+                        {s.jobRole && (
+                          <span className="sm-tag sm-tag-jobrole">
+                            <span className="sm-tag-label">Job:</span> {s.jobRole}
+                          </span>
+                        )}
+                        {s.zone && (
+                          <span className="sm-tag sm-tag-zone">
+                            <span className="sm-tag-label">Zone:</span> {s.zone}
+                          </span>
+                        )}
+                        {s.team && (
+                          <span className="sm-tag sm-tag-team">
+                            <span className="sm-tag-label">Team:</span> {s.team}
+                          </span>
+                        )}
                       </span>
                     )}
                   </span>
                 </span>
                 <span>
-                  <span className={`sm-rolebadge sm-rolebadge-${meta.key}`}>{meta.label}</span>
+                  <span className={`sm-rolebadge sm-rolebadge-${meta.key}`} title="System access role — controls app permissions">
+                    {meta.label}
+                  </span>
                 </span>
                 <span className="sm-cell-contact">{s.phone || "—"}</span>
                 <span className="sm-cell-pin">
@@ -389,7 +611,7 @@ function StaffTab({ staffList }) {
       </div>
 
       <div className="sm-access-note">
-        <div className="sm-access-note-title">What each role can access</div>
+        <div className="sm-access-note-title">Access Roles — what each one can do in the app</div>
         <div className="sm-access-grid">
           <div>
             <span className="sm-rolebadge sm-rolebadge-admin">Admin</span>
@@ -408,16 +630,27 @@ function StaffTab({ staffList }) {
             <p>Orders, tables, and manual order entry.</p>
           </div>
         </div>
+        <p className="sm-access-note-footer">
+          The <strong>Job title / Zone / Team</strong> tags shown next to a name are for scheduling and directory
+          organization only — they don't change what a staff member can access. Only the Access Role above does.
+        </p>
       </div>
 
       {showAdd && (
         <StaffFormModal
+          zones={zones}
+          teams={teams}
           onClose={() => setShowAdd(false)}
+          onManageZonesTeams={() => setShowManageZonesTeams(true)}
           onConfirm={async ({ name, role, phone, email, pin, zone, team, jobRole }) => {
             await addStaff({ name, role, phone, email, pin, zone, team, jobRole });
             setShowAdd(false);
           }}
         />
+      )}
+
+      {showManageZonesTeams && (
+        <ManageZonesTeamsModal zones={zones} teams={teams} onClose={() => setShowManageZonesTeams(false)} />
       )}
 
       {confirmTarget && confirmTarget.mode === "pause" && (

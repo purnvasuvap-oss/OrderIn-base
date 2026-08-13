@@ -22,6 +22,8 @@ import {
   query,
   where,
   serverTimestamp,
+  arrayUnion,
+  arrayRemove,
 } from "firebase/firestore";
 
 const RESTAURANT_ID = "orderin_restaurant_4";
@@ -42,15 +44,19 @@ const attendanceDocId = (dateKey, staffId) => `${dateKey}_${staffId}`;
 const attendanceDocRef = (dateKey, staffId) =>
   doc(db, "Restaurant", RESTAURANT_ID, "attendance", attendanceDocId(dateKey, staffId));
 
+// This restaurant's own Zone/Team list — a single config doc rather than a
+// per-restaurant collection, since one restaurant only ever needs one set.
+const staffConfigDocRef = () => doc(db, "Restaurant", RESTAURANT_ID, "settings", "staffConfig");
+
 export const ROLES = ["Admin", "General Manager", "Kitchen", "Floor"];
 export const DAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
-// Zone / Team are organisational tags distinct from `role` (which is the
-// access-level enum above). Team is a flat list, not filtered/gated by the
-// selected Zone — per user confirmation every team is available under
-// every zone despite conceptually sitting "under" one.
-export const ZONES = ["Floor", "Kitchen", "Dining Hall", "Management"];
-export const TEAMS = [
+// Seed values used only the first time a restaurant's staffConfig doc is
+// created (see subscribeStaffConfig) — after that, the restaurant's own
+// zones/teams (editable via addZone/addTeam/removeZone/removeTeam) are the
+// source of truth, not this list.
+const DEFAULT_ZONES = ["Floor", "Kitchen", "Dining Hall", "Management"];
+const DEFAULT_TEAMS = [
   "Cooking Team",
   "Finance Team",
   "Cleaning Team",
@@ -121,6 +127,72 @@ export const shiftWeekKey = (weekKey, deltaWeeks) => {
   const dt = new Date(y, m - 1, d);
   dt.setDate(dt.getDate() + deltaWeeks * 7);
   return isoDate(dt);
+};
+
+/* ---------------------------------------------------------------------- */
+/* Staff config (this restaurant's own Zones / Teams)                     */
+/* ---------------------------------------------------------------------- */
+
+/**
+ * Subscribe to this restaurant's Zone/Team lists. Doc shape:
+ *   { zones: string[], teams: string[] }
+ * If the config doc doesn't exist yet (new restaurant), seeds it with
+ * DEFAULT_ZONES/DEFAULT_TEAMS so there's something to pick from immediately
+ * — after that first write, the restaurant's own edits are authoritative.
+ */
+export const subscribeStaffConfig = (onUpdate) => {
+  try {
+    return onSnapshot(
+      staffConfigDocRef(),
+      (snap) => {
+        if (!snap.exists()) {
+          setDoc(staffConfigDocRef(), { zones: DEFAULT_ZONES, teams: DEFAULT_TEAMS }, { merge: true }).catch(
+            (err) => console.error("Failed to seed staffConfig:", err),
+          );
+          if (typeof onUpdate === "function") onUpdate({ zones: DEFAULT_ZONES, teams: DEFAULT_TEAMS });
+          return;
+        }
+        const data = snap.data();
+        if (typeof onUpdate === "function") {
+          onUpdate({ zones: data.zones || [], teams: data.teams || [] });
+        }
+      },
+      (error) => {
+        console.error("onSnapshot error (staffConfig):", error);
+        if (typeof onUpdate === "function") onUpdate({ zones: DEFAULT_ZONES, teams: DEFAULT_TEAMS });
+      },
+    );
+  } catch (error) {
+    console.error("Failed to subscribe to staffConfig:", error);
+    if (typeof onUpdate === "function") onUpdate({ zones: DEFAULT_ZONES, teams: DEFAULT_TEAMS });
+    return () => {};
+  }
+};
+
+/** Add a new Zone to this restaurant's list (no-op if it already exists). */
+export const addZone = async (zone) => {
+  const name = (zone || "").trim();
+  if (!name) return;
+  await setDoc(staffConfigDocRef(), { zones: arrayUnion(name) }, { merge: true });
+};
+
+/** Remove a Zone from this restaurant's list. Existing staff already tagged
+ * with it keep the tag on their record — this only affects future picks. */
+export const removeZone = async (zone) => {
+  await setDoc(staffConfigDocRef(), { zones: arrayRemove(zone) }, { merge: true });
+};
+
+/** Add a new Team to this restaurant's list (no-op if it already exists). */
+export const addTeam = async (team) => {
+  const name = (team || "").trim();
+  if (!name) return;
+  await setDoc(staffConfigDocRef(), { teams: arrayUnion(name) }, { merge: true });
+};
+
+/** Remove a Team from this restaurant's list. Existing staff already tagged
+ * with it keep the tag on their record — this only affects future picks. */
+export const removeTeam = async (team) => {
+  await setDoc(staffConfigDocRef(), { teams: arrayRemove(team) }, { merge: true });
 };
 
 /* ---------------------------------------------------------------------- */

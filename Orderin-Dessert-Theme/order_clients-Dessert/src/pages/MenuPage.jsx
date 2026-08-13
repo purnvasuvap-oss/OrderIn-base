@@ -12,6 +12,7 @@ import {
   deleteField,
 } from "firebase/firestore";
 import storageService from "../services/storageService";
+import { getInventoryItemOptions } from "../services/menuInventoryService";
 import { useNotification } from "../hooks/useNotification";
 import AvailableDishesIcon from "./landingpage/Available_dishes.svg";
 import CategoryIcon from "./landingpage/Category.svg";
@@ -81,6 +82,9 @@ const generateCustomizationId = () =>
 const generateOptionId = () =>
   `opt-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
 
+const generateRecipeLineId = () =>
+  `recipe-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+
 const MenuPage = () => {
   const navigate = useNavigate();
   const { addActivity } = useNotification();
@@ -111,6 +115,14 @@ const MenuPage = () => {
   const [selectedAvailability, setSelectedAvailability] = useState("All");
   const [vegOnlyFilter, setVegOnlyFilter] = useState(false);
   const [showAllVegConfirm, setShowAllVegConfirm] = useState(false);
+  const [inventoryOptions, setInventoryOptions] = useState([]);
+
+  useEffect(() => {
+    getInventoryItemOptions()
+      .then(setInventoryOptions)
+      .catch((error) => console.error("Error loading inventory items for recipe editor:", error));
+  }, []);
+
   useEffect(() => {
     if (!menuNotice) return undefined;
 
@@ -283,6 +295,14 @@ const MenuPage = () => {
             ),
           }))
         : [],
+      recipe: Array.isArray(item.recipe)
+        ? item.recipe.map((line) => ({
+            id: line.id || generateRecipeLineId(),
+            itemId: line.itemId || "",
+            quantity: String(line.quantity ?? ""),
+            unit: line.unit || "",
+          }))
+        : [],
     };
     setEditedItems([single]);
   };
@@ -298,6 +318,7 @@ const MenuPage = () => {
       description: "",
       type: TYPE_VEG,
       customizations: [],
+      recipe: [],
     };
     setIsAdding(true);
     setEditingIndex(null);
@@ -330,6 +351,19 @@ const MenuPage = () => {
                   .filter((opt) => opt.name),
               }))
               .filter((group) => group.label && group.options.length > 0)
+          : [],
+        recipe: Array.isArray(item.recipe)
+          ? item.recipe
+              .map((line) => {
+                const option = inventoryOptions.find((o) => o.id === line.itemId);
+                return {
+                  itemId: line.itemId || "",
+                  itemName: option?.name || line.itemId || "",
+                  quantity: priceToNumber(line.quantity),
+                  unit: line.unit || option?.unit || "",
+                };
+              })
+              .filter((line) => line.itemId && line.quantity > 0)
           : [],
       }));
 
@@ -844,6 +878,55 @@ const MenuPage = () => {
     });
   };
 
+  const handleAddRecipeLine = () => {
+    setEditedItems((current) => {
+      const draft = current[0] || {};
+      const lines = Array.isArray(draft.recipe) ? draft.recipe : [];
+      const firstOption = inventoryOptions[0];
+      return [
+        {
+          ...draft,
+          recipe: [
+            ...lines,
+            {
+              id: generateRecipeLineId(),
+              itemId: firstOption?.id || "",
+              quantity: "",
+              unit: firstOption?.unit || "",
+            },
+          ],
+        },
+      ];
+    });
+  };
+
+  const handleRemoveRecipeLine = (lineIndex) => {
+    setEditedItems((current) => {
+      const draft = current[0] || {};
+      const lines = Array.isArray(draft.recipe) ? draft.recipe : [];
+      return [{ ...draft, recipe: lines.filter((_, idx) => idx !== lineIndex) }];
+    });
+  };
+
+  const handleRecipeLineChange = (lineIndex, field, value) => {
+    setEditedItems((current) => {
+      const draft = current[0] || {};
+      const lines = Array.isArray(draft.recipe) ? draft.recipe : [];
+      const nextLines = lines.map((line, idx) => {
+        if (idx !== lineIndex) return line;
+        if (field === "itemId") {
+          const option = inventoryOptions.find((o) => o.id === value);
+          return { ...line, itemId: value, unit: option?.unit || line.unit };
+        }
+        if (field === "quantity") {
+          return { ...line, quantity: sanitizePriceInput(value) };
+        }
+        return { ...line, [field]: value };
+      });
+      return [{ ...draft, recipe: nextLines }];
+    });
+  };
+
   const handleDraftFileChange = (field, file) => {
     setEditedItems((current) => [
       { ...(current[0] || {}), [`${field}File`]: file },
@@ -1346,6 +1429,65 @@ const MenuPage = () => {
                 </button>
               </div>
             </div>
+
+            <div className="menu-editor-field menu-customizations-field">
+              <span>Recipe (Inventory Ingredients)</span>
+              <div className="menu-customizations-builder">
+                {inventoryOptions.length === 0 && (
+                  <p className="menu-customizations-empty">
+                    No inventory items found yet — add stock in Inventory Management first.
+                  </p>
+                )}
+                {inventoryOptions.length > 0 && (activeEditItem.recipe || []).length === 0 && (
+                  <p className="menu-customizations-empty">
+                    Not linked to inventory yet. Stock won't be auto-deducted for this dish until you add
+                    ingredients below.
+                  </p>
+                )}
+                {(activeEditItem.recipe || []).map((line, idx) => (
+                  <div className="menu-customization-option-row" key={line.id}>
+                    <select
+                      className="menu-editor-control"
+                      value={line.itemId}
+                      onChange={(e) => handleRecipeLineChange(idx, "itemId", e.target.value)}
+                    >
+                      <option value="">Select ingredient</option>
+                      {inventoryOptions.map((opt) => (
+                        <option key={opt.id} value={opt.id}>
+                          {opt.name}
+                        </option>
+                      ))}
+                    </select>
+                    <div className="menu-customization-option-price">
+                      <input
+                        type="text"
+                        inputMode="decimal"
+                        value={line.quantity}
+                        onChange={(e) => handleRecipeLineChange(idx, "quantity", e.target.value)}
+                        placeholder="Qty per dish"
+                      />
+                      <span>{line.unit || ""}</span>
+                    </div>
+                    <button
+                      type="button"
+                      className="menu-customization-option-remove"
+                      onClick={() => handleRemoveRecipeLine(idx)}
+                      aria-label="Remove ingredient"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  className="menu-customization-add"
+                  onClick={handleAddRecipeLine}
+                  disabled={inventoryOptions.length === 0}
+                >
+                  + Add Ingredient
+                </button>
+              </div>
+            </div>
           </div>
 
           <div className="menu-editor-footer">
@@ -1574,6 +1716,17 @@ const MenuPage = () => {
                       </td>
 
                       <td>
+                        {Array.isArray(item.recipe) && item.recipe.length > 0 && (
+                          <span
+                            className="menu-customizations-badge"
+                            title={item.recipe
+                              .map((r) => `${r.itemName || r.itemId}: ${r.quantity} ${r.unit || ""}`.trim())
+                              .join(" • ")}
+                            style={{ marginRight: 4 }}
+                          >
+                            🔗 Linked
+                          </span>
+                        )}
                         {Array.isArray(item.customizations) &&
                         item.customizations.length > 0 ? (
                           <span

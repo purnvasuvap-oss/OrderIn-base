@@ -1,15 +1,3 @@
-/* =========================================================================
-   Staff Management — layout/visual language ported from the supplied static
-   demo mockup (stat strip, tabs, staff table, roster grid, punch-clock),
-   recolored to match THIS app's established literal-hex convention (see
-   TableManagement.css / Orders.css / RejectReasonModal.css):
-     surfaces  #261013 (panel) / #3F0B11 (bg)
-     text      #F5DFBB
-     accents   #B5823F / #F2BB46
-     danger    #e53935
-   All custom properties are scoped under .staff-mgmt-page (not :root) so
-   nothing here leaks into other pages.
-   ========================================================================= */
 .staff-mgmt-page {
   --sm-bg: #3f0b11;
   --sm-panel: #261013;
@@ -403,6 +391,7 @@
 .sm-tag {
   display: inline-flex;
   align-items: center;
+  gap: 3px;
   font-size: 10px;
   font-weight: 600;
   letter-spacing: 0.01em;
@@ -412,6 +401,10 @@
   border: 1px solid var(--sm-line);
   color: var(--sm-text-2);
   white-space: nowrap;
+}
+.sm-tag-label {
+  opacity: 0.65;
+  font-weight: 500;
 }
 .sm-tag-zone {
   color: var(--sm-gm);
@@ -515,6 +508,17 @@
   font-size: 12.5px;
   color: var(--sm-text-2);
   line-height: 1.4;
+}
+.sm-access-note-footer {
+  margin: 16px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--sm-line);
+  font-size: 12px;
+  color: var(--sm-text-3);
+  line-height: 1.5;
+}
+.sm-access-note-footer strong {
+  color: var(--sm-text-2);
 }
 
 /* ---- legend (roster) ---- */
@@ -866,6 +870,93 @@
 .sm-optional {
   color: var(--sm-text-3);
   font-weight: 400;
+}
+.sm-field-hint {
+  margin: 6px 0 0;
+  font-size: 11px;
+  color: var(--sm-text-3);
+  line-height: 1.4;
+}
+.sm-form-divider {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 18px 0 14px;
+  padding-top: 14px;
+  border-top: 1px dashed var(--sm-line-2);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--sm-text-3);
+}
+.sm-inline-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  color: var(--sm-gold);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: none;
+  letter-spacing: normal;
+  padding: 0;
+}
+.sm-inline-link:hover {
+  text-decoration: underline;
+}
+
+.sm-manage-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+  min-height: 24px;
+}
+.sm-manage-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 6px 4px 10px;
+  border-radius: 999px;
+  background: var(--sm-panel-2);
+  border: 1px solid var(--sm-line);
+  color: var(--sm-text);
+}
+.sm-manage-chip button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: var(--sm-text-3);
+  padding: 3px;
+  border-radius: 50%;
+}
+.sm-manage-chip button:hover {
+  background: var(--sm-danger-t);
+  color: var(--sm-danger);
+}
+.sm-manage-add {
+  display: flex;
+  gap: 8px;
+}
+.sm-manage-add input {
+  flex: 1;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--sm-line-2);
+  background: var(--sm-bg);
+  color: var(--sm-text);
+  font-size: 13px;
+}
+.sm-manage-add input:focus {
+  outline: 2px solid var(--sm-gold);
+  outline-offset: 1px;
 }
 .sm-form-group input,
 .sm-form-group select {

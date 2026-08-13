@@ -7,6 +7,7 @@ import {
 import { db } from "../firebase";
 import "../pages/Orders.css";
 import { sanitizePhoneInput, isValidPhoneNumber } from "../utils/phoneValidation";
+import { deductInventoryForOrder } from "../services/menuInventoryService";
 
 // Extracted verbatim (no behavior changes) from Orders.jsx, where it used to
 // be defined inline as a non-exported function component. Moved here so it
@@ -166,6 +167,14 @@ function ManualOrderModal({ isOpen, onClose, menuItems, onOrderCreated, initialT
           pastOrders: pastOrders,
         },
         { merge: true },
+      );
+
+      // Manual orders are treated as accepted the instant they're created
+      // (see isOrderAccepted in orderService) — they never go through the
+      // Pending -> Accept step that normally triggers deduction, so it
+      // happens here instead. Non-fatal: the order is already saved.
+      deductInventoryForOrder(selectedItems).catch((err) =>
+        console.error("Inventory deduction failed for manual order:", err),
       );
 
       onOrderCreated();

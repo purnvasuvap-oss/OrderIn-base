@@ -1,6 +1,7 @@
 import { db } from "../firebase";
 import { collection, getDocs, doc, updateDoc, getDoc, onSnapshot, runTransaction } from "firebase/firestore";
 import { parseOrderTimestamp } from "../utils/orderDateTime";
+import { deductInventoryForOrder } from "./menuInventoryService";
 
 const RESTAURANT_ID = "orderin_restaurant_3";
 
@@ -941,13 +942,27 @@ export const updateOrderStatus = async (phoneNumber, orderIdOrIndex, newStatus, 
  * the Pending queue waiting on a restaurant decision.
  */
 export const acceptOrder = async (phoneNumber, orderIdOrIndex, restaurantId = RESTAURANT_ID) => {
+  let acceptedItems = null;
   try {
     await mutateOrderByIdOrIndex(phoneNumber, orderIdOrIndex, restaurantId, (order) => {
       order.status = "Preparing";
+      acceptedItems = order.items;
     });
   } catch (error) {
     console.error("Error accepting order:", error);
     throw error;
+  }
+
+  // Deduct linked-recipe inventory now that the kitchen has committed to
+  // making the order. Non-fatal: the order is already accepted, so a
+  // deduction failure shouldn't roll that back or block the kitchen —
+  // it's just logged for staff to reconcile stock manually if needed.
+  if (Array.isArray(acceptedItems) && acceptedItems.length > 0) {
+    try {
+      await deductInventoryForOrder(acceptedItems);
+    } catch (err) {
+      console.error("Inventory deduction failed for accepted order:", err);
+    }
   }
 };
 
