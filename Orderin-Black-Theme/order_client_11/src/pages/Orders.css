@@ -114,7 +114,7 @@ body,html,#root{height:100%;margin:0}
 /* ---- list / table ---- */
 .orders-page .orders-panel{background:var(--op-surface);border:1px solid var(--op-line);border-radius:var(--op-radius);box-shadow:var(--op-shadow);overflow:hidden}
 .orders-page .tbl-head,
-.orders-page .orow{display:grid;grid-template-columns:132px 1.2fr 2fr 1.1fr 154px 84px;gap:20px;align-items:start}
+.orders-page .orow{display:grid;grid-template-columns:132px 1.2fr 2fr 154px 84px;gap:20px;align-items:start}
 .orders-page .tbl-head{padding:12px 22px;background:var(--op-surface-2);border-bottom:1.5px solid var(--maroon);position:sticky;top:0;z-index:5;align-items:center}
 .orders-page .tbl-head span{font-size:11px;text-transform:uppercase;letter-spacing:.07em;font-weight:700;color:var(--ink-3)}
 .orders-page .tbl-head .th-time{text-align:right}
@@ -598,7 +598,7 @@ body,html,#root{height:100%;margin:0}
    ========================================================================= */
 @media (max-width:1160px){
   .orders-page .tbl-head,
-  .orders-page .orow{grid-template-columns:112px 1fr 1.7fr 1fr 148px 68px;gap:14px}
+  .orders-page .orow{grid-template-columns:112px 1fr 1.7fr 148px 68px;gap:14px}
   .orders-page .board{grid-template-columns:repeat(3,1fr)}
   .orders-page .stats-strip{grid-template-columns:repeat(3,1fr)}
 }

@@ -3,11 +3,27 @@ import { useNavigate } from "react-router-dom";
 import { Filter } from "lucide-react";
 import routes from "../routes";
 import "./Finance.css";
-import { formatTime, subscribeTodaysOrders, subscribeAllCustomerOrders, subscribeOnlineCustomerOrders } from "../services/orderService";
+import {
+  formatTime,
+  subscribeTodaysOrders,
+  subscribeAllCustomerOrders,
+  subscribeOnlineCustomerOrders,
+  acceptOrder,
+  rejectOrder,
+  isOrderAccepted,
+  isOrderPaymentCollected,
+} from "../services/orderService";
+import { collection, getDocs } from "firebase/firestore";
+import { db } from "../firebase";
 import BillModal from "../components/BillModal";
+import RejectReasonModal from "../components/RejectReasonModal";
+import ManualOrderModal from "../components/ManualOrderModal";
 import SalesTrendsPanel from "../components/SalesTrends/SalesTrendsPanel";
 import OrderAnalyticsPanel from "../components/OrderAnalytics/OrderAnalyticsPanel";
 import CustomerLoyaltyPanel from "../components/CustomerLoyalty/CustomerLoyaltyPanel";
+
+const money = (n) =>
+  "₹" + (Number(n) || 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 function App() {
   const navigate = useNavigate();
@@ -30,6 +46,10 @@ function App() {
   const [debugOpen, setDebugOpen] = useState({});
   const [billOrder, setBillOrder] = useState(null);
   const [showBillModal, setShowBillModal] = useState(false);
+  const [updatingOrderId, setUpdatingOrderId] = useState(null);
+  const [rejectingOrderId, setRejectingOrderId] = useState(null);
+  const [showManualOrderModal, setShowManualOrderModal] = useState(false);
+  const [menuItems, setMenuItems] = useState([]);
 
   // EARNINGS CALCULATION state
   const [earningsFilterType, setEarningsFilterType] = useState('today');
@@ -55,6 +75,61 @@ function App() {
 
   const toggleDebug = (id) => {
     setDebugOpen(prev => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  // Menu items for the "+ Manual Order" modal, mirroring Orders.jsx's fetch
+  // so a manual order can also be taken directly from Daily Transit.
+  useEffect(() => {
+    const fetchMenuItems = async () => {
+      try {
+        const menuRef = collection(db, "Restaurant", "orderin_restaurant_4", "menu");
+        const menuSnapshot = await getDocs(menuRef);
+        setMenuItems(menuSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
+      } catch (err) {
+        console.error("Error fetching menu items:", err);
+      }
+    };
+    fetchMenuItems();
+  }, []);
+
+  const handleAcceptOrder = async (order) => {
+    try {
+      setUpdatingOrderId(order.id);
+      await acceptOrder(order.phoneNumber, order.id);
+      setDailyTransitOrders((prev) =>
+        prev.map((o) => (o.id === order.id ? { ...o, status: "Preparing" } : o)),
+      );
+    } catch (err) {
+      console.error("Error accepting order:", err);
+    } finally {
+      setUpdatingOrderId(null);
+    }
+  };
+
+  // Clicking Reject opens RejectReasonModal so staff pick a reason first;
+  // the actual rejectOrder call happens in handleConfirmReject below.
+  const handleRejectOrder = (order) => {
+    setRejectingOrderId(order.id);
+  };
+
+  const handleConfirmReject = async (reason) => {
+    const orderId = rejectingOrderId;
+    if (!orderId) return;
+    const order = dailyTransitOrders.find((o) => o.id === orderId);
+    if (!order) {
+      setRejectingOrderId(null);
+      return;
+    }
+    try {
+      setUpdatingOrderId(orderId);
+      await rejectOrder(order.phoneNumber, order.id, reason);
+      setDailyTransitOrders((prev) => prev.filter((o) => o.id !== orderId));
+    } catch (err) {
+      console.error("Error rejecting order:", err);
+    } finally {
+      setUpdatingOrderId(null);
+      setRejectingOrderId(null);
+    }
   };
 
   const formatCurrency = (value) => {
@@ -628,6 +703,11 @@ function App() {
       {/* DAILY TRANSIT TAB */}
       {activeTab === "DAILY TRANSIT" && (
         <div className="fin-orders-container">
+          <div className="fin-transit-toolbar">
+            <button className="fin-manual-order-btn" onClick={() => setShowManualOrderModal(true)}>
+              + Manual Order
+            </button>
+          </div>
           {loadingTransit ? (
             <div style={{ padding: "40px", textAlign: "center", color: "#666" }}>
               Loading daily transit orders...
@@ -647,6 +727,7 @@ function App() {
                     <th>Specifications</th>
                     <th>Cost</th>
                     <th>Paid</th>
+                    <th>Accept / Reject</th>
                     <th>Time</th>
                     <th>Print</th>
                   </tr>
@@ -704,7 +785,34 @@ function App() {
                             <div className="fin-payment-status-text">
                                 {order.paid}
                             </div>
+                            {isOrderPaymentCollected(order) ? (
+                              <span className="fin-pay-badge paid">Paid {money(order.paidAmount)}</span>
+                            ) : (
+                              <span className="fin-pay-badge unpaid">Unpaid</span>
+                            )}
                           </div>
+                        </td>
+                        <td>
+                          {isOrderAccepted(order) ? (
+                            <span className="fin-accepted-pill">Accepted</span>
+                          ) : (
+                            <div className="fin-accept-box">
+                              <button
+                                className="fin-acc-btn"
+                                disabled={updatingOrderId === order.id}
+                                onClick={() => handleAcceptOrder(order)}
+                              >
+                                {updatingOrderId === order.id ? "…" : "Accept"}
+                              </button>
+                              <button
+                                className="fin-rej-btn"
+                                disabled={updatingOrderId === order.id}
+                                onClick={() => handleRejectOrder(order)}
+                              >
+                                {updatingOrderId === order.id ? "…" : "Reject"}
+                              </button>
+                            </div>
+                          )}
                         </td>
                         <td>
                           <strong>{formatTime(order.timestamp)}</strong>
@@ -738,7 +846,7 @@ function App() {
                       </tr>
                       {debugOpen[order.id] && (
                         <tr key={`${order.id}-debug`}>
-                          <td colSpan={8} style={{ background: '#fafafa', padding: 16 }}>
+                          <td colSpan={9} style={{ background: '#fafafa', padding: 16 }}>
                             <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontSize: 12, maxHeight: 300, overflow: 'auto' }}>
 {JSON.stringify(order, null, 2)}
                             </pre>
@@ -1007,6 +1115,19 @@ function App() {
       {showBillModal && (
         <BillModal order={billOrder} open={showBillModal} onClose={() => setShowBillModal(false)} />
       )}
+
+      <RejectReasonModal
+        isOpen={rejectingOrderId !== null}
+        onClose={() => setRejectingOrderId(null)}
+        onConfirm={handleConfirmReject}
+      />
+
+      <ManualOrderModal
+        isOpen={showManualOrderModal}
+        onClose={() => setShowManualOrderModal(false)}
+        menuItems={menuItems}
+        onOrderCreated={() => setShowManualOrderModal(false)}
+      />
     </div>
   );
 }

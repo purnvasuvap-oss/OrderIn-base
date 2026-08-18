@@ -6,13 +6,10 @@ import {
   updateOrderStatus,
   formatTime,
   subscribeRecentOrders,
-  acceptOrder,
-  rejectOrder,
   isOrderAccepted,
   isOrderQueued,
   isOrderActive,
   isOrderDelivered,
-  isOrderPaymentCollected,
   isOrderWithinLast24Hours,
   normalizeOrderStatus,
 } from "../services/orderService";
@@ -25,20 +22,19 @@ import { collection, getDocs } from "firebase/firestore";
 import { db } from "../firebase";
 import OrderItemListModal from "../components/OrderItemListModal/OrderItemListModal";
 import AllOrdersOverlay from "../components/AllOrdersOverlay/AllOrdersOverlay";
-import RejectReasonModal from "../components/RejectReasonModal";
 import ManualOrderModal from "../components/ManualOrderModal";
 
 /**
- * Status control — three behaviours, unified into one component (ported
+ * Status control — two behaviours, unified into one component (ported
  * from the Olive Green admin app's redesign):
- *  • not accepted (queued)  -> Accept / Reject
  *  • accepted + editing     -> <select>
  *  • accepted               -> status pill (click to edit)
- * Uses this app's own isOrderAccepted / normalizeOrderStatus (status-based,
- * with manual orders always accepted) rather than Olive's
- * `awaitingConfirmation` flag, since that field is never written here.
+ * Accept/Reject now happens in Finance's Daily Transit tab, not here — an
+ * order only reaches this page once its payment is collected, so an
+ * unaccepted-but-paid order shows a plain, non-interactive "Pending" pill
+ * instead of an Accept/Reject box.
  */
-function StatusPill({ status, onStatusChange, onAccept, onReject, orderId, isLoading, order }) {
+function StatusPill({ status, onStatusChange, orderId, isLoading, order }) {
   const [isEditing, setIsEditing] = useState(false);
   const normalizedStatus = normalizeOrderStatus(status);
   const key = normalizedStatus.toLowerCase().replace(/\s+/g, "-");
@@ -56,24 +52,10 @@ function StatusPill({ status, onStatusChange, onAccept, onReject, orderId, isLoa
 
   if (!accepted && !isEditing) {
     return (
-      <div className="accept-box">
-        <button
-          type="button"
-          className="acc-btn"
-          onClick={() => onAccept(orderId)}
-          disabled={isLoading}
-        >
-          {isLoading ? "…" : "Accept"}
-        </button>
-        <button
-          type="button"
-          className="rej-btn"
-          onClick={() => onReject(orderId)}
-          disabled={isLoading}
-        >
-          {isLoading ? "…" : "Reject"}
-        </button>
-      </div>
+      <span className="pill pending" title="Awaiting acceptance in Finance → Daily Transit">
+        <span className="pill-dot" />
+        Pending
+      </span>
     );
   }
 
@@ -172,11 +154,6 @@ function Orders() {
   const [menuItems, setMenuItems] = useState([]);
   const [itemsListOrder, setItemsListOrder] = useState(null);
   const [showAllOrdersOverlay, setShowAllOrdersOverlay] = useState(false);
-  // Order id awaiting a rejection reason from the RejectReasonModal
-  // (null = closed). Clicking Reject no longer rejects immediately — it
-  // opens the modal so staff can pick a reason first, and only the modal's
-  // confirm actually rejects.
-  const [rejectingOrderId, setRejectingOrderId] = useState(null);
 
   // UI-only state (never touches Firestore)
   const [view, setView] = useState("list"); // "list" | "board"
@@ -262,20 +239,17 @@ function Orders() {
       );
       // Rejected/cancelled/declined orders are excluded from the live list
       // entirely — they're a terminal, non-editable state and shouldn't
-      // clutter the working order queue. Unpaid/unknown payment states are
-      // kept (unlike the old table view) so they can surface in the
-      // "Queued" stat card / board lane while awaiting payment or accept.
+      // clutter the working order queue. Unpaid orders are also excluded
+      // here: Accept/Reject and payment collection now happen in Finance's
+      // Daily Transit tab, and an order only surfaces on this page once its
+      // payment has actually been collected (paid, or manual — manual
+      // orders are marked paid automatically when created).
       const rejectedStatuses = new Set(["rejected", "cancelled", "canceled", "declined"]);
       const displayOrders = fetchedOrders.filter((o) => {
         const paymentStatus = String(o.paymentStatus || "").toLowerCase();
         const orderStatus = String(o.status || "").toLowerCase().trim();
         if (rejectedStatuses.has(orderStatus)) return false;
-        return (
-          paymentStatus === "paid" ||
-          paymentStatus === "manual" ||
-          paymentStatus === "unpaid" ||
-          paymentStatus === "unknown"
-        );
+        return paymentStatus === "paid" || paymentStatus === "manual";
       });
       setOrders(displayOrders);
       setError(null);
@@ -325,58 +299,6 @@ function Orders() {
       setError("Failed to update order status");
     } finally {
       setUpdatingOrderId(null);
-    }
-  };
-
-  const handleAccept = async (orderId) => {
-    try {
-      setUpdatingOrderId(orderId);
-      const order = orders.find((o) => o.id === orderId);
-      if (!order) {
-        setError("Order not found");
-        return;
-      }
-      await acceptOrder(order.phoneNumber, order.id);
-      setOrders((prevOrders) =>
-        prevOrders.map((o) =>
-          o.id === orderId ? { ...o, status: "Preparing" } : o,
-        ),
-      );
-    } catch (err) {
-      console.error("Error accepting order:", err);
-      setError("Failed to accept order");
-    } finally {
-      setUpdatingOrderId(null);
-    }
-  };
-
-  // Clicking Reject no longer rejects immediately — it opens
-  // RejectReasonModal (via rejectingOrderId) so staff pick a reason first.
-  const handleReject = (orderId) => {
-    setRejectingOrderId(orderId);
-  };
-
-  // Fires only when the RejectReasonModal is confirmed with a reason.
-  const handleConfirmReject = async (reason) => {
-    const orderId = rejectingOrderId;
-    if (!orderId) return;
-    try {
-      setUpdatingOrderId(orderId);
-      const order = orders.find((o) => o.id === orderId);
-      if (!order) {
-        setError("Order not found");
-        return;
-      }
-      await rejectOrder(order.phoneNumber, order.id, reason);
-      // Rejected orders are a terminal, excluded state — drop it from the
-      // live list immediately rather than waiting on the next snapshot.
-      setOrders((prevOrders) => prevOrders.filter((o) => o.id !== orderId));
-    } catch (err) {
-      console.error("Error rejecting order:", err);
-      setError("Failed to reject order");
-    } finally {
-      setUpdatingOrderId(null);
-      setRejectingOrderId(null);
     }
   };
 
@@ -441,7 +363,7 @@ function Orders() {
 
   const titleMap = {
     all: ["Total Orders", "All orders from the last 24 hours"],
-    queued: ["Queued Orders", "Awaiting accept / payment"],
+    queued: ["Queued Orders", "Awaiting acceptance in Daily Transit"],
     active: ["Active Orders", "In the kitchen right now"],
     completed: ["Served Orders", "Delivered today"],
     large: ["Large Orders", "Orders with 5 or more items"],
@@ -450,34 +372,11 @@ function Orders() {
 
   const statCards = [
     { key: "all", label: "Total Orders", cap: "Last 24 hours", count: total, color: "#F2BB46", icon: TotalOrdersIcon },
-    { key: "queued", label: "Queued", cap: "Awaiting accept / payment", count: queued, color: "#2F6FB0", icon: QueuedOrdersIcon },
+    { key: "queued", label: "Queued", cap: "Awaiting acceptance", count: queued, color: "#2F6FB0", icon: QueuedOrdersIcon },
     { key: "active", label: "Active", cap: "In the kitchen", count: active, color: "#B5823F", icon: ActiveOrdersIcon },
     { key: "completed", label: "Served", cap: "Delivered today", count: completed, color: "#3FA34D", icon: CompletedIcon },
     { key: "large", label: "Large Orders", cap: "5+ items", count: largeCount, color: "#D2691E", icon: null },
   ];
-
-  /* ---------- payment cell renderer ---------- */
-  const PaymentBlock = ({ o }) => {
-    const isPaid = isOrderPaymentCollected(o);
-    const cost = Number(o.totalCost) || 0;
-    const paid = Number(o.paidAmount) || 0;
-    return (
-      <div className="pay">
-        <div className="pay-cost">{money(cost)}</div>
-        {isPaid ? (
-          <span className="pbadge paid">Paid {money(paid)}</span>
-        ) : (
-          <span className="pbadge unpaid">Unpaid</span>
-        )}
-        <div className="pay-meta">
-          <span className="pay-chip">{o.paymentType || "Online"}</span>
-          {o.verificationCode && o.verificationCode !== "-" && (
-            <span className="pay-code">#{o.verificationCode}</span>
-          )}
-        </div>
-      </div>
-    );
-  };
 
   return (
     <div className={`orders-page ${view === "board" ? "boardmode" : ""}`}>
@@ -586,7 +485,6 @@ function Orders() {
             <span>Order</span>
             <span>Customer</span>
             <span>Items</span>
-            <span>Payment</span>
             <span>Status</span>
             <span className="th-time">Time</span>
           </div>
@@ -647,17 +545,10 @@ function Orders() {
                   </div>
 
                   <div className="cell">
-                    <span className="cell-label">Payment</span>
-                    <PaymentBlock o={o} />
-                  </div>
-
-                  <div className="cell">
                     <span className="cell-label">Status</span>
                     <StatusPill
                       status={o.status}
                       onStatusChange={handleStatusChange}
-                      onAccept={handleAccept}
-                      onReject={handleReject}
                       orderId={o.id}
                       isLoading={updatingOrderId === o.id}
                       order={o}
@@ -728,14 +619,7 @@ function Orders() {
                             {delivered ? (
                               <span className="served-mini">Served ✓</span>
                             ) : !accepted ? (
-                              <div className="accept-box row">
-                                <button className="acc-btn" disabled={updatingOrderId === o.id} onClick={() => handleAccept(o.id)}>
-                                  {updatingOrderId === o.id ? "…" : "Accept"}
-                                </button>
-                                <button className="rej-btn" disabled={updatingOrderId === o.id} onClick={() => handleReject(o.id)}>
-                                  {updatingOrderId === o.id ? "…" : "Reject"}
-                                </button>
-                              </div>
+                              <span className="await-mini">Awaiting acceptance in Daily Transit</span>
                             ) : activeOrder ? (
                               <button
                                 className="adv-btn"
@@ -776,12 +660,6 @@ function Orders() {
           onClose={() => setShowAllOrdersOverlay(false)}
         />
       )}
-
-      <RejectReasonModal
-        isOpen={rejectingOrderId !== null}
-        onClose={() => setRejectingOrderId(null)}
-        onConfirm={handleConfirmReject}
-      />
     </div>
   );
 }

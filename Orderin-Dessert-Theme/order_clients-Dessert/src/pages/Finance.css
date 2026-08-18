@@ -447,6 +447,89 @@ td {
   min-width: 100px;
 }
 
+/* Paid/Unpaid badge + Accept/Reject controls for Daily Transit — moved
+   here from Orders.jsx, which no longer shows a payment column or
+   accept/reject buttons (an order only reaches Orders once it's paid). */
+.fin-pay-badge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 20px;
+  padding: 3px 10px;
+}
+.fin-pay-badge.paid {
+  color: #F2BB46;
+  background: rgba(242, 187, 70, 0.16);
+}
+.fin-pay-badge.unpaid {
+  color: #e08a80;
+  background: rgba(181, 52, 43, 0.18);
+}
+
+.fin-accept-box {
+  display: flex;
+  gap: 6px;
+}
+.fin-acc-btn,
+.fin-rej-btn {
+  font-size: 12px;
+  font-weight: 700;
+  border-radius: 8px;
+  padding: 6px 10px;
+  border: none;
+  cursor: pointer;
+}
+.fin-acc-btn {
+  background: #3FA34D;
+  color: #fff;
+}
+.fin-acc-btn:hover {
+  filter: brightness(1.1);
+}
+.fin-rej-btn {
+  background: rgba(181, 52, 43, 0.18);
+  color: #e08a80;
+}
+.fin-rej-btn:hover {
+  background: #b3261e;
+  color: #fff;
+}
+.fin-acc-btn:disabled,
+.fin-rej-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.fin-accepted-pill {
+  display: inline-flex;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 20px;
+  padding: 4px 10px;
+  background: rgba(242, 187, 70, 0.16);
+  color: #F2BB46;
+}
+
+.fin-transit-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 14px;
+}
+.fin-manual-order-btn {
+  background: #B5823F;
+  color: #F5DFBB;
+  border: none;
+  padding: 10px 18px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+}
+.fin-manual-order-btn:hover {
+  filter: brightness(1.1);
+  background: #9c6c34;
+}
+
 .print-btn {
   border: none;
   background: none;
