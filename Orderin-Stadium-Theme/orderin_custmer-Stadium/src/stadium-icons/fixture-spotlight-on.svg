@@ -1,0 +1,24 @@
+<svg width="64" height="72" viewBox="0 0 64 72" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="fixOn" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#5a626e"/>
+      <stop offset="100%" stop-color="#1c2128"/>
+    </linearGradient>
+    <radialGradient id="lensGlow" cx="50%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#fff4d6"/>
+      <stop offset="45%" stop-color="#ffe08a"/>
+      <stop offset="100%" stop-color="#f2bb46"/>
+    </radialGradient>
+    <radialGradient id="bloom" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ffe08a" stop-opacity="0.65"/>
+      <stop offset="100%" stop-color="#ffe08a" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <circle cx="32" cy="14" r="26" fill="url(#bloom)"/>
+  <path d="M20 66 L14 40 Q14 30 24 30 L40 30 Q50 30 50 40 L44 66" fill="none" stroke="url(#fixOn)" stroke-width="5" stroke-linecap="round"/>
+  <rect x="16" y="64" width="32" height="6" rx="2" fill="url(#fixOn)"/>
+  <rect x="16" y="10" width="32" height="28" rx="8" fill="url(#fixOn)" stroke="#f2bb46" stroke-width="1.5"/>
+  <ellipse cx="32" cy="12" rx="13" ry="5" fill="url(#lensGlow)"/>
+  <circle cx="20" cy="24" r="1.6" fill="#9a9ba0"/>
+  <circle cx="44" cy="24" r="1.6" fill="#9a9ba0"/>
+</svg>

@@ -1,0 +1,344 @@
+/* ===== Chocolate Theme Palette ===== */
+:root {
+  --bg-main: #3F0B11;
+  --bg-card: #261013;
+
+  --primary: #F2BB46;
+  --primary-dark: #B5823F;
+
+  --border: rgba(242, 187, 70, 0.18);
+  --hover-bg: rgba(242, 187, 70, 0.08);
+
+  --text-main: #F5DFBB;
+  --text-muted: rgba(245, 223, 187, 0.72);
+
+  --accent: #F2BB46;
+}
+
+.orderin-about-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  background: var(--bg-main);
+  color: var(--text-main);
+  font-family: Georgia, serif;
+}
+
+/* ================= Back Button ================= */
+
+.back-button-container {
+  padding: 12px 20px;
+  background: var(--bg-main);
+}
+
+.back-button-top {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--accent);
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: .95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: .3s;
+}
+
+.back-button-top:hover {
+  background: var(--primary-dark);
+  color: var(--text-main);
+  transform: translateX(-3px);
+  box-shadow: 0 6px 18px rgba(242,187,70,.18);
+}
+
+a,
+div,
+h1,
+h2,
+h3,
+header,
+section,
+img{
+  transition:.3s;
+}
+
+img{
+  max-width:100%;
+  height:auto;
+}
+
+/* ================= Header ================= */
+
+.orderin-header{
+  background: linear-gradient(135deg,#261013,#3F0B11);
+  padding:20px;
+  text-align:center;
+  border-bottom:1px solid var(--border);
+  box-shadow:0 8px 24px rgba(0,0,0,.35);
+}
+
+.logo{
+  max-width:180px;
+  filter:drop-shadow(0 12px 24px rgba(0,0,0,.35));
+}
+
+.logo:hover{
+  transform:translateY(-3px) scale(1.03);
+}
+
+.by-text{
+  color:var(--text-muted);
+}
+
+.Clogo{
+  max-height:50px;
+  background:#261013;
+  border:1px solid var(--border);
+  padding:8px 20px;
+  border-radius:16px;
+}
+
+.Clogo2{
+  max-height:50px;
+}
+
+/* ================= Main ================= */
+
+.orderin-main{
+  flex:1;
+  width:100%;
+}
+
+/* ================= Sections ================= */
+
+.orderin-section{
+  max-width:1100px;
+  margin:50px auto;
+  padding:40px;
+  background:var(--bg-card);
+  border-radius:16px;
+  border:1px solid var(--border);
+  box-shadow:0 14px 34px rgba(0,0,0,.30);
+}
+
+.orderin-section:hover{
+  box-shadow:0 20px 42px rgba(0,0,0,.38);
+}
+
+.section-header{
+  display:flex;
+  align-items:center;
+  gap:16px;
+}
+
+.about-header{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin-bottom:20px;
+}
+
+.about-header h2{
+  margin:0;
+  color:var(--text-main);
+}
+
+.logo2{
+  width:120px;
+}
+
+/* ================= Services ================= */
+
+.services-grid{
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:25px;
+}
+
+.service-card{
+  padding:25px;
+  border-radius:14px;
+  background:rgba(245,223,187,.04);
+  border:1px solid var(--border);
+  color:var(--text-main);
+  box-shadow:0 4px 14px rgba(0,0,0,.25);
+}
+
+.service-card:hover{
+  transform:translateY(-8px);
+  border-color:var(--primary);
+  box-shadow:0 10px 28px rgba(242,187,70,.12);
+}
+
+.service-card.with-image{
+  display:flex;
+  align-items:center;
+  gap:18px;
+}
+
+.service-img{
+  width:120px;
+  background:#fff;
+  border-radius:10px;
+  padding:6px;
+}
+
+.service-content{
+  text-align:left;
+}
+
+.service-content h3{
+  color:var(--accent);
+  margin:0;
+}
+
+.service-content p{
+  color:var(--text-muted);
+  margin-top:8px;
+}
+
+/* ================= Contact ================= */
+
+.contact-label{
+  color:var(--text-main);
+  font-weight:700;
+}
+
+.contact-link{
+  color:var(--accent);
+  font-weight:700;
+  text-decoration:none;
+}
+
+.contact-link:hover{
+  color:var(--primary-dark);
+}
+
+/* ================= Explore ================= */
+
+.explore-container{
+  display:flex;
+  align-items:center;
+  gap:16px;
+}
+
+.explore-container a{
+  text-decoration:none;
+}
+
+.explore-text{
+  color:var(--text-main);
+}
+
+.explore-subtext{
+  color:var(--text-muted);
+  font-style:italic;
+}
+
+/* ================= Animations ================= */
+
+@keyframes fadeInMove{
+  from{
+    opacity:0;
+    transform:translateY(24px);
+  }
+  to{
+    opacity:1;
+    transform:translateY(0);
+  }
+}
+
+.animated-section{
+  opacity:0;
+  animation:fadeInMove .9s ease forwards;
+}
+
+.animated-section-delay-1{
+  animation-delay:.1s;
+}
+
+.animated-section-delay-2{
+  animation-delay:.3s;
+}
+
+.animated-section-delay-3{
+  animation-delay:.5s;
+}
+
+/* ================= Footer ================= */
+
+.orderin-footer{
+  background:#261013;
+  color:var(--text-main);
+  text-align:center;
+  padding:20px;
+  border-top:1px solid var(--border);
+}
+
+.orderin-footer p{
+  margin:0;
+  color:var(--text-muted);
+}
+
+/* ================= Mobile ================= */
+
+@media(max-width:640px){
+
+  .back-button-container{
+    padding:10px 14px;
+  }
+
+  .back-button-top{
+    font-size:.85rem;
+    padding:8px 12px;
+  }
+
+  .orderin-section{
+    margin:30px 14px;
+    padding:24px;
+  }
+
+  .services-grid{
+    grid-template-columns:1fr;
+  }
+
+  .service-card.with-image{
+    flex-direction:column;
+    text-align:center;
+  }
+
+  .service-content{
+    text-align:center;
+  }
+
+  .service-img{
+    max-width:220px;
+  }
+
+  .logo{
+    max-width:150px;
+  }
+
+  .Clogo{
+    max-height:44px;
+  }
+
+  .logo2{
+    width:90px;
+  }
+
+}
+
+@media(max-width:345px){
+
+  .Clogo{
+    padding:8px 10px;
+  }
+
+  .back-button-top{
+    font-size:.8rem;
+    padding:6px 10px;
+  }
+
+}

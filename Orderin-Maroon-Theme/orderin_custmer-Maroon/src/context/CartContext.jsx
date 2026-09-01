@@ -1,0 +1,535 @@
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { db } from '../firebaseConfig';
+import { getPlaceholder } from '../utils/placeholder';
+import { resolveImageUrl } from '../utils/storageResolver';
+import { createOrderTimestamp } from '../utils/orderDateTime';
+import { parsePriceValue, sumOptionPrices, buildCartKey, calculateFinalBilling } from '../utils/pricing';
+import { safeGetUser } from '../utils/userStorage';
+import { menuStore } from '../menu/menuStore';
+
+// Menu products list, preferring the reactive menuStore (populated the same
+// moment Menu.jsx sets window.__menu_products__, but not dependent on the
+// window global staying intact) with the window value as a fallback only.
+const getMenuProducts = () => {
+  const fromStore = menuStore.get();
+  if (Array.isArray(fromStore) && fromStore.length > 0) return fromStore;
+  return (typeof window !== 'undefined' && Array.isArray(window.__menu_products__)) ? window.__menu_products__ : null;
+};
+
+const CartContext = createContext();
+
+export const useCart = () => {
+  return useContext(CartContext);
+};
+
+// Helper functions to manage temporary order state in localStorage
+// Export stable function references pointing at methods of a frozen object to avoid
+// export-shape changes that can break Vite Fast Refresh.
+const orderTempState = {
+  save(orderId, cartItems, billing, paymentStatus = 'unpaid') {
+    const tempState = {
+      orderin_orderId: orderId,
+      orderin_cart: JSON.stringify(cartItems),
+      orderin_billing: JSON.stringify(billing),
+      orderin_paymentStatus: paymentStatus
+    };
+    Object.entries(tempState).forEach(([key, value]) => {
+      localStorage.setItem(key, value);
+    });
+    console.log('Order temp state saved to localStorage:', tempState);
+  },
+  load() {
+    const orderId = localStorage.getItem('orderin_orderId');
+    const cartStr = localStorage.getItem('orderin_cart');
+    const billingStr = localStorage.getItem('orderin_billing');
+    const paymentStatus = localStorage.getItem('orderin_paymentStatus');
+
+    if (!orderId || !cartStr || !billingStr) {
+      return null; // No valid temp state
+    }
+
+    try {
+      return {
+        orderin_orderId: orderId,
+        orderin_cart: JSON.parse(cartStr),
+        orderin_billing: JSON.parse(billingStr),
+        orderin_paymentStatus: paymentStatus || 'unpaid'
+      };
+    } catch (err) {
+      console.error('Error parsing temp order state:', err);
+      return null;
+    }
+  },
+  clear() {
+    const keys = ['orderin_orderId', 'orderin_cart', 'orderin_billing', 'orderin_paymentStatus', 'orderin_countercode_orderId', 'orderin_countercode_paymentMethod'];
+    keys.forEach(key => localStorage.removeItem(key));
+    console.log('Order temp state cleared from localStorage');
+  }
+};
+
+// Freeze to keep export shape stable across HMR
+try { Object.freeze(orderTempState); } catch (e) { /* ignore */ }
+
+export function saveOrderTempState(...args) { return orderTempState.save(...args); }
+export function loadOrderTempState() { return orderTempState.load(); }
+export function clearOrderTempState() { return orderTempState.clear(); }
+
+// Helper to persist cart items to localStorage
+const saveCartToLocalStorage = (items) => {
+  try {
+    localStorage.setItem('cart_items', JSON.stringify(items));
+    console.log('Cart persisted to localStorage:', items.length, 'items');
+  } catch (err) {
+    console.error('Error saving cart to localStorage:', err);
+  }
+};
+
+// Helper to load cart items from localStorage
+const loadCartFromLocalStorage = () => {
+  try {
+    const cartStr = localStorage.getItem('cart_items');
+    if (cartStr) {
+      const items = JSON.parse(cartStr);
+      // Normalize items to ensure `image` property exists (match against menu `products` if available)
+      const normalized = (items || []).map(i => normalizeCartItem(i));
+      console.log('Cart restored from localStorage:', normalized.length, 'items (normalized)');
+      return normalized;
+    }
+  } catch (err) {
+    console.error('Error loading cart from localStorage:', err);
+  }
+  return null;
+};
+
+const loadOrderHistoryFromLocalStorage = () => {
+  try {
+    const savedOrderHistory = localStorage.getItem('orderHistory');
+    if (!savedOrderHistory) return [];
+    const parsed = JSON.parse(savedOrderHistory);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (err) {
+    console.error('Error loading order history from localStorage:', err);
+    return [];
+  }
+};
+
+// Ensure the cart item has expected fields like `image` and normalized price
+const PLACEHOLDER_IMAGE = getPlaceholder('No Image');
+const normalizeCartItem = (item) => {
+  if (!item) return item;
+  try {
+    // If image present, use it
+    if (item.image && String(item.image).trim() !== '') return item;
+
+    // Try to match against the shared menu products list
+    const globalProducts = getMenuProducts();
+    let resolvedImage = '';
+    if (globalProducts && Array.isArray(globalProducts)) {
+      const match = globalProducts.find(p => String(p.name || '').toLowerCase() === String(item.name || '').toLowerCase());
+      if (match) resolvedImage = match.image || match.imageUrl || match.imageURL || match.image_url || match.img || '';
+    }
+    return { ...item, image: (resolvedImage || item.image || PLACEHOLDER_IMAGE) };
+  } catch (err) {
+    return { ...item, image: item.image || PLACEHOLDER_IMAGE };
+  }
+};
+
+// Try to find a menu product by name using a normalization similar to Profile
+const normalizeForMatch = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim();
+
+const findProductInWindow = (name) => {
+  try {
+    const products = getMenuProducts();
+    if (!products || !name) return null;
+    const n = normalizeForMatch(name);
+    // exact
+    let match = products.find(p => normalizeForMatch(p.name) === n);
+    if (match) return match;
+    // substring
+    match = products.find(p => normalizeForMatch(p.name).includes(n) || n.includes(normalizeForMatch(p.name)));
+    if (match) return match;
+    // token overlap
+    const tokens = n.split(' ').filter(Boolean);
+    let best = null; let bestScore = 0;
+    for (const p of products) {
+      const pTokens = normalizeForMatch(p.name).split(' ').filter(Boolean);
+      const common = tokens.filter(t => pTokens.includes(t)).length;
+      if (common > bestScore) { bestScore = common; best = p; }
+    }
+    if (bestScore > 0) return best;
+  } catch (err) {
+    return null;
+  }
+  return null;
+};
+
+// Replace cart items with canonical menu details when menu becomes available
+const updateCartItemsWithMenu = (cartItems) => {
+  try {
+    const products = getMenuProducts();
+    if (!products) return cartItems;
+    return (cartItems || []).map(ci => {
+      const match = findProductInWindow(ci.name || ci.productName || ci.itemName || '');
+      if (match) {
+        const resolvedImage = match.image || match.imageUrl || match.imageURL || match.image_url || match.img || ci.image || PLACEHOLDER_IMAGE;
+        return { ...match, quantity: ci.quantity || 1, instructions: ci.instructions || '', image: (resolvedImage || PLACEHOLDER_IMAGE) };
+      }
+      // no match; ensure image exists
+      return { ...ci, image: ci.image || PLACEHOLDER_IMAGE };
+    });
+  } catch (err) {
+    return cartItems;
+  }
+};
+
+// Helper to clear cart from localStorage
+const clearCartFromLocalStorage = () => {
+  try {
+    localStorage.removeItem('cart_items');
+    console.log('Cart cleared from localStorage');
+  } catch (err) {
+    console.error('Error clearing cart from localStorage:', err);
+  }
+};
+
+export const CartProvider = ({ children, tableNo = '1' }) => {
+  const [cartItems, setCartItems] = useState(() => {
+    // Load cart from localStorage on initial mount
+    const savedCart = loadCartFromLocalStorage();
+    return savedCart || [];
+  });
+  const [orderHistory, setOrderHistory] = useState(() => loadOrderHistoryFromLocalStorage());
+  const [currentTableNo, setCurrentTableNo] = useState(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const tableFromUrl = urlParams.get('table');
+    if (tableFromUrl) {
+      localStorage.setItem('tableNumber', tableFromUrl);
+      return tableFromUrl;
+    }
+    return localStorage.getItem('tableNumber') || tableNo;
+  });
+
+  // Persist cartItems to localStorage whenever they change
+  useEffect(() => {
+    saveCartToLocalStorage(cartItems);
+  }, [cartItems]);
+
+  // Background-resolve any gs:// images that may be present on cart items (run once per changed item)
+  useEffect(() => {
+    let cancelled = false;
+    const resolveImages = async () => {
+      try {
+        const targets = cartItems.filter(it => it && it.image && String(it.image).startsWith('gs://'));
+        if (!targets.length) return;
+        await Promise.all(targets.map(async (it) => {
+          try {
+            const r = await resolveImageUrl(it.image);
+            if (cancelled) return;
+            if (r) setCartItems(prev => prev.map(ci => (ci.name === it.name ? { ...ci, image: r } : ci)));
+          } catch (e) { /* ignore per-item */ }
+        }));
+      } catch (e) { /* ignore */ }
+    };
+    if (cartItems && cartItems.length) resolveImages();
+    return () => { cancelled = true; };
+  }, [cartItems]);
+
+  // Load temporary order state on mount (e.g., after page refresh during payment)
+  useEffect(() => {
+    const tempState = loadOrderTempState();
+    if (tempState) {
+      console.log('Restoring temp order state from localStorage:', tempState);
+      // Restore cart items from temp state
+      // Normalize cart items when restoring
+      const restored = (tempState.orderin_cart || []).map(i => normalizeCartItem(i));
+      // If the menu is already loaded, upgrade items to canonical menu data
+      // (updateCartItemsWithMenu is a no-op and returns cartItems as-is if not).
+      const upgraded = updateCartItemsWithMenu(restored);
+      setCartItems(upgraded);
+      // Note: orderId is used by Payments/CounterCode components via sessionStorage if needed
+    }
+  }, []);
+
+  // If the menu is loaded later, listen for the 'menu:loaded' event to update cart items
+  useEffect(() => {
+    const handler = (e) => {
+      try {
+        setCartItems(prev => updateCartItemsWithMenu(prev));
+        console.log('CartContext: updated cart items with loaded menu');
+      } catch (err) {
+        console.error('Error updating cart items after menu load', err);
+      }
+    };
+    if (typeof window !== 'undefined') {
+      window.addEventListener('menu:loaded', handler);
+      // also run immediately if menu is already present
+      if (getMenuProducts()) handler();
+    }
+    return () => {
+      if (typeof window !== 'undefined') window.removeEventListener('menu:loaded', handler);
+    };
+  }, []);
+
+  // Save orderHistory to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('orderHistory', JSON.stringify(orderHistory));
+  }, [orderHistory]);
+
+  const addToCart = (item, quantity, instructions, selectedOptions = []) => {
+    const cartKey = buildCartKey(item.name, selectedOptions);
+    const effectivePrice = parsePriceValue(item.price) + sumOptionPrices(selectedOptions);
+    const existingItem = cartItems.find(cartItem => cartItem.cartKey === cartKey);
+    if (existingItem) {
+      setCartItems(cartItems.map(cartItem =>
+        cartItem.cartKey === cartKey
+          ? { ...cartItem, quantity: cartItem.quantity + quantity, instructions: instructions || cartItem.instructions }
+          : cartItem
+      ));
+    } else {
+      setCartItems(prev => {
+        const newItems = [...prev, { ...item, quantity, instructions: instructions || '', selectedOptions, effectivePrice, cartKey }];
+        return newItems;
+      });
+    }
+
+    // Resolve gs:// image in background and update cart item when available
+    (async () => {
+      try {
+        // Accept alternate field name 'image_url'
+        const img = item.image || item.imageURL || item.image_url || '';
+        if (img && String(img).startsWith('gs://')) {
+          const resolved = await resolveImageUrl(img);
+          if (resolved) {
+            setCartItems(prev => prev.map(ci => (ci.cartKey === cartKey ? { ...ci, image: resolved } : ci)));
+          }
+        }
+      } catch (e) { /* ignore */ }
+    })();
+  };
+
+  const updateQuantity = (cartKey, quantity) => {
+    setCartItems(prev => prev.map(item =>
+      item.cartKey === cartKey ? { ...item, quantity: Math.max(1, quantity) } : item
+    ));
+  };
+
+  const updateInstructions = (cartKey, instructions) => {
+    setCartItems(prev => prev.map(item =>
+      item.cartKey === cartKey ? { ...item, instructions } : item
+    ));
+  };
+
+  // Re-picks the customization chips for an existing cart line. Since the cart key is
+  // derived from name+selections, changing selections gives the line a new key — if that
+  // key already matches another line, the two are merged instead of left as duplicates.
+  const updateSelectedOptions = (cartKey, newSelectedOptions) => {
+    setCartItems(prev => {
+      const target = prev.find(ci => ci.cartKey === cartKey);
+      if (!target) return prev;
+
+      const newCartKey = buildCartKey(target.name, newSelectedOptions);
+      const newEffectivePrice = parsePriceValue(target.price) + sumOptionPrices(newSelectedOptions);
+
+      if (newCartKey === cartKey) {
+        return prev.map(ci =>
+          ci.cartKey === cartKey ? { ...ci, selectedOptions: newSelectedOptions, effectivePrice: newEffectivePrice } : ci
+        );
+      }
+
+      const mergeTarget = prev.find(ci => ci.cartKey === newCartKey);
+      if (mergeTarget) {
+        return prev
+          .filter(ci => ci.cartKey !== cartKey)
+          .map(ci =>
+            ci.cartKey === newCartKey ? { ...ci, quantity: ci.quantity + target.quantity } : ci
+          );
+      }
+
+      return prev.map(ci =>
+        ci.cartKey === cartKey
+          ? { ...ci, selectedOptions: newSelectedOptions, effectivePrice: newEffectivePrice, cartKey: newCartKey }
+          : ci
+      );
+    });
+  };
+
+  const removeFromCart = (cartKey) => {
+    const updatedItems = cartItems.filter(item => item.cartKey !== cartKey);
+    setCartItems(updatedItems);
+
+    // Also update the temporary order state if it exists
+    // This ensures removed items don't reappear on page refresh
+    const tempState = loadOrderTempState();
+    if (tempState) {
+      const updatedCart = tempState.orderin_cart.filter(item => item.cartKey !== cartKey);
+      saveOrderTempState(
+        tempState.orderin_orderId,
+        updatedCart,
+        tempState.orderin_billing,
+        tempState.orderin_paymentStatus
+      );
+      console.log('Updated temp order state after item removal:', updatedCart.length, 'items');
+    }
+  };
+
+  const getTotalPrice = () => {
+    return cartItems.reduce((total, item) => {
+      const num = item.effectivePrice ?? parsePriceValue(item.price);
+      return total + (num * item.quantity);
+    }, 0).toFixed(2);
+  };
+
+  const clearCart = () => {
+    setCartItems([]);
+    clearCartFromLocalStorage();
+  };
+
+  const placeOrder = (paymentMethod, orderData = null) => {
+    // If orderData is provided (from Cart.jsx checkout), use it directly
+    if (orderData) {
+      setOrderHistory(prev => [...prev, { ...orderData, paymentMethod }]);
+      return orderData;
+    }
+
+    const subtotal = cartItems.reduce((sum, item) => {
+      const num = parseFloat(String(item.price || '').replace(/[^0-9.\-]/g, '')) || 0;
+      return sum + (num * item.quantity);
+    }, 0);
+    const billing = calculateFinalBilling(subtotal, paymentMethod);
+
+    const orderTimestamp = createOrderTimestamp();
+
+    // Create order object
+    const order = {
+      id: Date.now(),
+      items: cartItems,
+      subtotal: billing.subtotal.toFixed(2),
+      taxes: billing.taxes.toFixed(2),
+      packing: billing.packing,
+      discount: billing.discount,
+      total: billing.total.toFixed(2),
+      paymentMethod,
+      status: 'Pending',
+      tableNo: currentTableNo, // Use the current table number from URL
+      time: orderTimestamp.time,
+      timestamp: orderTimestamp.timestamp,
+      createdAt: orderTimestamp.createdAt,
+      createdAtMs: orderTimestamp.createdAtMs
+    };
+
+    // Add to order history but DON'T clear cart yet
+    setOrderHistory(prev => [...prev, order]);
+
+    // Cart will be cleared only after payment is marked successful
+    // clearCart();
+
+    return order;
+  };
+
+  const markPaymentSuccessful = (orderId, paymentDetails = {}) => {
+    const idsMatch = (left, right) => String(left) === String(right);
+    const pendingOrderBackupRaw =
+      sessionStorage.getItem('pendingOrderForFirestore') ||
+      localStorage.getItem('pendingOrderForFirestore');
+
+    // Find the order and mark it as paid
+    setOrderHistory(prev => prev.map(order =>
+      idsMatch(order.id, orderId) ? { ...order, status: 'Paid' } : order
+    ));
+    // Now clear the cart after successful payment (both in-memory and localStorage)
+    clearCart();
+    clearOrderTempState(); // Also clear the temporary payment-stage state
+
+    // Update Firestore to mark order as paid
+    const updateOrderInFirestore = async () => {
+      try {
+        const user = safeGetUser();
+        if (!user || !user.phone) return;
+        const phoneNumber = user.phone;
+
+        const customerRef = doc(db, "Restaurant", "orderin_restaurant_4", "customers", phoneNumber);
+        const customerSnap = await getDoc(customerRef);
+
+        const data = customerSnap.exists() ? customerSnap.data() : {};
+        const pastOrders = Array.isArray(data.pastOrders) ? data.pastOrders : [];
+        const pendingOrderBackup = (() => {
+          try {
+            return pendingOrderBackupRaw ? JSON.parse(pendingOrderBackupRaw) : null;
+          } catch (err) {
+            console.warn("Could not parse pending order backup:", err);
+            return null;
+          }
+        })();
+        const backupOrder = pendingOrderBackup?.order && idsMatch(pendingOrderBackup.order.id, orderId)
+          ? pendingOrderBackup.order
+          : null;
+
+        // Find and update the order with matching ID
+        let foundOrder = false;
+        const updatedOrders = pastOrders.map(order => {
+          if (!idsMatch(order.id, orderId)) return order;
+          foundOrder = true;
+          return Object.fromEntries(
+            Object.entries({
+              ...order,
+              ...paymentDetails,
+              paymentStatus: 'paid',
+              paidAt: order.paidAt || new Date().toISOString(),
+              paymentTimestamp: order.paymentTimestamp || paymentDetails.paymentTimestamp || new Date().toISOString(),
+            }).filter(([, value]) => value !== undefined)
+          );
+        });
+
+        if (!foundOrder && backupOrder) {
+          updatedOrders.push(Object.fromEntries(
+            Object.entries({
+              ...backupOrder,
+              ...paymentDetails,
+              paymentStatus: 'paid',
+              paidAt: new Date().toISOString(),
+              paymentTimestamp: paymentDetails.paymentTimestamp || new Date().toISOString(),
+            }).filter(([, value]) => value !== undefined)
+          ));
+          console.warn("Recovered missing Firestore order from pending backup:", orderId);
+        }
+
+        if (!foundOrder && !backupOrder) {
+          console.warn("Order not found in Firestore and no pending backup exists:", orderId);
+          return;
+        }
+
+        await setDoc(customerRef, { pastOrders: updatedOrders, lastOrderAt: new Date() }, { merge: true });
+        sessionStorage.removeItem('pendingOrderForFirestore');
+        localStorage.removeItem('pendingOrderForFirestore');
+        console.log("Order marked as paid in Firestore:", orderId);
+      } catch (err) {
+        console.error("Error updating payment status in Firestore:", err);
+      }
+    };
+
+    updateOrderInFirestore();
+  };
+
+  return (
+    <CartContext.Provider value={{
+      cartItems,
+      addToCart,
+      updateQuantity,
+      updateInstructions,
+      updateSelectedOptions,
+      removeFromCart,
+      getTotalPrice,
+      clearCart,
+      placeOrder,
+      markPaymentSuccessful,
+      orderHistory,
+      currentTableNo,
+      saveOrderTempState,
+      loadOrderTempState,
+      clearOrderTempState
+    }}>
+      {children}
+    </CartContext.Provider>
+  );
+};

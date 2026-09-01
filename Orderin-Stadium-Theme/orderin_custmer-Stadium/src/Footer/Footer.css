@@ -1,0 +1,181 @@
+.footer-bar {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 50px;
+  background-color: #1c2128;
+  padding: 5px;
+  border-top: 1px solid #333333;
+}
+
+.icon-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 60px;
+  height: 60px;
+  background-color: transparent;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+  margin-top: -15px;
+}
+
+.icon-container:hover {
+  transform: scale(1.05);
+  background-color: #333333;
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.icon-container.active {
+  background-color: #F2BB46 ;
+  color: #1E1E1E;
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(242, 187, 70, 0.2);
+}
+
+.icon-container.active:hover {
+  background-color: #d8bc80 ;
+}
+
+.footer-icon {
+  font-size: 20px;
+  margin-bottom: 2px;
+  color: #F2BB46;
+}
+
+.footer-icon-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  margin-bottom: 2px;
+}
+
+.footer-icon-wrap .footer-icon {
+  margin-bottom: 0;
+}
+
+.cart-count-badge {
+  position: absolute;
+  top: -9px;
+  right: -13px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: #E11D36;
+  color: #FFFFFF !important;
+  border: 2px solid #E7E5D8;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px !important;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: 0;
+  box-shadow: 0 3px 8px rgba(225, 29, 54, 0.35);
+}
+
+.icon-container.active .footer-icon {
+  color: #1E1E1E;
+}
+
+.icon-container span {
+  font-size: 10px;
+  font-weight: 500;
+  color: #888888;
+}
+
+.icon-container.active span {
+  color: #1E1E1E;
+}
+
+.icon-container.active .cart-count-badge {
+  color: #FFFFFF !important;
+  border-color: #FFB703;
+}
+
+/* =====================================================================
+   STADIUM THEME OVERRIDE — Footer (floodlit bottom nav)
+   ===================================================================== */
+.footer-bar {
+  background: linear-gradient(180deg, #171b21 0%, #0d1014 100%);
+  border-top: 1px solid #33383f;
+  box-shadow: 0 -6px 20px rgba(0,0,0,0.5);
+  position: fixed;
+  overflow: visible;
+}
+.footer-bar::before,
+.footer-bar::after {
+  content: "";
+  position: absolute;
+  bottom: -6px;
+  width: 90px;
+  height: 40px;
+  background: radial-gradient(circle, rgba(255, 224, 138, 0.45), transparent 70%);
+  pointer-events: none;
+}
+.footer-bar::before { left: 6%; }
+.footer-bar::after { right: 6%; }
+
+.footer-icon { color: var(--st-gold-2); }
+
+.icon-container:hover {
+  background-color: rgba(242, 187, 70, 0.12);
+}
+
+.icon-container.active {
+  background: linear-gradient(180deg, var(--st-gold-1), var(--st-gold-3));
+  
+}
+.icon-container.active:hover {
+  background: linear-gradient(180deg, var(--st-gold-1), var(--st-gold-3));
+}
+
+.icon-container span { color: var(--st-text-muted); }
+.icon-container.active span,
+.icon-container.active .footer-icon { color: #ff9500; }
+
+
+/* =====================================================================
+   STADIUM ICON PASS — Footer (spotlight fixtures, real art instead of
+   the CSS radial-gradient approximation)
+   ===================================================================== */
+.footer-bar {
+  overflow: visible;
+  padding-top: 26px;
+}
+.footer-bar::before,
+.footer-bar::after {
+  content: none; /* replaced by per-item fixtures below */
+}
+
+.icon-container {
+  position: relative;
+}
+.icon-container::before {
+  content: "";
+  position: absolute;
+  top: -30px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 45px;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  background-image: url('../stadium-icons/fixture-spotlight-off.svg');
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+.icon-container.active::before {
+  background-image: url('../stadium-icons/fixture-spotlight-on.svg');
+}

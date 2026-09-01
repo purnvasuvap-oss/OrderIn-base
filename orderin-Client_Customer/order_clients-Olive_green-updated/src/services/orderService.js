@@ -1,0 +1,1241 @@
+import { db } from "../firebase";
+import { collection, getDocs, doc, updateDoc, getDoc, onSnapshot } from "firebase/firestore";
+import { parseOrderTimestamp } from "../utils/orderDateTime";
+
+const RESTAURANT_ID = "orderin_restaurant_3";
+
+/**
+ * Get the start of the current 24-hour transit window (11:59 PM previous day)
+ * Returns a Date object with time set to 23:59:00 of the previous day
+ * This creates a window from 11:59 PM yesterday to 11:59 PM today
+ */
+const getTransitWindowStart = () => {
+  const start = new Date();
+  start.setDate(start.getDate() - 1);
+  start.setHours(23, 59, 0, 0);
+  return start;
+};
+
+/**
+ * Get the end of the current 24-hour transit window (11:59 PM today)
+ * Used to filter orders within the 11:59 PM → 11:59 PM range
+ */
+const getTransitWindowEnd = () => {
+  const end = new Date();
+  end.setHours(23, 59, 0, 0);
+  return end;
+};
+
+/**
+ * Get today's date at midnight (start of day) for comparison
+ * Returns a Date object with time set to 00:00:00
+ */
+const getTodayAtMidnight = () => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return today;
+};
+
+/**
+ * Get tomorrow's date at midnight (end of today)
+ * Used to filter orders within today's date range
+ */
+const getTomorrowAtMidnight = () => {
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  tomorrow.setHours(0, 0, 0, 0);
+  return tomorrow;
+};
+
+/**
+ * Extract timestamp from order, checking multiple possible field names
+ * Handles: time, timestamp, createdAt, orderDate, date, etc.
+ */
+const getOrderTimestamp = (order) => {
+  return parseOrderTimestamp(order);
+};
+
+/**
+ * Check if a timestamp falls within the current 24-hour transit window
+ * Window: 11:59 PM previous day → 11:59 PM current day
+ */
+const isOrderInTransitWindow = (timestamp) => {
+  if (!timestamp) return false;
+  
+  try {
+    let orderDate;
+    
+    if (timestamp.toDate && typeof timestamp.toDate === "function") {
+      orderDate = timestamp.toDate();
+    } else if (timestamp instanceof Date) {
+      orderDate = timestamp;
+    } else if (typeof timestamp === "number") {
+      orderDate = new Date(timestamp);
+    } else if (typeof timestamp === "string") {
+      orderDate = new Date(timestamp);
+    } else {
+      return false;
+    }
+    
+    if (isNaN(orderDate.getTime())) return false;
+    
+    const windowStart = getTransitWindowStart();
+    const windowEnd = getTransitWindowEnd();
+    
+    const orderTime = orderDate.getTime();
+    return orderTime >= windowStart.getTime() && orderTime <= windowEnd.getTime();
+  } catch (error) {
+    console.error("Error checking transit window:", error);
+    return false;
+  }
+};
+
+/**
+ * Attempt to locate a tax value on the order object.
+ * Searches common top-level keys and one-level nested objects for keys containing "tax".
+ * Returns null when no explicit tax value is found.
+ */
+const findProvidedTax = (order) => {
+  if (!order || typeof order !== 'object') return null;
+
+  // Direct common keys
+  const directKeys = ['tax', 'taxes', 'taxAmount', 'tax_amount', 'tax_value', 'tax_value_amount', 'taxAmt', 'tax_amt'];
+  for (const k of directKeys) {
+    if (k in order && order[k] !== null && order[k] !== undefined) return order[k];
+  }
+
+  // If order has a 'taxes' array (e.g., breakdown), sum numeric entries
+  if (Array.isArray(order.taxes) && order.taxes.length > 0) {
+    const sum = order.taxes.reduce((acc, t) => {
+      if (t == null) return acc;
+      if (typeof t === 'number') return acc + t;
+      if (typeof t === 'object') {
+        const v = t.amount ?? t.value ?? t.tax ?? t.taxAmount;
+        const p = Number(String(v).replace(/[^0-9.-]+/g, ''));
+        return acc + (isNaN(p) ? 0 : p);
+      }
+      const parsed = Number(String(t).replace(/[^0-9.-]+/g, ''));
+      return acc + (isNaN(parsed) ? 0 : parsed);
+    }, 0);
+    if (sum > 0) return sum;
+  }
+
+  // Search one level deep for keys containing 'tax'
+  for (const [k, v] of Object.entries(order)) {
+    if (!v || typeof v !== 'object') continue;
+    for (const [nk, nv] of Object.entries(v)) {
+      if (String(nk).toLowerCase().includes('tax') && nv !== null && nv !== undefined) return nv;
+    }
+  }
+
+  return null;
+};
+
+/**
+ * Normalize and derive payment information from an order object.
+ * Returns: { paymentType, paymentStatus, paidDisplay, paidAmount }
+ */
+const derivePaymentInfo = (order) => {
+  const normalizedRazorpayStatus = String(order.razorpayStatus || "").toLowerCase().trim();
+  const hasRazorpaySync =
+    Boolean(order.razorpayPaymentId) ||
+    Boolean(order.razorpayOrderId) ||
+    Boolean(order.razorpayMethod) ||
+    Boolean(order.razorpayAmount) ||
+    Boolean(normalizedRazorpayStatus);
+
+  // Possible fields in different writes: paymentMethod, paymentType, paymentMethodType, method, paymentMode
+  // Also check nested payment objects (order.payment, order.transaction, order.card)
+  const nestedPaymentMethod = (order.payment && (order.payment.method || order.payment.type || order.payment.paymentMethod)) ||
+    (order.transaction && (order.transaction.method || order.transaction.type)) ||
+    (order.card && (order.card.type || order.card.brand));
+  const rawMethod = (
+    order.paymentMethod ||
+    order.PaymentMethod ||
+    order.paymentType ||
+    order.OnlinePayMethod ||
+    order.razorpayMethod ||
+    (hasRazorpaySync ? "Online" : "") ||
+    order.method ||
+    order.payment_mode ||
+    order.paymentMode ||
+    nestedPaymentMethod ||
+    ""
+  ).toString();
+  const rawStatus = (order.paymentStatus || order.payment_status || order.razorpayStatus || "").toString();
+  const rawPaidAmount = Number(
+    (order.paidAmount !== undefined && order.paidAmount !== null) ? order.paidAmount :
+    (order.paidAmountValue !== undefined && order.paidAmountValue !== null) ? order.paidAmountValue :
+    (order.paid !== undefined && order.paid !== null) ? order.paid :
+    (order.amountPaid !== undefined && order.amountPaid !== null) ? order.amountPaid :
+    (order.razorpayAmount !== undefined && order.razorpayAmount !== null) ? order.razorpayAmount :
+    0
+  ) || 0;
+  const verificationCode = order.verificationCode || order.code || order.txnRef || order.transactionId || "";
+
+  // Normalize payment type into a small set
+  const methodLower = rawMethod.toLowerCase();
+  let paymentType = "Unknown";
+  
+  // Check if it's a manual order first
+  if (methodLower.includes("manual")) {
+    paymentType = "Manual";
+  } else if (!methodLower) {
+    // If nothing present, try to infer from paymentStatus or flags
+    if (rawStatus.toLowerCase().includes("card") || String(order.cardLast4) || (order.card && (order.card.last4 || order.card.brand))) paymentType = "Card";
+    else if (order.payment && (order.payment.cardToken || order.payment.last4 || order.payment.cardLast4)) paymentType = "Card";
+    else if (String(order.OnlinePayMethod || "").toLowerCase().includes("upi")) paymentType = "UPI";
+    else if (rawStatus.toLowerCase().includes("manual")) paymentType = "Manual";
+  } else if (methodLower.includes("card") || methodLower.includes("visa") || methodLower.includes("master") || methodLower.includes("rupay")) {
+    paymentType = "Card";
+  } else if (methodLower.includes("upi") || methodLower.includes("google") || methodLower.includes("paytm") || methodLower.includes("phonepe")) {
+    paymentType = "UPI";
+  } else if (methodLower.includes("cash")) {
+    paymentType = "Cash";
+  } else if (methodLower.includes("wallet") || methodLower.includes("online") || methodLower.includes("netbanking") || methodLower.includes("gateway")) {
+    paymentType = "Online";
+  } else {
+    // fallback: use raw but capitalized
+    paymentType = rawMethod ? rawMethod.charAt(0).toUpperCase() + rawMethod.slice(1) : "Unknown";
+  }
+
+  // Normalize status
+  let paymentStatus = "unknown";
+  if (rawStatus) {
+    const s = rawStatus.toLowerCase().trim();
+    // Check for explicit negative statuses first to avoid matching 'paid' inside 'unpaid'
+    if (s.includes("manual")) {
+      paymentStatus = "manual";
+    } else if (s.includes("unpaid") || s.includes("pending") ) {
+      paymentStatus = "unpaid";
+    } else if (s.includes("failed") || s.includes("error") ) {
+      paymentStatus = "failed";
+    } else if (s === "paid" || /\bpaid\b/.test(s) || s === "success" || s === "completed" || s === "captured") {
+      paymentStatus = "paid";
+    } else {
+      paymentStatus = s;
+    }
+  } else {
+    // infer from paid amount
+    if (rawPaidAmount > 0 || normalizedRazorpayStatus === "captured") paymentStatus = "paid";
+    else if (verificationCode) paymentStatus = "unpaid";
+    else paymentStatus = "unknown";
+  }
+
+  // Cash / Card / Manual orders are only ever recorded once payment has
+  // already been collected at the counter, so their Firestore records
+  // rarely carry an explicit paidAmount field. Fall back to the order's
+  // own total so the "Paid" figure matches "Cost" instead of showing ₹0.
+  const counterCollectedTypes = new Set(["Cash", "Card", "Manual"]);
+  const isCounterCollected =
+    counterCollectedTypes.has(paymentType) &&
+    (paymentStatus === "paid" || paymentStatus === "manual");
+  let effectivePaidAmount = rawPaidAmount;
+  if (isCounterCollected && effectivePaidAmount <= 0) {
+    const orderTotalFallback = Number(
+      String(order.totalCost ?? order.total ?? order.amount ?? 0).replace(/[^0-9.-]+/g, "")
+    );
+    effectivePaidAmount = isNaN(orderTotalFallback) ? 0 : orderTotalFallback;
+  }
+
+  // Determine what to display in the 'Paid' column
+  let paidDisplay = "-";
+  if (paymentStatus === "manual") {
+    paidDisplay = effectivePaidAmount > 0 ? `₹${effectivePaidAmount.toFixed(2)}` : "Manual Order";
+  } else if (paymentStatus === "paid") {
+    // show Paid or the paid amount if available
+    paidDisplay = effectivePaidAmount > 0 ? `₹${effectivePaidAmount.toFixed ? effectivePaidAmount.toFixed(2) : effectivePaidAmount}` : "Paid";
+  } else if (verificationCode) {
+    paidDisplay = verificationCode;
+  } else if (paymentStatus === "failed") {
+    paidDisplay = "Failed";
+  } else if (paymentType && paymentType !== "Unknown") {
+    // show paymentType as fallback
+    paidDisplay = paymentType;
+  }
+
+  return {
+    paymentType,
+    paymentStatus,
+    paidDisplay,
+    paidAmount: effectivePaidAmount,
+    verificationCode,
+  };
+};
+
+/**
+ * Set of order-workflow statuses the UI is willing to display verbatim.
+ * Anything else (missing, blank, or a stray value like "created" that a
+ * legacy/external write path may have stored) is normalized to "Pending"
+ * so the status badge never shows a raw/unexpected value to staff.
+ */
+const KNOWN_ORDER_STATUSES = ["Pending", "Preparing", "Ready", "Delivered", "Rejected"];
+// Legacy/alternate spellings that should still read as "Rejected" rather
+// than falling back to "Pending".
+const REJECTED_STATUS_ALIASES = new Set(["rejected", "cancelled", "canceled", "declined"]);
+
+export const normalizeOrderStatus = (rawStatus) => {
+  const value = String(rawStatus || "").trim();
+  const lower = value.toLowerCase();
+  if (REJECTED_STATUS_ALIASES.has(lower)) return "Rejected";
+  const match = KNOWN_ORDER_STATUSES.find((known) => known.toLowerCase() === lower);
+  return match || "Pending";
+};
+
+/**
+ * Order state flow helpers (see Orders page + Finance page for usage):
+ *  - queued: not yet accepted, OR accepted but payment isn't collected yet
+ *  - active: accepted AND payment collected AND not delivered
+ *  - completed: status is Delivered
+ * Rejected orders are deleted from Firestore entirely (see deleteOrderRecord),
+ * so they never need to be represented in these buckets.
+ */
+export const isOrderAccepted = (order) => !(order && order.awaitingConfirmation === true);
+
+export const isOrderPaymentCollected = (order) => {
+  const s = String((order && order.paymentStatus) || "").toLowerCase().trim();
+  return s === "paid" || s === "manual";
+};
+
+export const isOrderDelivered = (order) =>
+  normalizeOrderStatus(order && order.status) === "Delivered";
+
+export const isOrderQueued = (order) =>
+  !isOrderDelivered(order) && (!isOrderAccepted(order) || !isOrderPaymentCollected(order));
+
+export const isOrderActive = (order) =>
+  !isOrderDelivered(order) && isOrderAccepted(order) && isOrderPaymentCollected(order);
+
+// Used by the Finance page: only orders the restaurant has accepted AND
+// that are actually paid for should ever show up in accounts/ledger.
+export const isOrderFinalizedForFinance = (order) =>
+  isOrderAccepted(order) && isOrderPaymentCollected(order);
+
+const toNumberOrNull = (value) => {
+  if (value === null || value === undefined || value === "") return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+};
+
+/**
+ * Check if a timestamp falls within today's date range
+ * Accounts for timezone differences
+ * Handles: Firestore Timestamp objects, Date objects, numbers, and date strings
+ */
+const isOrderFromToday = (timestamp) => {
+  if (!timestamp) {
+    console.log("    [isOrderFromToday] No timestamp provided");
+    return false;
+  }
+  
+  try {
+    let orderDate;
+    
+    // Handle Firestore Timestamp objects
+    if (timestamp.toDate && typeof timestamp.toDate === "function") {
+      orderDate = timestamp.toDate();
+      console.log("    [isOrderFromToday] Converted Firestore Timestamp to Date");
+    } 
+    // Handle JavaScript Date objects
+    else if (timestamp instanceof Date) {
+      orderDate = timestamp;
+      console.log("    [isOrderFromToday] Already a Date object");
+    } 
+    // Handle numeric timestamps (milliseconds or seconds)
+    else if (typeof timestamp === "number") {
+      orderDate = new Date(timestamp);
+      console.log("    [isOrderFromToday] Converted number to Date");
+    } 
+    // Handle string timestamps (e.g., "11/30/2025, 6:24:00 PM")
+    else if (typeof timestamp === "string") {
+      console.log("    [isOrderFromToday] Parsing string timestamp");
+      orderDate = new Date(timestamp);
+      console.log(`    [isOrderFromToday] Parsed string to Date: ${orderDate.toLocaleString()}`);
+    } 
+    else {
+      console.log(`    [isOrderFromToday] Unknown timestamp type: ${typeof timestamp}`);
+      return false;
+    }
+    
+    if (isNaN(orderDate.getTime())) {
+      console.log("    [isOrderFromToday] Invalid date after conversion");
+      return false;
+    }
+    
+    const todayStart = getTodayAtMidnight();
+    const todayEnd = getTomorrowAtMidnight();
+    
+    const orderTime = orderDate.getTime();
+    const todayStartTime = todayStart.getTime();
+    const todayEndTime = todayEnd.getTime();
+    
+    console.log(`    [isOrderFromToday] Order date: ${orderDate.toLocaleString()}`);
+    console.log(`    [isOrderFromToday] Range: ${todayStart.toLocaleString()} - ${todayEnd.toLocaleString()}`);
+    console.log(`    [isOrderFromToday] Check: ${orderTime} >= ${todayStartTime} && ${orderTime} < ${todayEndTime}`);
+    
+    const isFromToday = orderTime >= todayStartTime && orderTime < todayEndTime;
+    console.log(`    [isOrderFromToday] Result: ${isFromToday}`);
+
+    return isFromToday;
+  } catch (error) {
+    console.error("    [isOrderFromToday] Error checking order date:", error);
+    return false;
+  }
+};
+
+/**
+ * Check whether an order falls within a rolling 24-hour window measured
+ * from its OWN timestamp, rather than a calendar-day (midnight-to-midnight)
+ * cutoff. isOrderFromToday would drop an order placed at 11:59 PM the
+ * instant the clock ticks past midnight, even though the kitchen hasn't
+ * finished it yet — this keeps every order visible for a full 24 hours
+ * from when it was actually placed, independent of the wall-clock date.
+ */
+export const isOrderWithinLast24Hours = (timestamp) => {
+  if (!timestamp) return false;
+
+  try {
+    let orderDate;
+
+    if (timestamp.toDate && typeof timestamp.toDate === "function") {
+      orderDate = timestamp.toDate();
+    } else if (timestamp instanceof Date) {
+      orderDate = timestamp;
+    } else if (typeof timestamp === "number") {
+      orderDate = new Date(timestamp);
+    } else if (typeof timestamp === "string") {
+      orderDate = new Date(timestamp);
+    } else {
+      return false;
+    }
+
+    if (isNaN(orderDate.getTime())) return false;
+
+    const ageMs = Date.now() - orderDate.getTime();
+    // Treat slightly-future timestamps (clock skew) as still current,
+    // but anything older than 24 hours drops off.
+    return ageMs < 24 * 60 * 60 * 1000;
+  } catch (error) {
+    console.error("Error checking 24-hour window:", error);
+    return false;
+  }
+};
+
+/**
+ * Fetch all orders from today for all customers
+ * Path: /Restaurant/orderin_restaurant_1/customers/<phone_number>/pastOrders
+ * Only returns orders placed today (today's date only)
+ * Falls back to showing all orders if no timestamp present
+ */
+export const fetchTodaysOrders = async () => {
+  try {
+    console.log("=== STARTING FETCH ORDERS ===");
+    const todayStart = getTodayAtMidnight();
+    const todayEnd = getTomorrowAtMidnight();
+    console.log(`Today's date range: ${todayStart.toLocaleString()} to ${todayEnd.toLocaleString()}`);
+
+    const customersRef = collection(
+      db,
+      "Restaurant",
+      RESTAURANT_ID,
+      "customers"
+    );
+
+    const customersSnapshot = await getDocs(customersRef);
+    console.log(`Found ${customersSnapshot.docs.length} customer document(s)`);
+    
+    const ordersWithTimestamp = [];
+    const ordersWithoutTimestamp = [];
+
+    // Iterate through all customer documents (phone numbers)
+    for (const customerDoc of customersSnapshot.docs) {
+      const phoneNumber = customerDoc.id;
+      const customerData = customerDoc.data();
+      
+      console.log(`\n--- Processing Customer: ${phoneNumber} ---`);
+      console.log(`Customer data:`, customerData);
+
+      // Check if pastOrders array exists
+      if (customerData.pastOrders && Array.isArray(customerData.pastOrders)) {
+        console.log(`Found ${customerData.pastOrders.length} order(s) in pastOrders array`);
+        
+        // Process each order in the pastOrders array
+        customerData.pastOrders.forEach((order, index) => {
+          console.log(`\n  Order #${index}:`, order);
+          
+          // Get timestamp from various possible field names
+          const timestamp = getOrderTimestamp(order);
+          
+          // Get customer names from names array
+          const customerNames = customerData.names && Array.isArray(customerData.names) 
+            ? customerData.names 
+            : [];
+          const displayName = customerNames.length > 0 ? customerNames.join(", ") : (customerData.username || "Unknown");
+          
+          // Get order ID from order object
+          const orderId = order.id || `ORD-${phoneNumber}-${index}`;
+
+          // Extract instructions from items array (if present)
+          // Each item may have { name, price, quantity, instructions }
+          let instructions = "";
+          if (order.items && Array.isArray(order.items)) {
+            const instrs = order.items
+              .map((it) => (it && (it.instructions || it.instruction) ? String(it.instructions || it.instruction).trim() : ""))
+              .filter((s) => s && s.length > 0);
+            if (instrs.length > 0) {
+              instructions = instrs.join("; ");
+            }
+          }
+          console.log(`  Resolved instructions: "${instructions}"`);
+          
+          // Log timestamp details
+      if (timestamp) {
+            const orderDate = timestamp;
+            console.log(`  Timestamp field: ${order.time ? 'time' : order.timestamp ? 'timestamp' : 'other'}`);
+            console.log(`  Timestamp type: ${typeof timestamp}`);
+            console.log(`  Timestamp value: ${timestamp}`);
+            console.log(`  Converted to Date: ${orderDate.toLocaleString()}`);
+            console.log(`  Is from today? ${isOrderFromToday(timestamp)}`);
+            
+            // Filter only today's orders by timestamp
+            if (isOrderFromToday(timestamp)) {
+              console.log(`  ✅ ADDING ORDER TO LIST (has valid timestamp from today) - ${orderId}`);
+              const paymentInfo = derivePaymentInfo(order);
+              console.log('subscribeTodaysOrders - paymentInfo for', orderId, paymentInfo);
+              ordersWithTimestamp.push({
+                id: orderId,
+                restaurantId: RESTAURANT_ID,
+                phoneNumber: phoneNumber,
+                username: displayName,
+                customerNames: customerNames,
+                tableNumber: order.tableNo || "N/A",
+                items: order.items || [],
+                timestamp: timestamp,
+                status: normalizeOrderStatus(order.status),
+                awaitingConfirmation: order.awaitingConfirmation === true,
+                orderIndex: index,
+                customerRef: phoneNumber,
+                specs: instructions,
+                paymentType: paymentInfo.paymentType,
+                paid: paymentInfo.paidDisplay,
+                paymentStatus: paymentInfo.paymentStatus,
+                verificationCode: paymentInfo.verificationCode || "-",
+                paidAmount: paymentInfo.paidAmount,
+              });
+            } else {
+              console.log(`  ❌ ORDER NOT FROM TODAY - SKIPPING (timestamp is from different date)`);
+            }
+          } else {
+            console.log(`  ⚠️ NO TIMESTAMP FOUND - Adding to fallback list (will show all orders)`);
+            // If no timestamp, add to fallback list
+            // This ensures orders still display even if timestamp is missing
+            ordersWithoutTimestamp.push({
+              id: orderId,
+              restaurantId: RESTAURANT_ID,
+              phoneNumber: phoneNumber,
+              username: displayName,
+              customerNames: customerNames,
+              tableNumber: order.tableNo || "N/A",
+              items: order.items || [],
+              timestamp: null,
+              status: normalizeOrderStatus(order.status),
+              awaitingConfirmation: order.awaitingConfirmation === true,
+              orderIndex: index,
+              customerRef: phoneNumber,
+              specs: instructions,
+            });
+          }
+        });
+      } else {
+        console.log(`⚠️ No pastOrders array found for customer ${phoneNumber}`);
+      }
+    }
+
+    // Combine orders: prioritize orders with valid timestamps from today
+    // If no timestamped orders found, show orders without timestamps
+    const allOrders = ordersWithTimestamp.length > 0 ? ordersWithTimestamp : ordersWithoutTimestamp;
+
+    console.log(`\n=== FETCH COMPLETE ===`);
+    console.log(`Orders with valid timestamp: ${ordersWithTimestamp.length}`);
+    console.log(`Orders without timestamp: ${ordersWithoutTimestamp.length}`);
+    console.log(`Total orders to display: ${allOrders.length}`);
+    console.log(`Orders:`, allOrders);
+
+    if (allOrders.length === 0) {
+      console.warn("⚠️ No orders found at all!");
+    } else if (ordersWithoutTimestamp.length > 0 && ordersWithTimestamp.length === 0) {
+      console.warn("⚠️ Displaying orders without timestamp! Add timestamp field to order objects for proper date filtering.");
+    }
+
+    // Sort orders by timestamp (newest first) if they have timestamps
+    if (ordersWithTimestamp.length > 0) {
+      allOrders.sort((a, b) => {
+        const timeA = a.timestamp ? a.timestamp.getTime() : 0;
+        const timeB = b.timestamp ? b.timestamp.getTime() : 0;
+        return timeB - timeA;
+      });
+    }
+
+    return allOrders;
+  } catch (error) {
+    console.error("❌ ERROR FETCHING ORDERS:", error);
+    console.error("Error stack:", error.stack);
+    throw error;
+  }
+};
+
+/**
+ * Subscribe to customers collection and call onUpdate with processed orders
+ * whenever data changes. Defaults to a strict calendar-day (midnight to
+ * midnight) window — used by the Dashboard's "Orders Today" count, which
+ * intentionally resets at midnight.
+ *
+ * Pass dateFilterFn = isOrderWithinLast24Hours (see subscribeRecentOrders
+ * below) for a rolling per-order window instead, where an order placed at
+ * 11:59 PM doesn't disappear the instant the clock ticks past midnight.
+ *
+ * Returns an unsubscribe function.
+ */
+export const subscribeTodaysOrders = (onUpdate, dateFilterFn = isOrderFromToday) => {
+  try {
+    console.log("=== SUBSCRIBING TO ORDERS (real-time) ===");
+
+    const customersRef = collection(
+      db,
+      "Restaurant",
+      RESTAURANT_ID,
+      "customers"
+    );
+
+    const unsubscribe = onSnapshot(
+      customersRef,
+      (customersSnapshot) => {
+        console.log('subscribeTodaysOrders - customers snapshot received, docs:', customersSnapshot.size);
+        const allProcessedOrders = [];
+
+        try {
+          for (const customerDoc of customersSnapshot.docs) {
+            const phoneNumber = customerDoc.id;
+            const customerData = customerDoc.data();
+
+            if (!(customerData.pastOrders && Array.isArray(customerData.pastOrders))) {
+              continue;
+            }
+
+            const customerNames = customerData.names && Array.isArray(customerData.names) ? customerData.names : [];
+            const displayName = customerNames.length > 0 ? customerNames.join(", ") : (customerData.username || "Unknown");
+
+            customerData.pastOrders.forEach((order, index) => {
+              const timestamp = getOrderTimestamp(order);
+
+              // derive order id
+              const orderId = order.id || `ORD-${phoneNumber}-${index}`;
+
+              // extract item-level instructions
+              let instructions = "";
+              if (order.items && Array.isArray(order.items)) {
+                const instrs = order.items
+                  .map((it) => (it && (it.instructions || it.instruction) ? String(it.instructions || it.instruction).trim() : ""))
+                  .filter((s) => s && s.length > 0);
+                if (instrs.length > 0) instructions = instrs.join("; ");
+              }
+
+              // derive payment info for display
+              const paymentInfo = derivePaymentInfo(order);
+
+              // Normalize items array: support multiple field names used by different writers
+              const rawItemsArray = order.items || order.orderItems || order.cart || order.itemsList || order.itemDetails || order.rawItems || [];
+
+              // Build itemDetails and compute subtotal robustly
+              let itemDetails = [];
+              let subtotal = 0;
+              if (Array.isArray(rawItemsArray)) {
+                itemDetails = rawItemsArray.map((it) => {
+                  const name = (it && (it.name || it.title || it.itemName || (it.menu && it.menu.name))) || "Unknown";
+                  // price may be stored as number or string in different keys
+                  let itemPrice = 0;
+                  if (it) {
+                    const priceCandidate = it.price !== undefined && it.price !== null ? it.price : (it.priceText || it.priceValue || it.amount || it.cost || 0);
+                    const parsed = Number(String(priceCandidate).replace(/[^0-9.-]+/g, ""));
+                    itemPrice = isNaN(parsed) ? 0 : parsed;
+                  }
+                  const itemQty = Number(it && (it.quantity !== undefined ? it.quantity : (it.qty !== undefined ? it.qty : (it.count !== undefined ? it.count : 1)))) || 1;
+                  const itemTotal = itemPrice * itemQty;
+                  subtotal += itemTotal;
+                  const instructionsText = it && (it.instructions || it.instruction || it.note || it.specialInstructions) ? String(it.instructions || it.instruction || it.note || it.specialInstructions) : "";
+                  return {
+                    name,
+                    quantity: itemQty,
+                    price: itemPrice,
+                    total: itemTotal,
+                    instructions: instructionsText,
+                  };
+                });
+              }
+
+              // If order-level specs exist under alternative keys, always output as array
+              let specsArr = [];
+              if (Array.isArray(order.items)) {
+                specsArr = order.items.map((it, idx) => ({
+                  name: (it && (it.name || it.title || it.itemName || (it.menu && it.menu.name))) || `Item ${idx + 1}`,
+                  instructions: (it && (it.instructions || it.instruction || it.note || it.specialInstructions)) || "-",
+                }));
+              } else if (Array.isArray(order.specs)) {
+                specsArr = order.specs;
+              } else if (typeof order.specs === 'string' && order.specs.trim()) {
+                specsArr = [{ name: 'Spec', instructions: order.specs.trim() }];
+              } else if (typeof instructions === 'string' && instructions.trim()) {
+                specsArr = [{ name: 'Spec', instructions: instructions.trim() }];
+              } else if (order.specialInstructions || order.instructions || order.notes) {
+                specsArr = [{ name: 'Spec', instructions: order.specialInstructions || order.instructions || order.notes }];
+              }
+
+              // Prefer backend-provided tax when available (many keys possible),
+              // otherwise apply fallback rule: ₹1 tax for every ₹100 of subtotal.
+              const providedTax = findProvidedTax(order);
+              let tax;
+              if (providedTax !== null && providedTax !== undefined) {
+                const parsedTax = Number(String(providedTax).replace(/[^0-9.-]+/g, ""));
+                tax = isNaN(parsedTax) ? 0 : parsedTax;
+              } else {
+                tax = subtotal > 0 ? Math.ceil(subtotal / 100) : 0;
+              }
+              const totalCost = order.totalCost || order.total || order.amount || subtotal + tax;
+
+              const orderObj = {
+                id: orderId,
+                restaurantId: RESTAURANT_ID,
+                phoneNumber,
+                username: displayName,
+                customerNames,
+                tableNumber: order.tableNo || "N/A",
+                items: Array.isArray(rawItemsArray) ? rawItemsArray : [],
+                itemDetails: itemDetails,
+                timestamp: timestamp,
+                status: normalizeOrderStatus(order.status),
+                awaitingConfirmation: order.awaitingConfirmation === true,
+                orderIndex: index,
+                customerRef: phoneNumber,
+                specs: specsArr,
+                subtotal: subtotal,
+                tax: tax,
+                totalCost: totalCost,
+                paymentType: paymentInfo.paymentType,
+                paid: paymentInfo.paidDisplay,
+                paymentStatus: paymentInfo.paymentStatus,
+                verificationCode: paymentInfo.verificationCode || "-",
+                paidAmount: paymentInfo.paidAmount,
+              };
+
+              if (timestamp && dateFilterFn(timestamp)) {
+                allProcessedOrders.push(orderObj);
+              }
+            });
+          }
+
+          // Sort by timestamp (newest first)
+          allProcessedOrders.sort((a, b) => {
+            const timeA = a.timestamp ? a.timestamp.getTime?.() || a.timestamp.toDate?.().getTime() || 0 : 0;
+            const timeB = b.timestamp ? b.timestamp.getTime?.() || b.timestamp.toDate?.().getTime() || 0 : 0;
+            return timeB - timeA;
+          });
+
+          if (typeof onUpdate === "function") onUpdate(allProcessedOrders);
+        } catch (err) {
+          console.error("Error processing customers snapshot:", err);
+          if (typeof onUpdate === "function") onUpdate([]);
+        }
+      },
+      (err) => {
+        console.error("onSnapshot error (customers):", err);
+        if (typeof onUpdate === "function") onUpdate([]);
+      }
+    );
+
+    return unsubscribe;
+  } catch (error) {
+    console.error("Failed to subscribe to orders:", error);
+    if (typeof onUpdate === "function") onUpdate([]);
+    return () => {};
+  }
+};
+
+/**
+ * Same live subscription as subscribeTodaysOrders, but keeps each order
+ * visible for a rolling 24 hours from its own timestamp instead of
+ * clearing everything out at midnight. This is what the Orders page uses,
+ * so an order placed at 11:59 PM doesn't vanish before the kitchen has
+ * even finished it just because the calendar day rolled over.
+ */
+export const subscribeRecentOrders = (onUpdate) =>
+  subscribeTodaysOrders(onUpdate, isOrderWithinLast24Hours);
+
+/**
+ * Subscribe to all customer orders (history) and call onUpdate whenever data changes.
+ * Returns an unsubscribe function.
+ */
+export const subscribeAllCustomerOrders = (onUpdate) => {
+  try {
+    console.log("=== SUBSCRIBING TO ALL CUSTOMER ORDERS (real-time) ===");
+
+    const customersRef = collection(
+      db,
+      "Restaurant",
+      RESTAURANT_ID,
+      "customers"
+    );
+
+    const unsubscribe = onSnapshot(
+      customersRef,
+      (customersSnapshot) => {
+        try {
+          const allOrders = [];
+
+          for (const customerDoc of customersSnapshot.docs) {
+            const phoneNumber = customerDoc.id;
+            const customerData = customerDoc.data();
+
+            if (!(customerData.pastOrders && Array.isArray(customerData.pastOrders))) {
+              continue;
+            }
+
+            const customerNames = customerData.names && Array.isArray(customerData.names) ? customerData.names : [];
+            const displayName = customerNames.length > 0 ? customerNames.join(", ") : (customerData.username || "Unknown");
+
+            customerData.pastOrders.forEach((order, index) => {
+              const timestamp = getOrderTimestamp(order);
+              const orderId = order.id || `ORD-${phoneNumber}-${index}`;
+
+              // Extract item-level details
+              let itemDetails = [];
+              let subtotal = 0;
+              if (order.items && Array.isArray(order.items)) {
+                itemDetails = order.items.map((it) => {
+                  // parse price robustly (handle strings like "₹123" or "123")
+                  let itemPrice = 0;
+                  if (it && it.price !== undefined && it.price !== null) {
+                    const parsed = Number(String(it.price).replace(/[^0-9.-]+/g, ""));
+                    itemPrice = isNaN(parsed) ? 0 : parsed;
+                  }
+                  const itemQty = Number(it && it.quantity !== undefined ? it.quantity : 1) || 1;
+                  const itemTotal = itemPrice * itemQty;
+                  subtotal += itemTotal;
+                  return {
+                    name: it.name || "Unknown",
+                    quantity: itemQty,
+                    price: itemPrice,
+                    total: itemTotal,
+                    instructions: it.instructions || it.instruction || "",
+                  };
+                });
+              }
+
+              // Prefer backend-provided tax when available, otherwise apply ₹1 per ₹100 rule
+              const providedTax = findProvidedTax(order);
+              let tax;
+              if (providedTax !== null && providedTax !== undefined) {
+                const parsedTax = Number(String(providedTax).replace(/[^0-9.-]+/g, ""));
+                tax = isNaN(parsedTax) ? 0 : parsedTax;
+              } else {
+                tax = subtotal > 0 ? Math.ceil(subtotal / 100) : 0;
+              }
+              const totalCost = order.totalCost || order.total || order.amount || subtotal + tax;
+
+              const paymentInfo = derivePaymentInfo(order);
+
+              allOrders.push({
+                id: orderId,
+                restaurantId: RESTAURANT_ID,
+                phoneNumber: phoneNumber,
+                username: displayName,
+                tableNumber: order.tableNo || "N/A",
+                itemDetails: itemDetails,
+                specs: order.items?.map((it, idx) => ({
+                  name: it.name || `Item ${idx + 1}`,
+                  instructions: it.instructions || it.instruction || "-",
+                })) || [],
+                subtotal: subtotal,
+                tax: tax,
+                totalCost: totalCost,
+                paidAmount: paymentInfo.paidAmount,
+                paymentType: paymentInfo.paymentType,
+                paymentStatus: paymentInfo.paymentStatus,
+                paid: paymentInfo.paidDisplay,
+                verificationCode: order.verificationCode || order.code || "-",
+                paymentTimestamp: order.paymentTimestamp || null,
+                razorpayPaymentId: order.razorpayPaymentId || null,
+                razorpayOrderId: order.razorpayOrderId || null,
+                razorpayMethod: order.razorpayMethod || null,
+                razorpayStatus: order.razorpayStatus || null,
+                razorpayAmount: toNumberOrNull(order.razorpayAmount),
+                razorpayCurrency: order.razorpayCurrency || null,
+                razorpayCapturedAt: order.razorpayCapturedAt || null,
+                razorpayFeeAmount: toNumberOrNull(order.razorpayFeeAmount),
+                razorpayTaxAmount: toNumberOrNull(order.razorpayTaxAmount),
+                razorpaySettlementId: order.razorpaySettlementId || null,
+                razorpaySettlementStatus: order.razorpaySettlementStatus || null,
+                razorpaySettlementAmount: toNumberOrNull(order.razorpaySettlementAmount),
+                razorpayAdminSettlementAmount: toNumberOrNull(order.razorpayAdminSettlementAmount),
+                razorpaySettlementUtr: order.razorpaySettlementUtr || null,
+                razorpaySettlementCreatedAt: order.razorpaySettlementCreatedAt || null,
+                razorpaySettlementExpectedAt: order.razorpaySettlementExpectedAt || null,
+                razorpayTransferId: order.razorpayTransferId || null,
+                razorpayTransferStatus: order.razorpayTransferStatus || null,
+                razorpayTransferSettlementStatus: order.razorpayTransferSettlementStatus || null,
+                razorpayTransferSettlementId: order.razorpayTransferSettlementId || null,
+                razorpayTransferSettlementCreatedAt: order.razorpayTransferSettlementCreatedAt || null,
+                razorpayTransferSettlementExpectedAt: order.razorpayTransferSettlementExpectedAt || null,
+                razorpayTransferSettlementUtr: order.razorpayTransferSettlementUtr || null,
+                razorpayTransferRecipient: order.razorpayTransferRecipient || null,
+                razorpayTransferAmount: toNumberOrNull(order.razorpayTransferAmount),
+                razorpayTransferCurrency: order.razorpayTransferCurrency || null,
+                routePlatformGrossAmount: toNumberOrNull(order.routePlatformGrossAmount),
+                routePlatformNetAmount: toNumberOrNull(order.routePlatformNetAmount),
+                razorpaySyncedAt: order.razorpaySyncedAt || null,
+                timestamp: timestamp,
+                status: normalizeOrderStatus(order.status),
+                awaitingConfirmation: order.awaitingConfirmation === true,
+                orderIndex: index,
+                customerRef: phoneNumber,
+              });
+            });
+          }
+
+          // Sort by timestamp (newest first)
+          allOrders.sort((a, b) => {
+            const timeA = a.timestamp ? a.timestamp.getTime() : 0;
+            const timeB = b.timestamp ? b.timestamp.getTime() : 0;
+            return timeB - timeA;
+          });
+
+          if (typeof onUpdate === "function") onUpdate(allOrders);
+        } catch (err) {
+          console.error("Error processing all orders snapshot:", err);
+        }
+      },
+      (err) => {
+        console.error("onSnapshot error (all orders):", err);
+      }
+    );
+
+    return unsubscribe;
+  } catch (error) {
+    console.error("Failed to subscribe to all customer orders:", error);
+    return () => {};
+  }
+};
+
+export const subscribeOnlineCustomerOrders = (onUpdate) => {
+  return subscribeAllCustomerOrders((orders) => {
+    const onlineOrders = (orders || []).filter((order) => {
+      const paymentType = String(order.paymentType || "").toLowerCase();
+      const rawMethod = String(order.paymentMethod || order.PaymentMethod || order.OnlinePayMethod || order.razorpayMethod || "").toLowerCase();
+      return (
+        paymentType === "online" ||
+        rawMethod === "online" ||
+        Boolean(order.razorpayPaymentId) ||
+        Boolean(order.razorpayOrderId) ||
+        Boolean(order.razorpayAmount) ||
+        Boolean(order.razorpayStatus)
+      );
+    });
+    if (typeof onUpdate === "function") onUpdate(onlineOrders);
+  });
+};
+
+/**
+ * Update order status in Firebase
+ * Updates the status field in pastOrders array for a specific customer
+ * Fix #6: Uses order.id to find order instead of fragile orderIndex
+ * Fix #3: Clears awaitingConfirmation when status is updated
+ */
+export const updateOrderStatus = async (phoneNumber, orderIdOrIndex, newStatus, restaurantId = RESTAURANT_ID) => {
+  try {
+    const customerRef = doc(
+      db,
+      "Restaurant",
+      restaurantId,
+      "customers",
+      phoneNumber
+    );
+
+    // Use getDoc instead of getDocs for a single document
+    const customerSnap = await getDoc(customerRef);
+    if (!customerSnap.exists()) {
+      throw new Error("Customer not found");
+    }
+
+    const customerData = customerSnap.data();
+    const pastOrders = [...(customerData.pastOrders || [])];
+
+    // Try to find order by ID first (robust), fall back to index (legacy)
+    const idsMatch = (a, b) => String(a) === String(b);
+    let foundIndex = pastOrders.findIndex(o => idsMatch(o.id, orderIdOrIndex));
+    
+    // If not found by ID, try using as index (for backward compatibility)
+    if (foundIndex === -1) {
+      foundIndex = Number(orderIdOrIndex);
+    }
+
+    // Update the status of the specific order
+    if (foundIndex >= 0 && pastOrders[foundIndex]) {
+      pastOrders[foundIndex].status = newStatus;
+      // Clear awaitingConfirmation flag when order is confirmed or rejected (Fix #3)
+      if (newStatus === "Confirmed" || newStatus === "Rejected" || newStatus === "Cancelled") {
+        pastOrders[foundIndex].awaitingConfirmation = false;
+      }
+
+      // Update the document
+      await updateDoc(customerRef, {
+        pastOrders: pastOrders,
+      });
+    }
+  } catch (error) {
+    console.error("Error updating order status:", error);
+    throw error;
+  }
+};
+
+/**
+ * Accept an incoming order: clears the awaitingConfirmation flag so it
+ * leaves the "queued" bucket (see isOrderQueued/isOrderActive), and also
+ * writes status "Confirmed" — the customer-facing AwaitingConfirmation
+ * page (orderin_custmer_1-Olive_green) watches for exactly this value to
+ * move the customer from the waiting screen to the payment method page.
+ * "Confirmed" is a transient write only: normalizeOrderStatus displays it
+ * as "Pending" in this admin UI, and it gets overwritten the moment the
+ * kitchen picks a real status (Preparing/Ready/Delivered) from the dropdown.
+ */
+export const acceptOrder = async (phoneNumber, orderIdOrIndex, restaurantId = RESTAURANT_ID) => {
+  try {
+    const customerRef = doc(db, "Restaurant", restaurantId, "customers", phoneNumber);
+    const customerSnap = await getDoc(customerRef);
+    if (!customerSnap.exists()) {
+      throw new Error("Customer not found");
+    }
+
+    const customerData = customerSnap.data();
+    const pastOrders = [...(customerData.pastOrders || [])];
+
+    const idsMatch = (a, b) => String(a) === String(b);
+    let foundIndex = pastOrders.findIndex((o) => idsMatch(o.id, orderIdOrIndex));
+    if (foundIndex === -1) {
+      foundIndex = Number(orderIdOrIndex);
+    }
+
+    if (foundIndex >= 0 && pastOrders[foundIndex]) {
+      pastOrders[foundIndex].awaitingConfirmation = false;
+      pastOrders[foundIndex].status = "Confirmed";
+      await updateDoc(customerRef, { pastOrders });
+    }
+  } catch (error) {
+    console.error("Error accepting order:", error);
+    throw error;
+  }
+};
+
+/**
+ * Reject an incoming order. Writes status "Rejected" rather than deleting
+ * outright — the customer-facing AwaitingConfirmation page watches for
+ * this value to show its "Order Not Available" screen, and only THEN
+ * (when the customer taps "Continue Shopping"/"View Cart") does the
+ * customer app's own cleanup (safeDeleteUnpaidOrders) remove the order
+ * from Firestore, since it's still paymentStatus "unpaid" at that point.
+ * Deleting it immediately here would make the order vanish from under
+ * that page's listener before it ever gets to show the rejection.
+ * Either way the order never resurfaces in this admin's Orders/Finance
+ * views: both already filter out/exclude "Rejected" orders.
+ *
+ * `reason` (one of the three preset options from RejectReasonModal) is
+ * stored as `rejectionReason` on the order so the customer app can show
+ * it in its "Order Not Available" screen.
+ */
+export const rejectOrder = async (phoneNumber, orderIdOrIndex, restaurantId = RESTAURANT_ID, reason = null) => {
+  try {
+    const customerRef = doc(db, "Restaurant", restaurantId, "customers", phoneNumber);
+    const customerSnap = await getDoc(customerRef);
+    if (!customerSnap.exists()) {
+      throw new Error("Customer not found");
+    }
+
+    const customerData = customerSnap.data();
+    const pastOrders = [...(customerData.pastOrders || [])];
+
+    const idsMatch = (a, b) => String(a) === String(b);
+    let foundIndex = pastOrders.findIndex((o) => idsMatch(o.id, orderIdOrIndex));
+    if (foundIndex === -1) {
+      foundIndex = Number(orderIdOrIndex);
+    }
+
+    if (foundIndex >= 0 && pastOrders[foundIndex]) {
+      pastOrders[foundIndex].status = "Rejected";
+      pastOrders[foundIndex].awaitingConfirmation = false;
+      pastOrders[foundIndex].rejectionReason = reason;
+      await updateDoc(customerRef, { pastOrders });
+    }
+  } catch (error) {
+    console.error("Error rejecting order:", error);
+    throw error;
+  }
+};
+
+/**
+ * Format order items with quantity for display
+ */
+export const formatOrderItems = (items) => {
+  if (!Array.isArray(items)) return [];
+  return items.map((item) => {
+    if (typeof item === "string") {
+      return item;
+    }
+    if (item.name && item.quantity) {
+      return `${item.quantity}x ${item.name}`;
+    }
+    if (item.name) {
+      return item.name;
+    }
+    // If item is an object, stringify it for display
+    if (typeof item === "object" && item !== null) {
+      return JSON.stringify(item);
+    }
+    return String(item);
+  });
+};
+
+/**
+ * Format timestamp to readable 12-hour time format (e.g., "2:30 PM")
+ * Returns empty string if timestamp is invalid
+ */
+export const formatTime = (timestamp) => {
+  if (!timestamp) return "";
+  try {
+    const date = timestamp instanceof Date ? timestamp : getOrderTimestamp({ timestamp });
+    
+    // Validate date
+    if (isNaN(date.getTime())) {
+      return "";
+    }
+    
+    return date.toLocaleTimeString("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    });
+  } catch (error) {
+    console.error("Error formatting time:", error);
+    return "";
+  }
+};
+
+/**
+ * Format full date and time (e.g., "Nov 30, 2025 2:30 PM")
+ * Useful for debugging to verify orders are from today
+ */
+export const formatDateTime = (timestamp) => {
+  if (!timestamp) return "";
+  try {
+    const date = timestamp instanceof Date ? timestamp : getOrderTimestamp({ timestamp });
+    
+    if (isNaN(date.getTime())) {
+      return "";
+    }
+    
+    return date.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    }) + " " + formatTime(timestamp);
+  } catch (error) {
+    console.error("Error formatting date time:", error);
+    return "";
+  }
+};
+
+/**
+ * Subscribe to today's transit orders with the 11:59 PM → 11:59 PM window
+ */
+export const subscribeTransitOrders = (onUpdate) => {
+  try {
+    console.log("=== SUBSCRIBING TO TRANSIT ORDERS (11:59 PM window) ===");
+    const customersRef = collection(db, "Restaurant", RESTAURANT_ID, "customers");
+    
+    const unsubscribe = onSnapshot(customersRef, (snapshot) => {
+      try {
+        const transitOrders = [];
+        
+        snapshot.docs.forEach((customerDoc) => {
+          const phoneNumber = customerDoc.id;
+          const customerData = customerDoc.data();
+          
+          if (!Array.isArray(customerData.pastOrders)) return;
+          
+          const customerNames = Array.isArray(customerData.names) ? customerData.names : [];
+          const displayName = customerNames.length > 0 ? customerNames.join(", ") : (customerData.username || "Unknown");
+          
+          customerData.pastOrders.forEach((order, index) => {
+            const timestamp = getOrderTimestamp(order);
+            if (!timestamp || !isOrderInTransitWindow(timestamp)) return;
+            
+            const orderId = order.id || `ORD-${phoneNumber}-${index}`;
+            
+            // Extract items
+            let itemDetails = [];
+            let subtotal = 0;
+            if (Array.isArray(order.items)) {
+              itemDetails = order.items.map((it) => {
+                const price = Number(String(it?.price ?? 0).replace(/[^0-9.-]+/g, "")) || 0;
+                const qty = Number(it?.quantity ?? 1) || 1;
+                subtotal += price * qty;
+                return { name: it.name || "Unknown", quantity: qty, price, total: price * qty, instructions: it.instructions || "" };
+              });
+            }
+            
+            const tax = order.tax ?? Math.ceil(subtotal / 100);
+            const totalCost = order.totalCost ?? order.total ?? order.amount ?? subtotal + tax;
+            const paymentInfo = derivePaymentInfo(order);
+            
+            transitOrders.push({
+              id: orderId,
+              restaurantId: RESTAURANT_ID,
+              phoneNumber,
+              username: displayName,
+              tableNumber: order.tableNo || "N/A",
+              items: order.items || [],
+              itemDetails,
+              specs: Array.isArray(order.items) ? order.items.map((it, idx) => ({
+                name: it.name || `Item ${idx + 1}`,
+                instructions: it.instructions || it.instruction || "-",
+              })) : [],
+              subtotal, tax, totalCost,
+              paid: paymentInfo.paidDisplay,
+              paymentType: paymentInfo.paymentType,
+              paymentStatus: paymentInfo.paymentStatus,
+              verificationCode: paymentInfo.verificationCode || "-",
+              timestamp, status: normalizeOrderStatus(order.status), awaitingConfirmation: order.awaitingConfirmation === true, orderIndex: index, customerRef: phoneNumber,
+            });
+          });
+        });
+        
+        transitOrders.sort((a, b) => {
+          const ta = a.timestamp?.getTime?.() || a.timestamp?.toDate?.().getTime() || 0;
+          const tb = b.timestamp?.getTime?.() || b.timestamp?.toDate?.().getTime() || 0;
+          return tb - ta;
+        });
+        
+        if (typeof onUpdate === "function") onUpdate(transitOrders);
+      } catch (err) {
+        console.error("Error processing transit orders:", err);
+        if (typeof onUpdate === "function") onUpdate([]);
+      }
+    }, (err) => {
+      console.error("onSnapshot error (transit):", err);
+      if (typeof onUpdate === "function") onUpdate([]);
+    });
+    
+    return unsubscribe;
+  } catch (error) {
+    console.error("Failed to subscribe to transit orders:", error);
+    return () => {};
+  }
+};
+

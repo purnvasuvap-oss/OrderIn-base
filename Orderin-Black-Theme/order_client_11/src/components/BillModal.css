@@ -1,0 +1,20 @@
+.bill-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+.bill-modal {
+  background: #fff;
+  padding: 16px;
+  border-radius: 8px;
+  max-width: 380px;
+  width: 92%;
+  box-shadow: 0 6px 30px rgba(0,0,0,0.2);
+}
+.bill-modal .btn { margin-right: 8px; padding:8px 10px; border-radius:6px; border:1px solid #111; background:transparent; cursor:pointer }
+.bill-modal .btn-primary { background:#111; color:#fff }
+.bill-modal-actions { display:flex; justify-content:flex-end; gap:8px; margin-top:12px }

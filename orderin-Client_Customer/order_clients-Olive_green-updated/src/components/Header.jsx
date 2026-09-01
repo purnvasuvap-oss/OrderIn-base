@@ -1,0 +1,62 @@
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+// using image icons instead of lucide icons
+import "./Header.css";
+import Notification from "./Notification";
+import { useNotification } from "../hooks/useNotification";
+
+export default function Header() {
+  const navigate = useNavigate();
+  const [showNotification, setShowNotification] = useState(false);
+  const { queuedCount } = useNotification();
+
+  const handleLogout = () => {
+    // Clear main auth
+    localStorage.removeItem("auth");
+
+    // Clear section auth so back/forward cannot bypass menu/finance/inventory login screens
+    localStorage.removeItem("menuAuth");
+    localStorage.removeItem("financeAuth");
+    localStorage.removeItem("inventoryAuth");
+    sessionStorage.removeItem("menuAuth");
+    sessionStorage.removeItem("financeAuth");
+    sessionStorage.removeItem("inventoryAuth");
+
+    navigate("/", { replace: true });
+  };
+
+  const handleNotificationClick = () => {
+    setShowNotification(true);
+  };
+
+  const handleCloseNotification = () => {
+    setShowNotification(false);
+  };
+
+  return (
+    <>
+      <header className="header">
+        <div className="header-left">
+          <img src="/images/OrderIn.png" alt="OrderIn logo" className="orderin-logo" />
+        </div>
+
+        <div className="header-center">
+          <h1 className="restaurant-name">XYZ Restaurant</h1>
+        </div>
+
+        <div className="header-right">
+          <button className="icon-btn" onClick={handleNotificationClick}>
+            <img src="/images/Notification.svg" alt="notifications" className="icon-img" />
+            {queuedCount > 0 && (
+              <span className="notification-badge">{queuedCount > 99 ? "99+" : queuedCount}</span>
+            )}
+          </button>
+          <button className="icon-btn" onClick={handleLogout}>
+            <img src="/images/Export.svg" alt="logout" className="icon-img" />
+          </button>
+        </div>
+      </header>
+      {showNotification && <Notification onClose={handleCloseNotification} />}
+    </>
+  );
+}

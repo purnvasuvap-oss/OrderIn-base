@@ -1,0 +1,2509 @@
+/*
+  Responsive correction layer for order_clients.
+  Keeps the existing red/cream restaurant palette while normalizing layout
+  behavior across phones, tablets, laptops, and short desktop screens.
+*/
+
+:root {
+  --client-red: #e53935;
+  --client-red-dark: #c62828;
+  --client-green: #43a047;
+  --client-yellow: #f7c23b;
+  --client-page: #fff7f0;
+  --client-page-soft: #fceee6;
+  --client-panel: #ffffff;
+  --client-text: #212121;
+  --client-muted: #616161;
+  --client-line: #e0e0e0;
+  --client-radius: 8px;
+  --client-header-height: 84px;
+  --client-shadow: 0 10px 26px rgba(80, 45, 30, 0.1);
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+  height: auto;
+  overflow-x: hidden;
+}
+
+body {
+  color: var(--client-text);
+  background: linear-gradient(180deg, #fffefb 0%, var(--client-page) 68%, var(--client-page-soft) 100%);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  max-width: 100%;
+}
+
+button {
+  min-height: 40px;
+}
+
+img {
+  max-width: 100%;
+}
+
+/* Header */
+.header {
+  position: sticky !important;
+  top: 0;
+  z-index: 900;
+  display: grid !important;
+  grid-template-columns: minmax(96px, 1fr) minmax(0, auto) minmax(96px, 1fr);
+  align-items: center;
+  gap: 14px;
+  width: 100% !important;
+  min-height: var(--client-header-height);
+  height: auto !important;
+  margin: 0 !important;
+  padding: 10px clamp(14px, 3vw, 30px) !important;
+  background: rgba(255, 255, 255, 0.96);
+  border-bottom: 1px solid rgba(229, 57, 53, 0.12);
+  box-shadow: 0 8px 20px rgba(80, 45, 30, 0.08);
+}
+
+.header-left,
+.header-center,
+.header-right {
+  position: static !important;
+  inset: auto !important;
+  transform: none !important;
+}
+
+.header-left {
+  justify-self: start;
+}
+
+.header-center {
+  display: flex !important;
+  justify-self: center;
+  min-width: 0;
+  padding: 0 !important;
+}
+
+.header-right {
+  justify-self: end;
+  display: flex !important;
+  gap: clamp(6px, 1.4vw, 14px) !important;
+}
+
+.orderin-logo {
+  width: clamp(84px, 10vw, 132px) !important;
+  max-height: 58px;
+  object-fit: contain;
+}
+
+.header .restaurant-name {
+  display: block !important;
+  max-width: min(52vw, 620px);
+  margin: 0 !important;
+  font-size: clamp(18px, 4vw, 42px) !important;
+  line-height: 1.1;
+  text-align: center;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.icon-btn {
+  min-width: 42px;
+  min-height: 42px;
+  margin-left: 0 !important;
+  padding: 6px !important;
+}
+
+.icon-img {
+  width: clamp(30px, 4.5vw, 46px) !important;
+  height: clamp(30px, 4.5vw, 46px) !important;
+}
+
+.notification-modal {
+  padding: 16px;
+}
+
+.notification-content {
+  width: min(520px, 94vw) !important;
+  max-height: min(86svh, 760px) !important;
+}
+
+/* Shared protected page shell */
+.landing-container-,
+.app,
+.menu-management-container,
+.promotions-page-container,
+.inventory-container,
+.fin-app {
+  min-height: calc(100svh - var(--client-header-height)) !important;
+  height: auto !important;
+  overflow: visible !important;
+  margin-top: 0 !important;
+}
+
+.app,
+.menu-management-container,
+.promotions-page-container,
+.inventory-container,
+.fin-app {
+  padding: clamp(14px, 2.5vw, 32px) !important;
+}
+
+/* Dashboard */
+.landing-container- {
+  padding-top: clamp(18px, 3vw, 32px) !important;
+}
+
+.content- {
+  width: min(1180px, calc(100% - 28px)) !important;
+  margin-inline: auto !important;
+}
+
+.content- > div:first-child {
+  transform: translateY(-12px);
+}
+
+.content- > div:first-child h2 {
+  font-family: "Inter", "Segoe UI", system-ui, sans-serif !important;
+  font-weight: 850 !important;
+  line-height: 1.02 !important;
+  letter-spacing: 0 !important;
+  text-wrap: balance;
+}
+
+.content- > div:first-child h2:first-child {
+  color: #2f9e44 !important;
+  text-shadow: 0 8px 20px rgba(47, 158, 68, 0.16);
+}
+
+.content- > div:first-child h2:last-child {
+  color: #23201f !important;
+  text-shadow: 0 8px 20px rgba(70, 45, 35, 0.12);
+}
+
+.cards- {
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(160px, 1fr)) !important;
+  gap: clamp(14px, 2vw, 24px) !important;
+}
+
+.card- {
+  width: 100% !important;
+  min-height: 150px;
+  border-radius: var(--client-radius) !important;
+}
+
+/* Orders */
+.app .content {
+  display: grid !important;
+  grid-template-columns: 180px minmax(0, 1fr);
+  gap: 18px;
+  width: min(1280px, 100%);
+  margin: 0 auto !important;
+}
+
+.left-stats {
+  position: sticky;
+  top: calc(var(--client-header-height) + 12px);
+  display: flex !important;
+  flex-direction: column;
+  gap: 12px;
+  width: auto !important;
+  min-width: 0;
+}
+
+.back-button-container {
+  width: 100% !important;
+  margin: 0 !important;
+}
+
+.custom-btn {
+  width: 100% !important;
+  min-width: 0 !important;
+  border-radius: var(--client-radius) !important;
+}
+
+.stat {
+  width: 100% !important;
+  min-height: 100px;
+  height: auto !important;
+  padding: 14px !important;
+  border-radius: var(--client-radius) !important;
+}
+
+.main-panel {
+  min-width: 0;
+  padding: clamp(14px, 2vw, 24px) !important;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(224, 224, 224, 0.85);
+  border-radius: var(--client-radius);
+  box-shadow: var(--client-shadow);
+}
+
+.heading-row {
+  display: flex !important;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.heading-row h2 {
+  min-width: 0;
+  margin: 0 !important;
+  overflow-wrap: anywhere;
+}
+
+.heading-controls {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.manual-order-btn {
+  white-space: nowrap;
+  border-radius: var(--client-radius) !important;
+}
+
+.search {
+  min-width: 0;
+}
+
+.search input {
+  width: min(100%, 260px) !important;
+  border-radius: var(--client-radius) !important;
+}
+
+.orders-table {
+  max-height: calc(100svh - 240px);
+  overflow: auto !important;
+  border: 1px solid var(--client-line);
+  border-radius: var(--client-radius);
+  background: var(--client-panel);
+}
+
+.orders-table .table-header,
+.orders-table .table-row {
+  min-width: 980px;
+  grid-template-columns: 120px 150px 130px 90px minmax(220px, 1fr) 150px 124px 96px !important;
+}
+
+.orders-table .table-header {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  color: #ffffff;
+  background: var(--client-red);
+}
+
+.orders-table .table-row {
+  align-items: start;
+}
+
+.orders-table .col,
+.orders-table .table-row > div {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* Manual order modal */
+.manual-order-overlay {
+  align-items: center !important;
+  padding: 16px !important;
+}
+
+.manual-order-modal {
+  width: min(1120px, 96vw) !important;
+  max-height: min(92svh, 860px) !important;
+  overflow: hidden !important;
+  border-radius: var(--client-radius) !important;
+}
+
+.modal-header,
+.modal-footer {
+  position: sticky;
+  z-index: 4;
+  background: var(--client-panel);
+}
+
+.modal-header {
+  top: 0;
+}
+
+.modal-footer {
+  bottom: 0;
+}
+
+.modal-content {
+  display: grid !important;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1fr) minmax(0, 1fr);
+  gap: 18px !important;
+  max-height: calc(92svh - 150px);
+  overflow: auto;
+}
+
+.customer-info-section,
+.menu-selection-section,
+.selected-items-section {
+  min-width: 0;
+}
+
+.menu-list,
+.selected-items-list {
+  max-height: 46svh;
+  overflow: auto;
+}
+
+.selected-item {
+  min-width: 0;
+}
+
+.item-details,
+.item-specs {
+  min-width: 0;
+}
+
+/* Menu management */
+.menu-management-container {
+  display: flex !important;
+  flex-direction: column;
+}
+
+.menu-header-bar {
+  display: grid !important;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  margin: 0 0 16px !important;
+}
+
+.h1-page-title {
+  margin: 0 !important;
+  font-size: clamp(22px, 3vw, 34px) !important;
+  line-height: 1.15;
+  text-align: center;
+}
+
+.header-actions {
+  display: flex !important;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px !important;
+  flex-wrap: wrap;
+}
+
+.btn-back,
+.btn-primary {
+  border-radius: var(--client-radius) !important;
+  white-space: nowrap;
+}
+
+.menu-table .btn-primary:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+.menu-content-area {
+  flex: 1 1 auto;
+  min-height: 0;
+  margin-top: 0 !important;
+  padding: clamp(12px, 2vw, 24px) !important;
+  overflow: hidden !important;
+  border: 1px solid rgba(224, 224, 224, 0.85);
+  border-radius: var(--client-radius);
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: var(--client-shadow);
+}
+
+.menu-table-wrapper,
+.table-scroll-container {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.table-scroll-container {
+  max-height: calc(100svh - 240px);
+  overflow: auto !important;
+}
+
+.menu-table {
+  min-width: 960px;
+}
+
+.menu-table th,
+.menu-table td {
+  white-space: normal !important;
+  vertical-align: top;
+}
+
+.menu-table textarea,
+.menu-table input,
+.menu-table select {
+  min-width: 0;
+}
+
+/* Promotions */
+.promotions-page-container {
+  display: block !important;
+}
+
+.promotions-page-content {
+  width: min(1200px, 100%);
+  margin: 0 auto !important;
+  padding: clamp(18px, 3vw, 40px) !important;
+  border-radius: var(--client-radius) !important;
+}
+
+.promotions-back-btn {
+  position: static !important;
+  margin: 0 0 12px !important;
+  border-radius: var(--client-radius) !important;
+}
+
+.promotions-title {
+  margin-top: 0 !important;
+  font-size: clamp(20px, 3vw, 28px) !important;
+  line-height: 1.2;
+}
+
+.promotions-content {
+  display: grid !important;
+  grid-template-columns: minmax(260px, 0.9fr) minmax(280px, 1.1fr);
+  gap: clamp(16px, 3vw, 40px) !important;
+  align-items: start;
+}
+
+.promotions-upload-box,
+.promotions-input-section,
+.promotions-grid,
+.promotion-card {
+  min-width: 0;
+}
+
+.promotions-grid {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)) !important;
+}
+
+/* Inventory */
+.inventory-container {
+  display: flex !important;
+  flex-direction: column;
+}
+
+.Inventory-app-header {
+  display: grid !important;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  margin: 0 0 18px !important;
+}
+
+.Inventory-btn-back {
+  position: static !important;
+  border-radius: var(--client-radius) !important;
+}
+
+.Inventory-title-main {
+  margin: 0 !important;
+  font-size: clamp(22px, 3vw, 34px) !important;
+  line-height: 1.15;
+  text-align: center;
+}
+
+.Inventory-dashboard-wrapper {
+  width: 100% !important;
+}
+
+.Inventory-stats-row {
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px !important;
+  width: 100%;
+  margin: 0 !important;
+}
+
+.Inventory-card-stat,
+.Inventory-card-activity {
+  width: 100% !important;
+  min-width: 0;
+  min-height: 112px;
+  height: auto !important;
+  border-radius: var(--client-radius) !important;
+}
+
+.Inventory-toolbar-container {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 14px;
+  width: 100%;
+  margin: 16px 0 !important;
+  padding: 0 !important;
+}
+
+.Inventory-toolbar-left {
+  display: flex !important;
+  align-items: end;
+  gap: 14px !important;
+  min-width: 0;
+}
+
+.Inventory-toolbar-title {
+  margin-left: 0 !important;
+  white-space: nowrap;
+}
+
+.Inventory-input-search {
+  width: min(100%, 380px) !important;
+  min-width: 0 !important;
+  border-radius: var(--client-radius) !important;
+}
+
+.Inventory-toolbar-right {
+  position: static !important;
+  left: auto !important;
+  display: flex !important;
+  justify-content: flex-end;
+  gap: 10px;
+  min-width: 0;
+}
+
+.Inventory-btn-action {
+  margin-left: 0 !important;
+  border-radius: var(--client-radius) !important;
+  white-space: nowrap;
+}
+
+.Inventory-container {
+  flex: 1 1 auto;
+  height: auto !important;
+  padding: 0 !important;
+  overflow: visible !important;
+}
+
+.Inventory-table-wrapper {
+  max-height: calc(100svh - 320px);
+  overflow: auto !important;
+  border: 1px solid var(--client-line);
+  border-radius: var(--client-radius);
+  background: var(--client-panel);
+}
+
+.Inventory-inventory-table {
+  min-width: 760px;
+}
+
+.Inventory-inventory-table th,
+.Inventory-inventory-table td {
+  white-space: normal !important;
+  vertical-align: top;
+}
+
+.Inventory-modal-overlay {
+  padding: 16px !important;
+}
+
+.Inventory-modal-box {
+  width: min(520px, 94vw) !important;
+  max-height: 90svh !important;
+  overflow: auto;
+  border-radius: var(--client-radius) !important;
+}
+
+/* Finance */
+.fin-app {
+  display: flex !important;
+  flex-direction: column;
+}
+
+.fin-page-title {
+  margin: 0 0 18px !important;
+  font-size: clamp(24px, 3vw, 36px) !important;
+  line-height: 1.15;
+}
+
+.fin-top-row {
+  display: flex !important;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 0 !important;
+}
+
+.fin-back-btn {
+  position: static !important;
+  border-radius: var(--client-radius) !important;
+}
+
+.fin-nav-buttons {
+  display: flex !important;
+  gap: 10px !important;
+  justify-content: flex-start !important;
+  max-width: 100%;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.fin-nav-btn {
+  flex: 0 0 auto;
+  border-radius: var(--client-radius) !important;
+}
+
+.fin-orders-container {
+  width: 100% !important;
+  min-width: 0;
+  max-height: none !important;
+  overflow: visible !important;
+  border-radius: var(--client-radius) !important;
+}
+
+.fin-search-bar {
+  width: min(100%, 360px) !important;
+}
+
+.fin-orders-table {
+  max-height: calc(100svh - 260px);
+  overflow: auto !important;
+  border-radius: var(--client-radius);
+}
+
+.fin-orders-table table,
+.fin-ledger-table {
+  min-width: 980px;
+}
+
+.fin-orders-table th,
+.fin-orders-table td,
+.fin-ledger-table th,
+.fin-ledger-table td {
+  white-space: normal !important;
+  vertical-align: top;
+}
+
+.fin-filter-modal {
+  min-width: 0 !important;
+  width: min(92vw, 520px) !important;
+  max-height: 90svh;
+  overflow: auto;
+  border-radius: var(--client-radius) !important;
+}
+
+.graphs-container,
+.sub-nav,
+.fin-ledger-filters {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+/* Login and code entry screens */
+.sub-login {
+  display: grid !important;
+  grid-template-columns: minmax(260px, 380px) minmax(0, 1fr);
+  align-items: stretch;
+  gap: clamp(24px, 4vw, 68px) !important;
+  width: 100%;
+  min-height: 100svh !important;
+  height: auto !important;
+  padding: clamp(18px, 3vw, 44px) !important;
+  overflow: hidden !important;
+  background:
+    radial-gradient(circle at 90% 92%, rgba(229, 57, 53, 0.08) 0, rgba(229, 57, 53, 0.08) 28%, transparent 29%),
+    linear-gradient(135deg, #fffefb 0%, #fff7f0 58%, #fceee6 100%) !important;
+}
+
+.sub-login-left,
+.sub-login-right,
+.sub-login-card,
+.sub-login-panel,
+.sub-login-form {
+  max-width: 100%;
+  min-width: 0;
+}
+
+.sub-login-left {
+  width: auto !important;
+  min-width: 0 !important;
+  height: auto !important;
+  margin: 0 !important;
+  padding: clamp(22px, 3vw, 38px) !important;
+  border-radius: var(--client-radius) !important;
+  background: linear-gradient(160deg, var(--client-red) 0%, var(--client-red-dark) 100%) !important;
+  box-shadow: 0 18px 42px rgba(198, 40, 40, 0.18);
+}
+
+.sub-brand-section {
+  gap: 10px !important;
+}
+
+.sub-orderin-logo {
+  width: min(82%, 220px) !important;
+  margin: 0 auto 8px !important;
+}
+
+.sub-by-row {
+  gap: 6px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.sub-by-text,
+.sub-company-name-text {
+  font-size: clamp(11px, 1.15vw, 14px) !important;
+  line-height: 1.35 !important;
+}
+
+.sub-illustration {
+  width: min(100%, 300px) !important;
+  margin: 0 auto !important;
+}
+
+.sub-circle-outer {
+  width: min(100%, clamp(170px, 21vw, 260px)) !important;
+  height: auto !important;
+  aspect-ratio: 1;
+  margin: clamp(20px, 4vw, 38px) auto 14px !important;
+  background: rgba(255, 255, 255, 0.9) !important;
+  box-shadow: inset 0 10px 28px rgba(198, 40, 40, 0.12), 0 14px 28px rgba(90, 20, 20, 0.12) !important;
+}
+
+.sub-circle-inner {
+  background-color: rgba(67, 160, 71, 0.24) !important;
+}
+
+.sub-food-img {
+  width: 82% !important;
+  max-height: 82% !important;
+}
+
+.sub-tagline {
+  margin: 0 !important;
+  color: rgba(255, 255, 255, 0.95) !important;
+  font-size: clamp(12px, 1.2vw, 14px) !important;
+  line-height: 1.45 !important;
+}
+
+.sub-login-right {
+  justify-content: center !important;
+  align-items: center !important;
+  padding: 0 !important;
+  overflow: visible !important;
+}
+
+.sub-login-header {
+  width: min(100%, 520px);
+  margin: 0 0 18px !important;
+  text-align: center;
+}
+
+.sub-restaurant-name {
+  margin: 0 !important;
+  color: #2b2b2b !important;
+  font-size: clamp(30px, 4vw, 46px) !important;
+  line-height: 1.08 !important;
+  letter-spacing: 0 !important;
+}
+
+.sub-welcome-text {
+  margin: 8px 0 0 !important;
+  color: #666666 !important;
+  font-size: clamp(14px, 1.6vw, 18px) !important;
+}
+
+.sub-login-card {
+  width: min(100%, 420px) !important;
+  padding: clamp(24px, 3vw, 36px) !important;
+  text-align: left !important;
+  border: 1px solid rgba(229, 57, 53, 0.1);
+  border-radius: var(--client-radius) !important;
+  background: rgba(255, 255, 255, 0.96) !important;
+  box-shadow: 0 18px 44px rgba(80, 45, 30, 0.12) !important;
+}
+
+.sub-login-card h3 {
+  margin: 0 !important;
+  color: #222222 !important;
+  font-size: clamp(22px, 2.3vw, 28px) !important;
+  line-height: 1.15 !important;
+}
+
+.sub-login-card .sub {
+  margin: 6px 0 22px !important;
+  color: #777777 !important;
+  font-size: 14px !important;
+  line-height: 1.45 !important;
+}
+
+.sub-login-form {
+  display: flex !important;
+  flex-direction: column;
+  gap: 14px !important;
+}
+
+.sub-login-form input {
+  width: 100% !important;
+  min-height: 46px;
+  margin: 0 !important;
+  padding: 12px 14px !important;
+  border: 1px solid #e2d8d2 !important;
+  border-radius: var(--client-radius) !important;
+  background: #fffafa;
+  color: #222222 !important;
+  font-size: 15px !important;
+}
+
+.sub-login-form input::placeholder {
+  color: #9b908b;
+}
+
+.sub-login-form input:focus {
+  border-color: var(--client-red) !important;
+  box-shadow: 0 0 0 3px rgba(229, 57, 53, 0.1) !important;
+}
+
+.sub-primary-cta {
+  width: 100% !important;
+  min-height: 48px !important;
+  margin-top: 4px;
+  border-radius: var(--client-radius) !important;
+  background: var(--client-red) !important;
+  box-shadow: 0 10px 22px rgba(229, 57, 53, 0.18);
+}
+
+.sub-primary-cta:hover {
+  background: var(--client-red-dark) !important;
+}
+
+.sub-primary-cta:disabled {
+  cursor: not-allowed;
+  opacity: 0.62;
+  box-shadow: none;
+}
+
+.status-note {
+  margin: 0;
+  color: var(--client-red-dark);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.sub-contact-info {
+  position: static !important;
+  width: min(100%, 420px) !important;
+  max-width: 420px !important;
+  margin: 18px auto 0 !important;
+  padding: 0 !important;
+  color: #555555 !important;
+  text-align: center !important;
+  line-height: 1.55 !important;
+  background: transparent !important;
+  z-index: 2;
+}
+
+.sub-contact-info p {
+  margin: 0;
+  color: inherit !important;
+}
+
+.sub-tagline-below-contact {
+  display: none !important;
+}
+
+.sub-red-blob {
+  right: -80px !important;
+  bottom: -90px !important;
+  width: min(42vw, 520px) !important;
+  max-width: 520px !important;
+  opacity: 0.12;
+}
+
+/* Broad tablet corrections */
+@media (max-width: 1024px) {
+  .cards- {
+    grid-template-columns: repeat(2, minmax(180px, 1fr)) !important;
+  }
+
+  .Inventory-stats-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .Inventory-toolbar-container {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+
+  .Inventory-toolbar-left,
+  .Inventory-toolbar-right {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .Inventory-toolbar-right {
+    justify-content: flex-start;
+  }
+
+  .promotions-content {
+    grid-template-columns: 1fr;
+  }
+
+  .modal-content {
+    grid-template-columns: 1fr;
+    max-height: calc(92svh - 150px);
+  }
+}
+
+@media (max-width: 900px) {
+  :root {
+    --client-header-height: 72px;
+  }
+
+  .sub-login {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0 !important;
+    min-height: 100svh !important;
+    padding: 0 !important;
+    overflow: auto !important;
+    background: linear-gradient(180deg, #fffefb 0%, #fff7f0 72%, #fceee6 100%) !important;
+  }
+
+  .sub-login-left {
+    width: 100% !important;
+    min-height: auto !important;
+    padding: 18px 20px !important;
+    border-radius: 0 0 18px 18px !important;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center !important;
+    gap: 16px;
+  }
+
+  .sub-brand-section {
+    align-items: flex-start !important;
+    text-align: left !important;
+  }
+
+  .sub-orderin-logo {
+    width: min(68vw, 170px) !important;
+    margin: 0 0 6px !important;
+  }
+
+  .sub-by-row {
+    justify-content: flex-start !important;
+  }
+
+  .sub-illustration {
+    width: auto !important;
+    min-width: 118px;
+  }
+
+  .sub-circle-outer {
+    display: block !important;
+    width: clamp(96px, 18vw, 132px) !important;
+    margin: 0 auto 8px !important;
+  }
+
+  .sub-illustration .sub-tagline {
+    display: block !important;
+    font-size: 12px !important;
+    line-height: 1.25 !important;
+  }
+
+  .sub-login-right {
+    width: 100% !important;
+    flex: 1 1 auto;
+    justify-content: flex-start !important;
+    padding: 24px 16px 28px !important;
+  }
+
+  .sub-login-header {
+    margin-bottom: 14px !important;
+  }
+
+  .sub-login-card {
+    width: min(100%, 420px) !important;
+  }
+
+  .sub-contact-info {
+    position: static !important;
+    width: min(100%, 420px) !important;
+    max-width: 420px !important;
+    margin: 16px auto 0 !important;
+    padding: 0 !important;
+    color: #555555 !important;
+    text-align: center !important;
+    background: transparent !important;
+  }
+
+  .sub-red-blob {
+    display: none !important;
+  }
+
+  .header {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    min-height: var(--client-header-height);
+    gap: 10px;
+  }
+
+  .header .restaurant-name {
+    max-width: none;
+    font-size: clamp(16px, 3.5vw, 26px) !important;
+    letter-spacing: 0.5px !important;
+  }
+
+  .orderin-logo {
+    width: 90px !important;
+  }
+
+  .app .content {
+    grid-template-columns: 1fr !important;
+  }
+
+  .left-stats {
+    position: static;
+    display: grid !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .orders-table,
+  .table-scroll-container,
+  .Inventory-table-wrapper,
+  .fin-orders-table {
+    max-height: none;
+  }
+
+  .menu-list,
+  .selected-items-list {
+    max-height: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .header {
+    padding: 8px 10px !important;
+  }
+
+  .header-center {
+    display: flex !important;
+  }
+
+  .header .restaurant-name {
+    display: block !important;
+  }
+
+  .app,
+  .menu-management-container,
+  .promotions-page-container,
+  .inventory-container,
+  .fin-app {
+    padding: 12px !important;
+  }
+
+  .content- {
+    width: min(100%, calc(100% - 20px)) !important;
+  }
+
+  .left-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .back-button-container {
+    grid-column: 1 / -1;
+  }
+
+  .stat {
+    min-height: 82px;
+    padding: 12px !important;
+  }
+
+  .stat .value {
+    font-size: 30px !important;
+  }
+
+  .heading-row,
+  .heading-controls {
+    display: grid !important;
+    grid-template-columns: 1fr;
+    width: 100%;
+  }
+
+  .manual-order-btn,
+  .search,
+  .search input {
+    width: 100% !important;
+  }
+
+  .manual-order-overlay {
+    align-items: flex-end !important;
+    padding: 8px !important;
+  }
+
+  .manual-order-modal {
+    width: 100% !important;
+    max-height: 94svh !important;
+  }
+
+  .modal-footer {
+    display: grid !important;
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .menu-header-bar,
+  .Inventory-app-header {
+    grid-template-columns: 1fr;
+    text-align: center;
+  }
+
+  .btn-back,
+  .Inventory-btn-back,
+  .promotions-back-btn,
+  .fin-back-btn {
+    justify-self: start;
+  }
+
+  .header-actions {
+    justify-content: stretch;
+    width: 100%;
+  }
+
+  .header-actions .btn-primary {
+    flex: 1 1 130px;
+  }
+
+  .Inventory-stats-row {
+    grid-template-columns: 1fr;
+  }
+
+  .Inventory-toolbar-left {
+    align-items: stretch;
+  }
+
+  .Inventory-toolbar-title {
+    flex: 1 0 100%;
+  }
+
+  .Inventory-input-search {
+    width: 100% !important;
+  }
+
+  .Inventory-btn-action {
+    flex: 1 1 150px;
+  }
+
+  .promotions-page-content {
+    padding: 16px !important;
+  }
+
+  .fin-top-row {
+    align-items: stretch;
+  }
+
+  .fin-nav-buttons {
+    flex-wrap: nowrap;
+    width: 100%;
+  }
+
+  .fin-search-bar {
+    width: 100% !important;
+  }
+}
+
+@media (max-width: 560px) {
+  .cards- {
+    grid-template-columns: 1fr !important;
+  }
+
+  .header {
+    grid-template-columns: 82px minmax(0, 1fr) auto;
+    gap: 8px;
+  }
+
+  .orderin-logo {
+    width: 82px !important;
+  }
+
+  .header .restaurant-name {
+    font-size: 16px !important;
+  }
+
+  .icon-btn {
+    min-width: 36px;
+    min-height: 36px;
+    padding: 4px !important;
+  }
+
+  .icon-img {
+    width: 28px !important;
+    height: 28px !important;
+  }
+
+  .main-panel,
+  .menu-content-area,
+  .promotions-page-content {
+    padding: 12px !important;
+  }
+
+  .orders-table .table-header,
+  .orders-table .table-row {
+    min-width: 860px;
+    grid-template-columns: 105px 130px 120px 72px minmax(180px, 1fr) 128px 112px 84px !important;
+  }
+
+  .menu-table {
+    min-width: 820px;
+  }
+
+  .Inventory-inventory-table {
+    min-width: 700px;
+  }
+
+  .fin-orders-table table,
+  .fin-ledger-table {
+    min-width: 820px;
+  }
+}
+
+@media (max-width: 420px) {
+  .app,
+  .menu-management-container,
+  .promotions-page-container,
+  .inventory-container,
+  .fin-app,
+  .sub-login {
+    padding: 10px !important;
+  }
+
+  .header {
+    grid-template-columns: 72px minmax(0, 1fr) auto;
+    padding: 8px !important;
+  }
+
+  .orderin-logo {
+    width: 72px !important;
+  }
+
+  .header .restaurant-name {
+    font-size: 14px !important;
+    letter-spacing: 0.2px !important;
+  }
+
+  .header-right {
+    gap: 4px !important;
+  }
+
+  .icon-btn {
+    min-width: 32px;
+    min-height: 32px;
+  }
+
+  .icon-img {
+    width: 24px !important;
+    height: 24px !important;
+  }
+
+  .left-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .sub-login {
+    padding: 0 !important;
+  }
+
+  .sub-login-left {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    padding: 16px 14px !important;
+    text-align: center;
+  }
+
+  .sub-brand-section {
+    align-items: center !important;
+    text-align: center !important;
+  }
+
+  .sub-by-row {
+    justify-content: center !important;
+  }
+
+  .sub-orderin-logo {
+    width: min(72vw, 150px) !important;
+  }
+
+  .sub-illustration {
+    min-width: 0;
+  }
+
+  .sub-circle-outer {
+    width: 96px !important;
+    margin-top: 4px !important;
+  }
+
+  .sub-illustration .sub-tagline {
+    display: none !important;
+  }
+
+  .sub-login-right {
+    padding: 20px 12px 26px !important;
+  }
+
+  .sub-restaurant-name {
+    font-size: 24px !important;
+  }
+
+  .sub-welcome-text {
+    font-size: 14px !important;
+  }
+
+  .sub-login-card {
+    padding: 22px 16px !important;
+  }
+
+  .h1-page-title,
+  .Inventory-title-main,
+  .fin-page-title {
+    font-size: 22px !important;
+  }
+
+  .btn-back,
+  .btn-primary,
+  .custom-btn,
+  .manual-order-btn,
+  .Inventory-btn-action,
+  .fin-nav-btn {
+    width: 100%;
+  }
+
+  .promotions-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (max-width: 360px) {
+  .header {
+    grid-template-columns: 62px minmax(0, 1fr) auto;
+  }
+
+  .orderin-logo {
+    width: 62px !important;
+  }
+
+  .header .restaurant-name {
+    font-size: 12px !important;
+  }
+
+  .icon-img {
+    width: 22px !important;
+    height: 22px !important;
+  }
+}
+
+@media (min-width: 900px) and (max-height: 760px) {
+  :root {
+    --client-header-height: 64px;
+  }
+
+  .header {
+    min-height: var(--client-header-height);
+    padding-block: 6px !important;
+  }
+
+  .orderin-logo {
+    width: 82px !important;
+    max-height: 46px;
+  }
+
+  .header .restaurant-name {
+    font-size: clamp(18px, 3vw, 30px) !important;
+  }
+
+  .icon-img {
+    width: 32px !important;
+    height: 32px !important;
+  }
+
+  .orders-table {
+    max-height: calc(100svh - 190px);
+  }
+
+  .table-scroll-container {
+    max-height: calc(100svh - 190px);
+  }
+
+  .Inventory-table-wrapper {
+    max-height: calc(100svh - 260px);
+  }
+
+  .fin-orders-table {
+    max-height: calc(100svh - 210px);
+  }
+}
+
+/* Main restaurant login redesign */
+.sub-login.login-redesign {
+  position: relative;
+  isolation: isolate;
+  display: grid !important;
+  grid-template-columns: minmax(300px, 0.82fr) minmax(360px, 1fr);
+  gap: clamp(24px, 4vw, 76px) !important;
+  align-items: stretch;
+  width: 100%;
+  min-height: 0 !important;
+  height: 100svh !important;
+  margin: 0 !important;
+  padding: clamp(18px, 3vw, 44px) !important;
+  overflow-x: hidden !important;
+  overflow-y: hidden !important;
+  background:
+    radial-gradient(circle at 92% 12%, rgba(229, 57, 53, 0.1) 0 18%, transparent 19%),
+    radial-gradient(circle at 8% 92%, rgba(67, 160, 71, 0.1) 0 16%, transparent 17%),
+    linear-gradient(135deg, #fffdf8 0%, #fff7f0 56%, #fceee6 100%) !important;
+}
+
+.sub-login.login-redesign::before {
+  content: "";
+  position: absolute;
+  inset: clamp(10px, 1.6vw, 22px);
+  z-index: -2;
+  border: 1px solid rgba(229, 57, 53, 0.08);
+  border-radius: 18px;
+  pointer-events: none;
+}
+
+.sub-login.login-redesign::after {
+  content: "";
+  position: absolute;
+  right: -180px;
+  bottom: -220px;
+  z-index: -2;
+  width: clamp(360px, 44vw, 720px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: rgba(229, 57, 53, 0.08);
+  pointer-events: none;
+}
+
+.login-redesign .login-brand-panel {
+  position: relative;
+  display: flex !important;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  width: auto !important;
+  min-width: 0 !important;
+  min-height: min(760px, calc(100svh - clamp(36px, 6vw, 88px)));
+  margin: 0 !important;
+  padding: clamp(24px, 3.2vw, 42px) !important;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 18px !important;
+  color: #ffffff;
+  background:
+    linear-gradient(155deg, rgba(229, 57, 53, 0.96) 0%, rgba(198, 40, 40, 0.98) 54%, rgba(121, 42, 22, 0.96) 100%),
+    url("/images/backgroun-image.jpg") center / cover no-repeat !important;
+  box-shadow: 0 22px 56px rgba(139, 39, 28, 0.22);
+}
+
+.login-redesign .login-brand-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.16), transparent 42%),
+    radial-gradient(circle at 72% 26%, rgba(255, 255, 255, 0.18) 0 17%, transparent 18%);
+  pointer-events: none;
+}
+
+.login-redesign .sub-brand-section,
+.login-redesign .login-visual {
+  position: relative;
+  z-index: 1;
+}
+
+.login-redesign .sub-brand-section {
+  width: 100%;
+  gap: 12px !important;
+}
+
+.login-redesign .login-logo-card {
+  width: min(100%, 270px);
+  margin: 0 auto;
+  padding: 14px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 14px 34px rgba(80, 25, 16, 0.18);
+}
+
+.login-redesign .sub-orderin-logo {
+  display: block;
+  width: 100% !important;
+  margin: 0 !important;
+}
+
+.login-redesign .sub-by-row {
+  justify-content: center !important;
+  gap: 7px !important;
+  width: 100%;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.login-redesign .sub-by-text,
+.login-redesign .sub-company-name-text {
+  color: rgba(255, 255, 255, 0.92) !important;
+  font-size: clamp(11px, 1vw, 14px) !important;
+  line-height: 1.35 !important;
+}
+
+.login-redesign .login-visual {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: min(100%, 330px) !important;
+  margin: clamp(22px, 4vw, 46px) auto 0 !important;
+}
+
+.login-redesign .sub-circle-outer {
+  width: min(100%, clamp(190px, 24vw, 310px)) !important;
+  height: auto !important;
+  aspect-ratio: 1;
+  margin: 0 auto clamp(18px, 2.4vw, 28px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.32);
+  background: rgba(255, 255, 255, 0.92) !important;
+  box-shadow:
+    inset 0 10px 28px rgba(198, 40, 40, 0.12),
+    0 20px 42px rgba(80, 25, 16, 0.24) !important;
+}
+
+.login-redesign .sub-circle-inner {
+  width: 78%;
+  height: 78%;
+  background-color: rgba(67, 160, 71, 0.2) !important;
+}
+
+.login-redesign .sub-food-img {
+  width: 86% !important;
+  max-height: 86% !important;
+  filter: drop-shadow(0 18px 20px rgba(40, 18, 12, 0.18));
+}
+
+.login-redesign .login-brand-caption {
+  width: 100%;
+  padding: 16px 18px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.1);
+  text-align: center;
+  backdrop-filter: blur(10px);
+}
+
+.login-redesign .login-brand-caption span {
+  display: block;
+  margin-bottom: 6px;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.login-redesign .sub-tagline {
+  margin: 0 !important;
+  color: #ffffff !important;
+  font-size: clamp(15px, 1.45vw, 20px) !important;
+  font-weight: 700;
+  line-height: 1.25 !important;
+}
+
+.login-redesign .login-auth-area {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-width: 0;
+  padding: clamp(12px, 2vw, 28px) 0 !important;
+  overflow: hidden !important;
+}
+
+.login-redesign .login-auth-panel {
+  width: min(100%, 480px);
+}
+
+.login-redesign .sub-login-header {
+  width: 100%;
+  margin: 0 0 22px !important;
+  text-align: left;
+}
+
+.login-redesign .login-eyebrow {
+  margin: 0 0 10px;
+  color: var(--client-red-dark);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.login-redesign .sub-restaurant-name {
+  margin: 0 !important;
+  color: #26211f !important;
+  font-size: clamp(34px, 4vw, 54px) !important;
+  font-weight: 800 !important;
+  line-height: 1.02 !important;
+  letter-spacing: 0 !important;
+}
+
+.login-redesign .sub-welcome-text {
+  margin: 10px 0 0 !important;
+  color: #6d625e !important;
+  font-size: clamp(15px, 1.5vw, 18px) !important;
+  line-height: 1.45;
+}
+
+.login-redesign .sub-login-card {
+  width: 100% !important;
+  max-width: none !important;
+  padding: clamp(24px, 3vw, 36px) !important;
+  border: 1px solid rgba(229, 57, 53, 0.12);
+  border-radius: 18px !important;
+  background: rgba(255, 255, 255, 0.94) !important;
+  box-shadow: 0 24px 56px rgba(90, 48, 32, 0.13) !important;
+  text-align: left !important;
+  backdrop-filter: blur(12px);
+}
+
+.login-redesign .login-card-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.login-redesign .sub-login-card h3 {
+  margin: 0 !important;
+  color: #241f1d !important;
+  font-size: clamp(24px, 2.5vw, 32px) !important;
+  font-weight: 800 !important;
+  line-height: 1.1 !important;
+}
+
+.login-redesign .sub-login-card .sub {
+  margin: 7px 0 0 !important;
+  color: #7b716d !important;
+  font-size: 14px !important;
+  line-height: 1.45 !important;
+}
+
+.login-redesign .login-status-pill {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 30px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.login-redesign .login-status-pill.is-active {
+  color: #1b5e20;
+  background: rgba(67, 160, 71, 0.14);
+}
+
+.login-redesign .login-status-pill.is-limited,
+.login-redesign .login-status-pill.is-checking {
+  color: #8a5c00;
+  background: rgba(247, 194, 59, 0.24);
+}
+
+.login-redesign .login-status-pill.is-disabled {
+  color: var(--client-red-dark);
+  background: rgba(229, 57, 53, 0.13);
+}
+
+.login-redesign .sub-login-form {
+  display: flex !important;
+  flex-direction: column;
+  gap: 18px !important;
+}
+
+.login-redesign .sub-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.login-redesign .sub-field-label {
+  color: #443b37;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.login-redesign .sub-login-form input {
+  width: 100% !important;
+  min-height: 52px;
+  margin: 0 !important;
+  padding: 14px 15px !important;
+  border: 1px solid #e2d5cd !important;
+  border-radius: 12px !important;
+  outline: none;
+  background: #fffaf7 !important;
+  color: #241f1d !important;
+  font-size: 15px !important;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+.login-redesign .sub-login-form input::placeholder {
+  color: #9b908b;
+}
+
+.login-redesign .sub-login-form input:focus {
+  border-color: var(--client-red) !important;
+  background: #ffffff !important;
+  box-shadow: 0 0 0 4px rgba(229, 57, 53, 0.1) !important;
+}
+
+.login-redesign .sub-primary-cta {
+  width: 100% !important;
+  min-height: 52px !important;
+  margin-top: 2px;
+  border: none;
+  border-radius: 12px !important;
+  background: linear-gradient(135deg, var(--client-red) 0%, var(--client-red-dark) 100%) !important;
+  color: #ffffff !important;
+  font-size: 16px !important;
+  font-weight: 800 !important;
+  box-shadow: 0 14px 28px rgba(198, 40, 40, 0.22);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+}
+
+.login-redesign .sub-primary-cta:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 16px 32px rgba(198, 40, 40, 0.28);
+}
+
+.login-redesign .sub-primary-cta:active {
+  transform: translateY(0);
+}
+
+.login-redesign .sub-primary-cta:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+  box-shadow: none;
+  transform: none;
+}
+
+.login-redesign .sub-dashboard-back {
+  width: 100%;
+  min-height: 46px;
+  border: 1px solid rgba(229, 57, 53, 0.18);
+  border-radius: 12px;
+  background: rgba(255, 250, 247, 0.92);
+  color: var(--client-red-dark);
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+}
+
+.login-redesign .sub-dashboard-back:hover {
+  background: rgba(229, 57, 53, 0.08);
+  border-color: rgba(229, 57, 53, 0.32);
+  transform: translateY(-1px);
+}
+
+.login-redesign .sub-dashboard-back:active {
+  transform: translateY(0);
+}
+
+.login-redesign .status-note {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  color: var(--client-red-dark);
+  background: rgba(229, 57, 53, 0.08);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.login-redesign .login-support-card {
+  position: static !important;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  width: 100% !important;
+  max-width: none !important;
+  margin: 16px 0 0 !important;
+  padding: 14px 16px !important;
+  border: 1px solid rgba(229, 57, 53, 0.1);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.58) !important;
+  color: #5c514d !important;
+  text-align: left !important;
+  box-shadow: 0 12px 28px rgba(90, 48, 32, 0.07);
+}
+
+.login-redesign .login-support-card span {
+  flex: 0 0 auto;
+  color: var(--client-red-dark);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.login-redesign .login-support-card p {
+  margin: 0;
+  color: inherit !important;
+  font-size: 13px;
+  line-height: 1.45;
+  text-align: right;
+}
+
+.login-redesign .sub-red-blob {
+  position: fixed;
+  right: -120px !important;
+  bottom: -120px !important;
+  z-index: -1;
+  display: block !important;
+  width: min(40vw, 560px) !important;
+  max-width: 560px !important;
+  opacity: 0.08;
+  filter: none;
+}
+
+@media (max-width: 1120px) {
+  .sub-login.login-redesign {
+    grid-template-columns: minmax(280px, 0.74fr) minmax(340px, 1fr);
+    gap: clamp(20px, 3vw, 42px) !important;
+  }
+
+  .login-redesign .login-logo-card {
+    width: min(100%, 230px);
+  }
+
+  .login-redesign .sub-restaurant-name {
+    font-size: clamp(32px, 4vw, 46px) !important;
+  }
+}
+
+@media (max-width: 920px) {
+  .sub-login.login-redesign {
+    display: flex !important;
+    flex-direction: column;
+    gap: 0 !important;
+    min-height: 100svh !important;
+    height: auto !important;
+    padding: 0 !important;
+    overflow-y: auto !important;
+  }
+
+  .login-redesign .login-brand-panel {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 20px;
+    min-height: auto;
+    padding: 20px clamp(18px, 4vw, 34px) !important;
+    border-width: 0;
+    border-radius: 0 0 24px 24px !important;
+  }
+
+  .login-redesign .sub-brand-section {
+    align-items: flex-start;
+    text-align: left;
+  }
+
+  .login-redesign .login-logo-card {
+    width: min(55vw, 210px);
+    margin: 0;
+    padding: 10px 12px;
+  }
+
+  .login-redesign .sub-by-row {
+    justify-content: flex-start !important;
+  }
+
+  .login-redesign .login-visual {
+    width: auto !important;
+    min-width: 132px;
+    margin: 0 !important;
+  }
+
+  .login-redesign .sub-circle-outer {
+    width: clamp(108px, 18vw, 150px) !important;
+    margin: 0 auto 8px !important;
+  }
+
+  .login-redesign .login-brand-caption {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    backdrop-filter: none;
+  }
+
+  .login-redesign .login-brand-caption span {
+    display: none;
+  }
+
+  .login-redesign .sub-tagline {
+    font-size: 12px !important;
+    line-height: 1.25 !important;
+  }
+
+  .login-redesign .login-auth-area {
+    flex: 1 1 auto;
+    width: 100%;
+    padding: clamp(24px, 5vw, 42px) clamp(16px, 4vw, 34px) !important;
+  }
+
+  .login-redesign .login-auth-panel {
+    width: min(100%, 520px);
+  }
+
+  .login-redesign .sub-login-header {
+    text-align: center;
+  }
+}
+
+@media (max-width: 560px) {
+  .sub-login.login-redesign::before,
+  .sub-login.login-redesign::after {
+    display: none;
+  }
+
+  .login-redesign .login-brand-panel {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    gap: 12px;
+    padding: 16px 14px 18px !important;
+    text-align: center;
+  }
+
+  .login-redesign .sub-brand-section {
+    align-items: center;
+    text-align: center;
+  }
+
+  .login-redesign .login-logo-card {
+    width: min(76vw, 180px);
+  }
+
+  .login-redesign .sub-by-row {
+    justify-content: center !important;
+  }
+
+  .login-redesign .login-visual {
+    min-width: 0;
+  }
+
+  .login-redesign .sub-circle-outer {
+    display: none !important;
+  }
+
+  .login-redesign .login-brand-caption {
+    display: block;
+  }
+
+  .login-redesign .sub-tagline {
+    font-size: 13px !important;
+  }
+
+  .login-redesign .login-auth-area {
+    padding: 22px 12px 26px !important;
+  }
+
+  .login-redesign .sub-login-header {
+    margin-bottom: 16px !important;
+  }
+
+  .login-redesign .login-eyebrow {
+    margin-bottom: 8px;
+    font-size: 11px;
+  }
+
+  .login-redesign .sub-restaurant-name {
+    font-size: clamp(26px, 8vw, 34px) !important;
+  }
+
+  .login-redesign .sub-welcome-text {
+    margin-top: 6px !important;
+    font-size: 14px !important;
+  }
+
+  .login-redesign .sub-login-card {
+    padding: 22px 16px !important;
+    border-radius: 16px !important;
+  }
+
+  .login-redesign .login-card-heading {
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .login-redesign .login-status-pill {
+    align-self: flex-start;
+  }
+
+  .login-redesign .sub-login-form {
+    gap: 15px !important;
+  }
+
+  .login-redesign .sub-login-form input {
+    min-height: 50px;
+    font-size: 16px !important;
+  }
+
+  .login-redesign .login-support-card {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 13px 14px !important;
+  }
+
+  .login-redesign .login-support-card p {
+    text-align: left;
+  }
+}
+
+@media (max-width: 380px) {
+  .login-redesign .login-logo-card {
+    width: min(80vw, 160px);
+  }
+
+  .login-redesign .sub-tagline {
+    font-size: 12px !important;
+  }
+
+  .login-redesign .sub-restaurant-name {
+    font-size: 25px !important;
+  }
+
+  .login-redesign .sub-login-card {
+    padding: 18px 14px !important;
+  }
+
+  .login-redesign .sub-login-card h3 {
+    font-size: 23px !important;
+  }
+}
+
+@media (min-width: 921px) and (max-height: 760px) {
+  .sub-login.login-redesign {
+    height: 100svh !important;
+    padding: 14px 22px !important;
+  }
+
+  .login-redesign .login-brand-panel {
+    min-height: calc(100svh - 28px);
+    padding: 20px !important;
+  }
+
+  .login-redesign .login-logo-card {
+    width: min(100%, 210px);
+    padding: 10px 12px;
+  }
+
+  .login-redesign .sub-circle-outer {
+    width: min(100%, 190px) !important;
+    margin-bottom: 12px !important;
+  }
+
+  .login-redesign .login-brand-caption {
+    padding: 12px 14px;
+  }
+
+  .login-redesign .sub-login-header {
+    margin-bottom: 14px !important;
+  }
+
+  .login-redesign .sub-login-card {
+    padding: 22px !important;
+  }
+
+  .login-redesign .login-support-card {
+    margin-top: 12px !important;
+  }
+}
+
+/* Dashboard compact mobile landing */
+@media (max-width: 768px) {
+  .landing-container- {
+    min-height: calc(100svh - var(--client-header-height)) !important;
+    height: calc(100svh - var(--client-header-height)) !important;
+    padding: 16px 14px 20px !important;
+    overflow: hidden !important;
+    justify-content: center !important;
+    background:
+      linear-gradient(150deg, rgba(67, 160, 71, 0.08) 0 18%, transparent 18% 100%),
+      linear-gradient(330deg, rgba(229, 57, 53, 0.07) 0 22%, transparent 22% 100%),
+      linear-gradient(180deg, #fffefb 0%, #fff8f2 58%, #fceee6 100%) !important;
+  }
+
+  .landing-container-::before,
+  .landing-container-::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    z-index: 0;
+    width: min(92vw, 390px);
+    height: 1px;
+    transform: translateX(-50%);
+    pointer-events: none;
+  }
+
+  .landing-container-::before {
+    top: 20px;
+    background: linear-gradient(90deg, transparent, rgba(67, 160, 71, 0.26), transparent);
+  }
+
+  .landing-container-::after {
+    bottom: 22px;
+    background: linear-gradient(90deg, transparent, rgba(229, 57, 53, 0.22), transparent);
+  }
+
+  .content- {
+    display: flex !important;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center !important;
+    gap: clamp(18px, 4.4vw, 28px) !important;
+    width: min(100%, 390px) !important;
+    height: 100% !important;
+    margin: 0 auto !important;
+  }
+
+  .content- > div:first-child {
+    display: grid;
+    gap: 4px;
+    width: 100%;
+    justify-items: center;
+    transform: translateY(-10px);
+  }
+
+  .content- h2 {
+    margin: 0 !important;
+    font-size: clamp(22px, 6.2vw, 31px) !important;
+    line-height: 1.08 !important;
+    max-width: 360px;
+  }
+
+  .cards- {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    grid-template-rows: repeat(2, minmax(0, auto));
+    gap: 12px !important;
+    width: min(100%, 374px);
+    height: auto !important;
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 auto !important;
+    align-items: stretch !important;
+    justify-items: stretch;
+  }
+
+  .card- {
+    justify-self: stretch;
+    width: 100% !important;
+    min-height: 0 !important;
+    height: auto !important;
+    aspect-ratio: 1 / 1.28;
+    padding: 13px 10px 12px !important;
+    border: 1px solid rgba(229, 57, 53, 0.07) !important;
+    border-radius: 16px !important;
+    background: rgba(255, 255, 255, 0.96) !important;
+    box-shadow: 0 16px 34px rgba(125, 85, 62, 0.14) !important;
+    justify-content: center;
+    gap: 7px;
+  }
+
+  .card-:hover {
+    transform: none;
+  }
+
+  .card- img {
+    flex: 0 0 52px;
+    width: 52px !important;
+    height: 52px !important;
+    max-height: none !important;
+    margin: 0 auto 3px !important;
+    object-fit: contain;
+    transform: scale(2.85);
+    transform-origin: center;
+    filter: drop-shadow(0 8px 8px rgba(80, 45, 30, 0.08));
+  }
+
+  .card- h3 {
+    margin: 0 !important;
+    font-size: clamp(16px, 4.5vw, 20px) !important;
+    font-weight: 700 !important;
+    line-height: 1.1;
+  }
+
+  .card- p {
+    display: -webkit-box !important;
+    max-width: 100%;
+    min-height: 34px;
+    margin: 0 !important;
+    overflow: hidden;
+    color: #68605c !important;
+    font-size: clamp(10.5px, 2.8vw, 12px) !important;
+    line-height: 1.25 !important;
+    text-align: center;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  .card- button {
+    width: min(100%, 118px) !important;
+    min-height: 38px !important;
+    margin: 0 auto !important;
+    padding: 9px 14px !important;
+    font-size: 13px !important;
+    border-radius: 10px !important;
+    box-shadow: 0 8px 16px rgba(229, 57, 53, 0.2);
+  }
+}
+
+@media (max-width: 380px), (max-height: 700px) and (max-width: 768px) {
+  .landing-container- {
+    padding: 12px 10px 16px !important;
+  }
+
+  .content- {
+    gap: 14px !important;
+    width: min(100%, 340px) !important;
+  }
+
+  .content- h2 {
+    font-size: clamp(19px, 5.8vw, 25px) !important;
+  }
+
+  .cards- {
+    gap: 8px !important;
+    width: min(100%, 330px);
+  }
+
+  .card- {
+    aspect-ratio: 1 / 1.22;
+    padding: 10px 7px 9px !important;
+    gap: 5px;
+  }
+
+  .card- img {
+    flex-basis: 44px;
+    width: 44px !important;
+    height: 44px !important;
+    transform: scale(2.7);
+  }
+
+  .card- h3 {
+    font-size: clamp(14px, 4.1vw, 17px) !important;
+  }
+
+  .card- button {
+    width: min(100%, 104px) !important;
+    min-height: 32px !important;
+    padding: 6px 9px !important;
+    font-size: 12px !important;
+  }
+
+  .card- p {
+    min-height: 30px;
+    font-size: 10.5px !important;
+    line-height: 1.2 !important;
+  }
+}
+
+/* Mobile compaction for finance, inventory, and orders */
+@media (max-width: 768px) {
+  .fin-top-row {
+    display: grid !important;
+    grid-template-columns: 1fr;
+    gap: 12px !important;
+  }
+
+  .fin-back-col,
+  .fin-nav-center {
+    width: 100%;
+  }
+
+  .fin-nav-buttons {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px !important;
+    width: min(100%, 360px);
+    margin: 0 auto;
+    overflow: visible !important;
+    padding: 0 !important;
+  }
+
+  .fin-nav-btn {
+    width: 100% !important;
+    min-height: 42px !important;
+    padding: 8px 6px !important;
+    font-size: 11px !important;
+    line-height: 1.15;
+    white-space: normal !important;
+  }
+
+  .fin-orders-container {
+    padding: 12px !important;
+  }
+
+  .fin-earnings-filter-card,
+  .fin-earnings-section {
+    padding: 14px !important;
+    margin-bottom: 14px !important;
+  }
+
+  .fin-earnings-filter-controls {
+    display: grid !important;
+    grid-template-columns: 1fr;
+    gap: 10px !important;
+    align-items: stretch !important;
+  }
+
+  .fin-earnings-filter-controls select,
+  .fin-earnings-filter-controls input {
+    width: 100% !important;
+    min-height: 40px;
+  }
+
+  .fin-earnings-filter-controls span {
+    text-align: center;
+  }
+
+  .fin-earnings-summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+    margin-bottom: 14px !important;
+  }
+
+  .fin-earnings-summary-card {
+    padding: 14px 10px !important;
+    min-width: 0;
+  }
+
+  .fin-earnings-summary-card > div:nth-child(2) {
+    font-size: clamp(20px, 6vw, 24px) !important;
+    overflow-wrap: anywhere;
+  }
+
+  .fin-earnings-breakdown-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+  }
+
+  .fin-earnings-breakdown-card {
+    min-width: 0;
+    padding: 12px 10px !important;
+  }
+
+  .Inventory-stats-row {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+  }
+
+  .Inventory-stats-row > .Inventory-card-stat:not(.Inventory-card-activity) {
+    min-height: 82px !important;
+    padding: 9px 6px !important;
+  }
+
+  .Inventory-card-stat .Inventory-card-top {
+    justify-content: center;
+    gap: 4px;
+  }
+
+  .Inventory-card-stat .Inventory-card-icon {
+    width: 18px !important;
+    height: 18px !important;
+  }
+
+  .Inventory-card-stat h4 {
+    font-size: clamp(10px, 2.8vw, 12px) !important;
+    line-height: 1.15 !important;
+    text-align: center;
+  }
+
+  .Inventory-card-stat p {
+    display: none;
+  }
+
+  .Inventory-card-stat h2 {
+    font-size: clamp(20px, 6vw, 26px) !important;
+    margin: 4px 0 0 !important;
+  }
+
+  .Inventory-card-activity {
+    grid-column: 1 / -1;
+    min-height: 82px !important;
+    padding: 10px !important;
+  }
+
+  .left-stats {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+  }
+
+  .left-stats .back-button-container {
+    grid-column: 1 / -1;
+  }
+
+  .left-stats .stat {
+    min-height: 72px !important;
+    padding: 8px 5px !important;
+  }
+
+  .left-stats .stat .label {
+    font-size: clamp(10px, 2.8vw, 12px) !important;
+    line-height: 1.15;
+  }
+
+  .left-stats .stat .value {
+    font-size: clamp(22px, 6vw, 28px) !important;
+    line-height: 1;
+  }
+}
+
+@media (max-width: 420px) {
+  .fin-nav-buttons {
+    width: 100%;
+  }
+
+  .Inventory-stats-row {
+    gap: 6px !important;
+  }
+
+  .Inventory-stats-row > .Inventory-card-stat:not(.Inventory-card-activity) {
+    padding: 8px 4px !important;
+  }
+
+  .left-stats {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 6px !important;
+  }
+
+  .left-stats .stat {
+    min-height: 66px !important;
+  }
+}

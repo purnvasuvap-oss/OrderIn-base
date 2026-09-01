@@ -1,0 +1,75 @@
+.payment-success-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background-color: #F1EFD8;
+}
+
+.success-card {
+  background: #F7F5E9;
+  padding: 40px 30px;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(28, 27, 23, 0.15);
+  text-align: center;
+  width: 320px;
+  border: 1px solid #E4E0C8;
+}
+
+.success-icon {
+  margin: 0 auto 20px auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.success-icon svg {
+  width: 45px;
+  height: 45px;
+  color: #636E2C;
+}
+
+h2 {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #1C1B17;
+  margin-bottom: 6px;
+}
+
+.order-id {
+  font-weight: 600;
+  color: #6B6A5D;
+  margin-bottom: 25px;
+}
+
+.view-bill-btn {
+  background-color: #636E2C;
+  color: #F1EFD8;
+  border: none;
+  padding: 10px 0;
+  border-radius: 6px;
+  width: 100%;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.view-bill-btn:hover {
+  background-color: #3F441C;
+}
+
+.back-home-btn {
+  background: transparent;
+  color: #636E2C;
+  border: none;
+  margin-top: 12px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.back-home-btn:hover {
+  color: #3F441C;
+}

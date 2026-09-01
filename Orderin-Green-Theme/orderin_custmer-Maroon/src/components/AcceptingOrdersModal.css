@@ -1,0 +1,80 @@
+.ao-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  padding: 20px;
+  animation: aoFadeIn 0.3s ease-out;
+}
+
+@keyframes aoFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.ao-modal {
+  background: #043927;
+  border-radius: 24px;
+  padding: 40px 32px;
+  max-width: 420px;
+  width: 100%;
+  text-align: center;
+  animation: aoModalSlideUp 0.4s ease-out;
+  box-shadow: 0 25px 80px rgba(0, 0, 0, 0.5);
+  border: 1px solid #054D35;
+}
+
+@keyframes aoModalSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.ao-modal-icon {
+  font-size: 42px;
+  margin-bottom: 16px;
+}
+
+.ao-modal h2 {
+  font-size: 22px;
+  font-weight: 700;
+  color: #B83A3A;
+  margin: 0 0 12px;
+}
+
+.ao-modal-desc {
+  font-size: 15px;
+  color: #B39A76;
+  line-height: 1.6;
+  margin: 0 0 24px;
+}
+
+.ao-modal-btn {
+  width: 100%;
+  padding: 16px;
+  background: #D4AF37;
+  color: #132019;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.ao-modal-btn:hover {
+  background: #A3B899;
+  transform: translateY(-1px);
+}

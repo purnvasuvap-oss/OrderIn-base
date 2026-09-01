@@ -1,0 +1,84 @@
+{
+  "hash": "d2a756d8",
+  "configHash": "bf5c3b64",
+  "lockfileHash": "80c4df3c",
+  "browserHash": "4cf494c0",
+  "optimized": {
+    "firebase/app": {
+      "src": "../../../../../../../../../node_modules/firebase/app/dist/esm/index.esm.js",
+      "file": "firebase_app.js",
+      "fileHash": "e28b0e97",
+      "needsInterop": false
+    },
+    "firebase/firestore": {
+      "src": "../../../../../../../../../node_modules/firebase/firestore/dist/esm/index.esm.js",
+      "file": "firebase_firestore.js",
+      "fileHash": "2c8cc485",
+      "needsInterop": false
+    },
+    "idb": {
+      "src": "../../../../../../../../../node_modules/idb/build/index.js",
+      "file": "idb.js",
+      "fileHash": "f4f1ba7a",
+      "needsInterop": false
+    },
+    "lucide-react": {
+      "src": "../../../../../../../../../node_modules/lucide-react/dist/esm/lucide-react.mjs",
+      "file": "lucide-react.js",
+      "fileHash": "8e04641f",
+      "needsInterop": false
+    },
+    "react-dom": {
+      "src": "../../../../../../../../../node_modules/react-dom/index.js",
+      "file": "react-dom.js",
+      "fileHash": "14226a4c",
+      "needsInterop": true
+    },
+    "react-dom/client": {
+      "src": "../../../../../../../../../node_modules/react-dom/client.js",
+      "file": "react-dom_client.js",
+      "fileHash": "926b2511",
+      "needsInterop": true
+    },
+    "react-router-dom": {
+      "src": "../../../../../../../../../node_modules/react-router-dom/dist/index.mjs",
+      "file": "react-router-dom.js",
+      "fileHash": "36726a9f",
+      "needsInterop": false
+    },
+    "react": {
+      "src": "../../../../../../../../../node_modules/react/index.js",
+      "file": "react.js",
+      "fileHash": "e53832d9",
+      "needsInterop": true
+    },
+    "react/jsx-dev-runtime": {
+      "src": "../../../../../../../../../node_modules/react/jsx-dev-runtime.js",
+      "file": "react_jsx-dev-runtime.js",
+      "fileHash": "0473bc00",
+      "needsInterop": true
+    },
+    "react/jsx-runtime": {
+      "src": "../../../../../../../../../node_modules/react/jsx-runtime.js",
+      "file": "react_jsx-runtime.js",
+      "fileHash": "0db49057",
+      "needsInterop": true
+    },
+    "recharts": {
+      "src": "../../../../../../../../../node_modules/recharts/es6/index.js",
+      "file": "recharts.js",
+      "fileHash": "d024d144",
+      "needsInterop": false
+    }
+  },
+  "chunks": {
+    "index.esm-Cw9sAut9": {
+      "file": "index.esm-Cw9sAut9.js",
+      "isDynamicEntry": false
+    },
+    "rolldown-runtime-DC62tzP2": {
+      "file": "rolldown-runtime-DC62tzP2.js",
+      "isDynamicEntry": false
+    }
+  }
+}

@@ -1,0 +1,348 @@
+/* ===== Light Aqua Palette (#BCDDDC) ===== */
+:root {
+  --bg-main: #FBFCFD;
+  --bg-card: #FFFFFF;
+  --primary: #BCDDDC;
+  --border: #A7CDCC;
+  --hover-bg: #D6EEEE;
+  --text-main: #2E4F4F;
+  --text-muted: #4F6F6F;
+  --accent: #2F7F7A;
+}
+
+.orderin-about-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  background: var(--bg-main);
+  font-family: 'Georgia', serif;
+  color: var(--text-main);
+}
+
+/* ===== Back Button Container ===== */
+.back-button-container {
+  padding: 12px 20px;
+  background: var(--bg-main);
+}
+
+.back-button-top {
+  background: linear-gradient(135deg, #E6F3F2, var(--primary));
+  border: 2px solid var(--border);
+  color: var(--text-main);
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-family: 'Georgia', serif;
+}
+
+.back-button-top:hover {
+  background: linear-gradient(135deg, #D6EEEE, var(--hover-bg));
+  transform: translateX(-3px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+a, div, h1, h2, h3, header, section, img {
+  transition: all 0.3s ease;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* ===== Header ===== */
+.orderin-header {
+  background: linear-gradient(135deg, #E6F3F2, var(--primary));
+  padding: 20px;
+  text-align: center;
+  border-bottom: 4px solid var(--border);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+}
+
+.logo {
+  max-width: 180px;
+  filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.35))
+    drop-shadow(0 4px 8px rgba(0, 0, 0, 0.25));
+}
+
+.logo:hover {
+  transform: translateY(-2px) scale(1.03);
+  filter: drop-shadow(0 12px 24px rgba(0, 0, 0, 0.4))
+    drop-shadow(0 6px 12px rgba(0, 0, 0, 0.3))
+    drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+}
+
+.by-text {
+  font-size: 0.95rem;
+  color: var(--text-muted);
+  margin: 0 0 6px;
+}
+
+.Clogo {
+  max-height: 50px;
+  background-color: #497c7c;
+  padding: 8px 20px;
+  border-radius: 16px;
+  filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.1));
+}
+
+.Clogo2 {
+  max-height: 50px;
+  filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.1));
+}
+
+/* ===== Main Content ===== */
+.orderin-main {
+  flex: 1;
+  width: 100%;
+}
+
+/* ===== Sections ===== */
+.orderin-section {
+  max-width: 1100px;
+  margin: 50px auto;
+  padding: 40px;
+  background: var(--bg-card);
+  border-radius: 16px;
+  border: 2px solid var(--border);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.08);
+}
+
+.orderin-section:hover {
+  box-shadow: 0 14px 38px rgba(0, 0, 0, 0.12);
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.about-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 20px;
+}
+
+.about-header h2 {
+  margin: 0;
+  padding: 0;
+  white-space: nowrap;
+}
+
+.logo2 {
+  max-width: 120px;
+  min-width: 120px;
+  margin: 0;
+  padding: 0;
+}
+
+/* ===== Services Grid ===== */
+.services-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 25px;
+}
+
+.service-card {
+  padding: 25px;
+  border-radius: 14px;
+  background: #FBFEFE;
+  border: 1px solid var(--border);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.08);
+  font-weight: 600;
+}
+
+.service-card:hover {
+  transform: translateY(-10px) scale(1.04);
+  background: linear-gradient(135deg, #FFFFFF, var(--hover-bg));
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.14);
+}
+
+.service-card.with-image {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.service-img {
+  width: 120px;
+  object-fit: contain;
+  border-radius: 8px;
+  background: #fff;
+  padding: 4px;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.08);
+}
+
+.service-content {
+  text-align: left;
+}
+
+.service-content h3 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.service-content p {
+  margin: 0;
+  font-weight: 400;
+}
+
+/* ===== Contact Colors ===== */
+.contact-label {
+  color: var(--text-main);
+  font-weight: 700;
+}
+
+.contact-link {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.contact-link:hover {
+  color: #a78b3d;
+}
+
+/* ===== Explore Container ===== */
+.explore-container {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.explore-container a {
+  text-decoration: none;
+}
+
+.explore-text {
+  color: var(--text-main);
+  font-size: 0.95rem;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.explore-subtext {
+  color: #999;
+  font-size: 0.85rem;
+  font-style: italic;
+}
+
+/* ===== Animations ===== */
+@keyframes fadeInMove {
+  from {
+    opacity: 0;
+    transform: translateY(25px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animated-section {
+  opacity: 0;
+  animation: fadeInMove 0.9s ease-out forwards;
+}
+
+.animated-section-delay-1 {
+  animation-delay: 0.1s;
+}
+
+.animated-section-delay-2 {
+  animation-delay: 0.3s;
+}
+
+.animated-section-delay-3 {
+  animation-delay: 0.5s;
+}
+
+/* ===== Footer ===== */
+.orderin-footer {
+  background: #EAF6F5;
+  color: var(--text-muted);
+  text-align: center;
+  padding: 20px;
+  border-top: 3px solid var(--border);
+}
+
+.orderin-footer p {
+  margin: 0;
+}
+
+/* ========= MOBILE RESPONSIVE ========= */
+@media (max-width: 640px) {
+  .back-button-container {
+    padding: 10px 14px;
+  }
+
+  .back-button-top {
+    font-size: 0.85rem;
+    padding: 8px 12px;
+  }
+
+  .orderin-section {
+    max-width: 100%;
+    margin: 30px 14px;
+    padding: 24px;
+  }
+
+  .services-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .service-card.with-image {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .service-img {
+    max-width: 220px;
+  }
+
+  .service-content {
+    text-align: center;
+  }
+
+  .section-header {
+    align-items: flex-start;
+  }
+
+  .about-header {
+    gap: 6px;
+  }
+
+  .logo {
+    max-width: 150px;
+  }
+
+  .Clogo {
+    max-height: 44px;
+  }
+
+  .logo2 {
+    max-width: 90px;
+    min-width: 90px;
+  }
+}
+
+@media (max-width: 345px) {
+  .Clogo {
+    max-height: 50px;
+    background-color: #497c7c;
+    padding: 8px 10px;
+    border-radius: 16px;
+    filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.1));
+  }
+
+  .back-button-top {
+    font-size: 0.8rem;
+    padding: 6px 10px;
+  }
+}

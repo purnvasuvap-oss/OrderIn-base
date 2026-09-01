@@ -1,0 +1,212 @@
+// src/App.jsx
+import React from "react";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import routes from "./routes.jsx";
+import Header from "./components/Header.jsx";
+import ProtectedRoute from "./components/ProtectedRoute.jsx";
+import SectionProtectedRoute from "./components/SectionProtectedRoute.jsx";
+import Login from "./pages/Login.jsx";
+import Dashboard from "./pages/Dashboard.jsx";
+import Orders from "./pages/Orders.jsx";
+import MenuLogin from "./pages/MenuLogin.jsx";
+import MenuPage from "./pages/MenuPage.jsx";
+import Promotions from "./pages/Promotions.jsx";
+import FinanceLogin from "./pages/FinanceLogin.jsx";
+
+import InventoryLogin from "./pages/InventoryLogin.jsx";
+import Inventory from "./pages/Inventory.jsx";
+import Finance from "./pages/Finance.jsx";
+import NotificationPage from "./pages/NotificationPage.jsx";
+import TableManagement from "./pages/TableManagement.jsx";
+import StaffLogin from "./pages/StaffLogin.jsx";
+import StaffManagement from "./pages/StaffManagement.jsx";
+import KitchenDisplay from "./pages/KitchenDisplay.jsx";
+import { NotificationProvider } from "./contexts/NotificationContext.jsx";
+
+function App() {
+  return (
+    <NotificationProvider>
+      <Router>
+      <Routes>
+        {/* Public login route (no header) */}
+        <Route path={routes.login} element={<Login />} />
+
+        {/* Protected Routes with Header */}
+        <Route
+          path={routes.dashboard}
+          element={
+            <ProtectedRoute>
+              <>
+                <Header />
+                <Dashboard />
+              </>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path={routes.orders}
+          element={
+            <ProtectedRoute>
+              <>
+                <Header />
+                <Orders />
+              </>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Menu Routes */}
+        <Route
+          path={routes.menuLogin}
+          element={
+            <ProtectedRoute>
+              <MenuLogin />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path={routes.menu}
+          element={
+            <ProtectedRoute>
+              <SectionProtectedRoute storageKey="menuAuth" redirectTo={routes.menuLogin}>
+                <>
+                  <Header />
+                  <MenuPage />
+                </>
+              </SectionProtectedRoute>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Promotions Route */}
+        <Route
+          path={routes.promotions}
+          element={
+            <ProtectedRoute>
+              <SectionProtectedRoute storageKey="menuAuth" redirectTo={routes.menuLogin}>
+                <>
+                  <Header />
+                  <Promotions />
+                </>
+              </SectionProtectedRoute>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Finance Routes */}
+        <Route
+          path={routes.financeLogin}
+          element={
+            <ProtectedRoute>
+              <FinanceLogin />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path={routes.finance}
+          element={
+            <ProtectedRoute>
+              <SectionProtectedRoute storageKey="financeAuth" redirectTo={routes.financeLogin}>
+                <>
+                  <Header />
+                  <Finance />
+                </>
+              </SectionProtectedRoute>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Inventory Routes */}
+        <Route
+          path={routes.inventoryLogin}
+          element={
+            <ProtectedRoute>
+              <InventoryLogin />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path={routes.inventory}
+          element={
+            <ProtectedRoute>
+              <SectionProtectedRoute storageKey="inventoryAuth" redirectTo={routes.inventoryLogin}>
+                <>
+                  <Header />
+                  <Inventory />
+                </>
+              </SectionProtectedRoute>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Table Management Route */}
+        <Route
+          path={routes.tableManagement}
+          element={
+            <ProtectedRoute>
+              <>
+                <Header />
+                <TableManagement />
+              </>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Staff Management Routes */}
+        <Route
+          path={routes.staffLogin}
+          element={
+            <ProtectedRoute>
+              <StaffLogin />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path={routes.staffManagement}
+          element={
+            <ProtectedRoute>
+              <SectionProtectedRoute storageKey="staffAuth" redirectTo={routes.staffLogin}>
+                <>
+                  <Header />
+                  <StaffManagement />
+                </>
+              </SectionProtectedRoute>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Kitchen Display Route — kiosk screen, deliberately no shared
+            <Header/> chrome (bell/logout bar) so the board stays minimal
+            and readable from a distance. */}
+        <Route
+          path={routes.kitchen}
+          element={
+            <ProtectedRoute>
+              <KitchenDisplay />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Notification Route */}
+        <Route
+          path={routes.notification}
+          element={
+            <ProtectedRoute>
+              <>
+                <Header />
+                <NotificationPage />
+              </>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Redirect unknown paths */}
+        <Route path="*" element={<Navigate to={routes.login} />} />
+      </Routes>
+      </Router>
+    </NotificationProvider>
+  );
+}
+
+export default App;
