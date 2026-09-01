@@ -33,4 +33,5 @@ export const EVENTS = {
   CUSTOMERS_CHANGED: "customers_changed",
   SETTINGS_CHANGED: "settings_changed",
   USERS_CHANGED: "users_changed",
+  NOTIFICATIONS_CHANGED: "notifications_changed",
 };

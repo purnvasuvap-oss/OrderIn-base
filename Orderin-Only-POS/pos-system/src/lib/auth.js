@@ -41,7 +41,7 @@ export const ROLE_HOME = {
 const NAV_KEYS = [
   "dashboard", "pos", "orders", "kitchen", "menu", "inventory",
   "suppliers", "expenses", "employees", "customers", "reports",
-  "analytics", "invoices", "settings", "audit",
+  "analytics", "invoices", "notifications", "settings", "audit",
 ];
 
 // Every role gets "settings" so everyone can reach Settings -> My Account
@@ -50,9 +50,9 @@ const NAV_KEYS = [
 // inside Settings.jsx itself.
 const ROLE_ACCESS = {
   [ROLES.ADMIN]: NAV_KEYS,
-  [ROLES.MANAGER]: ["dashboard", "pos", "orders", "kitchen", "menu", "inventory", "employees", "reports", "analytics", "expenses", "suppliers", "customers", "invoices", "settings"],
-  [ROLES.CASHIER]: ["pos", "orders", "invoices", "settings"],
-  [ROLES.KITCHEN]: ["kitchen", "settings"],
+  [ROLES.MANAGER]: ["dashboard", "pos", "orders", "kitchen", "menu", "inventory", "employees", "reports", "analytics", "expenses", "suppliers", "customers", "invoices", "notifications", "settings"],
+  [ROLES.CASHIER]: ["pos", "orders", "invoices", "notifications", "settings"],
+  [ROLES.KITCHEN]: ["kitchen", "notifications", "settings"],
 };
 
 export function canAccess(role, key) {

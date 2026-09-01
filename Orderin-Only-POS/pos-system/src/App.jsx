@@ -30,12 +30,13 @@ import Analytics from "./pages/Analytics";
 import Invoices from "./pages/Invoices";
 import Settings from "./pages/Settings";
 import AuditLog from "./pages/AuditLog";
+import Notifications from "./pages/Notifications";
 
 const PAGE_TITLES = {
   "/dashboard": "Dashboard", "/pos": "Point of Sale", "/orders": "Orders", "/kitchen": "Kitchen Display",
   "/menu": "Menu Management", "/inventory": "Inventory", "/suppliers": "Suppliers", "/expenses": "Expenses",
   "/employees": "Employees", "/customers": "Customers", "/reports": "Reports", "/analytics": "Analytics",
-  "/invoices": "Invoices", "/settings": "Settings", "/audit": "Audit Log",
+  "/invoices": "Invoices", "/notifications": "Notifications", "/settings": "Settings", "/audit": "Audit Log",
 };
 
 function withLayout(path, navKey, element) {
@@ -70,6 +71,7 @@ function AppRoutes() {
       {withLayout("/reports", "reports", <Reports />)}
       {withLayout("/analytics", "analytics", <Analytics />)}
       {withLayout("/invoices", "invoices", <Invoices />)}
+      {withLayout("/notifications", "notifications", <Notifications />)}
       {withLayout("/settings", "settings", <Settings />)}
       {withLayout("/audit", "audit", <AuditLog />)}
       <Route path="*" element={<Navigate to="/" replace />} />

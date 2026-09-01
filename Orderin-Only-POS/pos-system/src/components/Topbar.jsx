@@ -1,14 +1,31 @@
-import { Menu, Wifi, WifiOff, LogOut, CloudUpload, Printer } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Menu, Wifi, WifiOff, LogOut, CloudUpload, Printer, Bell } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useOnlineStatus } from "../hooks/useOnlineStatus";
 import { usePrinterStatus } from "../hooks/usePrinterStatus";
 import { ROLE_LABELS } from "../lib/auth";
+import { permission as notifyPermission, unreadCount } from "../lib/notifications";
+import { EVENTS, on } from "../lib/bus";
 import "./Topbar.css";
 
 export default function Topbar({ onMenuClick, title }) {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const { online, pending } = useOnlineStatus();
   const printerConnection = usePrinterStatus();
+  const [unread, setUnread] = useState(unreadCount());
+
+  useEffect(() => {
+    const refresh = () => setUnread(unreadCount());
+    refresh();
+    return on(EVENTS.NOTIFICATIONS_CHANGED, refresh);
+  }, []);
+
+  const bellTitle =
+    notifyPermission() === "granted" ? "Notifications"
+      : notifyPermission() === "denied" ? "Notifications (browser popups blocked — see Settings)"
+      : "Notifications (enable browser popups in Settings)";
 
   return (
     <header className="topbar">
@@ -26,6 +43,16 @@ export default function Topbar({ onMenuClick, title }) {
             <span className="status-pending"><CloudUpload size={12} /> {pending}</span>
           )}
         </div>
+        <button
+          type="button"
+          className="status-pill status-neutral"
+          title={bellTitle}
+          onClick={() => navigate("/notifications")}
+          style={{ border: "none", cursor: "pointer", position: "relative" }}
+        >
+          <Bell size={14} />
+          <span>{unread > 0 ? unread : "Alerts"}</span>
+        </button>
         <div className={`status-pill printer-pill ${printerConnection ? "status-online" : "status-neutral"}`} title={printerConnection ? `Connected: ${printerConnection.name}` : "No hardware printer connected"}>
           <Printer size={14} />
           <span>{printerConnection ? printerConnection.name : "No printer"}</span>

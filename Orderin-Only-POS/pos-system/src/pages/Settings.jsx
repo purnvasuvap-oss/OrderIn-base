@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Printer, Save, CheckCircle2, XCircle, Usb, Bluetooth, Wifi, KeyRound } from "lucide-react";
+import { Printer, Save, CheckCircle2, XCircle, Usb, Bluetooth, Wifi, KeyRound, Bell } from "lucide-react";
 import { getSettings, saveSettings } from "../lib/repo";
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
@@ -12,13 +12,67 @@ import {
 import { useLiveQuery } from "../hooks/useLiveQuery";
 import { EVENTS, on } from "../lib/bus";
 import SyncPanel from "../components/SyncPanel";
+import {
+  notifySupported, permission as notifyPermission, requestPermission,
+  getPrefs as getNotifyPrefs, setPrefs as setNotifyPrefs,
+  sendTestNotification, NOTIFY_CATEGORIES,
+} from "../lib/notifications";
 
 // Restaurant-wide configuration (billing, printer, sync, etc.) stays
 // Admin-only — everyone else gets just "My Account" to change their own
 // password, which is the only reason non-admin roles can reach this page
 // at all now (see ROLE_ACCESS in lib/auth.js).
 const ADMIN_ONLY_TABS = ["Restaurant", "Billing", "Printer", "Order", "Sync"];
-const TABS = ["My Account", ...ADMIN_ONLY_TABS];
+// "Notifications" is per-device (browser permission + local prefs), so every
+// role gets it — kitchen staff want new-order/delay popups too.
+const TABS = ["My Account", ...ADMIN_ONLY_TABS, "Notifications"];
+
+// Currency choices for the billing currency field. Value is the symbol that
+// gets stored / printed on receipts; label spells out the currency + code.
+// Symbols are shared across many countries (e.g. "$", "kr", "₨"), so this is
+// deduplicated by symbol rather than one row per country.
+const CURRENCY_SYMBOLS = [
+  { value: "₹", label: "₹ — Indian Rupee (INR)" },
+  { value: "$", label: "$ — Dollar (USD / CAD / AUD / NZD / SGD / HKD / MXN …)" },
+  { value: "€", label: "€ — Euro (EUR)" },
+  { value: "£", label: "£ — Pound Sterling (GBP)" },
+  { value: "¥", label: "¥ — Yen / Yuan (JPY / CNY)" },
+  { value: "₩", label: "₩ — Won (KRW / KPW)" },
+  { value: "₽", label: "₽ — Russian Ruble (RUB)" },
+  { value: "₺", label: "₺ — Turkish Lira (TRY)" },
+  { value: "₴", label: "₴ — Ukrainian Hryvnia (UAH)" },
+  { value: "₪", label: "₪ — Israeli New Shekel (ILS)" },
+  { value: "₫", label: "₫ — Vietnamese Dong (VND)" },
+  { value: "₱", label: "₱ — Philippine Peso (PHP)" },
+  { value: "฿", label: "฿ — Thai Baht (THB)" },
+  { value: "₨", label: "₨ — Rupee (PKR / LKR / NPR / MUR)" },
+  { value: "৳", label: "৳ — Bangladeshi Taka (BDT)" },
+  { value: "₦", label: "₦ — Nigerian Naira (NGN)" },
+  { value: "₵", label: "₵ — Ghanaian Cedi (GHS)" },
+  { value: "R", label: "R — South African Rand (ZAR)" },
+  { value: "R$", label: "R$ — Brazilian Real (BRL)" },
+  { value: "kr", label: "kr — Krona / Krone (SEK / NOK / DKK / ISK)" },
+  { value: "zł", label: "zł — Polish Złoty (PLN)" },
+  { value: "Kč", label: "Kč — Czech Koruna (CZK)" },
+  { value: "Ft", label: "Ft — Hungarian Forint (HUF)" },
+  { value: "лв", label: "лв — Bulgarian Lev (BGN)" },
+  { value: "CHF", label: "CHF — Swiss Franc (CHF)" },
+  { value: "﷼", label: "﷼ — Riyal / Rial (SAR / QAR / IRR / YER / OMR)" },
+  { value: "د.إ", label: "د.إ — UAE Dirham (AED)" },
+  { value: "د.ك", label: "د.ك — Kuwaiti Dinar (KWD)" },
+  { value: "ج.م", label: "ج.م — Egyptian Pound (EGP)" },
+  { value: "RM", label: "RM — Malaysian Ringgit (MYR)" },
+  { value: "Rp", label: "Rp — Indonesian Rupiah (IDR)" },
+  { value: "₮", label: "₮ — Mongolian Tögrög (MNT)" },
+  { value: "₸", label: "₸ — Kazakhstani Tenge (KZT)" },
+  { value: "₾", label: "₾ — Georgian Lari (GEL)" },
+  { value: "₡", label: "₡ — Costa Rican Colón (CRC)" },
+  { value: "₲", label: "₲ — Paraguayan Guaraní (PYG)" },
+  { value: "S/", label: "S/ — Peruvian Sol (PEN)" },
+  { value: "₼", label: "₼ — Azerbaijani Manat (AZN)" },
+  { value: "₭", label: "₭ — Lao Kip (LAK)" },
+  { value: "៛", label: "៛ — Cambodian Riel (KHR)" },
+];
 
 const SAMPLE_ORDER = {
   id: "sample", orderNo: "ORD-TEST", invoiceNo: "INV-TEST", orderType: "counter", tableNo: null,
@@ -32,7 +86,7 @@ export default function Settings() {
   const toast = useToast();
   const { online, firebaseEnabled, lastSyncAt } = useOnlineStatus();
   const isAdmin = user?.role === ROLES.ADMIN;
-  const visibleTabs = isAdmin ? TABS : ["My Account"];
+  const visibleTabs = isAdmin ? TABS : ["My Account", "Notifications"];
   const [tab, setTab] = useState(isAdmin ? "Restaurant" : "My Account");
   const [restaurant, setRestaurant] = useState(null);
   const [billing, setBilling] = useState(null);
@@ -110,6 +164,7 @@ export default function Settings() {
 
       <div className="card" style={{ padding: 20, maxWidth: tab === "Sync" ? 760 : 560 }}>
         {tab === "My Account" && <ChangePasswordForm user={user} changePassword={changePassword} />}
+        {tab === "Notifications" && <NotificationSettings toast={toast} />}
         {isAdmin && <>
         {tab === "Restaurant" && restaurant && (
           <SettingsForm value={restaurant} onSave={(v) => save("restaurant", v, setRestaurant)} fields={[
@@ -119,7 +174,7 @@ export default function Settings() {
         {tab === "Billing" && billing && (
           <SettingsForm value={billing} onSave={(v) => save("billing", v, setBilling)} fields={[
             ["invoicePrefix", "Invoice prefix"], ["orderPrefix", "Order prefix"], ["defaultTax", "Default tax (%)"],
-            ["currency", "Currency symbol"], ["footerMessage", "Receipt footer message"],
+            ["currency", "Currency symbol", { options: CURRENCY_SYMBOLS }], ["footerMessage", "Receipt footer message"],
           ]} />
         )}
         {tab === "Printer" && printer && (
@@ -233,14 +288,107 @@ function ChangePasswordForm({ user, changePassword }) {
   );
 }
 
+// Per-device notification controls. Browser permission and the "which screen
+// pops a toast" choice are inherently device-local, so prefs live in
+// localStorage (see lib/notifications.js), not the synced settings doc.
+function NotificationSettings({ toast }) {
+  const supported = notifySupported();
+  const [perm, setPerm] = useState(notifyPermission());
+  const [prefs, setPrefs] = useState(getNotifyPrefs());
+
+  const update = (patch) => setPrefs(setNotifyPrefs(patch));
+
+  const enable = async () => {
+    const result = await requestPermission();
+    setPerm(result);
+    if (result === "granted") toast.success("Browser notifications enabled");
+    else if (result === "denied") toast.error("Notifications blocked — enable them in your browser's site settings");
+  };
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 14, maxWidth: 420 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <Bell size={16} />
+        <strong style={{ fontSize: 14 }}>Browser notifications</strong>
+      </div>
+      <p style={{ fontSize: 12.5, color: "var(--text-muted)", margin: 0 }}>
+        Pop up alerts for new orders, kitchen delays, low stock and print failures — on this
+        device, while the POS is open in a tab (a background tab is fine). Works on desktop and
+        Android Chrome; on iPhone only when added to the home screen.
+      </p>
+
+      {!supported ? (
+        <div style={{ fontSize: 13, color: "var(--warning)" }}>This browser doesn't support notifications.</div>
+      ) : perm === "granted" ? (
+        <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "var(--success)" }}>
+          <CheckCircle2 size={15} /> Enabled on this device
+        </div>
+      ) : perm === "denied" ? (
+        <div style={{ fontSize: 13, color: "var(--danger)" }}>
+          Blocked. Re-enable it in your browser's site settings (padlock icon → Notifications → Allow), then reload.
+        </div>
+      ) : (
+        <button className="btn btn-primary" style={{ alignSelf: "flex-start" }} onClick={enable}>
+          <Bell size={15} /> Enable browser notifications
+        </button>
+      )}
+
+      <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13 }}>
+        <input type="checkbox" checked={prefs.enabled} onChange={(e) => update({ enabled: e.target.checked })} />
+        All notifications
+      </label>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 8, paddingLeft: 22, opacity: prefs.enabled ? 1 : 0.5 }}>
+        {NOTIFY_CATEGORIES.map((c) => (
+          <label key={c.key} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13 }}>
+            <input
+              type="checkbox"
+              disabled={!prefs.enabled}
+              checked={prefs[c.key] !== false}
+              onChange={(e) => update({ [c.key]: e.target.checked })}
+            />
+            {c.label}
+          </label>
+        ))}
+        <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13 }}>
+          <input
+            type="checkbox"
+            disabled={!prefs.enabled}
+            checked={prefs.sound !== false}
+            onChange={(e) => update({ sound: e.target.checked })}
+          />
+          Play a sound
+        </label>
+      </div>
+
+      <button
+        className="btn btn-outline btn-sm"
+        style={{ alignSelf: "flex-start" }}
+        disabled={perm !== "granted"}
+        onClick={() => { if (!sendTestNotification()) toast.info("Enable notifications first"); }}
+      >
+        Send test notification
+      </button>
+    </div>
+  );
+}
+
 function SettingsForm({ value, onSave, fields }) {
   const [form, setForm] = useState(value);
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-      {fields.map(([key, label]) => (
+      {fields.map(([key, label, opts]) => (
         <div key={key}>
           <label style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)", display: "block", marginBottom: 4 }}>{label}</label>
-          <input className="input" value={form[key] ?? ""} onChange={(e) => setForm({ ...form, [key]: e.target.value })} />
+          {opts?.options ? (
+            <select className="input" value={form[key] ?? ""} onChange={(e) => setForm({ ...form, [key]: e.target.value })}>
+              {opts.options.map((o) => (
+                <option key={o.value} value={o.value}>{o.label}</option>
+              ))}
+            </select>
+          ) : (
+            <input className="input" value={form[key] ?? ""} onChange={(e) => setForm({ ...form, [key]: e.target.value })} />
+          )}
         </div>
       ))}
       <button className="btn btn-primary" style={{ alignSelf: "flex-start", marginTop: 4 }} onClick={() => onSave(form)}>
