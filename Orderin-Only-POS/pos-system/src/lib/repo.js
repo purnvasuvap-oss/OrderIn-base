@@ -1,6 +1,8 @@
 import { STORES, getAll, getOne, putOne, removeOne, genId } from "./db";
 import { enqueueSync } from "./sync";
 import { emit, EVENTS } from "./bus";
+import { reserveNextInvoiceSeq } from "./counters";
+import { syncEmployeeAccessLogin, removeEmployeeAccessLogin } from "./accessControl";
 
 async function persist(store, value, { sync = true } = {}) {
   await putOne(store, value);
@@ -9,7 +11,7 @@ async function persist(store, value, { sync = true } = {}) {
 }
 
 export async function logAudit({ user, action, entity, entityId, before, after }) {
-  await putOne(STORES.auditLogs, {
+  await persist(STORES.auditLogs, {
     id: genId("log"),
     user: user?.name || "system",
     userId: user?.id || null,
@@ -97,6 +99,29 @@ export async function deleteInventoryItem(id, user) {
   emit(EVENTS.INVENTORY_CHANGED);
 }
 
+// `active` defaults to true for existing items that predate this field, so
+// nothing already in Firestore/local storage needs a migration.
+export function isInventoryItemActive(item) {
+  return item?.active !== false;
+}
+
+// Discontinuing an item stops it showing in the default Stock view (it's no
+// longer purchased/restocked) without touching its stock count or deleting
+// it — its full purchase/usage history stays intact in Transaction History
+// and can be restored with Reactivate at any time.
+export async function setInventoryItemActive(id, active, user) {
+  const item = await getOne(STORES.inventory, id);
+  if (!item) return null;
+  const next = { ...item, active };
+  await persist(STORES.inventory, next);
+  await logAudit({
+    user, action: active ? "inventory.reactivate" : "inventory.discontinue",
+    entity: "inventory", entityId: id, before: { active: isInventoryItemActive(item) }, after: { active },
+  });
+  emit(EVENTS.INVENTORY_CHANGED);
+  return next;
+}
+
 export async function adjustStock({ itemId, type, qty, reason, refOrderId, user }) {
   const item = await getOne(STORES.inventory, itemId);
   if (!item) return null;
@@ -135,11 +160,25 @@ export async function listWastage() {
 }
 
 // ---------- Orders ----------
+// Returns both numbers built from the SAME sequence value, each with its own
+// configured prefix — previously orderNo was derived by string-replacing the
+// literal text "INV-" inside invoiceNo, which silently did nothing the
+// moment someone changed Invoice/Order prefix in Settings away from the
+// defaults, since that substring no longer existed to replace.
 export async function nextInvoiceNumber() {
-  const billing = (await getOne(STORES.settings, "billing")) || { invoicePrefix: "INV-", nextInvoiceSeq: 1001 };
-  const seq = billing.nextInvoiceSeq || 1001;
-  await putOne(STORES.settings, { ...billing, id: "billing", nextInvoiceSeq: seq + 1 });
-  return `${billing.invoicePrefix || "INV-"}${seq}`;
+  const billing = (await getOne(STORES.settings, "billing")) || { invoicePrefix: "INV-", orderPrefix: "ORD-", nextInvoiceSeq: 1001 };
+  // Prefer the shared Firestore counter (safe across every device); fall
+  // back to the local one only when offline/unreachable — see counters.js.
+  const remoteSeq = await reserveNextInvoiceSeq();
+  const seq = remoteSeq ?? (billing.nextInvoiceSeq || 1001);
+  // Keep the local fallback counter at least as far ahead as whatever we
+  // just handed out, so it never reissues a number already taken remotely.
+  const nextLocal = Math.max(seq + 1, billing.nextInvoiceSeq || 1001);
+  await putOne(STORES.settings, { ...billing, id: "billing", nextInvoiceSeq: nextLocal });
+  return {
+    invoiceNo: `${billing.invoicePrefix || "INV-"}${seq}`,
+    orderNo: `${billing.orderPrefix || "ORD-"}${seq}`,
+  };
 }
 
 export function computeOrderTotals(items, orderDiscount = 0) {
@@ -161,12 +200,19 @@ export async function listOrders() {
   return (await getAll(STORES.orders)).sort((a, b) => b.createdAt - a.createdAt);
 }
 
-export async function createOrder({ items, orderType, tableNo, discount = 0, payments, cashier, priority = "normal", notes = "" }) {
+export async function createOrder({ items, orderType, tableNo, discount = 0, payments, cashier, priority = "normal", notes = "", customerName, customerPhone }) {
+  // Required so every order can be traced to a customer record — the
+  // Customers page (acquisition order, regulars, per-customer order
+  // history) only has data to show because this is enforced here, not just
+  // in the POS UI, so no code path can create an order without it.
+  if (!customerPhone || !customerPhone.trim()) {
+    throw new Error("Customer phone number is required to complete an order.");
+  }
   const totals = computeOrderTotals(items, discount);
-  const invoiceNo = await nextInvoiceNumber();
+  const { invoiceNo, orderNo } = await nextInvoiceNumber();
   const order = {
     id: genId("ord"),
-    orderNo: invoiceNo.replace("INV-", "ORD-"),
+    orderNo,
     invoiceNo,
     orderType,
     tableNo: tableNo || null,
@@ -180,6 +226,8 @@ export async function createOrder({ items, orderType, tableNo, discount = 0, pay
     paymentStatus: payments?.length ? "paid" : "pending",
     cashierId: cashier?.id || null,
     cashierName: cashier?.name || "Unknown",
+    customerName: customerName?.trim() || "Guest",
+    customerPhone: customerPhone.trim(),
     createdAt: Date.now(),
     updatedAt: Date.now(),
     readyAt: null,
@@ -245,10 +293,23 @@ export async function refundOrder(orderId, amount, reason, user) {
 async function upsertCustomerFromOrder(order) {
   if (!order.customerPhone) return;
   const all = await getAll(STORES.customers);
+  // Unique by phone — a repeat customer updates their one record rather
+  // than creating a new one.
   const existing = all.find((c) => c.phone === order.customerPhone);
   const value = existing
-    ? { ...existing, orders: (existing.orders || 0) + 1, totalSpent: +(existing.totalSpent + order.total).toFixed(2), lastOrder: order.createdAt }
-    : { id: genId("cus"), name: order.customerName || "Guest", phone: order.customerPhone, orders: 1, totalSpent: order.total, lastOrder: order.createdAt };
+    ? {
+        ...existing,
+        // A later order can supply a fuller/corrected name than an earlier
+        // "Guest" fallback did; keep it if the customer used one this time.
+        name: order.customerName && order.customerName !== "Guest" ? order.customerName : existing.name,
+        orders: (existing.orders || 0) + 1,
+        totalSpent: +(existing.totalSpent + order.total).toFixed(2),
+        lastOrder: order.createdAt,
+      }
+    : {
+        id: genId("cus"), name: order.customerName || "Guest", phone: order.customerPhone,
+        orders: 1, totalSpent: order.total, firstOrder: order.createdAt, lastOrder: order.createdAt,
+      };
   await persist(STORES.customers, value);
   emit(EVENTS.CUSTOMERS_CHANGED);
 }
@@ -260,17 +321,33 @@ export async function listCustomers() {
 // ---------- Employees / Suppliers / Expenses ----------
 export async function listEmployees() { return getAll(STORES.employees); }
 export async function saveEmployee(emp, user) {
+  const before = emp.id ? await getOne(STORES.employees, emp.id) : null;
   const value = { ...emp, id: emp.id || genId("emp") };
   await persist(STORES.employees, value);
-  await logAudit({ user, action: "employee.save", entity: "employee", entityId: value.id, after: value });
+  await logAudit({ user, action: before ? "employee.update" : "employee.create", entity: "employee", entityId: value.id, before, after: value });
   emit(EVENTS.EMPLOYEES_CHANGED);
-  return value;
+  // Provisions/updates their accessControl login (username = name, starting
+  // password = employee ID) so adding an employee here is enough to give
+  // them a working role-based login — see syncEmployeeAccessLogin for the
+  // create/move/rename rules.
+  let loginResult = "skipped";
+  try {
+    loginResult = await syncEmployeeAccessLogin(value, before);
+  } catch (err) {
+    console.warn("syncEmployeeAccessLogin failed:", err?.message || err);
+    loginResult = "error";
+  }
+  return { employee: value, loginResult };
 }
 export async function deleteEmployee(id, user) {
+  const employee = await getOne(STORES.employees, id);
   await removeOne(STORES.employees, id);
   enqueueSync(STORES.employees, "delete", { id });
   await logAudit({ user, action: "employee.delete", entity: "employee", entityId: id });
   emit(EVENTS.EMPLOYEES_CHANGED);
+  // Removing the staff record without also removing their login would leave
+  // a working set of credentials with no employee behind them.
+  if (employee) await removeEmployeeAccessLogin(employee);
 }
 
 export async function listSuppliers() { return getAll(STORES.suppliers); }

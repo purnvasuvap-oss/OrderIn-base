@@ -4,10 +4,12 @@ const MAP = {
   in_stock: "success", low: "warning", critical: "danger", out: "danger",
   active: "success", disabled: "neutral", paid: "success", pending: "warning",
   partial: "warning", high: "danger", normal: "neutral",
+  regular: "success", occasional: "info",
 };
 
 const TEXT = {
   in_stock: "In Stock", out: "Out of Stock",
+  regular: "Regular", occasional: "New / Occasional",
 };
 
 export default function StatusBadge({ status }) {

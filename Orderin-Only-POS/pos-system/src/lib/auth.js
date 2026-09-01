@@ -44,11 +44,15 @@ const NAV_KEYS = [
   "analytics", "invoices", "settings", "audit",
 ];
 
+// Every role gets "settings" so everyone can reach Settings -> My Account
+// and change their own password — restaurant-wide configuration (billing,
+// printer, sync, etc.) inside that same page is still gated to Admin only,
+// inside Settings.jsx itself.
 const ROLE_ACCESS = {
   [ROLES.ADMIN]: NAV_KEYS,
-  [ROLES.MANAGER]: ["dashboard", "pos", "orders", "kitchen", "menu", "inventory", "employees", "reports", "analytics", "expenses", "suppliers", "customers", "invoices"],
-  [ROLES.CASHIER]: ["pos", "orders", "invoices"],
-  [ROLES.KITCHEN]: ["kitchen"],
+  [ROLES.MANAGER]: ["dashboard", "pos", "orders", "kitchen", "menu", "inventory", "employees", "reports", "analytics", "expenses", "suppliers", "customers", "invoices", "settings"],
+  [ROLES.CASHIER]: ["pos", "orders", "invoices", "settings"],
+  [ROLES.KITCHEN]: ["kitchen", "settings"],
 };
 
 export function canAccess(role, key) {

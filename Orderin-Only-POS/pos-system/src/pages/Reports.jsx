@@ -31,7 +31,7 @@ function inRange(ts, range) {
 export default function Reports() {
   const { data: orders } = useLiveQuery(listOrders, [EVENTS.ORDERS_CHANGED], []);
   const { data: inventory } = useLiveQuery(listInventory, [EVENTS.INVENTORY_CHANGED], []);
-  const { data: expenses } = useLiveQuery(listExpenses, [], []);
+  const { data: expenses } = useLiveQuery(listExpenses, [EVENTS.EXPENSES_CHANGED], []);
   const [range, setRange] = useState("month");
 
   const scoped = useMemo(() => (orders || []).filter((o) => inRange(o.createdAt, range) && o.status !== "cancelled"), [orders, range]);

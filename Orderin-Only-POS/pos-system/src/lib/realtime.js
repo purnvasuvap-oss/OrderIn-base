@@ -1,6 +1,6 @@
 import { collection, onSnapshot } from "firebase/firestore";
 import { STORES, getAll, putOne, removeOne } from "./db";
-import { firebaseEnabled, db as firestore } from "./firebase";
+import { firebaseEnabled, db as firestore, RESTAURANT_ID } from "./firebase";
 import { emit } from "./bus";
 import { ENTITY_EVENT, REALTIME_STORES } from "./entityEvents";
 
@@ -21,7 +21,7 @@ export function startRealtimeSync() {
 
   REALTIME_STORES.forEach((storeName) => {
     const unsub = onSnapshot(
-      collection(firestore, storeName),
+      collection(firestore, "Restaurant", RESTAURANT_ID, storeName),
       async (snapshot) => {
         const queue = await getAll(STORES.syncQueue);
         const pendingIds = new Set(

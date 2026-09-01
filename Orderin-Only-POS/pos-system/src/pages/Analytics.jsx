@@ -100,7 +100,7 @@ export default function Analytics() {
           {categoryContribution.length ? (
             <ResponsiveContainer width="100%" height={230}>
               <PieChart>
-                <Pie data={categoryContribution} dataKey="value" nameKey="name" outerRadius={85} label>
+                <Pie data={categoryContribution} dataKey="value" nameKey="name" outerRadius={85} label isAnimationActive={false}>
                   {categoryContribution.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                 </Pie>
                 <Tooltip />
@@ -113,7 +113,7 @@ export default function Analytics() {
           {orderTypeSplit.length ? (
             <ResponsiveContainer width="100%" height={230}>
               <PieChart>
-                <Pie data={orderTypeSplit} dataKey="value" nameKey="name" outerRadius={85} label>
+                <Pie data={orderTypeSplit} dataKey="value" nameKey="name" outerRadius={85} label isAnimationActive={false}>
                   {orderTypeSplit.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                 </Pie>
                 <Tooltip />

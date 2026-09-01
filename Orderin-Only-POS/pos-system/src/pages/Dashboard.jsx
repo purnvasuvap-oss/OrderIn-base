@@ -127,7 +127,7 @@ export default function Dashboard() {
           {paymentSplit.length ? (
             <ResponsiveContainer width="100%" height={240}>
               <PieChart>
-                <Pie data={paymentSplit} dataKey="value" nameKey="name" innerRadius={50} outerRadius={85} paddingAngle={3}>
+                <Pie data={paymentSplit} dataKey="value" nameKey="name" innerRadius={50} outerRadius={85} paddingAngle={3} isAnimationActive={false}>
                   {paymentSplit.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                 </Pie>
                 <Tooltip />

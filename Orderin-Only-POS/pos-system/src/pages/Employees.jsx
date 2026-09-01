@@ -6,12 +6,13 @@ import { EVENTS } from "../lib/bus";
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
 import { ROLE_LABELS, ROLES } from "../lib/auth";
+import { toLocalDateInputValue } from "../lib/dates";
 import Modal from "../components/Modal";
 import ConfirmDialog from "../components/ConfirmDialog";
 import EmptyState from "../components/EmptyState";
 import StatusBadge from "../components/StatusBadge";
 
-const EMPTY = { empId: "", name: "", role: ROLES.CASHIER, phone: "", email: "", status: "active", joiningDate: new Date().toISOString().slice(0, 10) };
+const EMPTY = { empId: "", name: "", role: ROLES.CASHIER, phone: "", email: "", status: "active", joiningDate: toLocalDateInputValue() };
 
 export default function Employees() {
   const { user } = useAuth();
@@ -26,9 +27,18 @@ export default function Employees() {
     return { count: handled.length, sales: handled.reduce((s, o) => s + o.total, 0) };
   };
 
+  const LOGIN_MESSAGES = {
+    created: `Employee saved — login created (username "${editing?.name}", password is their employee ID).`,
+    moved: "Employee saved — their login moved to match the new role.",
+    renamed: "Employee saved — their login username was updated to match.",
+    unchanged: "Employee saved.",
+    skipped: "Employee saved, but a login couldn't be auto-created — add an Employee ID, or one may already exist with that ID.",
+    error: "Employee saved, but syncing their login failed — check the connection and try editing them again.",
+  };
+
   const save = async () => {
-    await saveEmployee(editing, user);
-    toast.success("Employee saved");
+    const { loginResult } = await saveEmployee(editing, user);
+    toast.success(LOGIN_MESSAGES[loginResult] || "Employee saved");
     setEditing(null);
     reload();
   };

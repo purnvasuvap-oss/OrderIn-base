@@ -32,4 +32,5 @@ export const EVENTS = {
   WASTAGE_CHANGED: "wastage_changed",
   CUSTOMERS_CHANGED: "customers_changed",
   SETTINGS_CHANGED: "settings_changed",
+  USERS_CHANGED: "users_changed",
 };

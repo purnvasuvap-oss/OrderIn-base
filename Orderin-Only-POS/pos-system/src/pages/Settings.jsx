@@ -1,18 +1,24 @@
 import { useEffect, useState } from "react";
-import { Printer, Save, CheckCircle2, XCircle, Usb, Bluetooth, Wifi } from "lucide-react";
+import { Printer, Save, CheckCircle2, XCircle, Usb, Bluetooth, Wifi, KeyRound } from "lucide-react";
 import { getSettings, saveSettings } from "../lib/repo";
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
 import { useOnlineStatus } from "../hooks/useOnlineStatus";
+import { ROLE_LABELS, ROLES } from "../lib/auth";
 import {
   connectSerial, connectBluetooth, disconnectPrinter, getConnectionInfo,
   isSerialSupported, isBluetoothSupported, printJob, listPrintJobs,
 } from "../lib/printer";
 import { useLiveQuery } from "../hooks/useLiveQuery";
-import { EVENTS } from "../lib/bus";
+import { EVENTS, on } from "../lib/bus";
 import SyncPanel from "../components/SyncPanel";
 
-const TABS = ["Restaurant", "Billing", "Printer", "Order", "Sync"];
+// Restaurant-wide configuration (billing, printer, sync, etc.) stays
+// Admin-only — everyone else gets just "My Account" to change their own
+// password, which is the only reason non-admin roles can reach this page
+// at all now (see ROLE_ACCESS in lib/auth.js).
+const ADMIN_ONLY_TABS = ["Restaurant", "Billing", "Printer", "Order", "Sync"];
+const TABS = ["My Account", ...ADMIN_ONLY_TABS];
 
 const SAMPLE_ORDER = {
   id: "sample", orderNo: "ORD-TEST", invoiceNo: "INV-TEST", orderType: "counter", tableNo: null,
@@ -22,10 +28,12 @@ const SAMPLE_ORDER = {
 };
 
 export default function Settings() {
-  const { user } = useAuth();
+  const { user, changePassword } = useAuth();
   const toast = useToast();
   const { online, firebaseEnabled, lastSyncAt } = useOnlineStatus();
-  const [tab, setTab] = useState("Restaurant");
+  const isAdmin = user?.role === ROLES.ADMIN;
+  const visibleTabs = isAdmin ? TABS : ["My Account"];
+  const [tab, setTab] = useState(isAdmin ? "Restaurant" : "My Account");
   const [restaurant, setRestaurant] = useState(null);
   const [billing, setBilling] = useState(null);
   const [printer, setPrinter] = useState(null);
@@ -35,10 +43,20 @@ export default function Settings() {
   const { data: printJobs } = useLiveQuery(listPrintJobs, [EVENTS.PRINT_JOBS_CHANGED], []);
 
   useEffect(() => {
-    getSettings("restaurant").then(setRestaurant);
-    getSettings("billing").then(setBilling);
-    getSettings("printer").then(setPrinter);
-    getSettings("order").then(setOrder);
+    // Restaurant/Billing/Printer/Order settings each fetch once here rather
+    // than through useLiveQuery (one hook, one loader — these are 4
+    // independent docs sharing a single change event), so without this
+    // listener this page would only ever show whatever was true at the
+    // moment it mounted — stale the instant someone changes a setting from
+    // another device, or Firestore pulls in a change, while this tab stays open.
+    const reload = () => {
+      getSettings("restaurant").then(setRestaurant);
+      getSettings("billing").then(setBilling);
+      getSettings("printer").then(setPrinter);
+      getSettings("order").then(setOrder);
+    };
+    reload();
+    return on(EVENTS.SETTINGS_CHANGED, reload);
   }, []);
 
   const save = async (id, value, setter) => {
@@ -85,12 +103,14 @@ export default function Settings() {
       </div>
 
       <div style={{ display: "flex", gap: 8, marginBottom: 18, flexWrap: "wrap" }}>
-        {TABS.map((t) => (
+        {visibleTabs.map((t) => (
           <button key={t} className={`pos-cat-chip ${tab === t ? "active" : ""}`} onClick={() => setTab(t)}>{t}</button>
         ))}
       </div>
 
       <div className="card" style={{ padding: 20, maxWidth: tab === "Sync" ? 760 : 560 }}>
+        {tab === "My Account" && <ChangePasswordForm user={user} changePassword={changePassword} />}
+        {isAdmin && <>
         {tab === "Restaurant" && restaurant && (
           <SettingsForm value={restaurant} onSave={(v) => save("restaurant", v, setRestaurant)} fields={[
             ["name", "Restaurant name"], ["address", "Address"], ["phone", "Phone"], ["email", "Email"], ["gstin", "GSTIN"],
@@ -162,7 +182,53 @@ export default function Settings() {
           ]} />
         )}
         {tab === "Sync" && <SyncPanel online={online} firebaseEnabled={firebaseEnabled} lastSyncAt={lastSyncAt} />}
+        </>}
       </div>
+    </div>
+  );
+}
+
+// Self-service password change. For an accessControl-sourced login (the
+// normal case — see AuthContext.changePassword) this updates the actual
+// Firestore login doc, not just a local copy, so it takes effect everywhere
+// immediately — including whatever an employee was assigned as their
+// starting password (their employee ID) when they were first added.
+function ChangePasswordForm({ user, changePassword }) {
+  const toast = useToast();
+  const [next, setNext] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const submit = async () => {
+    if (!next) return toast.error("Enter a new password.");
+    if (next !== confirm) return toast.error("Passwords don't match.");
+    setSaving(true);
+    try {
+      await changePassword(user.id, next);
+      setNext("");
+      setConfirm("");
+      toast.success("Password updated.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12, maxWidth: 320 }}>
+      <div style={{ fontSize: 13, color: "var(--text-muted)" }}>
+        Signed in as <strong>{user?.name}</strong> — {ROLE_LABELS[user?.role]}
+      </div>
+      <div>
+        <label style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)", display: "block", marginBottom: 4 }}>New password</label>
+        <input className="input" type="password" value={next} onChange={(e) => setNext(e.target.value)} placeholder="New password" />
+      </div>
+      <div>
+        <label style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)", display: "block", marginBottom: 4 }}>Confirm new password</label>
+        <input className="input" type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} placeholder="Confirm new password" />
+      </div>
+      <button className="btn btn-primary" style={{ alignSelf: "flex-start" }} disabled={saving} onClick={submit}>
+        <KeyRound size={15} /> Update password
+      </button>
     </div>
   );
 }

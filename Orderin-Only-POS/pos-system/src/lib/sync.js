@@ -1,6 +1,6 @@
-import { doc, getDoc, setDoc, deleteDoc, collection } from "firebase/firestore";
+import { doc, getDoc, setDoc, deleteDoc } from "firebase/firestore";
 import { STORES, genId, getAll, getOne, putOne, removeOne } from "./db";
-import { firebaseEnabled, db as firestore } from "./firebase";
+import { firebaseEnabled, db as firestore, RESTAURANT_ID } from "./firebase";
 import { emit, EVENTS } from "./bus";
 import { ENTITY_EVENT } from "./entityEvents";
 
@@ -142,7 +142,7 @@ export async function flushSyncQueue() {
 
     for (const item of queue) {
       try {
-        const ref = doc(collection(firestore, item.entity), item.payload.id);
+        const ref = doc(firestore, "Restaurant", RESTAURANT_ID, item.entity, item.payload.id);
 
         if (item.action === "delete") {
           await deleteDoc(ref);

@@ -1,16 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChefHat, Loader2 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { ROLE_LABELS } from "../lib/auth";
+import { fetchDemoAccounts } from "../lib/accessControl";
 import "./Login.css";
-
-const DEMO_ACCOUNTS = [
-  { username: "admin", password: "admin123", role: "admin" },
-  { username: "manager", password: "manager123", role: "manager" },
-  { username: "cashier", password: "cashier123", role: "cashier" },
-  { username: "kitchen", password: "kitchen123", role: "kitchen" },
-];
 
 export default function Login() {
   const { login } = useAuth();
@@ -19,6 +13,14 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  // Fetched from the real accessControl accounts, not hardcoded — see
+  // fetchDemoAccounts. Testing-phase convenience only; drop this whole
+  // "demo accounts" section once staff are using their real logins.
+  const [demoAccounts, setDemoAccounts] = useState([]);
+
+  useEffect(() => {
+    fetchDemoAccounts().then(setDemoAccounts).catch(() => setDemoAccounts([]));
+  }, []);
 
   const submit = async (e) => {
     e.preventDefault();
@@ -67,16 +69,18 @@ export default function Login() {
           </button>
         </form>
 
-        <div className="login-demo">
-          <div className="login-demo-title">Demo accounts</div>
-          <div className="login-demo-grid">
-            {DEMO_ACCOUNTS.map((acc) => (
-              <button key={acc.username} type="button" className="login-demo-chip" onClick={() => fillDemo(acc)}>
-                {ROLE_LABELS[acc.role]}
-              </button>
-            ))}
+        {demoAccounts.length > 0 && (
+          <div className="login-demo">
+            <div className="login-demo-title">Demo accounts</div>
+            <div className="login-demo-grid">
+              {demoAccounts.map((acc) => (
+                <button key={acc.role} type="button" className="login-demo-chip" onClick={() => fillDemo(acc)}>
+                  {ROLE_LABELS[acc.role]}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

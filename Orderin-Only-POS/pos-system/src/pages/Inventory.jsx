@@ -1,7 +1,10 @@
 import { useMemo, useState } from "react";
-import { Plus, Pencil, Trash2, Boxes, ArrowDownCircle, ArrowUpCircle, History, Trash } from "lucide-react";
+import { Plus, Pencil, Trash2, Boxes, ArrowDownCircle, ArrowUpCircle, History, Trash, AlertTriangle, PowerOff, Power } from "lucide-react";
 import { useLiveQuery } from "../hooks/useLiveQuery";
-import { listInventory, saveInventoryItem, deleteInventoryItem, adjustStock, listInventoryTx, inventoryStatus, recordWastage } from "../lib/repo";
+import {
+  listInventory, saveInventoryItem, deleteInventoryItem, adjustStock, listInventoryTx, inventoryStatus,
+  recordWastage, isInventoryItemActive, setInventoryItemActive,
+} from "../lib/repo";
 import { EVENTS } from "../lib/bus";
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
@@ -10,7 +13,7 @@ import ConfirmDialog from "../components/ConfirmDialog";
 import EmptyState from "../components/EmptyState";
 import StatusBadge from "../components/StatusBadge";
 
-const EMPTY_ITEM = { name: "", sku: "", category: "", unit: "g", stock: 0, minStock: 0, maxStock: 0, purchasePrice: 0, location: "" };
+const EMPTY_ITEM = { name: "", sku: "", category: "", unit: "g", stock: 0, minStock: 0, maxStock: 0, purchasePrice: 0, location: "", active: true };
 
 export default function Inventory() {
   const { user } = useAuth();
@@ -24,11 +27,22 @@ export default function Inventory() {
   const [txTarget, setTxTarget] = useState(null);
   const [wastageTarget, setWastageTarget] = useState(null);
   const [statusFilter, setStatusFilter] = useState("all");
+  const [showDiscontinued, setShowDiscontinued] = useState(false);
+  const [discontinueTarget, setDiscontinueTarget] = useState(null);
 
   const filtered = useMemo(() => {
     if (!items) return [];
-    return statusFilter === "all" ? items : items.filter((i) => inventoryStatus(i) === statusFilter);
-  }, [items, statusFilter]);
+    return items
+      .filter((i) => showDiscontinued || isInventoryItemActive(i))
+      .filter((i) => statusFilter === "all" || inventoryStatus(i) === statusFilter);
+  }, [items, statusFilter, showDiscontinued]);
+
+  // Discontinued items aren't being restocked on purpose, so they don't
+  // belong in a "needs attention" alert — only active items count here.
+  const lowStock = useMemo(
+    () => (items || []).filter((i) => isInventoryItemActive(i) && ["low", "critical", "out"].includes(inventoryStatus(i))),
+    [items]
+  );
 
   const valuation = useMemo(() => (items || []).reduce((s, i) => s + i.stock * i.purchasePrice, 0), [items]);
 
@@ -58,7 +72,18 @@ export default function Inventory() {
 
       {tab === "stock" ? (
         <>
-          <div style={{ marginBottom: 14 }}>
+          {lowStock.length > 0 && (
+            <div className="card" style={{ padding: "12px 14px", marginBottom: 14, display: "flex", flexDirection: "column", gap: 6, background: "var(--danger-bg)" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, color: "var(--danger)", fontWeight: 600, fontSize: 13.5 }}>
+                <AlertTriangle size={16} /> {lowStock.length} item{lowStock.length > 1 ? "s" : ""} at or below their threshold
+              </div>
+              <div style={{ fontSize: 12.5, color: "var(--danger)" }}>
+                {lowStock.map((i) => `${i.name} (${i.stock} ${i.unit})`).join(" · ")}
+              </div>
+            </div>
+          )}
+
+          <div style={{ marginBottom: 14, display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
             <select className="input" style={{ maxWidth: 200 }} value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
               <option value="all">All statuses</option>
               <option value="in_stock">In Stock</option>
@@ -66,6 +91,10 @@ export default function Inventory() {
               <option value="critical">Critical</option>
               <option value="out">Out of Stock</option>
             </select>
+            <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "var(--text-muted)" }}>
+              <input type="checkbox" checked={showDiscontinued} onChange={(e) => setShowDiscontinued(e.target.checked)} />
+              Show discontinued items
+            </label>
           </div>
           <div className="table-wrap">
             {!filtered.length ? (
@@ -74,9 +103,14 @@ export default function Inventory() {
               <table className="data-table">
                 <thead><tr><th>Item</th><th>Stock</th><th>Min / Max</th><th>Unit price</th><th>Location</th><th>Status</th><th></th></tr></thead>
                 <tbody>
-                  {filtered.map((i) => (
-                    <tr key={i.id}>
-                      <td data-label="Item"><strong>{i.name}</strong><br /><span style={{ fontSize: 11, color: "var(--text-muted)" }}>{i.sku}</span></td>
+                  {filtered.map((i) => {
+                    const active = isInventoryItemActive(i);
+                    return (
+                    <tr key={i.id} style={active ? undefined : { opacity: 0.55 }}>
+                      <td data-label="Item">
+                        <strong>{i.name}</strong>{!active && <span className="badge badge-neutral" style={{ marginLeft: 6, fontSize: 10 }}>Discontinued</span>}
+                        <br /><span style={{ fontSize: 11, color: "var(--text-muted)" }}>{i.sku}</span>
+                      </td>
                       <td data-label="Stock">{i.stock} {i.unit}</td>
                       <td data-label="Min / Max">{i.minStock} / {i.maxStock} {i.unit}</td>
                       <td data-label="Unit price">₹{i.purchasePrice}</td>
@@ -87,12 +121,16 @@ export default function Inventory() {
                           <button className="btn btn-ghost btn-sm" title="Stock in" onClick={() => setTxTarget({ item: i, type: "in" })}><ArrowUpCircle size={14} /></button>
                           <button className="btn btn-ghost btn-sm" title="Stock out" onClick={() => setTxTarget({ item: i, type: "out" })}><ArrowDownCircle size={14} /></button>
                           <button className="btn btn-ghost btn-sm" title="Record wastage" onClick={() => setWastageTarget(i)}><Trash size={14} /></button>
+                          <button className="btn btn-ghost btn-sm" title={active ? "Discontinue" : "Reactivate"} onClick={() => setDiscontinueTarget(i)}>
+                            {active ? <PowerOff size={14} /> : <Power size={14} />}
+                          </button>
                           <button className="btn btn-ghost btn-sm" onClick={() => setEditing(i)}><Pencil size={14} /></button>
                           <button className="btn btn-ghost btn-sm" onClick={() => setDeleteTarget(i)}><Trash2 size={14} /></button>
                         </div>
                       </td>
                     </tr>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </table>
             )}
@@ -123,6 +161,20 @@ export default function Inventory() {
       )}
 
       <ItemModal open={!!editing} item={editing} onClose={() => setEditing(null)} onSave={save} />
+
+      <ConfirmDialog open={!!discontinueTarget} title={discontinueTarget && isInventoryItemActive(discontinueTarget) ? "Discontinue item" : "Reactivate item"}
+        danger={discontinueTarget ? isInventoryItemActive(discontinueTarget) : false}
+        message={discontinueTarget && isInventoryItemActive(discontinueTarget)
+          ? `Stop purchasing/restocking "${discontinueTarget?.name}"? It'll disappear from the default Stock view, but its full transaction history stays intact and it can be reactivated any time.`
+          : `Bring "${discontinueTarget?.name}" back into active use?`}
+        confirmLabel={discontinueTarget && isInventoryItemActive(discontinueTarget) ? "Discontinue" : "Reactivate"}
+        onConfirm={async () => {
+          const goingActive = !isInventoryItemActive(discontinueTarget);
+          await setInventoryItemActive(discontinueTarget.id, goingActive, user);
+          toast.info(goingActive ? "Item reactivated" : "Item discontinued");
+          setDiscontinueTarget(null);
+        }}
+        onCancel={() => setDiscontinueTarget(null)} />
 
       <ConfirmDialog open={!!deleteTarget} title="Delete inventory item" danger
         message={`Remove "${deleteTarget?.name}" from inventory?`} confirmLabel="Delete"
