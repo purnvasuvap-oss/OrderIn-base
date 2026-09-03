@@ -13,6 +13,7 @@ export default defineConfig({
     restoreMocks: true,
     coverage: {
       provider: "v8",
+      reportOnFailure: true,
       reporter: ["text", "html", "lcov"],
       reportsDirectory: "./coverage",
       include: ["src/**/*.{js,jsx,ts,tsx}"],

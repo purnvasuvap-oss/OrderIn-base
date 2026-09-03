@@ -30,8 +30,12 @@ const renderMenu = () =>
 
 describe('Menu', () => {
   it('matches the snapshot', () => {
+    // The hero shows a time-of-day greeting — freeze the clock so it is stable.
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-02-01T10:00:00"));
     const { asFragment } = renderMenu();
     expect(asFragment()).toMatchSnapshot();
+    vi.useRealTimers();
   });
 
   it('renders the hero title and the search box', () => {

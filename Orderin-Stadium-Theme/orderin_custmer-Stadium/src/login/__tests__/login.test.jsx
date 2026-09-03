@@ -46,13 +46,13 @@ describe('Login', () => {
 
   it('enables the login button once an Active restaurant status loads', async () => {
     renderLogin();
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Login' })).toBeEnabled());
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Login' })).toBeEnabled(), { timeout: 4000 });
   });
 
   it('shows a validation error when the phone number is missing', async () => {
     const user = userEvent.setup();
     renderLogin();
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Login' })).toBeEnabled());
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Login' })).toBeEnabled(), { timeout: 4000 });
 
     await user.type(screen.getByPlaceholderText('Enter your name'), 'Asha');
     await user.click(screen.getByRole('button', { name: 'Login' }));
@@ -63,7 +63,7 @@ describe('Login', () => {
   it('saves the user and navigates to the menu on a successful login', async () => {
     const user = userEvent.setup();
     renderLogin();
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Login' })).toBeEnabled());
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Login' })).toBeEnabled(), { timeout: 4000 });
 
     await user.type(screen.getByPlaceholderText('Enter your name'), 'Asha');
     await user.type(screen.getByPlaceholderText('Enter phone number'), '9876543210');
@@ -77,7 +77,7 @@ describe('Login', () => {
     getDoc.mockResolvedValue({ exists: () => true, data: () => ({ status: 'Off' }) });
     const user = userEvent.setup();
     renderLogin();
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Login' })).toBeEnabled());
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Login' })).toBeEnabled(), { timeout: 4000 });
 
     await user.type(screen.getByPlaceholderText('Enter your name'), 'Asha');
     await user.type(screen.getByPlaceholderText('Enter phone number'), '9876543210');

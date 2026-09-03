@@ -125,6 +125,7 @@ open  coverage/index.html   # macOS
 ```js
 coverage: {
   provider: 'v8',
+  reportOnFailure: true,   // still write the HTML report if some tests fail
   reporter: ['text', 'html', 'lcov'],
   reportsDirectory: './coverage',
   include: ['src/**/*.{js,jsx,ts,tsx}'],
