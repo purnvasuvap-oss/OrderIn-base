@@ -1,0 +1,283 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`MenuPage > matches the snapshot 1`] = `
+<DocumentFragment>
+  <div
+    class="menu-management-container"
+  >
+    <div
+      class="menu-header"
+    >
+      <div
+        class="menu-header-bar"
+      >
+        <button
+          class="btn-back"
+        >
+          Back
+        </button>
+        <h1
+          class="h1-page-title"
+        >
+          Menu Management
+        </h1>
+        <div
+          style="display: flex; align-items: start; gap: 10px;"
+        >
+          <div
+            class="header-actions"
+          >
+            <button
+              class="btn-primary"
+            >
+              + Add Menu Item
+            </button>
+            <button
+              class="btn-primary"
+            >
+              Create Promotions
+            </button>
+          </div>
+          <label
+            class="menu-all-veg-control"
+          >
+            <input
+              type="checkbox"
+            />
+            <span>
+              All Veg
+            </span>
+          </label>
+        </div>
+      </div>
+    </div>
+    <div
+      class="stats-container"
+    >
+      <div
+        class="stat-card"
+      >
+        <div
+          class="stat-icon stat-icon--red"
+        />
+        <div
+          class="stat-body"
+        >
+          <p
+            class="stat-label"
+          >
+            Total Dishes
+          </p>
+          <h2
+            class="stat-value"
+          >
+            0
+          </h2>
+          <span
+            class="stat-subtitle"
+          >
+            Across 0 categories
+          </span>
+        </div>
+      </div>
+      <div
+        class="stat-card"
+      >
+        <div
+          class="stat-icon stat-icon--green"
+        />
+        <div
+          class="stat-body"
+        >
+          <p
+            class="stat-label"
+          >
+            Category Count
+          </p>
+          <h2
+            class="stat-value"
+          >
+            0
+          </h2>
+          <span
+            class="stat-subtitle"
+          >
+            Active categories
+          </span>
+        </div>
+      </div>
+      <div
+        class="stat-card"
+      >
+        <div
+          class="stat-icon stat-icon--amber"
+        />
+        <div
+          class="stat-body"
+        >
+          <p
+            class="stat-label"
+          >
+            Active Promotions
+          </p>
+          <h2
+            class="stat-value"
+          >
+            0
+          </h2>
+          <span
+            class="stat-subtitle"
+          >
+            Running Promotions
+          </span>
+        </div>
+      </div>
+      <div
+        class="stat-card"
+      >
+        <div
+          class="stat-icon stat-icon--blue"
+        />
+        <div
+          class="stat-body"
+        >
+          <p
+            class="stat-label"
+          >
+            Available dishes
+          </p>
+          <h2
+            class="stat-value"
+          >
+            0
+          </h2>
+          <span
+            class="stat-subtitle"
+          >
+            Are ready to serve/available
+          </span>
+        </div>
+      </div>
+    </div>
+    <div
+      class="filters-bar"
+    >
+      <div
+        class="search-box"
+      >
+        <span
+          class="search-icon"
+        >
+          🔍
+        </span>
+        <input
+          class="search-input"
+          placeholder="Search dish name..."
+          type="text"
+          value=""
+        />
+      </div>
+      <select
+        class="filter-dropdown"
+      >
+        <option
+          value="All"
+        >
+          All Categories
+        </option>
+      </select>
+      <select
+        class="filter-dropdown"
+      >
+        <option
+          value="All"
+        >
+          Availability: All
+        </option>
+        <option
+          value="Yes"
+        >
+          Yes
+        </option>
+        <option
+          value="No"
+        >
+          No
+        </option>
+      </select>
+      <label
+        class="veg-toggle-ui"
+      >
+        <input
+          type="checkbox"
+        />
+        <span />
+        <p>
+          Veg Only
+        </p>
+      </label>
+      <button
+        class="reset-btn"
+      >
+        ⟳ Reset Filters
+      </button>
+    </div>
+    <div
+      class="menu-content-area"
+    >
+      <div
+        class="menu-table-wrapper"
+      >
+        <div
+          class="table-scroll-container"
+        >
+          <table
+            class="menu-table"
+          >
+            <thead>
+              <tr>
+                <th>
+                  Category 
+                  <span
+                    class="filter-icon"
+                  />
+                </th>
+                <th>
+                  Name
+                </th>
+                <th>
+                  Item Image
+                </th>
+                <th>
+                  Price
+                </th>
+                <th
+                  class="promo-header"
+                >
+                  Promotions
+                </th>
+                <th>
+                  Availability
+                </th>
+                <th>
+                  Description
+                </th>
+                <th>
+                  Customizations
+                </th>
+                <th>
+                  Type
+                </th>
+                <th>
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody />
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</DocumentFragment>
+`;

@@ -1,0 +1,371 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`InventoryItemManager > matches the snapshot 1`] = `
+<DocumentFragment>
+  <div
+    class="ItemManager-wrapper"
+  >
+    <div
+      class="ItemManager-header"
+    >
+      <div>
+        <h3>
+          Inventory Item Manager
+        </h3>
+        <p
+          class="ItemManager-subtitle"
+        >
+          Pause or delete items or whole categories to hide them from the live inventory. Continue brings them back exactly as they were.
+        </p>
+      </div>
+      <div
+        class="ItemManager-view-toggle"
+      >
+        <button
+          class="is-active"
+        >
+          <svg
+            aria-hidden="true"
+            class="lucide lucide-layout-grid"
+            fill="none"
+            height="14"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            width="14"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <rect
+              height="7"
+              rx="1"
+              width="7"
+              x="3"
+              y="3"
+            />
+            <rect
+              height="7"
+              rx="1"
+              width="7"
+              x="14"
+              y="3"
+            />
+            <rect
+              height="7"
+              rx="1"
+              width="7"
+              x="14"
+              y="14"
+            />
+            <rect
+              height="7"
+              rx="1"
+              width="7"
+              x="3"
+              y="14"
+            />
+          </svg>
+           Category View
+        </button>
+        <button
+          class=""
+        >
+          <svg
+            aria-hidden="true"
+            class="lucide lucide-list"
+            fill="none"
+            height="14"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            width="14"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M3 5h.01"
+            />
+            <path
+              d="M3 12h.01"
+            />
+            <path
+              d="M3 19h.01"
+            />
+            <path
+              d="M8 5h13"
+            />
+            <path
+              d="M8 12h13"
+            />
+            <path
+              d="M8 19h13"
+            />
+          </svg>
+           Item View
+        </button>
+      </div>
+    </div>
+    <input
+      class="ItemManager-search"
+      placeholder="Search item or category..."
+      value=""
+    />
+    <div
+      class="ItemManager-list"
+    >
+      <div
+        class="ItemManager-row"
+      >
+        <div
+          class="ItemManager-row-main"
+        >
+          <span
+            class="ItemManager-row-name"
+          >
+            Vegetables
+          </span>
+          <span
+            class="ItemManager-badge ItemManager-badge-active"
+          >
+            Active
+          </span>
+          <span
+            class="ItemManager-row-meta"
+          >
+            1 item(s) — 1 active · 0 paused · 0 deleted
+          </span>
+        </div>
+        <div
+          class="ItemManager-row-actions"
+        >
+          <button
+            class="ItemManager-btn ItemManager-btn-pause"
+          >
+            <svg
+              aria-hidden="true"
+              class="lucide lucide-circle-pause"
+              fill="none"
+              height="14"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="14"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <circle
+                cx="12"
+                cy="12"
+                r="10"
+              />
+              <line
+                x1="10"
+                x2="10"
+                y1="15"
+                y2="9"
+              />
+              <line
+                x1="14"
+                x2="14"
+                y1="15"
+                y2="9"
+              />
+            </svg>
+             Pause
+          </button>
+          <button
+            class="ItemManager-btn ItemManager-btn-continue"
+            disabled=""
+          >
+            <svg
+              aria-hidden="true"
+              class="lucide lucide-circle-play"
+              fill="none"
+              height="14"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="14"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M9 9.003a1 1 0 0 1 1.517-.859l4.997 2.997a1 1 0 0 1 0 1.718l-4.997 2.997A1 1 0 0 1 9 14.996z"
+              />
+              <circle
+                cx="12"
+                cy="12"
+                r="10"
+              />
+            </svg>
+             Continue
+          </button>
+          <button
+            class="ItemManager-btn ItemManager-btn-delete"
+          >
+            <svg
+              aria-hidden="true"
+              class="lucide lucide-trash2 lucide-trash-2"
+              fill="none"
+              height="14"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="14"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M10 11v6"
+              />
+              <path
+                d="M14 11v6"
+              />
+              <path
+                d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"
+              />
+              <path
+                d="M3 6h18"
+              />
+              <path
+                d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
+              />
+            </svg>
+             Delete
+          </button>
+        </div>
+      </div>
+      <div
+        class="ItemManager-row"
+      >
+        <div
+          class="ItemManager-row-main"
+        >
+          <span
+            class="ItemManager-row-name"
+          >
+            Dairy
+          </span>
+          <span
+            class="ItemManager-badge ItemManager-badge-paused"
+          >
+            Paused
+          </span>
+          <span
+            class="ItemManager-row-meta"
+          >
+            1 item(s) — 0 active · 1 paused · 0 deleted
+          </span>
+        </div>
+        <div
+          class="ItemManager-row-actions"
+        >
+          <button
+            class="ItemManager-btn ItemManager-btn-pause"
+            disabled=""
+          >
+            <svg
+              aria-hidden="true"
+              class="lucide lucide-circle-pause"
+              fill="none"
+              height="14"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="14"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <circle
+                cx="12"
+                cy="12"
+                r="10"
+              />
+              <line
+                x1="10"
+                x2="10"
+                y1="15"
+                y2="9"
+              />
+              <line
+                x1="14"
+                x2="14"
+                y1="15"
+                y2="9"
+              />
+            </svg>
+             Pause
+          </button>
+          <button
+            class="ItemManager-btn ItemManager-btn-continue"
+          >
+            <svg
+              aria-hidden="true"
+              class="lucide lucide-circle-play"
+              fill="none"
+              height="14"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="14"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M9 9.003a1 1 0 0 1 1.517-.859l4.997 2.997a1 1 0 0 1 0 1.718l-4.997 2.997A1 1 0 0 1 9 14.996z"
+              />
+              <circle
+                cx="12"
+                cy="12"
+                r="10"
+              />
+            </svg>
+             Continue
+          </button>
+          <button
+            class="ItemManager-btn ItemManager-btn-delete"
+          >
+            <svg
+              aria-hidden="true"
+              class="lucide lucide-trash2 lucide-trash-2"
+              fill="none"
+              height="14"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="14"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M10 11v6"
+              />
+              <path
+                d="M14 11v6"
+              />
+              <path
+                d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"
+              />
+              <path
+                d="M3 6h18"
+              />
+              <path
+                d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
+              />
+            </svg>
+             Delete
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</DocumentFragment>
+`;

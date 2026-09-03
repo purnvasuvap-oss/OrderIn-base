@@ -1,0 +1,51 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`PaymentSuccess > matches the snapshot 1`] = `
+<DocumentFragment>
+  <div
+    class="payment-success-container"
+  >
+    <div
+      class="success-card"
+    >
+      <div
+        class="success-icon"
+      >
+        <svg
+          class="success-svg"
+          fill="none"
+          stroke="#00a693"
+          stroke-width="2"
+          viewBox="0 0 24 24"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+      </div>
+      <h2>
+        Payment Successful!
+      </h2>
+      <p
+        class="order-id order-id-warning"
+      >
+        Order details unavailable. Please ask the counter for help.
+      </p>
+      <button
+        class="view-bill-btn"
+        disabled=""
+      >
+        View Bill
+      </button>
+      <button
+        class="back-home-btn"
+      >
+        Back to Home
+      </button>
+    </div>
+  </div>
+</DocumentFragment>
+`;

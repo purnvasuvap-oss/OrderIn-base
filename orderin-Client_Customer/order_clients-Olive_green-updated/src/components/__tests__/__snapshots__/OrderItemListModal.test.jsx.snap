@@ -1,0 +1,226 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`OrderItemListModal > matches the snapshot 1`] = `
+<DocumentFragment>
+  <div
+    class="OrderItemList-overlay"
+  >
+    <div
+      class="OrderItemList-modal"
+    >
+      <div
+        class="OrderItemList-header"
+      >
+        <div
+          class="OrderItemList-header-left"
+        >
+          <svg
+            aria-hidden="true"
+            class="lucide lucide-package"
+            fill="none"
+            height="20"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            width="20"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"
+            />
+            <path
+              d="M12 22V12"
+            />
+            <polyline
+              points="3.29 7 12 12 20.71 7"
+            />
+            <path
+              d="m7.5 4.27 9 5.15"
+            />
+          </svg>
+          <div>
+            <h3>
+              Order Items
+            </h3>
+            <p
+              class="OrderItemList-subtitle"
+            >
+              #ORD-5 — Meera (Table 3)
+            </p>
+          </div>
+        </div>
+        <button
+          class="OrderItemList-close"
+        >
+          <svg
+            aria-hidden="true"
+            class="lucide lucide-x"
+            fill="none"
+            height="20"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            width="20"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M18 6 6 18"
+            />
+            <path
+              d="m6 6 12 12"
+            />
+          </svg>
+        </button>
+      </div>
+      <div
+        class="OrderItemList-body"
+      >
+        <div
+          class="OrderItemList-summary"
+        >
+          <span>
+            Total Items: 
+            <strong>
+              3
+            </strong>
+          </span>
+          <span>
+            Unique Dishes: 
+            <strong>
+              2
+            </strong>
+          </span>
+          <span>
+            Total Qty: 
+            <strong>
+              4
+            </strong>
+          </span>
+        </div>
+        <div
+          class="OrderItemList-table-header"
+        >
+          <span
+            class="OrderItemList-th-item"
+          >
+            Item
+          </span>
+          <span
+            class="OrderItemList-th-qty"
+          >
+            Qty
+          </span>
+          <span
+            class="OrderItemList-th-price"
+          >
+            Price
+          </span>
+          <span
+            class="OrderItemList-th-total"
+          >
+            Total
+          </span>
+          <span
+            class="OrderItemList-th-instr"
+          >
+            Instructions
+          </span>
+        </div>
+        <div
+          class="OrderItemList-items"
+        >
+          <div
+            class="OrderItemList-row "
+          >
+            <span
+              class="OrderItemList-item-name"
+            >
+              Dosa
+            </span>
+            <span
+              class="OrderItemList-item-qty"
+            >
+              ×2
+            </span>
+            <span
+              class="OrderItemList-item-price"
+            >
+              ₹100.00
+            </span>
+            <span
+              class="OrderItemList-item-total"
+            >
+              ₹200.00
+            </span>
+            <span
+              class="OrderItemList-item-instr"
+            >
+              <span
+                class="OrderItemList-no-instr"
+              >
+                —
+              </span>
+            </span>
+          </div>
+          <div
+            class="OrderItemList-row has-instructions"
+          >
+            <span
+              class="OrderItemList-item-name"
+            >
+              Coffee
+            </span>
+            <span
+              class="OrderItemList-item-qty"
+            >
+              ×2
+            </span>
+            <span
+              class="OrderItemList-item-price"
+            >
+              ₹50.00
+            </span>
+            <span
+              class="OrderItemList-item-total"
+            >
+              ₹100.00
+            </span>
+            <span
+              class="OrderItemList-item-instr"
+            >
+              less sugar
+            </span>
+          </div>
+        </div>
+        <div
+          class="OrderItemList-note"
+        >
+          <strong>
+            Note:
+          </strong>
+           Items with custom instructions are listed separately for accurate kitchen preparation.
+        </div>
+      </div>
+      <div
+        class="OrderItemList-footer"
+      >
+        <span>
+          Subtotal: ₹300.00
+        </span>
+        <span>
+          Tax: ₹15.00
+        </span>
+        <span
+          class="OrderItemList-total"
+        >
+          Total: ₹315.00
+        </span>
+      </div>
+    </div>
+  </div>
+</DocumentFragment>
+`;

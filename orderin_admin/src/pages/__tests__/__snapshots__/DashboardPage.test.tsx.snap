@@ -1,0 +1,397 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`DashboardPage > matches the snapshot with empty data 1`] = `
+<DocumentFragment>
+  <div
+    data-testid="app-layout"
+  >
+    <div
+      style="display: flex; flex-direction: column; gap: 2rem;"
+    >
+      <div
+        style="background: linear-gradient(135deg, rgb(6, 182, 212) 0%, rgb(168, 85, 247) 50%, rgb(236, 72, 153) 100%); border-radius: 1.5rem; padding: 2rem; color: white; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2); animation: slideInUp 0.6s ease;"
+      >
+        <h1
+          style="font-size: 2.25rem; font-weight: 900;"
+        >
+          Dashboard
+        </h1>
+        <p
+          style="color: rgba(255, 255, 255, 0.9); margin-top: 0.5rem; font-size: 1.125rem;"
+        >
+          Global analytics and financial insights
+        </p>
+      </div>
+      <div
+        style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem;"
+      >
+        <div
+          style="background: linear-gradient(135deg, rgba(30, 41, 59, 0.8) 0%, rgba(45, 27, 105, 0.6) 100%); border-radius: 1rem; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); border: 1px solid rgba(6, 182, 212, 0.2); padding: 1.5rem; transition: all 0.3s ease; cursor: pointer; animation: scaleIn 0.5s ease;"
+        >
+          <div
+            style="display: flex; align-items: flex-start; justify-content: space-between;"
+          >
+            <div
+              style="flex: 1 1 0%;"
+            >
+              <p
+                style="font-size: 0.75rem; font-weight: 600; color: rgb(148, 163, 184); text-transform: uppercase; letter-spacing: 0.05em;"
+              >
+                Total Restaurants
+              </p>
+              <h3
+                style="font-size: 2rem; font-weight: 900; color: rgb(241, 245, 249); margin-top: 0.5rem;"
+              >
+                0
+              </h3>
+            </div>
+            <div
+              style="padding: 0.75rem; background: rgba(6, 182, 212, 0.1); border: 1px solid rgba(6, 182, 212, 0.2); border-radius: 0.75rem; color: rgb(6, 182, 212); display: flex; align-items: center; justify-content: center; box-shadow: 0 0 20px #06b6d420; transition: all 0.3s ease;"
+            >
+              <svg
+                aria-hidden="true"
+                class="lucide lucide-users"
+                fill="none"
+                height="28"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+                width="28"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"
+                />
+                <path
+                  d="M16 3.128a4 4 0 0 1 0 7.744"
+                />
+                <path
+                  d="M22 21v-2a4 4 0 0 0-3-3.87"
+                />
+                <circle
+                  cx="9"
+                  cy="7"
+                  r="4"
+                />
+              </svg>
+            </div>
+          </div>
+        </div>
+        <div
+          style="background: linear-gradient(135deg, rgba(30, 41, 59, 0.8) 0%, rgba(45, 27, 105, 0.6) 100%); border-radius: 1rem; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); border: 1px solid rgba(168, 85, 247, 0.2); padding: 1.5rem; transition: all 0.3s ease; cursor: pointer; animation: scaleIn 0.5s ease;"
+        >
+          <div
+            style="display: flex; align-items: flex-start; justify-content: space-between;"
+          >
+            <div
+              style="flex: 1 1 0%;"
+            >
+              <p
+                style="font-size: 0.75rem; font-weight: 600; color: rgb(148, 163, 184); text-transform: uppercase; letter-spacing: 0.05em;"
+              >
+                Total Transactions
+              </p>
+              <h3
+                style="font-size: 2rem; font-weight: 900; color: rgb(241, 245, 249); margin-top: 0.5rem;"
+              >
+                0
+              </h3>
+            </div>
+            <div
+              style="padding: 0.75rem; background: rgba(168, 85, 247, 0.1); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 0.75rem; color: rgb(168, 85, 247); display: flex; align-items: center; justify-content: center; box-shadow: 0 0 20px #a855f720; transition: all 0.3s ease;"
+            >
+              <svg
+                aria-hidden="true"
+                class="lucide lucide-receipt"
+                fill="none"
+                height="28"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+                width="28"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"
+                />
+                <path
+                  d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"
+                />
+                <path
+                  d="M12 17.5v-11"
+                />
+              </svg>
+            </div>
+          </div>
+        </div>
+        <div
+          style="background: linear-gradient(135deg, rgba(30, 41, 59, 0.8) 0%, rgba(45, 27, 105, 0.6) 100%); border-radius: 1rem; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); border: 1px solid rgba(236, 72, 153, 0.2); padding: 1.5rem; transition: all 0.3s ease; cursor: pointer; animation: scaleIn 0.5s ease;"
+        >
+          <div
+            style="display: flex; align-items: flex-start; justify-content: space-between;"
+          >
+            <div
+              style="flex: 1 1 0%;"
+            >
+              <p
+                style="font-size: 0.75rem; font-weight: 600; color: rgb(148, 163, 184); text-transform: uppercase; letter-spacing: 0.05em;"
+              >
+                Gross Volume
+              </p>
+              <h3
+                style="font-size: 2rem; font-weight: 900; color: rgb(241, 245, 249); margin-top: 0.5rem;"
+              >
+                ₹0.0L
+              </h3>
+            </div>
+            <div
+              style="padding: 0.75rem; background: rgba(236, 72, 153, 0.1); border: 1px solid rgba(236, 72, 153, 0.2); border-radius: 0.75rem; color: rgb(236, 72, 153); display: flex; align-items: center; justify-content: center; box-shadow: 0 0 20px #ec489920; transition: all 0.3s ease;"
+            >
+              <svg
+                aria-hidden="true"
+                class="lucide lucide-dollar-sign"
+                fill="none"
+                height="28"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+                width="28"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <line
+                  x1="12"
+                  x2="12"
+                  y1="2"
+                  y2="22"
+                />
+                <path
+                  d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"
+                />
+              </svg>
+            </div>
+          </div>
+        </div>
+        <div
+          style="background: linear-gradient(135deg, rgba(30, 41, 59, 0.8) 0%, rgba(45, 27, 105, 0.6) 100%); border-radius: 1rem; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); border: 1px solid rgba(249, 115, 22, 0.2); padding: 1.5rem; transition: all 0.3s ease; cursor: pointer; animation: scaleIn 0.5s ease;"
+        >
+          <div
+            style="display: flex; align-items: flex-start; justify-content: space-between;"
+          >
+            <div
+              style="flex: 1 1 0%;"
+            >
+              <p
+                style="font-size: 0.75rem; font-weight: 600; color: rgb(148, 163, 184); text-transform: uppercase; letter-spacing: 0.05em;"
+              >
+                Platform Earnings
+              </p>
+              <h3
+                style="font-size: 2rem; font-weight: 900; color: rgb(241, 245, 249); margin-top: 0.5rem;"
+              >
+                ₹0K
+              </h3>
+            </div>
+            <div
+              style="padding: 0.75rem; background: rgba(249, 115, 22, 0.1); border: 1px solid rgba(249, 115, 22, 0.2); border-radius: 0.75rem; color: rgb(249, 115, 22); display: flex; align-items: center; justify-content: center; box-shadow: 0 0 20px #f9731620; transition: all 0.3s ease;"
+            >
+              <svg
+                aria-hidden="true"
+                class="lucide lucide-trending-up"
+                fill="none"
+                height="28"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+                width="28"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M16 7h6v6"
+                />
+                <path
+                  d="m22 7-8.5 8.5-5-5L2 17"
+                />
+              </svg>
+            </div>
+          </div>
+        </div>
+        <div
+          style="background: linear-gradient(135deg, rgba(30, 41, 59, 0.8) 0%, rgba(45, 27, 105, 0.6) 100%); border-radius: 1rem; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); border: 1px solid rgba(16, 185, 129, 0.2); padding: 1.5rem; transition: all 0.3s ease; cursor: pointer; animation: scaleIn 0.5s ease;"
+        >
+          <div
+            style="display: flex; align-items: flex-start; justify-content: space-between;"
+          >
+            <div
+              style="flex: 1 1 0%;"
+            >
+              <p
+                style="font-size: 0.75rem; font-weight: 600; color: rgb(148, 163, 184); text-transform: uppercase; letter-spacing: 0.05em;"
+              >
+                GST Payable
+              </p>
+              <h3
+                style="font-size: 2rem; font-weight: 900; color: rgb(241, 245, 249); margin-top: 0.5rem;"
+              >
+                ₹0K
+              </h3>
+            </div>
+            <div
+              style="padding: 0.75rem; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 0.75rem; color: rgb(16, 185, 129); display: flex; align-items: center; justify-content: center; box-shadow: 0 0 20px #10b98120; transition: all 0.3s ease;"
+            >
+              <svg
+                aria-hidden="true"
+                class="lucide lucide-zap"
+                fill="none"
+                height="28"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+                width="28"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"
+                />
+              </svg>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div
+        style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 1.5rem;"
+      >
+        <div
+          class="card"
+          style="animation: slideInLeft 0.6s ease;"
+        >
+          <h2
+            style="font-size: 1.125rem; font-weight: 700; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; color: rgb(6, 182, 212);"
+          >
+            <svg
+              aria-hidden="true"
+              class="lucide lucide-trending-up"
+              fill="none"
+              height="20"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="20"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M16 7h6v6"
+              />
+              <path
+                d="m22 7-8.5 8.5-5-5L2 17"
+              />
+            </svg>
+            Earnings Over Time
+          </h2>
+          <div
+            data-testid="chart"
+          >
+            <div
+              class="recharts-wrapper"
+              style="position: relative; cursor: default;"
+            />
+          </div>
+        </div>
+        <div
+          class="card"
+          style="animation: slideInRight 0.6s ease;"
+        >
+          <h2
+            style="font-size: 1.125rem; font-weight: 700; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; color: rgb(168, 85, 247);"
+          >
+            <svg
+              aria-hidden="true"
+              class="lucide lucide-dollar-sign"
+              fill="none"
+              height="20"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="20"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <line
+                x1="12"
+                x2="12"
+                y1="2"
+                y2="22"
+              />
+              <path
+                d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"
+              />
+            </svg>
+            Payment Method Split
+          </h2>
+          <div
+            data-testid="chart"
+          >
+            <div
+              class="recharts-wrapper"
+              style="position: relative; cursor: default;"
+            />
+          </div>
+        </div>
+      </div>
+      <div
+        class="card"
+        style="animation: slideInUp 0.6s ease;"
+      >
+        <h2
+          style="font-size: 1.125rem; font-weight: 700; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; color: rgb(236, 72, 153);"
+        >
+          <svg
+            aria-hidden="true"
+            class="lucide lucide-receipt"
+            fill="none"
+            height="20"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            width="20"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"
+            />
+            <path
+              d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"
+            />
+            <path
+              d="M12 17.5v-11"
+            />
+          </svg>
+          Top 10 Restaurants by Volume
+        </h2>
+        <div
+          data-testid="chart"
+        >
+          <div
+            class="recharts-wrapper"
+            style="position: relative; cursor: default;"
+          />
+        </div>
+      </div>
+    </div>
+  </div>
+</DocumentFragment>
+`;

@@ -1,0 +1,102 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Finance > matches the snapshot 1`] = `
+<DocumentFragment>
+  <div
+    class="fin-app"
+  >
+    <h1
+      class="fin-page-title"
+    >
+      Financial Management
+    </h1>
+    <div
+      class="fin-top-row"
+    >
+      <div
+        class="fin-back-col"
+      >
+        <button
+          class="fin-back-btn"
+        >
+          Back
+        </button>
+      </div>
+      <div
+        class="fin-nav-center"
+      >
+        <div
+          class="fin-nav-buttons"
+        >
+          <button
+            class="fin-nav-btn active"
+          >
+            ACCOUNTS
+          </button>
+          <button
+            class="fin-nav-btn "
+          >
+            EARNINGS CALCULATION
+          </button>
+          <button
+            class="fin-nav-btn "
+          >
+            LEDGER
+          </button>
+          <button
+            class="fin-nav-btn "
+          >
+            SALES TRENDS
+          </button>
+          <button
+            class="fin-nav-btn "
+          >
+            ORDER ANALYTICS
+          </button>
+          <button
+            class="fin-nav-btn "
+          >
+            CUSTOMER LOYALTY
+          </button>
+        </div>
+      </div>
+    </div>
+    <div
+      class="fin-orders-container"
+    >
+      <div
+        class="fin-search-bar"
+      >
+        <input
+          placeholder="Search orders..."
+          type="text"
+          value=""
+        />
+        <svg
+          aria-hidden="true"
+          class="lucide lucide-funnel fin-filter-icon"
+          fill="none"
+          height="24"
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          style="cursor: pointer;"
+          viewBox="0 0 24 24"
+          width="24"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M10 20a1 1 0 0 0 .553.895l2 1A1 1 0 0 0 14 21v-7a2 2 0 0 1 .517-1.341L21.74 4.67A1 1 0 0 0 21 3H3a1 1 0 0 0-.742 1.67l7.225 7.989A2 2 0 0 1 10 14z"
+          />
+        </svg>
+      </div>
+      <div
+        style="padding: 40px; text-align: center; color: rgb(102, 102, 102);"
+      >
+        Loading all customer orders...
+      </div>
+    </div>
+  </div>
+</DocumentFragment>
+`;

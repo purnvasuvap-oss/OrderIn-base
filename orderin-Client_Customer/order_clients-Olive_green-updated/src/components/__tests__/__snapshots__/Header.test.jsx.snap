@@ -1,0 +1,50 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Header > matches the snapshot 1`] = `
+<DocumentFragment>
+  <header
+    class="header"
+  >
+    <div
+      class="header-left"
+    >
+      <img
+        alt="OrderIn logo"
+        class="orderin-logo"
+        src="/images/OrderIn.png"
+      />
+    </div>
+    <div
+      class="header-center"
+    >
+      <h1
+        class="restaurant-name"
+      >
+        XYZ Restaurant
+      </h1>
+    </div>
+    <div
+      class="header-right"
+    >
+      <button
+        class="icon-btn"
+      >
+        <img
+          alt="notifications"
+          class="icon-img"
+          src="/images/Notification.svg"
+        />
+      </button>
+      <button
+        class="icon-btn"
+      >
+        <img
+          alt="logout"
+          class="icon-img"
+          src="/images/Export.svg"
+        />
+      </button>
+    </div>
+  </header>
+</DocumentFragment>
+`;

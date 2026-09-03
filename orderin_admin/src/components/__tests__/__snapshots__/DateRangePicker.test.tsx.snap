@@ -1,0 +1,32 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`DateRangePicker > matches the snapshot in its collapsed state 1`] = `
+<DocumentFragment>
+  <div
+    style="position: relative;"
+  >
+    <button
+      style="padding: 0.5rem 1rem; background: rgba(30, 27, 75, 0.5); border: 1px solid rgba(6, 182, 212, 0.3); border-radius: 0.5rem; font-size: 0.875rem; font-weight: 500; color: rgb(203, 213, 225); display: flex; align-items: center; gap: 0.5rem; cursor: pointer; transition: all 0.2s ease;"
+    >
+      Select Date Range
+      <svg
+        aria-hidden="true"
+        class="lucide lucide-chevron-down"
+        fill="none"
+        height="16"
+        stroke="currentColor"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+        viewBox="0 0 24 24"
+        width="16"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <path
+          d="m6 9 6 6 6-6"
+        />
+      </svg>
+    </button>
+  </div>
+</DocumentFragment>
+`;

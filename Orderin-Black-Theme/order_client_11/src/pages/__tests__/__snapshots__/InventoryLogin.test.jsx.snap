@@ -1,0 +1,143 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`InventoryLogin > matches the snapshot 1`] = `
+<DocumentFragment>
+  <div
+    class="sub-login"
+  >
+    <aside
+      aria-hidden="false"
+      class="sub-login-left"
+    >
+      <div
+        class="sub-brand-section"
+      >
+        <img
+          alt="OrderIn logo"
+          class="sub-orderin-logo"
+          src="/images/OrderIn.png"
+        />
+        <div
+          class="sub-by-row"
+        >
+          <span
+            class="sub-by-text"
+          >
+            by
+          </span>
+          <p
+            class="sub-company-name-text"
+          >
+            PurnVasu Tech Solutions Pvt. Ltd.
+          </p>
+        </div>
+      </div>
+      <div
+        class="sub-illustration"
+      >
+        <div
+          aria-hidden="true"
+          class="sub-circle-outer"
+        >
+          <div
+            aria-hidden="true"
+            class="sub-circle-inner"
+          />
+          <div
+            aria-hidden="true"
+            class="sub-food-img"
+          >
+            <span />
+            <span />
+            <span />
+          </div>
+        </div>
+        <p
+          class="sub-tagline"
+        >
+          Personalized Restaurant
+          <br />
+          Control Unit
+        </p>
+      </div>
+    </aside>
+    <main
+      class="sub-login-right"
+    >
+      <header
+        class="sub-login-header"
+      >
+        <h2
+          class="sub-restaurant-name"
+        >
+          XYZ Restaurant
+        </h2>
+        <p
+          class="sub-welcome-text"
+        >
+          Welcome XYZ Restaurant
+        </p>
+      </header>
+      <section
+        aria-label="login form"
+        class="sub-login-card"
+      >
+        <h3>
+          Inventory Section Login
+        </h3>
+        <p
+          class="sub"
+        >
+          To your account to continue
+        </p>
+        <form
+          class="sub-login-form"
+        >
+          <label
+            class="sub-sr-only"
+            for="pin"
+          >
+            PIN
+          </label>
+          <input
+            id="pin"
+            name="pin"
+            placeholder="Enter PIN"
+            required=""
+            type="password"
+            value=""
+          />
+          <button
+            class="sub-primary-cta"
+            type="submit"
+          >
+            Enter
+          </button>
+          <button
+            class="sub-dashboard-back"
+            type="button"
+          >
+            Back to Dashboard
+          </button>
+        </form>
+      </section>
+      <div
+        class="sub-contact-info"
+      >
+        <p>
+          Contact PurnVasu for queries:
+          <br />
+          Email: 
+          <strong>
+            OrderIn.vap@gmail.com
+          </strong>
+        </p>
+      </div>
+    </main>
+    <div
+      aria-hidden="true"
+      class="sub-red-blob"
+    />
+  </div>
+</DocumentFragment>
+`;

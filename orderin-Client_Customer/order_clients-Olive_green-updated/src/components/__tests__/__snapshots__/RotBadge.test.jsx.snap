@@ -1,0 +1,13 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`RotBadge > matches the snapshot 1`] = `
+<DocumentFragment>
+  <span
+    class="RotBadge"
+    style="color: rgb(180, 83, 9); background: rgb(254, 243, 199);"
+    title="6d of 10d shelf life used"
+  >
+    Warning · 60%
+  </span>
+</DocumentFragment>
+`;

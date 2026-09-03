@@ -1,0 +1,35 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`StatCard > matches the snapshot without a trend 1`] = `
+<DocumentFragment>
+  <div
+    style="background: linear-gradient(135deg, rgba(30, 41, 59, 0.8) 0%, rgba(45, 27, 105, 0.6) 100%); border-radius: 1rem; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); border: 1px solid rgba(6, 182, 212, 0.2); padding: 1.5rem; transition: all 0.3s ease; cursor: pointer; animation: scaleIn 0.5s ease;"
+  >
+    <div
+      style="display: flex; align-items: flex-start; justify-content: space-between;"
+    >
+      <div
+        style="flex: 1 1 0%;"
+      >
+        <p
+          style="font-size: 0.75rem; font-weight: 600; color: rgb(148, 163, 184); text-transform: uppercase; letter-spacing: 0.05em;"
+        >
+          Total Revenue
+        </p>
+        <h3
+          style="font-size: 2rem; font-weight: 900; color: rgb(241, 245, 249); margin-top: 0.5rem;"
+        >
+          ₹1,20,000
+        </h3>
+      </div>
+      <div
+        style="padding: 0.75rem; background: rgba(6, 182, 212, 0.1); border: 1px solid rgba(6, 182, 212, 0.2); border-radius: 0.75rem; color: rgb(6, 182, 212); display: flex; align-items: center; justify-content: center; box-shadow: 0 0 20px #06b6d420; transition: all 0.3s ease;"
+      >
+        <svg
+          data-testid="stat-icon"
+        />
+      </div>
+    </div>
+  </div>
+</DocumentFragment>
+`;

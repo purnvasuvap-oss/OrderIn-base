@@ -1,0 +1,83 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`DataTable > matches the snapshot with populated data 1`] = `
+<DocumentFragment>
+  <div
+    style="overflow-x: auto; border: 1px solid rgba(6, 182, 212, 0.2); border-radius: 1rem; background: linear-gradient(135deg, rgba(30, 41, 59, 0.8) 0%, rgba(45, 27, 105, 0.6) 100%);"
+  >
+    <table
+      style="width: 100%; border-collapse: collapse;"
+    >
+      <thead>
+        <tr
+          style="background: rgba(30, 27, 75, 0.5); border-bottom: 2px solid rgba(6, 182, 212, 0.2);"
+        >
+          <th
+            style="text-align: left; padding: 1rem 1.5rem; font-size: 0.75rem; font-weight: 700; color: rgb(6, 182, 212); text-transform: uppercase; letter-spacing: 0.05em;"
+          >
+            Name
+          </th>
+          <th
+            style="text-align: left; padding: 1rem 1.5rem; font-size: 0.75rem; font-weight: 700; color: rgb(6, 182, 212); text-transform: uppercase; letter-spacing: 0.05em;"
+          >
+            City
+          </th>
+          <th
+            style="text-align: left; padding: 1rem 1.5rem; font-size: 0.75rem; font-weight: 700; color: rgb(6, 182, 212); text-transform: uppercase; letter-spacing: 0.05em;"
+          >
+            Status
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr
+          style="border-bottom: 1px solid rgba(6, 182, 212, 0.1); transition: all 0.15s ease; cursor: default;"
+        >
+          <td
+            style="padding: 1rem 1.5rem; font-size: 0.875rem; color: rgb(241, 245, 249); font-weight: 500;"
+          >
+            Spice Villa
+          </td>
+          <td
+            style="padding: 1rem 1.5rem; font-size: 0.875rem; color: rgb(241, 245, 249); font-weight: 500;"
+          >
+            Chennai
+          </td>
+          <td
+            style="padding: 1rem 1.5rem; font-size: 0.875rem; color: rgb(241, 245, 249); font-weight: 500;"
+          >
+            <span
+              data-testid="status-cell"
+            >
+              ACTIVE
+            </span>
+          </td>
+        </tr>
+        <tr
+          style="border-bottom: 1px solid rgba(6, 182, 212, 0.1); transition: all 0.15s ease; cursor: default;"
+        >
+          <td
+            style="padding: 1rem 1.5rem; font-size: 0.875rem; color: rgb(241, 245, 249); font-weight: 500;"
+          >
+            Curry House
+          </td>
+          <td
+            style="padding: 1rem 1.5rem; font-size: 0.875rem; color: rgb(241, 245, 249); font-weight: 500;"
+          >
+            Mumbai
+          </td>
+          <td
+            style="padding: 1rem 1.5rem; font-size: 0.875rem; color: rgb(241, 245, 249); font-weight: 500;"
+          >
+            <span
+              data-testid="status-cell"
+            >
+              INACTIVE
+            </span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</DocumentFragment>
+`;

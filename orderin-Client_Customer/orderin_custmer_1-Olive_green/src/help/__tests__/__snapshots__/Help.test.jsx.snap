@@ -1,0 +1,67 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Help > matches the snapshot 1`] = `
+<DocumentFragment>
+  <div
+    class="help-container"
+  >
+    <div
+      class="help-card"
+    >
+      <div
+        class="help-header-row"
+      >
+        <button
+          class="help-back"
+        >
+          Back
+        </button>
+        <h1>
+          Help & FAQ
+        </h1>
+      </div>
+      <div
+        class="help-accordion"
+      >
+        <div
+          class="accordion-item"
+        >
+          <button
+            aria-expanded="true"
+            class="accordion-caption"
+          >
+            Ordering Help
+          </button>
+          <div
+            class="accordion-content"
+          >
+            <p>
+              Browse the menu, add items to your cart, review the bill, and choose a payment option. If something looks wrong, go back to the cart before placing the order.
+            </p>
+          </div>
+        </div>
+        <div
+          class="accordion-item"
+        >
+          <button
+            aria-expanded="false"
+            class="accordion-caption"
+          >
+            Quick FAQs
+          </button>
+        </div>
+        <div
+          class="accordion-item"
+        >
+          <button
+            aria-expanded="false"
+            class="accordion-caption"
+          >
+            Contact Help
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</DocumentFragment>
+`;

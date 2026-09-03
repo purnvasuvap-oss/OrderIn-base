@@ -1,0 +1,374 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Inventory > matches the snapshot 1`] = `
+<DocumentFragment>
+  <div
+    class="inventory-container"
+  >
+    <div
+      class="Inventory-app-header"
+    >
+      <button
+        class="Inventory-btn-back"
+      >
+        Back
+      </button>
+      <h2
+        class="Inventory-title-main"
+      >
+        Inventory Management
+      </h2>
+    </div>
+    <div
+      class="Inventory-dashboard-wrapper"
+    >
+      <div
+        class="Inventory-stats-row"
+      >
+        <div
+          class="Inventory-card-stat Inventory-card-good"
+        >
+          <div
+            class="Inventory-card-icon-badge"
+          >
+            <svg
+              aria-hidden="true"
+              class="lucide lucide-utensils"
+              fill="none"
+              height="26"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="26"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"
+              />
+              <path
+                d="M7 2v20"
+              />
+              <path
+                d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"
+              />
+            </svg>
+          </div>
+          <div
+            class="Inventory-card-text"
+          >
+            <h4>
+              Good Stock Items
+            </h4>
+            <p>
+              No. of items in good stock
+            </p>
+            <h2>
+              0
+            </h2>
+          </div>
+        </div>
+        <div
+          class="Inventory-card-stat Inventory-card-low"
+        >
+          <div
+            class="Inventory-card-icon-badge"
+          >
+            <svg
+              aria-hidden="true"
+              class="lucide lucide-shopping-cart"
+              fill="none"
+              height="26"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="26"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <circle
+                cx="8"
+                cy="21"
+                r="1"
+              />
+              <circle
+                cx="19"
+                cy="21"
+                r="1"
+              />
+              <path
+                d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"
+              />
+            </svg>
+          </div>
+          <div
+            class="Inventory-card-text"
+          >
+            <h4>
+              Low Stock Items
+            </h4>
+            <p>
+              No. of items running low
+            </p>
+            <h2>
+              0
+            </h2>
+          </div>
+        </div>
+        <div
+          class="Inventory-card-stat Inventory-card-verylow"
+        >
+          <div
+            class="Inventory-card-icon-badge"
+          >
+            <svg
+              aria-hidden="true"
+              class="lucide lucide-circle-alert"
+              fill="none"
+              height="26"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="26"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <circle
+                cx="12"
+                cy="12"
+                r="10"
+              />
+              <line
+                x1="12"
+                x2="12"
+                y1="8"
+                y2="12"
+              />
+              <line
+                x1="12"
+                x2="12.01"
+                y1="16"
+                y2="16"
+              />
+            </svg>
+          </div>
+          <div
+            class="Inventory-card-text"
+          >
+            <h4>
+              Very Low Stock Items
+            </h4>
+            <p>
+              No. of items very low in stock
+            </p>
+            <h2>
+              0
+            </h2>
+          </div>
+        </div>
+        <div
+          class="Inventory-card-stat Inventory-card-activity"
+        >
+          <div
+            class="Inventory-activity-header"
+          >
+            <h4
+              class="Inventory-activity-heading"
+            >
+              Recent Activity
+            </h4>
+          </div>
+          <div
+            class="Inventory-activity-list"
+          />
+        </div>
+      </div>
+    </div>
+    <div
+      class="Inventory-tabs"
+    >
+      <button
+        class="Inventory-tab-btn is-active"
+      >
+        <svg
+          aria-hidden="true"
+          class="lucide lucide-clipboard-list"
+          fill="none"
+          height="16"
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          viewBox="0 0 24 24"
+          width="16"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <rect
+            height="4"
+            rx="1"
+            ry="1"
+            width="8"
+            x="8"
+            y="2"
+          />
+          <path
+            d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"
+          />
+          <path
+            d="M12 11h4"
+          />
+          <path
+            d="M12 16h4"
+          />
+          <path
+            d="M8 11h.01"
+          />
+          <path
+            d="M8 16h.01"
+          />
+        </svg>
+         Inventory
+      </button>
+      <button
+        class="Inventory-tab-btn "
+      >
+        <svg
+          aria-hidden="true"
+          class="lucide lucide-settings2 lucide-settings-2"
+          fill="none"
+          height="16"
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          viewBox="0 0 24 24"
+          width="16"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M14 17H5"
+          />
+          <path
+            d="M19 7h-9"
+          />
+          <circle
+            cx="17"
+            cy="17"
+            r="3"
+          />
+          <circle
+            cx="7"
+            cy="7"
+            r="3"
+          />
+        </svg>
+         Item Manager
+      </button>
+    </div>
+    <div
+      class="Inventory-toolbar-container"
+    >
+      <div
+        class="Inventory-toolbar-left"
+      >
+        <input
+          class="Inventory-field-search"
+          placeholder="Search by item or category..."
+          type="text"
+          value=""
+        />
+        <select
+          class="Inventory-dropdown-filter"
+        >
+          <option
+            value=""
+          >
+            All Locations
+          </option>
+        </select>
+        <select
+          class="Inventory-dropdown-filter"
+        >
+          <option
+            value=""
+          >
+            All Statuses
+          </option>
+          <option
+            value="Good"
+          >
+            Good
+          </option>
+          <option
+            value="Low"
+          >
+            Low
+          </option>
+          <option
+            value="Very Low"
+          >
+            Very Low
+          </option>
+        </select>
+      </div>
+      <div
+        class="Inventory-toolbar-right"
+      >
+        <button
+          class="Inventory-btn-action Inventory-btn-update"
+        >
+          Stock Update
+        </button>
+        <button
+          class="Inventory-btn-action Inventory-btn-alert"
+        >
+          Set Alerts
+        </button>
+      </div>
+    </div>
+    <div
+      class="Inventory-container"
+    >
+      <div
+        class="Inventory-table-wrapper"
+      >
+        <table
+          class="Inventory-inventory-table"
+        >
+          <thead
+            class="Inventory-table-header"
+          >
+            <tr>
+              <th>
+                Item Name
+              </th>
+              <th>
+                Category
+              </th>
+              <th>
+                Quantity Available
+              </th>
+              <th>
+                Storage location
+              </th>
+              <th>
+                Item Status
+              </th>
+              <th>
+                Rot Index
+              </th>
+              <th>
+                Actions
+              </th>
+            </tr>
+          </thead>
+          <tbody />
+        </table>
+      </div>
+    </div>
+  </div>
+</DocumentFragment>
+`;

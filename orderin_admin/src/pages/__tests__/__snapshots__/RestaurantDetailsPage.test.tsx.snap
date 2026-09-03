@@ -1,0 +1,19 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`RestaurantDetailsPage > matches the snapshot for the not-found state 1`] = `
+<DocumentFragment>
+  <div
+    data-testid="app-layout"
+  >
+    <div
+      class="text-center py-12"
+    >
+      <h2
+        class="text-xl font-bold text-gray-900"
+      >
+        Restaurant not found
+      </h2>
+    </div>
+  </div>
+</DocumentFragment>
+`;

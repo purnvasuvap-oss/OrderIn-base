@@ -1,0 +1,137 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`IllusionPricingModal > matches the snapshot once the menu loads 1`] = `
+<DocumentFragment>
+  <div
+    class="Illusion-modal-overlay"
+  >
+    <div
+      class="Illusion-modal-box"
+    >
+      <div
+        class="Illusion-modal-header"
+      >
+        <h3>
+          <svg
+            aria-hidden="true"
+            class="lucide lucide-flame"
+            fill="none"
+            height="18"
+            stroke="#dc2626"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            width="18"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M12 3q1 4 4 6.5t3 5.5a1 1 0 0 1-14 0 5 5 0 0 1 1-3 1 1 0 0 0 5 0c0-2-1.5-3-1.5-5q0-2 2.5-4"
+            />
+          </svg>
+           Activate Illusion Pricing
+        </h3>
+        <button>
+          <svg
+            aria-hidden="true"
+            class="lucide lucide-x"
+            fill="none"
+            height="20"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            width="20"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M18 6 6 18"
+            />
+            <path
+              d="m6 6 12 12"
+            />
+          </svg>
+        </button>
+      </div>
+      <div
+        class="Illusion-modal-body"
+      >
+        <p
+          class="Illusion-intro"
+        >
+          <strong>
+            Tomato
+          </strong>
+           is in the Red Zone and about to spoil. Push a flash discount on a dish that uses it, to clear stock tonight.
+        </p>
+        <label>
+          Search for a dish
+        </label>
+        <input
+          placeholder="e.g. Paneer Butter Masala"
+          type="text"
+          value="Tomato"
+        />
+        <div
+          class="Illusion-menu-list"
+        >
+          <label
+            class="Illusion-menu-row "
+          >
+            <input
+              name="illusion-menu-item"
+              type="radio"
+            />
+            <span
+              class="Illusion-menu-name"
+            >
+              Tomato Soup
+            </span>
+            <span
+              class="Illusion-menu-cat"
+            />
+            <span
+              class="Illusion-menu-price"
+            >
+              ₹120
+            </span>
+          </label>
+        </div>
+        <div
+          class="Illusion-fields-row"
+        >
+          <div>
+            <label>
+              Discount %
+            </label>
+            <input
+              max="80"
+              min="5"
+              type="number"
+              value="30"
+            />
+          </div>
+          <div>
+            <label>
+              Active for (hours)
+            </label>
+            <input
+              max="24"
+              min="1"
+              type="number"
+              value="6"
+            />
+          </div>
+        </div>
+        <button
+          class="Illusion-activate-btn"
+          disabled=""
+        >
+          Activate Promo Banner
+        </button>
+      </div>
+    </div>
+  </div>
+</DocumentFragment>
+`;

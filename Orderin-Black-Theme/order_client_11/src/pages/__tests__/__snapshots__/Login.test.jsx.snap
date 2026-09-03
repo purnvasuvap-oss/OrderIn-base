@@ -1,0 +1,151 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Login > matches the snapshot 1`] = `
+<DocumentFragment>
+  <div
+    class="login-page"
+  >
+    <aside
+      aria-hidden="false"
+      class="login-left"
+    >
+      <div
+        class="brand-section"
+      >
+        <img
+          alt="OrderIn logo"
+          class="login-orderin-logo"
+          src="/images/OrderIn.png"
+        />
+        <div
+          class="by-row"
+        >
+          <span
+            class="by-text"
+          >
+            by
+          </span>
+          <p
+            class="company-name-text"
+          >
+            PurnVasu Tech Solutions Pvt. Ltd.
+          </p>
+        </div>
+      </div>
+      <div
+        class="illustration"
+      >
+        <div
+          aria-hidden="true"
+          class="circle-outer"
+        >
+          <div
+            aria-hidden="true"
+            class="circle-inner"
+          />
+          <div
+            aria-hidden="true"
+            class="food-img"
+          >
+            <span />
+            <span />
+            <span />
+          </div>
+        </div>
+        <p
+          class="tagline"
+        >
+          Personalized Restaurant
+          <br />
+          Control Unit
+        </p>
+      </div>
+    </aside>
+    <main
+      class="login-right"
+    >
+      <header
+        class="login-header"
+      >
+        <h2
+          class="restaurant-name"
+        >
+          XYZ Restaurant
+        </h2>
+        <p
+          class="welcome-text"
+        >
+          Welcome XYZ Restaurant
+        </p>
+      </header>
+      <section
+        aria-label="login form"
+        class="login-card"
+      >
+        <h3>
+          Login
+        </h3>
+        <p
+          class="sub"
+        >
+          To your account to continue
+        </p>
+        <form
+          class="login-form"
+        >
+          <label
+            class="sr-only"
+            for="userId"
+          >
+            User Id
+          </label>
+          <input
+            id="userId"
+            name="userId"
+            placeholder="User Id"
+            required=""
+            type="text"
+            value=""
+          />
+          <label
+            class="sr-only"
+            for="password"
+          >
+            Password
+          </label>
+          <input
+            id="password"
+            name="password"
+            placeholder="Password"
+            required=""
+            type="password"
+            value=""
+          />
+          <button
+            class="primary-cta"
+            type="submit"
+          >
+            Login
+          </button>
+        </form>
+      </section>
+      <div
+        class="contact-info"
+      >
+        <p>
+          Contact PurnVasu for queries:
+          <br />
+          Email: 
+          <strong>
+            OrderIn.vap@gmail.com
+          </strong>
+        </p>
+      </div>
+    </main>
+    <div
+      aria-hidden="true"
+      class="red-blob"
+    />
+  </div>
+</DocumentFragment>
+`;
