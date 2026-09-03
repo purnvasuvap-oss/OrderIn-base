@@ -1,0 +1,1122 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`About (restaurant) > matches the snapshot 1`] = `
+<DocumentFragment>
+  <div
+    class="about-root"
+  >
+    <header
+      class="about-topbar"
+    >
+      <button
+        aria-label="Back to Menu"
+        class="about-back-button"
+      >
+        <svg
+          aria-hidden="true"
+          class="lucide lucide-chevron-left"
+          fill="none"
+          height="22"
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          viewBox="0 0 24 24"
+          width="22"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="m15 18-6-6 6-6"
+          />
+        </svg>
+      </button>
+      <span
+        class="about-topbar-title"
+      >
+        About Restaurant
+      </span>
+    </header>
+    <section
+      aria-labelledby="restaurant-title"
+      class="about-hero"
+    >
+      <div
+        class="about-hero-content"
+      >
+        <p
+          class="about-eyebrow"
+        >
+          Restaurant Profile
+        </p>
+        <h1
+          id="restaurant-title"
+        >
+          Foodie's Paradise
+        </h1>
+        <p
+          class="about-hero-copy"
+        >
+          Fresh food, steady service, and a simple table-ordering experience for every visit.
+        </p>
+        <div
+          aria-label="Restaurant quick details"
+          class="about-hero-facts"
+        >
+          <div
+            class="about-fact"
+          >
+            <svg
+              aria-hidden="true"
+              class="lucide lucide-clock"
+              fill="none"
+              height="20"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="20"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M12 6v6l4 2"
+              />
+              <circle
+                cx="12"
+                cy="12"
+                r="10"
+              />
+            </svg>
+            <div>
+              <span>
+                Open Daily
+              </span>
+              <strong>
+                9 AM - 11 PM
+              </strong>
+            </div>
+          </div>
+          <div
+            class="about-fact"
+          >
+            <svg
+              aria-hidden="true"
+              class="lucide lucide-utensils-crossed"
+              fill="none"
+              height="20"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="20"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="m16 2-2.3 2.3a3 3 0 0 0 0 4.2l1.8 1.8a3 3 0 0 0 4.2 0L22 8"
+              />
+              <path
+                d="M15 15 3.3 3.3a4.2 4.2 0 0 0 0 6l7.3 7.3c.7.7 2 .7 2.8 0L15 15Zm0 0 7 7"
+              />
+              <path
+                d="m2.1 21.8 6.4-6.3"
+              />
+              <path
+                d="m19 5-7 7"
+              />
+            </svg>
+            <div>
+              <span>
+                Service
+              </span>
+              <strong>
+                Dine-in Orders
+              </strong>
+            </div>
+          </div>
+          <div
+            class="about-fact"
+          >
+            <svg
+              aria-hidden="true"
+              class="lucide lucide-users"
+              fill="none"
+              height="20"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="20"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"
+              />
+              <path
+                d="M16 3.128a4 4 0 0 1 0 7.744"
+              />
+              <path
+                d="M22 21v-2a4 4 0 0 0-3-3.87"
+              />
+              <circle
+                cx="9"
+                cy="7"
+                r="4"
+              />
+            </svg>
+            <div>
+              <span>
+                Dining Style
+              </span>
+              <strong>
+                Family Friendly
+              </strong>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <main
+      class="about-main"
+    >
+      <section
+        class="about-section-shell about-story-section"
+      >
+        <div
+          class="about-section-heading"
+        >
+          <p>
+            Our Story
+          </p>
+          <h2>
+            Built around fresh meals and smoother ordering.
+          </h2>
+        </div>
+        <p
+          class="about-story-copy"
+        >
+          Foodie's Paradise focuses on everyday comfort food made with consistent quality. The restaurant keeps service simple: browse the live menu, place your table order, and let the kitchen prepare it with clear item notes and instructions.
+        </p>
+      </section>
+      <section
+        aria-label="Restaurant highlights"
+        class="about-highlight-grid"
+      >
+        <article
+          class="about-highlight-card"
+        >
+          <div
+            class="about-card-icon"
+          >
+            <svg
+              aria-hidden="true"
+              class="lucide lucide-utensils-crossed"
+              fill="none"
+              height="22"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="22"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="m16 2-2.3 2.3a3 3 0 0 0 0 4.2l1.8 1.8a3 3 0 0 0 4.2 0L22 8"
+              />
+              <path
+                d="M15 15 3.3 3.3a4.2 4.2 0 0 0 0 6l7.3 7.3c.7.7 2 .7 2.8 0L15 15Zm0 0 7 7"
+              />
+              <path
+                d="m2.1 21.8 6.4-6.3"
+              />
+              <path
+                d="m19 5-7 7"
+              />
+            </svg>
+          </div>
+          <h3>
+            Fresh Kitchen
+          </h3>
+          <p>
+            Meals are prepared in small batches with ingredients checked each morning.
+          </p>
+        </article>
+        <article
+          class="about-highlight-card"
+        >
+          <div
+            class="about-card-icon"
+          >
+            <svg
+              aria-hidden="true"
+              class="lucide lucide-sparkles"
+              fill="none"
+              height="22"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="22"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"
+              />
+              <path
+                d="M20 2v4"
+              />
+              <path
+                d="M22 4h-4"
+              />
+              <circle
+                cx="4"
+                cy="20"
+                r="2"
+              />
+            </svg>
+          </div>
+          <h3>
+            Quick Table Service
+          </h3>
+          <p>
+            Orders placed through OrderIn go straight to the kitchen for faster handling.
+          </p>
+        </article>
+        <article
+          class="about-highlight-card"
+        >
+          <div
+            class="about-card-icon"
+          >
+            <svg
+              aria-hidden="true"
+              class="lucide lucide-star"
+              fill="none"
+              height="22"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="22"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"
+              />
+            </svg>
+          </div>
+          <h3>
+            Comfortable Dining
+          </h3>
+          <p>
+            A calm, family-friendly space built for relaxed meals and easy ordering.
+          </p>
+        </article>
+      </section>
+      <section
+        class="about-section-shell"
+      >
+        <div
+          class="about-section-heading"
+        >
+          <p>
+            Locations
+          </p>
+          <h2>
+            Visit a nearby branch.
+          </h2>
+        </div>
+        <div
+          class="about-branch-grid"
+        >
+          <article
+            class="about-branch-card"
+          >
+            <h3>
+              Central Branch
+            </h3>
+            <p>
+              <svg
+                aria-hidden="true"
+                class="lucide lucide-map-pin"
+                fill="none"
+                height="16"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+                width="16"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"
+                />
+                <circle
+                  cx="12"
+                  cy="10"
+                  r="3"
+                />
+              </svg>
+              <span>
+                123 Main Street, City Center
+              </span>
+            </p>
+            <p>
+              <svg
+                aria-hidden="true"
+                class="lucide lucide-clock"
+                fill="none"
+                height="16"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+                width="16"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M12 6v6l4 2"
+                />
+                <circle
+                  cx="12"
+                  cy="12"
+                  r="10"
+                />
+              </svg>
+              <span>
+                9:00 AM - 11:00 PM
+              </span>
+            </p>
+            <a
+              class="about-branch-phone"
+              href="tel:+919876543210"
+            >
+              <svg
+                aria-hidden="true"
+                class="lucide lucide-phone"
+                fill="none"
+                height="16"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+                width="16"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M13.832 16.568a1 1 0 0 0 1.213-.303l.355-.465A2 2 0 0 1 17 15h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2A18 18 0 0 1 2 4a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v3a2 2 0 0 1-.8 1.6l-.468.351a1 1 0 0 0-.292 1.233 14 14 0 0 0 6.392 6.384"
+                />
+              </svg>
+              <span>
+                +91 98765 43210
+              </span>
+            </a>
+          </article>
+          <article
+            class="about-branch-card"
+          >
+            <h3>
+              Riverside Branch
+            </h3>
+            <p>
+              <svg
+                aria-hidden="true"
+                class="lucide lucide-map-pin"
+                fill="none"
+                height="16"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+                width="16"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"
+                />
+                <circle
+                  cx="12"
+                  cy="10"
+                  r="3"
+                />
+              </svg>
+              <span>
+                45 Riverside Drive, Northside
+              </span>
+            </p>
+            <p>
+              <svg
+                aria-hidden="true"
+                class="lucide lucide-clock"
+                fill="none"
+                height="16"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+                width="16"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M12 6v6l4 2"
+                />
+                <circle
+                  cx="12"
+                  cy="12"
+                  r="10"
+                />
+              </svg>
+              <span>
+                10:00 AM - 10:00 PM
+              </span>
+            </p>
+            <a
+              class="about-branch-phone"
+              href="tel:+919123456789"
+            >
+              <svg
+                aria-hidden="true"
+                class="lucide lucide-phone"
+                fill="none"
+                height="16"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+                width="16"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M13.832 16.568a1 1 0 0 0 1.213-.303l.355-.465A2 2 0 0 1 17 15h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2A18 18 0 0 1 2 4a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v3a2 2 0 0 1-.8 1.6l-.468.351a1 1 0 0 0-.292 1.233 14 14 0 0 0 6.392 6.384"
+                />
+              </svg>
+              <span>
+                +91 91234 56789
+              </span>
+            </a>
+          </article>
+          <article
+            class="about-branch-card"
+          >
+            <h3>
+              Mall Outlet
+            </h3>
+            <p>
+              <svg
+                aria-hidden="true"
+                class="lucide lucide-map-pin"
+                fill="none"
+                height="16"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+                width="16"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"
+                />
+                <circle
+                  cx="12"
+                  cy="10"
+                  r="3"
+                />
+              </svg>
+              <span>
+                Unit G12, City Mall
+              </span>
+            </p>
+            <p>
+              <svg
+                aria-hidden="true"
+                class="lucide lucide-clock"
+                fill="none"
+                height="16"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+                width="16"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M12 6v6l4 2"
+                />
+                <circle
+                  cx="12"
+                  cy="12"
+                  r="10"
+                />
+              </svg>
+              <span>
+                11:00 AM - 10:30 PM
+              </span>
+            </p>
+            <a
+              class="about-branch-phone"
+              href="tel:+919012345678"
+            >
+              <svg
+                aria-hidden="true"
+                class="lucide lucide-phone"
+                fill="none"
+                height="16"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+                width="16"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M13.832 16.568a1 1 0 0 0 1.213-.303l.355-.465A2 2 0 0 1 17 15h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2A18 18 0 0 1 2 4a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v3a2 2 0 0 1-.8 1.6l-.468.351a1 1 0 0 0-.292 1.233 14 14 0 0 0 6.392 6.384"
+                />
+              </svg>
+              <span>
+                +91 90123 45678
+              </span>
+            </a>
+          </article>
+        </div>
+      </section>
+      <section
+        class="about-section-shell"
+      >
+        <div
+          class="about-section-heading"
+        >
+          <p>
+            Team
+          </p>
+          <h2>
+            The people behind your order.
+          </h2>
+        </div>
+        <div
+          class="about-team-grid"
+        >
+          <div
+            class="about-team-card"
+          >
+            <div
+              class="about-team-avatar"
+            >
+              <svg
+                aria-hidden="true"
+                class="lucide lucide-users"
+                fill="none"
+                height="22"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+                width="22"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"
+                />
+                <path
+                  d="M16 3.128a4 4 0 0 1 0 7.744"
+                />
+                <path
+                  d="M22 21v-2a4 4 0 0 0-3-3.87"
+                />
+                <circle
+                  cx="9"
+                  cy="7"
+                  r="4"
+                />
+              </svg>
+            </div>
+            <span>
+              Head Chef
+            </span>
+          </div>
+          <div
+            class="about-team-card"
+          >
+            <div
+              class="about-team-avatar"
+            >
+              <svg
+                aria-hidden="true"
+                class="lucide lucide-users"
+                fill="none"
+                height="22"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+                width="22"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"
+                />
+                <path
+                  d="M16 3.128a4 4 0 0 1 0 7.744"
+                />
+                <path
+                  d="M22 21v-2a4 4 0 0 0-3-3.87"
+                />
+                <circle
+                  cx="9"
+                  cy="7"
+                  r="4"
+                />
+              </svg>
+            </div>
+            <span>
+              Kitchen Team
+            </span>
+          </div>
+          <div
+            class="about-team-card"
+          >
+            <div
+              class="about-team-avatar"
+            >
+              <svg
+                aria-hidden="true"
+                class="lucide lucide-users"
+                fill="none"
+                height="22"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+                width="22"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"
+                />
+                <path
+                  d="M16 3.128a4 4 0 0 1 0 7.744"
+                />
+                <path
+                  d="M22 21v-2a4 4 0 0 0-3-3.87"
+                />
+                <circle
+                  cx="9"
+                  cy="7"
+                  r="4"
+                />
+              </svg>
+            </div>
+            <span>
+              Service Staff
+            </span>
+          </div>
+          <div
+            class="about-team-card"
+          >
+            <div
+              class="about-team-avatar"
+            >
+              <svg
+                aria-hidden="true"
+                class="lucide lucide-users"
+                fill="none"
+                height="22"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+                width="22"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"
+                />
+                <path
+                  d="M16 3.128a4 4 0 0 1 0 7.744"
+                />
+                <path
+                  d="M22 21v-2a4 4 0 0 0-3-3.87"
+                />
+                <circle
+                  cx="9"
+                  cy="7"
+                  r="4"
+                />
+              </svg>
+            </div>
+            <span>
+              Restaurant Manager
+            </span>
+          </div>
+        </div>
+      </section>
+      <section
+        class="about-cta"
+      >
+        <div>
+          <p>
+            Ready to order?
+          </p>
+          <h2>
+            Go back to the live menu.
+          </h2>
+        </div>
+        <button
+          class="about-primary-action"
+        >
+          <svg
+            aria-hidden="true"
+            class="lucide lucide-utensils-crossed"
+            fill="none"
+            height="18"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            width="18"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="m16 2-2.3 2.3a3 3 0 0 0 0 4.2l1.8 1.8a3 3 0 0 0 4.2 0L22 8"
+            />
+            <path
+              d="M15 15 3.3 3.3a4.2 4.2 0 0 0 0 6l7.3 7.3c.7.7 2 .7 2.8 0L15 15Zm0 0 7 7"
+            />
+            <path
+              d="m2.1 21.8 6.4-6.3"
+            />
+            <path
+              d="m19 5-7 7"
+            />
+          </svg>
+          <span>
+            View Menu
+          </span>
+        </button>
+      </section>
+    </main>
+    <footer
+      class="about-footer"
+    >
+      <p>
+        © 2025 Foodie's Paradise. All rights reserved.
+      </p>
+    </footer>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`OrderInAbout > matches the snapshot 1`] = `
+<DocumentFragment>
+  <div
+    class="orderin-about-container"
+  >
+    <div
+      class="back-button-container"
+    >
+      <button
+        aria-label="Back to Menu"
+        class="back-button-top"
+      >
+        ← Back to Home
+      </button>
+    </div>
+    <header
+      class="orderin-header"
+    >
+      <img
+        alt="OrderIn Logo"
+        class="logo"
+        src="/OrderIn.png"
+      />
+      <p
+        class="by-text"
+      >
+        By
+      </p>
+      <img
+        alt="Company Logo"
+        class="Clogo"
+        src="/company-logo.png"
+      />
+    </header>
+    <main
+      class="orderin-main"
+    >
+      <section
+        class="orderin-section animated-section animated-section-delay-1"
+      >
+        <div
+          class="about-header"
+        >
+          <h2>
+            About
+          </h2>
+          <img
+            alt="OrderIn Logo"
+            class="logo2"
+            src="/OrderIn.png"
+          />
+        </div>
+        <p>
+          OrderIn is a comprehensive ordering support and CRM platform designed to streamline business operations.
+        </p>
+      </section>
+      <section
+        class="orderin-section animated-section animated-section-delay-2"
+      >
+        <h2>
+          Our Services
+        </h2>
+        <div
+          class="services-grid"
+        >
+          <div
+            class="service-card with-image"
+          >
+            <img
+              alt="Bill Generation"
+              class="service-img"
+              src="/bill-generation.jpeg"
+            />
+            <div
+              class="service-content"
+            >
+              <h3>
+                Bill Generation
+              </h3>
+              <p>
+                Automated bill creation for seamless transactions.
+              </p>
+            </div>
+          </div>
+          <div
+            class="service-card with-image"
+          >
+            <img
+              alt="Work Finance Handling"
+              class="service-img"
+              src="/work-finance.jpeg"
+            />
+            <div
+              class="service-content"
+            >
+              <h3>
+                Work Finance Handling
+              </h3>
+              <p>
+                Efficient tracking and management of finances.
+              </p>
+            </div>
+          </div>
+          <div
+            class="service-card with-image"
+          >
+            <img
+              alt="Inventory Support"
+              class="service-img"
+              src="/inventory-support.jpeg"
+            />
+            <div
+              class="service-content"
+            >
+              <h3>
+                Inventory Support
+              </h3>
+              <p>
+                Advanced inventory tracking with real-time updates.
+              </p>
+            </div>
+          </div>
+          <div
+            class="service-card with-image"
+          >
+            <img
+              alt="Links Inventory Flash Checking"
+              class="service-img"
+              src="/inventory-flash.jpeg"
+            />
+            <div
+              class="service-content"
+            >
+              <h3>
+                Links Inventory Flash Checking
+              </h3>
+              <p>
+                Quick and accurate inventory flash checks.
+              </p>
+            </div>
+          </div>
+          <div
+            class="service-card with-image"
+          >
+            <img
+              alt="Order Receiving"
+              class="service-img"
+              src="/order-receiving.jpeg"
+            />
+            <div
+              class="service-content"
+            >
+              <h3>
+                Order Receiving
+              </h3>
+              <p>
+                Track and manage all incoming orders effortlessly.
+              </p>
+            </div>
+          </div>
+          <div
+            class="service-card with-image"
+          >
+            <img
+              alt="Dynamic Menu Controlling"
+              class="service-img"
+              src="/dynamic-menu.jpeg"
+            />
+            <div
+              class="service-content"
+            >
+              <h3>
+                Dynamic Menu Controlling
+              </h3>
+              <p>
+                Instant menu item updates based on business needs.
+              </p>
+            </div>
+          </div>
+          <div
+            class="service-card with-image"
+          >
+            <img
+              alt="Advertising"
+              class="service-img"
+              src="/advertising.jpeg"
+            />
+            <div
+              class="service-content"
+            >
+              <h3>
+                Advertising
+              </h3>
+              <p>
+                Built-in tools to publish and manage advertisements.
+              </p>
+            </div>
+          </div>
+          <div
+            class="service-card with-image"
+          >
+            <img
+              alt="Feedback Receiving"
+              class="service-img"
+              src="/feedback.jpeg"
+            />
+            <div
+              class="service-content"
+            >
+              <h3>
+                Feedback Receiving
+              </h3>
+              <p>
+                Collect and analyze customer feedback.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+      <section
+        class="orderin-section animated-section animated-section-delay-3"
+      >
+        <h2>
+          Contact Us
+        </h2>
+        <p>
+          <span
+            class="contact-label"
+          >
+            Email:
+          </span>
+          <a
+            class="contact-link"
+            href="mailto:purnvasu.vap@gmail.com"
+          >
+            purnvasu.vap@gmail.com
+          </a>
+        </p>
+        <p>
+          <span
+            class="contact-label"
+          >
+            Phone:
+          </span>
+          <a
+            class="contact-link"
+            href="tel:+918639987869"
+          >
+            +91 8639987869
+          </a>
+        </p>
+      </section>
+      <section
+        class="orderin-section animated-section animated-section-delay-3"
+      >
+        <h2>
+          Explore More
+        </h2>
+        <div
+          class="explore-container"
+        >
+          <a
+            href="https://purnvasu.in/"
+            rel="noopener noreferrer"
+            target="_blank"
+          >
+            <img
+              alt="PurnVasu Tech Solutions"
+              class="Clogo2"
+              src="/company-logo.png"
+            />
+          </a>
+          <p
+            class="explore-text"
+          >
+            Click here to explore 
+            <br />
+            <span
+              class="explore-subtext"
+            >
+              (Our amazing landing page)
+            </span>
+          </p>
+        </div>
+      </section>
+    </main>
+    <footer
+      class="orderin-footer"
+    >
+      <p>
+        © 2025 PurnVasu Tech Solutions Private Limited. All rights reserved.
+      </p>
+    </footer>
+  </div>
+</DocumentFragment>
+`;

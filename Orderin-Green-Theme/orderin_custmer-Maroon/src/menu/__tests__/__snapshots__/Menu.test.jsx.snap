@@ -1,0 +1,151 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Menu > matches the snapshot 1`] = `
+<DocumentFragment>
+  <div
+    class="menu-container"
+  >
+    <div
+      data-testid="header"
+    />
+    <div
+      class="hero-bar"
+    >
+      <div
+        class="hero-greeting"
+      >
+        <p
+          class="hero-eyebrow"
+        >
+          Good morning
+        </p>
+        <h1
+          class="hero-title"
+        >
+          Our Restaurant
+        </h1>
+      </div>
+      <div
+        class="hero-meta"
+      >
+        <span
+          class="table-chip"
+        >
+          Table 4
+        </span>
+      </div>
+    </div>
+    <div
+      class="search-row"
+    >
+      <div
+        class="search-bar"
+      >
+        <svg
+          aria-hidden="true"
+          class="lucide lucide-search search-icon"
+          fill="none"
+          height="18"
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          viewBox="0 0 24 24"
+          width="18"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="m21 21-4.34-4.34"
+          />
+          <circle
+            cx="11"
+            cy="11"
+            r="8"
+          />
+        </svg>
+        <input
+          class="search-input"
+          placeholder="Search for dishes, cuisines..."
+          type="text"
+          value=""
+        />
+      </div>
+    </div>
+    <div
+      aria-label="Menu categories"
+      class="selection-row"
+      role="tablist"
+    >
+      <button
+        aria-selected="true"
+        class="selection active"
+        role="tab"
+      >
+        All
+      </button>
+    </div>
+    <div
+      class="menu-grid-section"
+    >
+      <div
+        class="no-results"
+      >
+        <p>
+          No items found matching your search.
+        </p>
+      </div>
+    </div>
+    <button
+      class="filter-fab"
+    >
+      <svg
+        aria-hidden="true"
+        class="lucide lucide-sliders-horizontal"
+        fill="none"
+        height="25"
+        stroke="currentColor"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+        viewBox="0 0 24 24"
+        width="25"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <path
+          d="M10 5H3"
+        />
+        <path
+          d="M12 19H3"
+        />
+        <path
+          d="M14 3v4"
+        />
+        <path
+          d="M16 17v4"
+        />
+        <path
+          d="M21 12h-9"
+        />
+        <path
+          d="M21 19h-5"
+        />
+        <path
+          d="M21 5h-7"
+        />
+        <path
+          d="M8 10v4"
+        />
+        <path
+          d="M8 12H3"
+        />
+      </svg>
+      <span>
+        Filter
+      </span>
+    </button>
+    <div
+      data-testid="footer"
+    />
+  </div>
+</DocumentFragment>
+`;

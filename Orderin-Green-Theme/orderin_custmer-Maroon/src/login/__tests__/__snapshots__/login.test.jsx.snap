@@ -1,0 +1,81 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Login > matches the snapshot 1`] = `
+<DocumentFragment>
+  <div
+    class="login-container"
+  >
+    <div
+      class="login-box"
+    >
+      <img
+        alt="OrderIn"
+        class="orderin-logo"
+        src="/OrderIn.png"
+      />
+      <div
+        class="input-wrapper"
+      >
+        <div
+          class="name-icon-wrapper"
+        >
+          <svg
+            fill="none"
+            height="1em"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            width="1em"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"
+            />
+            <circle
+              cx="12"
+              cy="7"
+              r="4"
+            />
+          </svg>
+        </div>
+        <input
+          class="name-input"
+          placeholder="Enter your name"
+          type="text"
+          value=""
+        />
+      </div>
+      <div
+        class="phone-input-container"
+      >
+        <div
+          class="country-code-wrapper"
+        >
+          <input
+            class="country-code-selector"
+            placeholder="+91"
+            type="text"
+            value="+91"
+          />
+        </div>
+        <input
+          class="phone-input"
+          maxlength="20"
+          placeholder="Enter phone number"
+          type="tel"
+          value=""
+        />
+      </div>
+      <button
+        class="login-btn"
+        disabled=""
+        style="background: rgb(204, 204, 204); cursor: not-allowed;"
+      >
+        Checking status...
+      </button>
+    </div>
+  </div>
+</DocumentFragment>
+`;

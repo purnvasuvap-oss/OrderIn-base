@@ -1,0 +1,283 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`ItemDetails > matches the snapshot 1`] = `
+<DocumentFragment>
+  <div
+    class="itemdetails-overlay"
+  >
+    <div
+      class="hero-section"
+    >
+      <img
+        alt="Masala Dosa"
+        class="hero-media"
+        src="https://example.com/dosa.png"
+      />
+      <div
+        class="hero-scrim"
+      />
+      <div
+        class="hero-topbar"
+      >
+        <button
+          aria-label="Back to menu"
+          class="floating-icon-btn"
+        >
+          <svg
+            aria-hidden="true"
+            class="lucide lucide-arrow-left"
+            fill="none"
+            height="20"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            width="20"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="m12 19-7-7 7-7"
+            />
+            <path
+              d="M19 12H5"
+            />
+          </svg>
+        </button>
+        <div
+          class="floating-icon-group"
+        >
+          <button
+            aria-label="Add to favorites"
+            class="floating-icon-btn"
+          >
+            <svg
+              aria-hidden="true"
+              class="lucide lucide-heart"
+              fill="none"
+              height="18"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="18"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M2 9.5a5.5 5.5 0 0 1 9.591-3.676.56.56 0 0 0 .818 0A5.49 5.49 0 0 1 22 9.5c0 2.29-1.5 4-3 5.5l-5.492 5.313a2 2 0 0 1-3 .019L5 15c-1.5-1.5-3-3.2-3-5.5"
+              />
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+    <div
+      class="content-card"
+    >
+      <div
+        class="content-inner"
+      >
+        <p
+          class="eyebrow"
+        >
+          On The Menu
+        </p>
+        <div
+          class="title-row"
+        >
+          <h1
+            class="item-title"
+          >
+            Masala Dosa
+          </h1>
+        </div>
+        <p
+          class="item-description"
+        >
+          Crispy rice crepe
+        </p>
+        <div
+          class="section-divider"
+        />
+        <section
+          class="detail-section"
+        >
+          <h3
+            class="section-heading"
+          >
+            Ingredients
+          </h3>
+          <p
+            class="section-placeholder"
+          >
+            Ingredient details coming soon — ask your server for allergen information.
+          </p>
+        </section>
+        <div
+          class="section-divider"
+        />
+        <section
+          class="detail-section"
+        >
+          <h3
+            class="section-heading"
+          >
+            Customize
+          </h3>
+          <div
+            class="customize-groups"
+          >
+            <div
+              class="customize-group"
+            >
+              <p
+                class="customize-label"
+              >
+                Portion
+              </p>
+              <div
+                class="chip-row"
+              >
+                <button
+                  class="option-chip active"
+                  type="button"
+                >
+                  Regular
+                </button>
+                <button
+                  class="option-chip "
+                  type="button"
+                >
+                  Large
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+        <div
+          class="section-divider"
+        />
+        <section
+          class="detail-section quantity-section-wrap"
+        >
+          <h3
+            class="section-heading"
+          >
+            Quantity
+          </h3>
+          <div
+            class="quantity-section"
+          >
+            <button
+              aria-label="Decrease quantity"
+              class="qty-btn"
+            >
+              <svg
+                aria-hidden="true"
+                class="lucide lucide-minus"
+                fill="none"
+                height="20"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+                width="20"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M5 12h14"
+                />
+              </svg>
+            </button>
+            <span
+              class="qty-value"
+            >
+              1
+            </span>
+            <button
+              aria-label="Increase quantity"
+              class="qty-btn"
+            >
+              <svg
+                aria-hidden="true"
+                class="lucide lucide-plus"
+                fill="none"
+                height="20"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+                width="20"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M5 12h14"
+                />
+                <path
+                  d="M12 5v14"
+                />
+              </svg>
+            </button>
+          </div>
+        </section>
+      </div>
+    </div>
+    <div
+      class="bottom-bar"
+    >
+      <div
+        class="price-section"
+      >
+        <p
+          class="price-label"
+        >
+          Total Price
+        </p>
+        <p
+          class="price-value"
+        >
+          ₹120.00
+        </p>
+      </div>
+      <button
+        class="add-to-cart-btn "
+      >
+        <svg
+          aria-hidden="true"
+          class="lucide lucide-shopping-cart"
+          fill="none"
+          height="18"
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          viewBox="0 0 24 24"
+          width="18"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <circle
+            cx="8"
+            cy="21"
+            r="1"
+          />
+          <circle
+            cx="19"
+            cy="21"
+            r="1"
+          />
+          <path
+            d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"
+          />
+        </svg>
+         Add to Cart
+      </button>
+    </div>
+    <div
+      data-testid="footer"
+    />
+  </div>
+</DocumentFragment>
+`;

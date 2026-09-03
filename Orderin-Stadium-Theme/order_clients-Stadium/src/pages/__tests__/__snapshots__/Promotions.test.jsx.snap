@@ -1,0 +1,212 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Promotions > matches the snapshot 1`] = `
+<DocumentFragment>
+  <div
+    class="promotions-page-container"
+  >
+    <div
+      class="promotions-page-content"
+    >
+      <button
+        class="promotions-back-btn"
+      >
+        Back
+      </button>
+      <h2
+        class="promotions-title"
+      >
+        CREATE POP AD
+      </h2>
+      <form>
+        <div
+          class="promotions-content"
+        >
+          <div
+            class="promotions-upload-section"
+          >
+            <div
+              class="promotions-upload-box"
+            >
+              <svg
+                class="promotions-upload-icon"
+                fill="none"
+                height="1em"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+                width="1em"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"
+                />
+                <polyline
+                  points="17 8 12 3 7 8"
+                />
+                <line
+                  x1="12"
+                  x2="12"
+                  y1="3"
+                  y2="15"
+                />
+              </svg>
+              <p
+                class="promotions-upload-text"
+              >
+                Upload advertisement picture
+              </p>
+              <input
+                accept="image/*"
+                class="promotions-file-input"
+                type="file"
+              />
+            </div>
+          </div>
+          <div
+            class="promotions-input-section"
+          >
+            <label
+              class="promotions-label"
+            >
+              Caption
+            </label>
+            <textarea
+              class="promotions-textarea promotions-textarea-caption"
+              placeholder="Enter Caption (if any)"
+              required=""
+            />
+            <label
+              class="promotions-label"
+            >
+              Description
+            </label>
+            <textarea
+              class="promotions-textarea promotions-textarea-description"
+              placeholder="Enter Description (if any)"
+              required=""
+            />
+            <label
+              class="promotions-label"
+            >
+              Duration
+            </label>
+            <select
+              class="promotions-select"
+              required=""
+            >
+              <option
+                value=""
+              >
+                Select Duration
+              </option>
+              <option
+                value="1hour"
+              >
+                1 hour
+              </option>
+              <option
+                value="2hours"
+              >
+                2 hours
+              </option>
+              <option
+                value="3hours"
+              >
+                3 hours
+              </option>
+              <option
+                value="6hours"
+              >
+                6 hours
+              </option>
+              <option
+                value="12hours"
+              >
+                12 hours
+              </option>
+              <option
+                value="1day"
+              >
+                1 day
+              </option>
+              <option
+                value="2days"
+              >
+                2 days
+              </option>
+              <option
+                value="3days"
+              >
+                3 days
+              </option>
+              <option
+                value="1week"
+              >
+                1 week
+              </option>
+              <option
+                value="2weeks"
+              >
+                2 weeks
+              </option>
+              <option
+                value="3weeks"
+              >
+                3 weeks
+              </option>
+              <option
+                value="1month"
+              >
+                1 month
+              </option>
+              <option
+                value="2months"
+              >
+                2 months
+              </option>
+              <option
+                value="3months"
+              >
+                3 months
+              </option>
+              <option
+                value="6months"
+              >
+                6 months
+              </option>
+              <option
+                value="1year"
+              >
+                1 year
+              </option>
+            </select>
+            <button
+              class="promotions-submit-btn"
+              type="submit"
+            >
+              Submit
+            </button>
+          </div>
+        </div>
+      </form>
+      <div
+        class="promotions-list-container"
+      >
+        <h2
+          class="promotions-list-title"
+        >
+          Active Promotions
+        </h2>
+        <div
+          class="promotions-no-data"
+        >
+          No promotions available
+        </div>
+      </div>
+    </div>
+  </div>
+</DocumentFragment>
+`;

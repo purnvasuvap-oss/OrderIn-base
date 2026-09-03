@@ -1,0 +1,512 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Dashboard > matches the snapshot once loaded 1`] = `
+<DocumentFragment>
+  <div
+    class="page"
+  >
+    <div
+      class="page-header"
+    >
+      <div>
+        <h2
+          class="page-title"
+        >
+          Dashboard
+        </h2>
+        <p
+          class="page-subtitle"
+        >
+          Today's overview across sales, kitchen and inventory.
+        </p>
+      </div>
+    </div>
+    <div
+      style="display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px; margin-bottom: 20px;"
+    >
+      <div
+        class="card"
+        style="padding: 16px 18px; display: flex; align-items: center; gap: 14px;"
+      >
+        <div
+          style="width: 42px; height: 42px; border-radius: 12px; display: flex; align-items: center; justify-content: center; background: var(--secondary); color: var(--text); flex-shrink: 0;"
+        >
+          <svg
+            aria-hidden="true"
+            class="lucide lucide-indian-rupee"
+            fill="none"
+            height="20"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            width="20"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M6 3h12"
+            />
+            <path
+              d="M6 8h12"
+            />
+            <path
+              d="m6 13 8.5 8"
+            />
+            <path
+              d="M6 13h3"
+            />
+            <path
+              d="M9 13c6.667 0 6.667-10 0-10"
+            />
+          </svg>
+        </div>
+        <div
+          style="min-width: 0;"
+        >
+          <div
+            style="font-size: 12px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em;"
+          >
+            Today's Sales
+          </div>
+          <div
+            style="font-size: 22px; font-weight: 700; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"
+          >
+            ₹0
+          </div>
+        </div>
+      </div>
+      <div
+        class="card"
+        style="padding: 16px 18px; display: flex; align-items: center; gap: 14px;"
+      >
+        <div
+          style="width: 42px; height: 42px; border-radius: 12px; display: flex; align-items: center; justify-content: center; background: var(--secondary); color: var(--text); flex-shrink: 0;"
+        >
+          <svg
+            aria-hidden="true"
+            class="lucide lucide-shopping-bag"
+            fill="none"
+            height="20"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            width="20"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M16 10a4 4 0 0 1-8 0"
+            />
+            <path
+              d="M3.103 6.034h17.794"
+            />
+            <path
+              d="M3.4 5.467a2 2 0 0 0-.4 1.2V20a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6.667a2 2 0 0 0-.4-1.2l-2-2.667A2 2 0 0 0 17 2H7a2 2 0 0 0-1.6.8z"
+            />
+          </svg>
+        </div>
+        <div
+          style="min-width: 0;"
+        >
+          <div
+            style="font-size: 12px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em;"
+          >
+            Total Orders
+          </div>
+          <div
+            style="font-size: 22px; font-weight: 700; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"
+          >
+            0
+          </div>
+        </div>
+      </div>
+      <div
+        class="card"
+        style="padding: 16px 18px; display: flex; align-items: center; gap: 14px;"
+      >
+        <div
+          style="width: 42px; height: 42px; border-radius: 12px; display: flex; align-items: center; justify-content: center; background: var(--secondary); color: var(--text); flex-shrink: 0;"
+        >
+          <svg
+            aria-hidden="true"
+            class="lucide lucide-receipt"
+            fill="none"
+            height="20"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            width="20"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M12 17V7"
+            />
+            <path
+              d="M16 8h-6a2 2 0 0 0 0 4h4a2 2 0 0 1 0 4H8"
+            />
+            <path
+              d="M4 3a1 1 0 0 1 1-1 1.3 1.3 0 0 1 .7.2l.933.6a1.3 1.3 0 0 0 1.4 0l.934-.6a1.3 1.3 0 0 1 1.4 0l.933.6a1.3 1.3 0 0 0 1.4 0l.933-.6a1.3 1.3 0 0 1 1.4 0l.934.6a1.3 1.3 0 0 0 1.4 0l.933-.6A1.3 1.3 0 0 1 19 2a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1 1.3 1.3 0 0 1-.7-.2l-.933-.6a1.3 1.3 0 0 0-1.4 0l-.934.6a1.3 1.3 0 0 1-1.4 0l-.933-.6a1.3 1.3 0 0 0-1.4 0l-.933.6a1.3 1.3 0 0 1-1.4 0l-.934-.6a1.3 1.3 0 0 0-1.4 0l-.933.6a1.3 1.3 0 0 1-.7.2 1 1 0 0 1-1-1z"
+            />
+          </svg>
+        </div>
+        <div
+          style="min-width: 0;"
+        >
+          <div
+            style="font-size: 12px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em;"
+          >
+            Avg Order Value
+          </div>
+          <div
+            style="font-size: 22px; font-weight: 700; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"
+          >
+            ₹0
+          </div>
+        </div>
+      </div>
+      <div
+        class="card"
+        style="padding: 16px 18px; display: flex; align-items: center; gap: 14px;"
+      >
+        <div
+          style="width: 42px; height: 42px; border-radius: 12px; display: flex; align-items: center; justify-content: center; background: var(--secondary); color: var(--text); flex-shrink: 0;"
+        >
+          <svg
+            aria-hidden="true"
+            class="lucide lucide-package"
+            fill="none"
+            height="20"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            width="20"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"
+            />
+            <path
+              d="M12 22V12"
+            />
+            <polyline
+              points="3.29 7 12 12 20.71 7"
+            />
+            <path
+              d="m7.5 4.27 9 5.15"
+            />
+          </svg>
+        </div>
+        <div
+          style="min-width: 0;"
+        >
+          <div
+            style="font-size: 12px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em;"
+          >
+            Items Sold
+          </div>
+          <div
+            style="font-size: 22px; font-weight: 700; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"
+          >
+            0
+          </div>
+        </div>
+      </div>
+      <div
+        class="card"
+        style="padding: 16px 18px; display: flex; align-items: center; gap: 14px;"
+      >
+        <div
+          style="width: 42px; height: 42px; border-radius: 12px; display: flex; align-items: center; justify-content: center; background: var(--warning-bg); color: var(--warning); flex-shrink: 0;"
+        >
+          <svg
+            aria-hidden="true"
+            class="lucide lucide-chef-hat"
+            fill="none"
+            height="20"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            width="20"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M17 21a1 1 0 0 0 1-1v-5.35c0-.457.316-.844.727-1.041a4 4 0 0 0-2.134-7.589 5 5 0 0 0-9.186 0 4 4 0 0 0-2.134 7.588c.411.198.727.585.727 1.041V20a1 1 0 0 0 1 1Z"
+            />
+            <path
+              d="M6 17h12"
+            />
+          </svg>
+        </div>
+        <div
+          style="min-width: 0;"
+        >
+          <div
+            style="font-size: 12px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em;"
+          >
+            Pending Kitchen
+          </div>
+          <div
+            style="font-size: 22px; font-weight: 700; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"
+          >
+            0
+          </div>
+        </div>
+      </div>
+      <div
+        class="card"
+        style="padding: 16px 18px; display: flex; align-items: center; gap: 14px;"
+      >
+        <div
+          style="width: 42px; height: 42px; border-radius: 12px; display: flex; align-items: center; justify-content: center; background: var(--success-bg); color: var(--success); flex-shrink: 0;"
+        >
+          <svg
+            aria-hidden="true"
+            class="lucide lucide-circle-check"
+            fill="none"
+            height="20"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            width="20"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <circle
+              cx="12"
+              cy="12"
+              r="10"
+            />
+            <path
+              d="m9 12 2 2 4-4"
+            />
+          </svg>
+        </div>
+        <div
+          style="min-width: 0;"
+        >
+          <div
+            style="font-size: 12px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em;"
+          >
+            Completed
+          </div>
+          <div
+            style="font-size: 22px; font-weight: 700; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"
+          >
+            0
+          </div>
+        </div>
+      </div>
+      <div
+        class="card"
+        style="padding: 16px 18px; display: flex; align-items: center; gap: 14px;"
+      >
+        <div
+          style="width: 42px; height: 42px; border-radius: 12px; display: flex; align-items: center; justify-content: center; background: var(--danger-bg); color: var(--danger); flex-shrink: 0;"
+        >
+          <svg
+            aria-hidden="true"
+            class="lucide lucide-circle-x"
+            fill="none"
+            height="20"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            width="20"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <circle
+              cx="12"
+              cy="12"
+              r="10"
+            />
+            <path
+              d="m15 9-6 6"
+            />
+            <path
+              d="m9 9 6 6"
+            />
+          </svg>
+        </div>
+        <div
+          style="min-width: 0;"
+        >
+          <div
+            style="font-size: 12px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em;"
+          >
+            Cancelled
+          </div>
+          <div
+            style="font-size: 22px; font-weight: 700; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"
+          >
+            0
+          </div>
+        </div>
+      </div>
+      <div
+        class="card"
+        style="padding: 16px 18px; display: flex; align-items: center; gap: 14px;"
+      >
+        <div
+          style="width: 42px; height: 42px; border-radius: 12px; display: flex; align-items: center; justify-content: center; background: var(--danger-bg); color: var(--danger); flex-shrink: 0;"
+        >
+          <svg
+            aria-hidden="true"
+            class="lucide lucide-triangle-alert"
+            fill="none"
+            height="20"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            width="20"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"
+            />
+            <path
+              d="M12 9v4"
+            />
+            <path
+              d="M12 17h.01"
+            />
+          </svg>
+        </div>
+        <div
+          style="min-width: 0;"
+        >
+          <div
+            style="font-size: 12px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em;"
+          >
+            Low Stock Items
+          </div>
+          <div
+            style="font-size: 22px; font-weight: 700; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"
+          >
+            0
+          </div>
+        </div>
+      </div>
+    </div>
+    <div
+      style="display: grid; grid-template-columns: 1.4fr 1fr; gap: 16px; margin-bottom: 16px;"
+    >
+      <div
+        class="card"
+        style="padding: 18px;"
+      >
+        <h3
+          style="margin-top: 0px; font-size: 14px;"
+        >
+          Revenue over time (7 days)
+        </h3>
+        <div
+          data-testid="chart"
+        >
+          <div
+            class="recharts-wrapper"
+            style="position: relative; cursor: default;"
+          />
+        </div>
+      </div>
+      <div
+        class="card"
+        style="padding: 18px;"
+      >
+        <h3
+          style="margin-top: 0px; font-size: 14px;"
+        >
+          Payment method distribution
+        </h3>
+        <div
+          class="empty-state"
+        >
+          <div
+            style="font-weight: 600; color: var(--text);"
+          >
+            No payments yet
+          </div>
+          <div
+            style="font-size: 13px;"
+          >
+            Complete an order in POS to see this chart.
+          </div>
+        </div>
+      </div>
+    </div>
+    <div
+      style="display: grid; grid-template-columns: 1.4fr 1fr; gap: 16px;"
+    >
+      <div
+        class="card"
+        style="padding: 18px;"
+      >
+        <h3
+          style="margin-top: 0px; font-size: 14px;"
+        >
+          Top-selling products
+        </h3>
+        <div
+          class="empty-state"
+        >
+          <div
+            style="font-weight: 600; color: var(--text);"
+          >
+            No sales yet
+          </div>
+        </div>
+      </div>
+      <div
+        class="card"
+        style="padding: 18px;"
+      >
+        <h3
+          style="margin-top: 0px; font-size: 14px;"
+        >
+          Operational alerts
+        </h3>
+        <div
+          style="display: flex; flex-direction: column; gap: 10px;"
+        >
+          <div
+            class="empty-state"
+          >
+            <div
+              style="font-weight: 600; color: var(--text);"
+            >
+              All clear
+            </div>
+            <div
+              style="font-size: 13px;"
+            >
+              No alerts right now.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`Dashboard > matches the snapshot with no data 1`] = `
+<DocumentFragment>
+  <div
+    class="page"
+  >
+    Loading dashboard…
+  </div>
+</DocumentFragment>
+`;

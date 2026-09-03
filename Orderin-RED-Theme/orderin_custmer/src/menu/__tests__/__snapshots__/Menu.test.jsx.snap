@@ -1,0 +1,114 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Menu > matches the snapshot 1`] = `
+<DocumentFragment>
+  <div
+    class="menu-container"
+  >
+    <div
+      data-testid="header"
+    />
+    <div
+      class="search-bar-container"
+    >
+      <div
+        class="search-bar"
+      >
+        <svg
+          class="search-icon"
+          fill="none"
+          height="1em"
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          viewBox="0 0 24 24"
+          width="1em"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <circle
+            cx="11"
+            cy="11"
+            r="8"
+          />
+          <line
+            x1="21"
+            x2="16.65"
+            y1="21"
+            y2="16.65"
+          />
+        </svg>
+        <input
+          class="search-input"
+          placeholder="Search menu"
+          type="text"
+          value=""
+        />
+      </div>
+      <div
+        class="filters-container"
+      >
+        <div
+          class="category-dropdown"
+        >
+          <button
+            class="category-button"
+          >
+            Category 
+            <svg
+              aria-hidden="true"
+              class="lucide lucide-chevron-down"
+              fill="none"
+              height="16"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="16"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="m6 9 6 6 6-6"
+              />
+            </svg>
+          </button>
+        </div>
+        <div
+          class="veg-toggle all"
+        >
+          <button
+            aria-label="Veg"
+            class="toggle-button"
+            title="Veg"
+          />
+          <button
+            aria-label="All"
+            class="toggle-button"
+            title="All"
+          />
+          <button
+            aria-label="Non-Veg"
+            class="toggle-button"
+            title="Non-Veg"
+          />
+        </div>
+      </div>
+    </div>
+    <div
+      class="app-container"
+    >
+      <div
+        class="no-results"
+      >
+        <p>
+          No items found matching your search.
+        </p>
+      </div>
+    </div>
+    <div
+      data-testid="footer"
+    />
+  </div>
+</DocumentFragment>
+`;

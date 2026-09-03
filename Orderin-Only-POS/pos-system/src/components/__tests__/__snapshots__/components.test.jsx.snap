@@ -1,0 +1,15 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`EmptyState > matches the snapshot 1`] = `
+<DocumentFragment>
+  <div
+    class="empty-state"
+  >
+    <div
+      style="font-weight: 600; color: var(--text);"
+    >
+      Empty
+    </div>
+  </div>
+</DocumentFragment>
+`;

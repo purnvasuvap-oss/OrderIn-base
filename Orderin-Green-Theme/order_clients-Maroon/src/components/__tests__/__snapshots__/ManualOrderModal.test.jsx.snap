@@ -1,0 +1,189 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`ManualOrderModal > matches the snapshot when open 1`] = `
+<DocumentFragment>
+  <div
+    class="manual-order-overlay"
+  >
+    <div
+      class="manual-order-modal"
+    >
+      <div
+        class="modal-header"
+      >
+        <h2>
+          Create Manual Order
+        </h2>
+        <button
+          class="close-btn"
+        >
+          ×
+        </button>
+      </div>
+      <div
+        class="modal-content"
+      >
+        <div
+          class="customer-info-section"
+        >
+          <h3>
+            Customer Information
+          </h3>
+          <div
+            class="form-group"
+          >
+            <label>
+              Customer Name
+            </label>
+            <input
+              placeholder="Enter customer name"
+              type="text"
+              value=""
+            />
+          </div>
+          <div
+            class="form-group"
+          >
+            <label>
+              Phone Number
+            </label>
+            <input
+              maxlength="20"
+              placeholder="Enter phone number"
+              type="tel"
+              value=""
+            />
+          </div>
+          <div
+            class="form-group"
+          >
+            <label>
+              Order Type
+            </label>
+            <select>
+              <option
+                value="Dine-in"
+              >
+                Dine-in
+              </option>
+              <option
+                value="Pickup"
+              >
+                Pickup
+              </option>
+              <option
+                value="Delivery"
+              >
+                Delivery
+              </option>
+            </select>
+          </div>
+          <div
+            class="form-group"
+          >
+            <label>
+              Table Number
+            </label>
+            <input
+              placeholder="Enter table number"
+              type="number"
+              value=""
+            />
+          </div>
+        </div>
+        <div
+          class="menu-selection-section"
+        >
+          <h3>
+            Add Items from Menu
+          </h3>
+          <div
+            class="menu-search"
+          >
+            <input
+              placeholder="Search menu items..."
+              type="text"
+              value=""
+            />
+          </div>
+          <div
+            class="menu-list"
+          >
+            <div
+              class="menu-item"
+            >
+              <div
+                class="item-info"
+              >
+                <div
+                  class="item-name"
+                >
+                  Masala Dosa
+                </div>
+                <div
+                  class="item-price"
+                >
+                  ₹120
+                </div>
+              </div>
+              <button
+                class="add-item-btn"
+              >
+                + Add
+              </button>
+            </div>
+            <div
+              class="menu-item"
+            >
+              <div
+                class="item-info"
+              >
+                <div
+                  class="item-name"
+                >
+                  Filter Coffee
+                </div>
+                <div
+                  class="item-price"
+                >
+                  ₹40
+                </div>
+              </div>
+              <button
+                class="add-item-btn"
+              >
+                + Add
+              </button>
+            </div>
+          </div>
+        </div>
+        <div
+          class="selected-items-section"
+        >
+          <h3>
+            Selected Items (0)
+          </h3>
+          <div
+            class="selected-items-list"
+          />
+        </div>
+      </div>
+      <div
+        class="modal-footer"
+      >
+        <button
+          class="cancel-btn"
+        >
+          Cancel
+        </button>
+        <button
+          class="submit-btn"
+          disabled=""
+        >
+          Create Order
+        </button>
+      </div>
+    </div>
+  </div>
+</DocumentFragment>
+`;

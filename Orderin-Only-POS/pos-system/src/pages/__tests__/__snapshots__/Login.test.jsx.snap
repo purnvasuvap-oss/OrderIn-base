@@ -1,0 +1,86 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Login > matches the snapshot 1`] = `
+<DocumentFragment>
+  <div
+    class="login-screen"
+  >
+    <div
+      class="login-card"
+    >
+      <div
+        class="login-brand"
+      >
+        <div
+          class="login-brand-mark"
+        >
+          <svg
+            aria-hidden="true"
+            class="lucide lucide-chef-hat"
+            fill="none"
+            height="22"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            width="22"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M17 21a1 1 0 0 0 1-1v-5.35c0-.457.316-.844.727-1.041a4 4 0 0 0-2.134-7.589 5 5 0 0 0-9.186 0 4 4 0 0 0-2.134 7.588c.411.198.727.585.727 1.041V20a1 1 0 0 0 1 1Z"
+            />
+            <path
+              d="M6 17h12"
+            />
+          </svg>
+        </div>
+        <div>
+          <div
+            class="login-brand-name"
+          >
+            Orderin POS
+          </div>
+          <div
+            class="login-brand-tag"
+          >
+            Restaurant Operations Platform
+          </div>
+        </div>
+      </div>
+      <form
+        class="login-form"
+      >
+        <label
+          class="login-label"
+        >
+          Username
+        </label>
+        <input
+          class="input"
+          placeholder="e.g. cashier"
+          value=""
+        />
+        <label
+          class="login-label"
+        >
+          Password
+        </label>
+        <input
+          class="input"
+          placeholder="••••••••"
+          type="password"
+          value=""
+        />
+        <button
+          class="btn btn-primary"
+          style="margin-top: 6px; height: 42px;"
+          type="submit"
+        >
+          Sign in
+        </button>
+      </form>
+    </div>
+  </div>
+</DocumentFragment>
+`;

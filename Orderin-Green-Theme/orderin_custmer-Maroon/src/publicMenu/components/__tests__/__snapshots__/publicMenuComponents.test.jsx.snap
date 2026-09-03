@@ -1,0 +1,88 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`BookEmptyState > matches the snapshot 1`] = `
+<DocumentFragment>
+  <div
+    class="pm-empty-state"
+    role="alert"
+  >
+    <p
+      class="pm-empty-message"
+    >
+      x
+    </p>
+    <button
+      class="pm-empty-retry-btn"
+      type="button"
+    >
+      <svg
+        aria-hidden="true"
+        class="lucide lucide-refresh-cw"
+        fill="none"
+        height="16"
+        stroke="currentColor"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+        viewBox="0 0 24 24"
+        width="16"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <path
+          d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"
+        />
+        <path
+          d="M21 3v5h-5"
+        />
+        <path
+          d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"
+        />
+        <path
+          d="M8 16H3v5"
+        />
+      </svg>
+      Try Again
+    </button>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`LoginRequiredModal > matches the snapshot when open 1`] = `
+<DocumentFragment>
+  <div
+    class="pm-login-modal-overlay"
+  >
+    <div
+      aria-labelledby="pm-login-modal-title"
+      aria-modal="true"
+      class="pm-login-modal-card"
+      role="dialog"
+      tabindex="-1"
+    >
+      <h2
+        class="pm-login-modal-title"
+        id="pm-login-modal-title"
+      >
+        Ready to order?
+      </h2>
+      <p
+        class="pm-login-modal-copy"
+      >
+        Login to continue.
+      </p>
+      <button
+        class="pm-login-modal-btn-primary"
+        type="button"
+      >
+        Login
+      </button>
+      <button
+        class="pm-login-modal-btn-secondary"
+        type="button"
+      >
+        Continue Browsing
+      </button>
+    </div>
+  </div>
+</DocumentFragment>
+`;

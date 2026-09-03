@@ -1,0 +1,196 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Login > matches the snapshot 1`] = `
+<DocumentFragment>
+  <div
+    class="sub-login login-redesign"
+  >
+    <aside
+      aria-hidden="false"
+      class="sub-login-left login-brand-panel"
+    >
+      <div
+        class="sub-brand-section"
+      >
+        <div
+          class="login-logo-card"
+        >
+          <img
+            alt="OrderIn logo"
+            class="sub-orderin-logo"
+            src="/images/OrderIn.png"
+          />
+        </div>
+        <div
+          class="sub-by-row"
+        >
+          <span
+            class="sub-by-text"
+          >
+            by
+          </span>
+          <p
+            class="sub-company-name-text"
+          >
+            PurnVasu Tech Solutions Pvt. Ltd.
+          </p>
+        </div>
+      </div>
+      <div
+        class="sub-illustration login-visual"
+      >
+        <div
+          aria-hidden="true"
+          class="sub-circle-outer"
+        >
+          <div
+            aria-hidden="true"
+            class="sub-circle-inner"
+          />
+          <img
+            alt="food illustration"
+            class="sub-food-img"
+            src="/images/OFD.png"
+          />
+        </div>
+        <div
+          class="login-brand-caption"
+        >
+          <span>
+            OrderIn Console
+          </span>
+          <p
+            class="sub-tagline"
+          >
+            Personalized Restaurant
+            <br />
+            Control Unit
+          </p>
+        </div>
+      </div>
+    </aside>
+    <main
+      class="sub-login-right login-auth-area"
+    >
+      <div
+        class="login-auth-panel"
+      >
+        <header
+          class="sub-login-header"
+        >
+          <p
+            class="login-eyebrow"
+          >
+            Restaurant Portal
+          </p>
+          <h2
+            class="sub-restaurant-name"
+          >
+            XYZ Restaurant
+          </h2>
+          <p
+            class="sub-welcome-text"
+          >
+            Welcome back
+          </p>
+        </header>
+        <section
+          aria-label="login form"
+          class="sub-login-card"
+        >
+          <div
+            class="login-card-heading"
+          >
+            <div>
+              <h3>
+                Sign in
+              </h3>
+              <p
+                class="sub"
+              >
+                To your account to continue
+              </p>
+            </div>
+            <span
+              class="login-status-pill is-checking"
+            >
+              Checking
+            </span>
+          </div>
+          <form
+            class="sub-login-form"
+          >
+            <div
+              class="sub-field"
+            >
+              <label
+                class="sub-field-label"
+                for="userId"
+              >
+                User ID
+              </label>
+              <input
+                autocomplete="username"
+                id="userId"
+                name="userId"
+                placeholder="Enter user ID"
+                required=""
+                type="text"
+                value=""
+              />
+            </div>
+            <div
+              class="sub-field"
+            >
+              <label
+                class="sub-field-label"
+                for="password"
+              >
+                Password
+              </label>
+              <input
+                autocomplete="current-password"
+                id="password"
+                name="password"
+                placeholder="Enter password"
+                required=""
+                type="password"
+                value=""
+              />
+            </div>
+            <button
+              class="sub-primary-cta"
+              type="submit"
+            >
+              Login
+            </button>
+          </form>
+        </section>
+        <div
+          class="sub-contact-info login-support-card"
+        >
+          <span>
+            Support
+          </span>
+          <p>
+            Contact PurnVasu for queries
+            <br />
+            <strong>
+              OrderIn.vap@gmail.com
+            </strong>
+          </p>
+        </div>
+      </div>
+    </main>
+    <div
+      aria-hidden="true"
+      class="sub-red-blob"
+    >
+      <img
+        alt="decorative vector"
+        src="/images/Vector.png"
+      />
+    </div>
+  </div>
+</DocumentFragment>
+`;

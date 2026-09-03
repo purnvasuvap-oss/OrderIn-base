@@ -1,0 +1,196 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`ItemDetails > matches the snapshot 1`] = `
+<DocumentFragment>
+  <div
+    class="itemdetails-overlay"
+  >
+    <div
+      class="itemdetails-header"
+    >
+      <button
+        class="bac-button"
+      >
+        <svg
+          fill="none"
+          height="22"
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          viewBox="0 0 24 24"
+          width="22"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <line
+            x1="19"
+            x2="5"
+            y1="12"
+            y2="12"
+          />
+          <polyline
+            points="12 19 5 12 12 5"
+          />
+        </svg>
+      </button>
+    </div>
+    <div
+      class="itemdetails-image-container"
+    >
+      <img
+        alt="Masala Dosa"
+        class="itemdetails-image"
+        src="https://example.com/dosa.png"
+      />
+    </div>
+    <div
+      class="itemdetails-info"
+    >
+      <div
+        class="itemdetails-header-row"
+      >
+        <h1
+          class="itemdetails-title"
+        >
+          Masala Dosa
+        </h1>
+        <div
+          class="favorite-btn"
+        >
+          <svg
+            class="favorite-default"
+            fill="none"
+            height="24"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            width="24"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"
+            />
+          </svg>
+        </div>
+      </div>
+      <p
+        class="itemdetails-description"
+      >
+        Crispy rice crepe
+      </p>
+      <div
+        class="quantity-section"
+      >
+        <button
+          class="qty-btn"
+        >
+          <svg
+            fill="none"
+            height="1em"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            width="1em"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <line
+              x1="5"
+              x2="19"
+              y1="12"
+              y2="12"
+            />
+          </svg>
+        </button>
+        <span
+          class="qty-value"
+        >
+          1
+        </span>
+        <button
+          class="qty-btn"
+        >
+          <svg
+            fill="none"
+            height="1em"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            width="1em"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <line
+              x1="12"
+              x2="12"
+              y1="5"
+              y2="19"
+            />
+            <line
+              x1="5"
+              x2="19"
+              y1="12"
+              y2="12"
+            />
+          </svg>
+        </button>
+      </div>
+      <div
+        class="bottom-bar"
+      >
+        <div
+          class="price-section"
+        >
+          <p
+            class="price-label"
+          >
+            Total Price
+          </p>
+          <p
+            class="price-value"
+          >
+            ₹120.00
+          </p>
+        </div>
+        <button
+          class="add-to-cart-btn "
+        >
+          <svg
+            fill="none"
+            height="18"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            width="18"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <circle
+              cx="9"
+              cy="21"
+              r="1"
+            />
+            <circle
+              cx="20"
+              cy="21"
+              r="1"
+            />
+            <path
+              d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"
+            />
+          </svg>
+           Add to Cart
+        </button>
+      </div>
+    </div>
+    <div
+      data-testid="footer"
+    />
+  </div>
+</DocumentFragment>
+`;

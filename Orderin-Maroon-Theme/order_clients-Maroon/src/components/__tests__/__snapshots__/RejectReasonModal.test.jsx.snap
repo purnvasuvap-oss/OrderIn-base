@@ -1,0 +1,117 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`RejectReasonModal > matches the snapshot when open 1`] = `
+<DocumentFragment>
+  <div
+    class="RejectReason-overlay"
+  >
+    <div
+      class="RejectReason-modal"
+    >
+      <div
+        class="RejectReason-header"
+      >
+        <h3>
+          Select Reason
+        </h3>
+        <button
+          class="RejectReason-close"
+        >
+          <svg
+            aria-hidden="true"
+            class="lucide lucide-x"
+            fill="none"
+            height="20"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            width="20"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M18 6 6 18"
+            />
+            <path
+              d="m6 6 12 12"
+            />
+          </svg>
+        </button>
+      </div>
+      <div
+        class="RejectReason-body"
+      >
+        <p
+          class="RejectReason-prompt"
+        >
+          Let the customer know why this order can't be fulfilled:
+        </p>
+        <label
+          class="RejectReason-option"
+        >
+          <input
+            name="reject-reason"
+            type="radio"
+            value="Item Sold Out"
+          />
+          <span>
+            Item Sold Out
+          </span>
+        </label>
+        <label
+          class="RejectReason-option"
+        >
+          <input
+            name="reject-reason"
+            type="radio"
+            value="Temporarily Unavailable"
+          />
+          <span>
+            Temporarily Unavailable
+          </span>
+        </label>
+        <label
+          class="RejectReason-option"
+        >
+          <input
+            name="reject-reason"
+            type="radio"
+            value="Long Prep Time"
+          />
+          <span>
+            Long Prep Time
+          </span>
+        </label>
+        <label
+          class="RejectReason-option"
+        >
+          <input
+            name="reject-reason"
+            type="radio"
+            value="Customization Not Possible"
+          />
+          <span>
+            Customization Not Possible
+          </span>
+        </label>
+      </div>
+      <div
+        class="RejectReason-footer"
+      >
+        <button
+          class="RejectReason-btn-secondary"
+        >
+          Cancel
+        </button>
+        <button
+          class="RejectReason-btn-primary"
+          disabled=""
+        >
+          Send Update to Customer
+        </button>
+      </div>
+    </div>
+  </div>
+</DocumentFragment>
+`;

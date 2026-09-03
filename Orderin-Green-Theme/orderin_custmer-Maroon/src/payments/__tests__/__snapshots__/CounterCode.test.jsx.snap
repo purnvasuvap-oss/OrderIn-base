@@ -1,0 +1,195 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`CounterCode > matches the snapshot 1`] = `
+<DocumentFragment>
+  <div
+    class="counter-code-container"
+  >
+    <header
+      class="counter-code-header"
+    >
+      <button
+        aria-label="Back to cart"
+        class="counter-back-icon"
+      >
+        <svg
+          aria-hidden="true"
+          class="lucide lucide-chevron-left"
+          fill="none"
+          height="22"
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          viewBox="0 0 24 24"
+          width="22"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="m15 18-6-6 6-6"
+          />
+        </svg>
+      </button>
+      <h1>
+        Payment Verification
+      </h1>
+    </header>
+    <div
+      class="code-entry-section"
+    >
+      <div
+        class="code-entry-box"
+      >
+        <div
+          aria-hidden="true"
+          class="counter-code-badge"
+        >
+          <svg
+            aria-hidden="true"
+            class="lucide lucide-shield-check"
+            fill="none"
+            height="32"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            width="32"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"
+            />
+            <path
+              d="m9 12 2 2 4-4"
+            />
+          </svg>
+        </div>
+        <div
+          class="counter-copy"
+        >
+          <p
+            class="counter-eyebrow"
+          >
+            Counter Payment
+          </p>
+          <h2>
+            Enter Verification Code
+          </h2>
+          <p>
+            Ask the counter for the 4 digit code and enter it below to complete payment.
+          </p>
+        </div>
+        <div
+          class="counter-order-summary"
+        >
+          <div
+            aria-hidden="true"
+            class="counter-order-icon"
+          >
+            <svg
+              aria-hidden="true"
+              class="lucide lucide-credit-card"
+              fill="none"
+              height="20"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="20"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <rect
+                height="14"
+                rx="2"
+                width="20"
+                x="2"
+                y="5"
+              />
+              <line
+                x1="2"
+                x2="22"
+                y1="10"
+                y2="10"
+              />
+            </svg>
+          </div>
+          <div>
+            <span>
+              Order ID
+            </span>
+            <strong>
+              #42
+            </strong>
+          </div>
+        </div>
+        <div
+          aria-label="Counter code input"
+          class="digit-inputs"
+        >
+          <input
+            aria-label="Counter code digit 1"
+            autocomplete="one-time-code"
+            id="code-0"
+            inputmode="numeric"
+            maxlength="1"
+            pattern="[0-9]*"
+            type="text"
+            value=""
+          />
+          <input
+            aria-label="Counter code digit 2"
+            autocomplete="off"
+            id="code-1"
+            inputmode="numeric"
+            maxlength="1"
+            pattern="[0-9]*"
+            type="text"
+            value=""
+          />
+          <input
+            aria-label="Counter code digit 3"
+            autocomplete="off"
+            id="code-2"
+            inputmode="numeric"
+            maxlength="1"
+            pattern="[0-9]*"
+            type="text"
+            value=""
+          />
+          <input
+            aria-label="Counter code digit 4"
+            autocomplete="off"
+            id="code-3"
+            inputmode="numeric"
+            maxlength="1"
+            pattern="[0-9]*"
+            type="text"
+            value=""
+          />
+        </div>
+        <p
+          class="instruction-text"
+        >
+          The code is used only to confirm this counter payment.
+        </p>
+        <div
+          class="counter-actions"
+        >
+          <button
+            class="verify-button"
+          >
+            Verify Payment
+          </button>
+          <button
+            class="counter-back-button"
+          >
+            Back to Cart
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</DocumentFragment>
+`;

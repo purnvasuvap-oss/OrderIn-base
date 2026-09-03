@@ -1,0 +1,337 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`StaffManagement > matches the snapshot 1`] = `
+<DocumentFragment>
+  <div
+    class="staff-mgmt-page"
+  >
+    <div
+      class="sm-pagehead"
+    >
+      <div>
+        <h1
+          class="sm-page-h1"
+        >
+          Staff Management
+        </h1>
+        <div
+          class="sm-page-sub"
+        >
+          Staff directory, roster, and live attendance — backed by Firestore
+        </div>
+      </div>
+      <button
+        class="sm-back-btn"
+      >
+        <svg
+          aria-hidden="true"
+          class="lucide lucide-chevron-left"
+          fill="none"
+          height="16"
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          viewBox="0 0 24 24"
+          width="16"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="m15 18-6-6 6-6"
+          />
+        </svg>
+         Back to Dashboard
+      </button>
+    </div>
+    <div
+      class="sm-stats"
+    >
+      <div
+        class="sm-statc"
+      >
+        <div
+          class="sm-statc-n"
+        >
+          0
+        </div>
+        <div
+          class="sm-statc-lbl"
+        >
+          Total Staff
+        </div>
+      </div>
+      <div
+        class="sm-statc"
+      >
+        <div
+          class="sm-statc-n sm-statc-n-shift"
+        >
+          0
+        </div>
+        <div
+          class="sm-statc-lbl"
+        >
+          On Shift Now
+        </div>
+      </div>
+      <div
+        class="sm-statc"
+      >
+        <div
+          class="sm-statc-n sm-statc-n-break"
+        >
+          0
+        </div>
+        <div
+          class="sm-statc-lbl"
+        >
+          On Break
+        </div>
+      </div>
+      <div
+        class="sm-statc"
+      >
+        <div
+          class="sm-statc-n sm-statc-n-pending"
+        >
+          0
+        </div>
+        <div
+          class="sm-statc-lbl"
+        >
+          Time-off Pending
+        </div>
+      </div>
+    </div>
+    <div
+      class="sm-tabs"
+    >
+      <button
+        class="sm-tab on"
+      >
+        Staff & Roles
+      </button>
+      <button
+        class="sm-tab "
+      >
+        Schedule & Roster
+      </button>
+      <button
+        class="sm-tab "
+      >
+        Attendance & Timecards
+      </button>
+      <button
+        class="sm-tab "
+      >
+        <svg
+          aria-hidden="true"
+          class="lucide lucide-calendar"
+          fill="none"
+          height="14"
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          style="vertical-align: -2px; margin-right: 4px;"
+          viewBox="0 0 24 24"
+          width="14"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M8 2v4"
+          />
+          <path
+            d="M16 2v4"
+          />
+          <rect
+            height="18"
+            rx="2"
+            width="18"
+            x="3"
+            y="4"
+          />
+          <path
+            d="M3 10h18"
+          />
+        </svg>
+        Calendar
+      </button>
+    </div>
+    <div
+      class="sm-panel"
+    >
+      <div
+        class="sm-toolbar"
+      >
+        <div
+          class="sm-search"
+        >
+          <svg
+            aria-hidden="true"
+            class="lucide lucide-search sm-search-icon"
+            fill="none"
+            height="15"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            width="15"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="m21 21-4.34-4.34"
+            />
+            <circle
+              cx="11"
+              cy="11"
+              r="8"
+            />
+          </svg>
+          <input
+            placeholder="Search name or email…"
+            value=""
+          />
+        </div>
+        <select
+          class="sm-select"
+        >
+          <option
+            value="all"
+          >
+            All roles
+          </option>
+          <option
+            value="Admin"
+          >
+            Admin
+          </option>
+          <option
+            value="Kitchen"
+          >
+            Kitchen
+          </option>
+          <option
+            value="Floor"
+          >
+            Floor
+          </option>
+        </select>
+        <div
+          class="sm-spacer"
+        />
+        <button
+          class="sm-btn sm-btn-gold"
+        >
+          <svg
+            aria-hidden="true"
+            class="lucide lucide-plus"
+            fill="none"
+            height="15"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            width="15"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M5 12h14"
+            />
+            <path
+              d="M12 5v14"
+            />
+          </svg>
+           Add Staff
+        </button>
+      </div>
+      <div
+        class="sm-table"
+      >
+        <div
+          class="sm-thead"
+        >
+          <span>
+            Employee
+          </span>
+          <span>
+            Role & Access
+          </span>
+          <span>
+            Contact
+          </span>
+          <span>
+            Login PIN
+          </span>
+          <span>
+            Status
+          </span>
+          <span>
+            Actions
+          </span>
+        </div>
+        <div
+          class="sm-state-msg"
+        >
+          No staff match this view.
+        </div>
+      </div>
+      <div
+        class="sm-access-note"
+      >
+        <div
+          class="sm-access-note-title"
+        >
+          What each role can access
+        </div>
+        <div
+          class="sm-access-grid"
+        >
+          <div>
+            <span
+              class="sm-rolebadge sm-rolebadge-admin"
+            >
+              Admin
+            </span>
+            <p>
+              Full access, including staff management and PIN resets.
+            </p>
+          </div>
+          <div>
+            <span
+              class="sm-rolebadge sm-rolebadge-gm"
+            >
+              General Manager
+            </span>
+            <p>
+              All operations and finance — cannot edit staff PINs.
+            </p>
+          </div>
+          <div>
+            <span
+              class="sm-rolebadge sm-rolebadge-kitchen"
+            >
+              Kitchen
+            </span>
+            <p>
+              Orders board and inventory view only.
+            </p>
+          </div>
+          <div>
+            <span
+              class="sm-rolebadge sm-rolebadge-floor"
+            >
+              Floor
+            </span>
+            <p>
+              Orders, tables, and manual order entry.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</DocumentFragment>
+`;

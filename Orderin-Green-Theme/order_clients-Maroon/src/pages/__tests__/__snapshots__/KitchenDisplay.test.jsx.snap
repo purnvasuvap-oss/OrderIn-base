@@ -1,0 +1,170 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`KitchenDisplay > matches the snapshot 1`] = `
+<DocumentFragment>
+  <div
+    class="kds-wrapper"
+  >
+    <div
+      class="kds-header"
+    >
+      <button
+        class="kds-back"
+        type="button"
+      >
+        ← Dashboard
+      </button>
+      <h1>
+        Kitchen Display
+      </h1>
+      <span
+        class="kds-live"
+      >
+        <span
+          class="kds-live-dot"
+        />
+        Live
+      </span>
+    </div>
+    <div
+      class="kds-board"
+    >
+      <div
+        class="kds-lane kds-lane--queued"
+      >
+        <div
+          class="kds-lane-head"
+        >
+          <span
+            class="kds-lane-title"
+          >
+            New
+          </span>
+          <span
+            class="kds-lane-count"
+          >
+            0
+          </span>
+        </div>
+        <div
+          class="kds-lane-body"
+        >
+          <div
+            class="kds-lane-empty"
+          >
+            Nothing here
+          </div>
+        </div>
+      </div>
+      <div
+        class="kds-lane kds-lane--pending"
+      >
+        <div
+          class="kds-lane-head"
+        >
+          <span
+            class="kds-lane-title"
+          >
+            Accepted
+          </span>
+          <span
+            class="kds-lane-count"
+          >
+            0
+          </span>
+        </div>
+        <div
+          class="kds-lane-body"
+        >
+          <div
+            class="kds-lane-empty"
+          >
+            Nothing here
+          </div>
+        </div>
+      </div>
+      <div
+        class="kds-lane kds-lane--preparing"
+      >
+        <div
+          class="kds-lane-head"
+        >
+          <span
+            class="kds-lane-title"
+          >
+            Preparing
+          </span>
+          <span
+            class="kds-lane-count"
+          >
+            0
+          </span>
+        </div>
+        <div
+          class="kds-lane-body"
+        >
+          <div
+            class="kds-lane-empty"
+          >
+            Nothing here
+          </div>
+        </div>
+      </div>
+      <div
+        class="kds-lane kds-lane--ready"
+      >
+        <div
+          class="kds-lane-head"
+        >
+          <span
+            class="kds-lane-title"
+          >
+            Ready
+          </span>
+          <span
+            class="kds-lane-count"
+          >
+            0
+          </span>
+        </div>
+        <div
+          class="kds-lane-body"
+        >
+          <div
+            class="kds-lane-empty"
+          >
+            Nothing here
+          </div>
+        </div>
+      </div>
+      <div
+        class="kds-lane kds-lane--delivered"
+      >
+        <div
+          class="kds-lane-head"
+        >
+          <span
+            class="kds-lane-title"
+          >
+            Picked Up
+          </span>
+          <span
+            class="kds-lane-count"
+          >
+            0
+          </span>
+        </div>
+        <div
+          class="kds-lane-body"
+        >
+          <div
+            class="kds-lane-empty"
+          >
+            Nothing here
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</DocumentFragment>
+`;

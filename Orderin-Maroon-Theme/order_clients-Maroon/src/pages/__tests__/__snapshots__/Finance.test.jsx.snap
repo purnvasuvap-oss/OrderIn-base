@@ -1,0 +1,96 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Finance > matches the snapshot 1`] = `
+<DocumentFragment>
+  <div
+    class="fin-app"
+  >
+    <h1
+      class="fin-page-title"
+    >
+      Financial Management
+    </h1>
+    <div
+      class="fin-top-row"
+    >
+      <div
+        class="fin-back-col"
+      >
+        <button
+          class="fin-back-btn"
+        >
+          Back
+        </button>
+      </div>
+      <div
+        class="fin-nav-center"
+      >
+        <div
+          class="fin-nav-buttons"
+        >
+          <button
+            class="fin-nav-btn active"
+          >
+            DAILY TRANSIT
+          </button>
+          <button
+            class="fin-nav-btn "
+          >
+            ACCOUNTS
+          </button>
+          <button
+            class="fin-nav-btn "
+          >
+            EARNINGS CALCULATION
+          </button>
+          <button
+            class="fin-nav-btn "
+          >
+            LEDGER
+          </button>
+          <button
+            class="fin-nav-btn "
+          >
+            SALES TRENDS
+          </button>
+          <button
+            class="fin-nav-btn "
+          >
+            ORDER ANALYTICS
+          </button>
+          <button
+            class="fin-nav-btn "
+          >
+            CUSTOMER LOYALTY
+          </button>
+        </div>
+      </div>
+    </div>
+    <div
+      class="fin-orders-container"
+    >
+      <div
+        class="fin-transit-toolbar"
+      >
+        <button
+          class="fin-manual-order-btn"
+        >
+          + Manual Order
+        </button>
+      </div>
+      <div
+        style="padding: 40px; text-align: center; color: rgb(102, 102, 102);"
+      >
+        Loading daily transit orders...
+      </div>
+    </div>
+    <div
+      data-testid="manual-order-modal"
+    >
+      <button>
+        x
+      </button>
+    </div>
+  </div>
+</DocumentFragment>
+`;

@@ -1,0 +1,195 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`BillModal > matches the snapshot when open 1`] = `
+<DocumentFragment>
+  <div
+    class="bill-modal-overlay"
+  >
+    <div
+      class="bill-modal"
+    >
+      <style
+        id="bill-modal-styles"
+      >
+        .receipt { width: 320px; max-width: 88vw; margin: 20px auto; font-family: 'Courier New', Courier, monospace; color: #111; background: #fff; padding: 14px 18px; }
+      .receipt .business { text-align: center; font-weight: 700; font-size: 18px; letter-spacing: 1px; }
+      .receipt .address { text-align: center; font-size: 12px; margin-top: 6px; color: #333 }
+      .receipt .dotted { border-top: 2px dotted #444; margin: 10px 0; }
+      .receipt .items { font-size: 13px; margin-top: 6px; }
+      .receipt .item-row { display: flex; justify-content: space-between; gap: 8px; }
+      .receipt .item-name { flex: 1 1 auto; }
+      .receipt .item-price { width: 70px; text-align: right; }
+      .receipt .summary { margin-top: 8px; font-size: 13px; }
+      .receipt .summary .row { display:flex; justify-content:space-between; margin:4px 0; }
+      .receipt .total { font-weight: 700; font-size: 16px; margin-top: 6px; display:flex; justify-content:space-between }
+      .receipt .paid-by { margin-top: 8px; display:flex; justify-content:space-between; font-size:13px }
+      .receipt .meta { font-size:11px; color:#333; margin-top:10px }
+      .receipt .thankyou { text-align:center; font-weight:700; margin-top:12px }
+      
+      </style>
+      <div
+        class="receipt"
+        id="bill-modal-content"
+      >
+        <div
+          class="business"
+        >
+          BUSINESS NAME
+        </div>
+        <div
+          class="address small"
+        >
+          1234 Main Street
+          <br />
+          Suite 567
+          <br />
+          City Name, State 54321
+          <br />
+          123-456-7890
+        </div>
+        <div
+          class="dotted"
+        />
+        <div
+          class="items"
+        >
+          <div
+            class="item-row"
+          >
+            <div
+              class="item-name"
+            >
+              2x Paneer Tikka
+            </div>
+            <div
+              class="item-price"
+              style="text-align: right; font-size: 12px;"
+            >
+              <div>
+                ₹150.00 × 2
+              </div>
+              <div
+                style="font-weight: 700;"
+              >
+                ₹300.00
+              </div>
+            </div>
+          </div>
+          <div
+            class="item-row"
+          >
+            <div
+              class="item-name"
+            >
+              3x Naan
+            </div>
+            <div
+              class="item-price"
+              style="text-align: right; font-size: 12px;"
+            >
+              <div>
+                ₹30.00 × 3
+              </div>
+              <div
+                style="font-weight: 700;"
+              >
+                ₹90.00
+              </div>
+            </div>
+          </div>
+        </div>
+        <div
+          class="dotted"
+        />
+        <div
+          class="summary"
+        >
+          <div
+            class="row"
+          >
+            <span>
+              Sub Total
+            </span>
+            <span>
+              ₹390.00
+            </span>
+          </div>
+          <div
+            class="row"
+          >
+            <span>
+              Sales Tax
+            </span>
+            <span>
+              ₹19.50
+            </span>
+          </div>
+          <div
+            class="total"
+          >
+            <span>
+              TOTAL
+            </span>
+            <span>
+              ₹409.50
+            </span>
+          </div>
+        </div>
+        <div
+          class="dotted"
+        />
+        <div
+          class="paid-by"
+        >
+          <span>
+            Paid By:
+          </span>
+          <span>
+            UPI
+          </span>
+        </div>
+        <div
+          class="meta small"
+        >
+          <div>
+            01/02/2026 17:30:00
+          </div>
+          <div>
+            Transaction ID: TX-777
+          </div>
+          <div>
+            Order ID: ORD-9
+          </div>
+        </div>
+        <div
+          class="dotted"
+        />
+        <div
+          class="thankyou"
+        >
+          Thank You For Supporting Local Business!
+        </div>
+      </div>
+      <div
+        class="bill-modal-actions"
+      >
+        <button
+          class="btn"
+        >
+          Close
+        </button>
+        <button
+          class="btn"
+        >
+          Print
+        </button>
+        <button
+          class="btn btn-primary"
+        >
+          Download
+        </button>
+      </div>
+    </div>
+  </div>
+</DocumentFragment>
+`;

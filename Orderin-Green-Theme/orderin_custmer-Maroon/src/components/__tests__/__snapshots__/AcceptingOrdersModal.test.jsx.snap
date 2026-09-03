@@ -1,0 +1,32 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`AcceptingOrdersModal > matches the snapshot 1`] = `
+<DocumentFragment>
+  <div
+    class="ao-modal-overlay"
+  >
+    <div
+      class="ao-modal"
+    >
+      <div
+        class="ao-modal-icon"
+      >
+        🚫
+      </div>
+      <h2>
+        Restaurant Is Not Serving Right Now
+      </h2>
+      <p
+        class="ao-modal-desc"
+      >
+        This restaurant isn't accepting new orders at the moment. You can still browse the menu, but please try placing your order again later.
+      </p>
+      <button
+        class="ao-modal-btn"
+      >
+        Got it
+      </button>
+    </div>
+  </div>
+</DocumentFragment>
+`;

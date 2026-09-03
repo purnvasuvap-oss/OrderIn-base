@@ -1,0 +1,42 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Notification > matches the snapshot with no activities 1`] = `
+<DocumentFragment>
+  <div
+    class="notification-modal"
+  >
+    <div
+      class="notification-content"
+    >
+      <button
+        class="close-btn"
+      >
+        ×
+      </button>
+      <div
+        class="tab-bar"
+      >
+        <button
+          class="tab-button active"
+        >
+          📋 Recent Activities
+        </button>
+        <button
+          class="tab-button "
+        >
+          ⭐ Feedback
+        </button>
+      </div>
+      <div
+        class="tab-content"
+      >
+        <div
+          class="empty-state"
+        >
+          No recent activities
+        </div>
+      </div>
+    </div>
+  </div>
+</DocumentFragment>
+`;

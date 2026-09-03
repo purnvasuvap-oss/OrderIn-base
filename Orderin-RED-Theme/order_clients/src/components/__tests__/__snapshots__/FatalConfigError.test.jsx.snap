@@ -1,0 +1,92 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`FatalConfigError > matches the snapshot 1`] = `
+<DocumentFragment>
+  <div
+    style="display: flex; align-items: center; justify-content: center; height: 100vh; background: rgb(255, 255, 255); color: rgb(51, 51, 51); padding: 24px;"
+  >
+    <div
+      style="max-width: 680px; text-align: left;"
+    >
+      <h1
+        style="color: rgb(183, 28, 28); margin-bottom: 8px;"
+      >
+        Application configuration error
+      </h1>
+      <p
+        style="margin-bottom: 8px;"
+      >
+        A required server configuration is missing and the application cannot start.
+      </p>
+      <pre
+        style="background: rgb(248, 249, 250); padding: 12px; border-radius: 6px; color: rgb(51, 51, 51);"
+      >
+        MISSING_ENV: RAZORPAY_KEY
+      </pre>
+      <div
+        style="margin-top: 12px; color: rgb(85, 85, 85);"
+      >
+        <p>
+          Check required environment variables and rebuild the application.
+        </p>
+        <ol
+          style="margin-top: 6px;"
+        >
+          <li>
+            Set the required values in a local 
+            <code>
+              .env
+            </code>
+             or as build-time secrets in your CI. Do not commit secrets to source control.
+          </li>
+          <li>
+            Do 
+            <strong>
+              not
+            </strong>
+             wrap the values in quotes and avoid leading/trailing whitespace.
+          </li>
+          <li>
+            Restart the dev server (
+            <code>
+              npm run dev
+            </code>
+            ) or rebuild for production (
+            <code>
+              npm run build
+            </code>
+            ).
+          </li>
+          <li>
+            Open the browser console for diagnostics if needed.
+          </li>
+        </ol>
+        <div
+          style="margin-top: 12px; background: rgb(255, 255, 255); padding: 10px; border-radius: 6px; border: 1px solid rgb(238, 238, 238); color: rgb(68, 68, 68);"
+        >
+          <strong>
+            Diagnostic
+          </strong>
+          <div
+            style="margin-top: 8px; font-size: 13px;"
+          >
+            <div>
+              <div>
+                Build mode: 
+                <strong>
+                  test
+                </strong>
+              </div>
+              <div
+                style="margin-top: 6px; color: rgb(102, 102, 102);"
+              >
+                If you see a configuration error, check your environment variables and rebuild the application.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</DocumentFragment>
+`;
