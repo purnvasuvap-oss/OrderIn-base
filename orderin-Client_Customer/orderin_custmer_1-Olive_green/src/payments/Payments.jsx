@@ -49,42 +49,6 @@ function Payments({ onBackClick }) {
     }
   }, []);
 
-  if (initializing) {
-    return <Loading isLoading={true} />;
-  }
-
-  // Fallback onBackClick: navigate back and clean up unpaid orders from Firestore
-  const handleBackClick = async () => {
-    try {
-      const user = JSON.parse(localStorage.getItem("user"));
-      if (user && user.phone && confirmedOrderId) {
-        // Fix #16: Pass specific confirmedOrderId to only delete the current pending order
-        await safeDeleteUnpaidOrders(user.phone, confirmedOrderId);
-      }
-    } catch (err) {
-      console.error('Error during order cleanup on back navigation:', err);
-    }
-
-    // Clear payment-related storage
-    sessionStorage.removeItem('pendingOrderId');
-    sessionStorage.removeItem('pendingOrderForFirestore');
-    sessionStorage.removeItem('pendingVerificationCode');
-    sessionStorage.removeItem('confirmedOrderId');
-    sessionStorage.removeItem('confirmedOrderData');
-    localStorage.removeItem('orderin_countercode_orderId');
-    localStorage.removeItem('orderin_countercode_paymentMethod');
-    localStorage.removeItem('orderin_onlinepayment_orderId');
-    localStorage.removeItem('orderin_confirmed_orderid');
-    localStorage.removeItem('orderin_confirmed_orderdata');
-    localStorage.removeItem('pendingVerificationCode');
-
-    if (onBackClick) {
-      onBackClick();
-    } else {
-      navigate(getPathWithTable('/cart'));
-    }
-  };
-
   const [isSaving, setIsSaving] = useState(false);
   const [resolvedImages, setResolvedImages] = useState({});
 
@@ -121,7 +85,45 @@ function Payments({ onBackClick }) {
     if (cartItems && cartItems.length) resolve();
     return () => { cancelled = true; };
   }, [cartItems]);
-  
+
+  // Every hook must run on every render — the early `initializing` return
+  // below is only allowed AFTER all hooks are declared (Rules of Hooks).
+  if (initializing) {
+    return <Loading isLoading={true} />;
+  }
+
+  // Fallback onBackClick: navigate back and clean up unpaid orders from Firestore
+  const handleBackClick = async () => {
+    try {
+      const user = JSON.parse(localStorage.getItem("user"));
+      if (user && user.phone && confirmedOrderId) {
+        // Fix #16: Pass specific confirmedOrderId to only delete the current pending order
+        await safeDeleteUnpaidOrders(user.phone, confirmedOrderId);
+      }
+    } catch (err) {
+      console.error('Error during order cleanup on back navigation:', err);
+    }
+
+    // Clear payment-related storage
+    sessionStorage.removeItem('pendingOrderId');
+    sessionStorage.removeItem('pendingOrderForFirestore');
+    sessionStorage.removeItem('pendingVerificationCode');
+    sessionStorage.removeItem('confirmedOrderId');
+    sessionStorage.removeItem('confirmedOrderData');
+    localStorage.removeItem('orderin_countercode_orderId');
+    localStorage.removeItem('orderin_countercode_paymentMethod');
+    localStorage.removeItem('orderin_onlinepayment_orderId');
+    localStorage.removeItem('orderin_confirmed_orderid');
+    localStorage.removeItem('orderin_confirmed_orderdata');
+    localStorage.removeItem('pendingVerificationCode');
+
+    if (onBackClick) {
+      onBackClick();
+    } else {
+      navigate(getPathWithTable('/cart'));
+    }
+  };
+
   // Use the cart items data for display and calculate billing.
   // Deliberately NOT passed `selectedPayment`: Cash/Card round the tax to a
   // whole rupee for easier physical settlement, but recalculating this on

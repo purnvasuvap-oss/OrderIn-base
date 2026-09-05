@@ -2,7 +2,10 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "./context/CartContext";
 import { useTableNumber } from "./hooks/useTableNumber";
-import html2pdf from "html2pdf.js";
+// html2pdf.js (and its jsPDF/html2canvas dependencies, ~250KB+ gzipped) is
+// loaded on demand in downloadBill() below, not imported here — it was
+// previously a static import, which meant every visitor downloaded the PDF
+// library on page load even though it's only needed if they tap "Download".
 import { X, Star } from "lucide-react";
 import "./Bill.css";
 import { doc, getDoc, setDoc, updateDoc, arrayUnion, serverTimestamp } from "firebase/firestore";
@@ -249,7 +252,7 @@ function Bill() {
     })();
   };
 
-  const downloadBill = () => {
+  const downloadBill = async () => {
     const element = document.getElementById("bill-content");
     if (!element) return;
     // Clone element and remove action buttons so they don't appear in PDF
@@ -283,6 +286,8 @@ function Bill() {
       jsPDF: { unit: "in", format: [pageWidthIn, pageHeightIn], orientation: "portrait" },
       pagebreak: { mode: ["css"] },
     };
+
+    const { default: html2pdf } = await import("html2pdf.js");
 
     html2pdf().set(opt).from(clone).save().then(() => {
       // cleanup

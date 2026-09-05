@@ -1,0 +1,318 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Payments > matches the snapshot for the confirmed-order checkout screen 1`] = `
+<DocumentFragment>
+  <div
+    class="payments-container"
+  >
+    <div
+      class="payments-card"
+    >
+      <button
+        class="close-button"
+      >
+        <svg
+          aria-hidden="true"
+          class="lucide lucide-x"
+          fill="none"
+          height="22"
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          viewBox="0 0 24 24"
+          width="22"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M18 6 6 18"
+          />
+          <path
+            d="m6 6 12 12"
+          />
+        </svg>
+      </button>
+      <h2
+        class="checkout-header"
+      >
+        Checkout
+      </h2>
+      <div
+        class="order-item"
+      >
+        <img
+          alt="Dosa"
+          class="order-item-image"
+          src="data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20width%3D'400'%20height%3D'300'%20viewBox%3D'0%200%20400%20300'%3E%3Crect%20width%3D'100%25'%20height%3D'100%25'%20fill%3D'%23eeeeee'%2F%3E%3Ctext%20x%3D'50%25'%20y%3D'50%25'%20font-family%3D'Arial%2C%20Helvetica%2C%20sans-serif'%20font-size%3D'20'%20fill%3D'%23888888'%20dominant-baseline%3D'middle'%20text-anchor%3D'middle'%3ENo%20Image%3C%2Ftext%3E%3C%2Fsvg%3E"
+        />
+        <div
+          class="order-item-details"
+        >
+          <h3
+            class="order-item-name"
+          >
+            Dosa
+          </h3>
+          <p
+            class="order-item-price"
+          >
+            ₹240.00
+          </p>
+          <p
+            class="order-item-each"
+          >
+            ₹120.00 each
+          </p>
+        </div>
+        <div
+          class="quantity-controls"
+        >
+          <button
+            class="qty-button"
+          >
+            <svg
+              aria-hidden="true"
+              class="lucide lucide-minus"
+              fill="none"
+              height="14"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="14"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M5 12h14"
+              />
+            </svg>
+          </button>
+          <span
+            class="qty-value"
+          >
+            2
+          </span>
+          <button
+            class="qty-button"
+          >
+            <svg
+              aria-hidden="true"
+              class="lucide lucide-plus"
+              fill="none"
+              height="14"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="14"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M5 12h14"
+              />
+              <path
+                d="M12 5v14"
+              />
+            </svg>
+          </button>
+          <button
+            class="remove-button"
+          >
+            <svg
+              aria-hidden="true"
+              class="lucide lucide-trash2 lucide-trash-2"
+              fill="none"
+              height="16"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="16"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M10 11v6"
+              />
+              <path
+                d="M14 11v6"
+              />
+              <path
+                d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"
+              />
+              <path
+                d="M3 6h18"
+              />
+              <path
+                d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
+              />
+            </svg>
+          </button>
+        </div>
+      </div>
+      <div
+        class="billing-breakdown"
+      >
+        <h4
+          class="billing-header"
+        >
+          Billing Breakdown
+        </h4>
+        <div
+          class="billing-row"
+        >
+          <span>
+            Subtotal :
+          </span>
+          <span>
+            ₹240.00
+          </span>
+        </div>
+        <div
+          class="billing-row"
+        >
+          <span>
+            Additional Charges :
+          </span>
+          <span>
+            ₹12.00
+          </span>
+        </div>
+        <div
+          class="billing-total"
+        >
+          <span>
+            Total :
+          </span>
+          <span>
+            ₹252.00
+          </span>
+        </div>
+      </div>
+      <div
+        class="payment-methods"
+      >
+        <h4
+          class="payment-header"
+        >
+          Payment Method
+        </h4>
+        <div
+          class="payment-grid"
+        >
+          <button
+            class="payment-option "
+          >
+            <svg
+              aria-hidden="true"
+              class="lucide lucide-wallet payment-icon-online"
+              fill="none"
+              height="22"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="22"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"
+              />
+              <path
+                d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"
+              />
+            </svg>
+            <span
+              class="payment-label"
+            >
+              Online
+            </span>
+          </button>
+          <button
+            class="payment-option "
+          >
+            <svg
+              aria-hidden="true"
+              class="lucide lucide-credit-card payment-icon-card"
+              fill="none"
+              height="22"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="22"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <rect
+                height="14"
+                rx="2"
+                width="20"
+                x="2"
+                y="5"
+              />
+              <line
+                x1="2"
+                x2="22"
+                y1="10"
+                y2="10"
+              />
+            </svg>
+            <span
+              class="payment-label"
+            >
+              Card
+            </span>
+          </button>
+          <button
+            class="payment-option "
+          >
+            <svg
+              aria-hidden="true"
+              class="lucide lucide-banknote payment-icon-cash"
+              fill="none"
+              height="22"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="22"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <rect
+                height="12"
+                rx="2"
+                width="20"
+                x="2"
+                y="6"
+              />
+              <circle
+                cx="12"
+                cy="12"
+                r="2"
+              />
+              <path
+                d="M6 12h.01M18 12h.01"
+              />
+            </svg>
+            <span
+              class="payment-label"
+            >
+              Cash
+            </span>
+          </button>
+        </div>
+      </div>
+      <button
+        class="place-order-btn"
+      >
+        Place Order
+      </button>
+    </div>
+  </div>
+</DocumentFragment>
+`;

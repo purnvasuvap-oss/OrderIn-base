@@ -72,6 +72,7 @@ export const Sidebar = () => {
       <div style={{ borderTop: '1px solid rgba(6, 182, 212, 0.1)', padding: '1rem', background: 'linear-gradient(180deg, transparent 0%, rgba(6, 182, 212, 0.05) 100%)' }}>
         <button 
           onClick={() => {
+            sessionStorage.removeItem('orderin_admin_auth');
             logout();
             navigate('/login', { replace: true });
           }}

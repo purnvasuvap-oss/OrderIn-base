@@ -16,9 +16,14 @@ exports[`Header > matches the snapshot 1`] = `
       Table 7
     </div>
     <svg
+      aria-expanded="false"
+      aria-haspopup="true"
+      aria-label="Open menu"
       class="menu-icon"
       fill="none"
       height="24"
+      role="button"
+      tabindex="0"
       viewBox="0 0 24 24"
       width="24"
       xmlns="http://www.w3.org/2000/svg"
@@ -34,27 +39,36 @@ exports[`Header > matches the snapshot 1`] = `
   </div>
   <div
     class="side-menu "
+    role="menu"
   >
     <div
       class="side-menu-content"
     >
       <div
         class="menu-item"
+        role="menuitem"
+        tabindex="0"
       >
         About OrderIn
       </div>
       <div
         class="menu-item"
+        role="menuitem"
+        tabindex="0"
       >
         About Restaurant
       </div>
       <div
         class="menu-item"
+        role="menuitem"
+        tabindex="0"
       >
         Help
       </div>
       <div
         class="menu-item logout-item"
+        role="menuitem"
+        tabindex="0"
       >
         <svg
           aria-hidden="true"

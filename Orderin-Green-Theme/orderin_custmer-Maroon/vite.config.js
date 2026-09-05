@@ -4,7 +4,7 @@ import path from 'node:path'
 import os from 'node:os'
 
 // https://vitejs.dev/config/
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   plugins: [react()],
   // This project lives under OneDrive, whose background sync locks files
   // mid-write and collides with Vite renaming its dep-cache temp folder
@@ -12,6 +12,7 @@ export default defineConfig({
   // synced tree avoids the race entirely.
   cacheDir: path.join(os.tmpdir(), 'vite-cache', 'orderin_custmer-Maroon-poscloud'),
   esbuild: {
+    drop: mode === 'production' ? ['console', 'debugger'] : [],
     loader: 'jsx',
     include: /src\/.*\.(js|jsx)$/,
   },
@@ -31,4 +32,4 @@ export default defineConfig({
     },
     chunkSizeWarningLimit: 600,
   },
-})
+}))

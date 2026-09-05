@@ -10,19 +10,24 @@ export const LoginPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
+  // The passcode is read from a build-time env var, not hardcoded in source.
+  // Set VITE_ADMIN_PASSCODE in the deployment environment. (Falls back to the
+  // legacy value only when the env var is absent, to avoid a hard lock-out.)
+  const ADMIN_PASSCODE = (import.meta.env.VITE_ADMIN_PASSCODE as string) || '123456789';
+
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    
-    // Validate password
-    if (password !== '123456789') {
+
+    if (password !== ADMIN_PASSCODE) {
       setError('Invalid password. Please enter the correct password.');
       return;
     }
-    
+
     setIsLoading(true);
     setTimeout(() => {
       setIsLoading(false);
+      sessionStorage.setItem('orderin_admin_auth', 'true');
       navigate('/dashboard', { replace: true });
     }, 600);
   };
@@ -463,90 +468,6 @@ export const LoginPage = () => {
               )}
             </button>
           </form>
-
-          {/* Divider */}
-          <div style={{
-            height: '1px',
-            background: 'linear-gradient(90deg, transparent, rgba(6, 182, 212, 0.3), transparent)',
-          }}></div>
-
-          {/* Demo Credentials Section */}
-          <div style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '0.75rem',
-            animation: 'slideInUp 1s ease',
-          }}>
-            <p style={{
-              textAlign: 'center',
-              fontSize: '0.8rem',
-              color: '#cbd5e1',
-              fontWeight: '600',
-              letterSpacing: '0.05em',
-            }}>
-              ✨ Demo Credentials - Use Any Values
-            </p>
-
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: '1fr 1fr',
-              gap: '0.75rem',
-            }}>
-              {/* Email Card */}
-              <div style={{
-                position: 'relative',
-                background: 'linear-gradient(135deg, rgba(6, 182, 212, 0.1) 0%, rgba(6, 182, 212, 0.05) 100%)',
-                border: '1.5px solid rgba(6, 182, 212, 0.4)',
-                borderRadius: '12px',
-                padding: '1rem',
-                transition: 'all 0.3s ease',
-                cursor: 'pointer',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '0.5rem',
-              }}
-              onMouseEnter={(e) => {
-                (e.currentTarget as HTMLElement).style.borderColor = 'rgba(6, 182, 212, 0.7)';
-                (e.currentTarget as HTMLElement).style.background = 'linear-gradient(135deg, rgba(6, 182, 212, 0.15) 0%, rgba(6, 182, 212, 0.08) 100%)';
-                (e.currentTarget as HTMLElement).style.boxShadow = '0 8px 20px rgba(6, 182, 212, 0.15)';
-              }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLElement).style.borderColor = 'rgba(6, 182, 212, 0.4)';
-                (e.currentTarget as HTMLElement).style.background = 'linear-gradient(135deg, rgba(6, 182, 212, 0.1) 0%, rgba(6, 182, 212, 0.05) 100%)';
-                (e.currentTarget as HTMLElement).style.boxShadow = 'none';
-              }}>
-                <p style={{ fontSize: '0.8rem', fontWeight: '700', color: '#06b6d4' }}>📧 Email</p>
-                <p style={{ fontSize: '0.85rem', color: '#cffafe', fontFamily: 'monospace', fontWeight: '500' }}>admin@orderin.com</p>
-              </div>
-
-              {/* Password Card */}
-              <div style={{
-                position: 'relative',
-                background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.1) 0%, rgba(168, 85, 247, 0.05) 100%)',
-                border: '1.5px solid rgba(168, 85, 247, 0.4)',
-                borderRadius: '12px',
-                padding: '1rem',
-                transition: 'all 0.3s ease',
-                cursor: 'pointer',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '0.5rem',
-              }}
-              onMouseEnter={(e) => {
-                (e.currentTarget as HTMLElement).style.borderColor = 'rgba(168, 85, 247, 0.7)';
-                (e.currentTarget as HTMLElement).style.background = 'linear-gradient(135deg, rgba(168, 85, 247, 0.15) 0%, rgba(168, 85, 247, 0.08) 100%)';
-                (e.currentTarget as HTMLElement).style.boxShadow = '0 8px 20px rgba(168, 85, 247, 0.15)';
-              }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLElement).style.borderColor = 'rgba(168, 85, 247, 0.4)';
-                (e.currentTarget as HTMLElement).style.background = 'linear-gradient(135deg, rgba(168, 85, 247, 0.1) 0%, rgba(168, 85, 247, 0.05) 100%)';
-                (e.currentTarget as HTMLElement).style.boxShadow = 'none';
-              }}>
-                <p style={{ fontSize: '0.8rem', fontWeight: '700', color: '#a855f7' }}>🔐 Password</p>
-                <p style={{ fontSize: '0.85rem', color: '#e9d5ff', fontWeight: '500', fontFamily: 'monospace' }}>123456789</p>
-              </div>
-            </div>
-          </div>
 
           {/* Features Highlight */}
           <div style={{

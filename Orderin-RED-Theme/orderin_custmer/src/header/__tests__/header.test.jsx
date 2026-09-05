@@ -10,12 +10,6 @@ vi.mock('react-router-dom', async (importOriginal) => {
 });
 vi.mock('../../context/CartContext', () => ({ useCart: () => ({ currentTableNo: '7' }) }));
 
-// header.jsx has a bug: its always-on `mousedown` handler references an
-// undeclared `menuWrapperRef` (the ref is actually named `sideMenuRef`), so any
-// click bubbling to `document` throws a ReferenceError. Provide a harmless
-// global so the buggy handler no-ops instead of polluting the test run.
-globalThis.menuWrapperRef = { current: null };
-
 const renderHeader = () =>
   render(
     <MemoryRouter>

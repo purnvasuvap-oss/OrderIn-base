@@ -4,9 +4,10 @@ import path from 'node:path'
 import os from 'node:os'
 
 // https://vitejs.dev/config/
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   plugins: [react()],
   esbuild: {
+    drop: mode === 'production' ? ['console', 'debugger'] : [],
     loader: 'jsx',
     include: /src\/.*\.[jt]sx?$/,
   },
@@ -15,4 +16,4 @@ export default defineConfig({
   // (EPERM on node_modules/.vite/deps). Keeping the cache outside the
   // synced tree avoids the race entirely.
   cacheDir: path.join(os.tmpdir(), 'vite-cache', 'order_clients-Dessert'),
-})
+}))

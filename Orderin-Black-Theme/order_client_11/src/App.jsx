@@ -150,7 +150,7 @@ function App() {
         />
 
         {/* Redirect unknown paths */}
-        <Route path="*" element={<Navigate to={routes.login} />} />
+        <Route path="*" element={<Navigate to={routes.login} replace />} />
       </Routes>
       </Router>
     </NotificationProvider>

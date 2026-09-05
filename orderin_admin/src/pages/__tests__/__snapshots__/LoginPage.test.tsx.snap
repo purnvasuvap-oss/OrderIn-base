@@ -292,50 +292,6 @@ exports[`LoginPage > matches the snapshot 1`] = `
           </button>
         </form>
         <div
-          style="height: 1px; background: linear-gradient(90deg, transparent, rgba(6, 182, 212, 0.3), transparent);"
-        />
-        <div
-          style="display: flex; flex-direction: column; gap: 0.75rem; animation: slideInUp 1s ease;"
-        >
-          <p
-            style="text-align: center; font-size: 0.8rem; color: rgb(203, 213, 225); font-weight: 600; letter-spacing: 0.05em;"
-          >
-            ✨ Demo Credentials - Use Any Values
-          </p>
-          <div
-            style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;"
-          >
-            <div
-              style="position: relative; background: linear-gradient(135deg, rgba(6, 182, 212, 0.1) 0%, rgba(6, 182, 212, 0.05) 100%); border: 1.5px solid rgba(6, 182, 212, 0.4); border-radius: 12px; padding: 1rem; transition: all 0.3s ease; cursor: pointer; display: flex; flex-direction: column; gap: 0.5rem;"
-            >
-              <p
-                style="font-size: 0.8rem; font-weight: 700; color: rgb(6, 182, 212);"
-              >
-                📧 Email
-              </p>
-              <p
-                style="font-size: 0.85rem; color: rgb(207, 250, 254); font-family: monospace; font-weight: 500;"
-              >
-                admin@orderin.com
-              </p>
-            </div>
-            <div
-              style="position: relative; background: linear-gradient(135deg, rgba(168, 85, 247, 0.1) 0%, rgba(168, 85, 247, 0.05) 100%); border: 1.5px solid rgba(168, 85, 247, 0.4); border-radius: 12px; padding: 1rem; transition: all 0.3s ease; cursor: pointer; display: flex; flex-direction: column; gap: 0.5rem;"
-            >
-              <p
-                style="font-size: 0.8rem; font-weight: 700; color: rgb(168, 85, 247);"
-              >
-                🔐 Password
-              </p>
-              <p
-                style="font-size: 0.85rem; color: rgb(233, 213, 255); font-weight: 500; font-family: monospace;"
-              >
-                123456789
-              </p>
-            </div>
-          </div>
-        </div>
-        <div
           style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; padding-top: 0.75rem; animation: slideInUp 1.1s ease;"
         >
           <div
