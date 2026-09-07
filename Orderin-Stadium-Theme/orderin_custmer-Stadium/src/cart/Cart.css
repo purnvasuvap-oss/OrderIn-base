@@ -731,11 +731,7 @@ button {
 .cart-title { font-family: var(--st-font-display); letter-spacing: 0.03em; }
 
 .cart-tabs { background: rgba(0,0,0,0.3); border: 1px solid #2f3540; border-radius: 999px; }
-.tab-item.active {
-  background: linear-gradient(180deg, var(--color-accent) 0%, var(--color-accent-dark) 100%);
-  color: #241705;
-  box-shadow: 0 3px 0 #7a5321, 0 6px 14px rgba(0,0,0,0.4);
-}
+
 
 .status-banner {
   background: linear-gradient(155deg, #262c34 0%, #1c2128 60%, #14181e 100%);

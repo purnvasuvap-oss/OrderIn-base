@@ -150,7 +150,8 @@
 }
 .search-input:focus-within{
  border-color: black;
-  box-shadow:none; 
+  box-shadow:none !important; 
+  background: linear-gradient(180deg, #14181f, #1b2028);
 }
 .search-bar:focus-within {
   border-color: var(--color-accent);
@@ -167,7 +168,7 @@
   font-size: 0.95rem;
   font-weight: 500;
   color: var(--color-text);
-  background-color: transparent;
+  background-color: linear-gradient(180deg, #14181f, #1b2028) !important;
   min-width: 0;
 }
 
@@ -653,13 +654,15 @@
   inset: 0;
   background: rgba(0, 0, 0, 0.55);
   backdrop-filter: blur(2px);
-  z-index: 40;
+  /* above the fixed footer (z-index: 1000) so the sheet covers it */
+  z-index: 1100;
   display: flex;
   align-items: flex-end;
   justify-content: center;
 }
 
 .filter-sheet {
+  position: relative;
   width: 100%;
   max-width: 560px;
   background: var(--color-surface-elevated);
@@ -682,6 +685,23 @@
   background: var(--color-border);
   margin: 6px auto 16px;
 }
+
+.filter-sheet-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: none;
+  border: none;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: transform 0.12s ease;
+}
+.filter-sheet-close:hover { transform: rotate(90deg); }
+.filter-sheet-close img { width: 32px; height: 32px; display: block; }
 
 .filter-sheet-title {
   margin: 0 0 16px;
@@ -836,10 +856,26 @@
 }
 
 .filter-fab {
-  background: linear-gradient(180deg, var(--color-accent) 0%, var(--color-accent-strong) 100%);
-  box-shadow: 0 3px 0 #7a5321, 0 10px 22px rgba(0,0,0,0.45);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+  /* NEW-UI: circular film-reel style FAB (matches the mockup) */
+  width: 54px;
+  height: 54px;
+  padding: 0;
+  border-radius: 50%;
+  justify-content: center;
+  background:
+    radial-gradient(circle at 50% 42%, rgba(0,0,0,0.25), rgba(0,0,0,0.55)),
+    url('../stadium-icons/icon-filmreel-active.svg') center / 92% no-repeat,
+    linear-gradient(180deg, #2b323b, #14181e);
+  border: 1px solid rgba(242, 187, 70, 0.7);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.55), 0 0 0 4px rgba(0,0,0,0.15);
+}
+.filter-fab svg { display: none; }
+.filter-fab span {
+  position: absolute !important;
+  width: 1px; height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
 }
 
 .promotion-banner {
@@ -910,3 +946,28 @@
 .category-section-header::before {
   display: none;
 }
+
+/* ---- NEW-UI: centred hero eyebrow + venue title ---- */
+.hero-bar {
+  justify-content: center;
+  text-align: center;
+  padding-top: 6px;
+}
+.hero-greeting { align-items: center; }
+.hero-eyebrow {
+  font-family: var(--st-font-display);
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  font-size: 0.68rem;
+  color: var(--st-gold-2);
+  opacity: 0.85;
+}
+.hero-title {
+  font-size: 1.9rem;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.6);
+  text-transform: uppercase;
+}
+@media (max-width: 420px) {
+  .hero-title { font-size: 1.55rem; }
+}
+

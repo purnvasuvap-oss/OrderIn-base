@@ -346,7 +346,7 @@ function ItemDetails() {
 
   return (
     <div
-      className="itemdetails-overlay"
+      className="itemdetails-overlay st-backdrop"
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}

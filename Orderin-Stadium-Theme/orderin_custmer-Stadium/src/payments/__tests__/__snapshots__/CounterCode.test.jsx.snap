@@ -3,7 +3,7 @@
 exports[`CounterCode > matches the snapshot 1`] = `
 <DocumentFragment>
   <div
-    class="counter-code-container"
+    class="counter-code-container st-backdrop"
   >
     <header
       class="counter-code-header"

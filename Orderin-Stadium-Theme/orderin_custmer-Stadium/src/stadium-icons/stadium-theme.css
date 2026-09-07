@@ -1,0 +1,161 @@
+/* =====================================================================
+   STADIUM NEW-UI — global design tokens + shared primitives
+   Cinema + stadium look: brushed steel, brick, spotlights, gold coins,
+   riveted plates. Loaded once from index.jsx so every screen (and the
+   previously-undefined --st-* vars in Footer/Header/Login/CounterCode)
+   resolves consistently.
+   ===================================================================== */
+@import url('https://fonts.googleapis.com/css2?family=Anton&family=Poppins:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  /* Golds */
+  --st-gold-1: #ffe08a;
+  --st-gold-2: #f2bb46;
+  --st-gold-3: #b5823f;
+  --st-gold-4: #7a5321;
+
+  /* Metals */
+  --st-metal-1: #2a313a;
+  --st-metal-2: #1f252d;
+  --st-metal-3: #12161c;
+  --st-metal-edge: #3a4048;
+  --st-rivet: #55565a;
+  --st-rivet-hi: #9a9ba0;
+
+  /* Ground */
+  --st-bg-1: #0f141a;
+  --st-bg-2: #161c24;
+
+  /* Text */
+  --st-text: #f5e9cf;
+  --st-text-muted: rgba(245, 233, 207, 0.62);
+
+  /* Type */
+  --st-font-display: "Anton", "Poppins", "Segoe UI", sans-serif;
+
+  /* Spotlight beam colour */
+  --st-beam: rgba(255, 224, 138, 0.30);
+}
+
+/* Full-bleed brushed-steel + brick backdrop used by every screen root
+   (.menu-container, .login-page, .item-details-page, .cart-page, ...) */
+.st-backdrop {
+  background-color: var(--st-bg-1);
+  background-image:
+    linear-gradient(180deg, rgba(0,0,0,0.55), rgba(0,0,0,0.15) 30%, rgba(0,0,0,0.6)),
+    repeating-linear-gradient(90deg, rgba(255,255,255,0.015) 0 2px, transparent 2px 4px),
+    radial-gradient(ellipse 70% 45% at 12% -5%, rgba(242,187,70,0.10), transparent 60%),
+    radial-gradient(ellipse 70% 45% at 88% -5%, rgba(242,187,70,0.10), transparent 60%),
+    linear-gradient(160deg, #223041 0%, #182430 45%, #10161d 100%);
+  background-attachment: fixed;
+}
+
+/* Riveted steel panel — for cards, sheets, login plate, code panel */
+.st-plate {
+  background:
+    linear-gradient(160deg, var(--st-metal-1) 0%, var(--st-metal-2) 55%, var(--st-metal-3) 100%);
+  border: 1px solid var(--st-metal-edge);
+  border-radius: 18px;
+  box-shadow:
+    0 18px 40px rgba(0,0,0,0.55),
+    inset 0 1px 0 rgba(255,255,255,0.06),
+    inset 0 -18px 30px rgba(0,0,0,0.45);
+  position: relative;
+}
+.st-plate::before,
+.st-plate::after,
+.st-plate > .st-rivet {
+  content: "";
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, var(--st-rivet-hi), var(--st-rivet) 55%, #1a1a1a 100%);
+  box-shadow: inset 0 1px 1px rgba(255,255,255,0.4), 0 1px 2px rgba(0,0,0,0.6);
+}
+.st-plate::before { top: 10px; left: 10px; }
+.st-plate::after  { top: 10px; right: 10px; }
+
+/* Gold pill / metal button */
+.st-btn-gold {
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(180deg, var(--st-gold-1) 0%, var(--st-gold-2) 45%, var(--st-gold-3) 100%);
+  color: #1a1400;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+  box-shadow:
+    0 3px 0 var(--st-gold-4),
+    0 10px 22px rgba(0,0,0,0.45),
+    inset 0 1px 0 rgba(255,255,255,0.6);
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+.st-btn-gold:hover { transform: translateY(-1px); }
+.st-btn-gold:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--st-gold-4), 0 4px 10px rgba(0,0,0,0.4); }
+
+/* Circular film-reel / play button overlay for media (food cards, hero) */
+.st-play {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(circle at 50% 40%, rgba(0,0,0,0.35), rgba(0,0,0,0.7)),
+    url('./icon-filmreel-idle.svg') center / 70% no-repeat;
+  border: 2px solid rgba(242,187,70,0.85);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.55), 0 0 0 6px rgba(0,0,0,0.15);
+  pointer-events: none;
+  z-index: 3;
+}
+.st-play::after {
+  content: "";
+  width: 0; height: 0;
+  border-style: solid;
+  border-width: 8px 0 8px 13px;
+  border-color: transparent transparent transparent var(--st-gold-1);
+  margin-left: 3px;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.6));
+}
+
+/* Spotlight fixture + light beam, mounted above a bar (footer, hero) */
+.st-spotlight {
+  position: absolute;
+  width: 48px;
+  height: 52px;
+  background: url('./fixture-spotlight-on.svg') center / contain no-repeat;
+  pointer-events: none;
+}
+.st-spotlight::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 70%;
+  width: 120px;
+  height: 220px;
+  transform: translateX(-50%);
+  background: linear-gradient(180deg, var(--st-beam), transparent 78%);
+  clip-path: polygon(38% 0, 62% 0, 100% 100%, 0% 100%);
+  filter: blur(2px);
+}
+.st-spotlight.off {
+  background-image: url('./fixture-spotlight-off.svg');
+}
+.st-spotlight.off::after { display: none; }
+
+/* Small gold coin decoration */
+.st-coin {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, var(--st-gold-1), var(--st-gold-2) 55%, var(--st-gold-3) 100%);
+  box-shadow: inset 0 1px 1px rgba(255,255,255,0.7), inset 0 -3px 4px rgba(0,0,0,0.35), 0 2px 4px rgba(0,0,0,0.5);
+  border: 1px solid rgba(0,0,0,0.25);
+}
+

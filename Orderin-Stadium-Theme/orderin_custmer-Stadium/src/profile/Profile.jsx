@@ -445,7 +445,8 @@ function Profile({ onBackClick, onCartClick }) {
   };
 
   return (
-    <div className="profile-container">
+    <div className="profile-container st-backdrop">
+      <Sparkles className="profile-sparkle" aria-hidden="true" strokeWidth={1} />
       <header className="profile-header">
         <div className="back-icon" onClick={() => { if (onBackClick) onBackClick(); else navigate(-1); }}>
           <ChevronLeft size={20} />

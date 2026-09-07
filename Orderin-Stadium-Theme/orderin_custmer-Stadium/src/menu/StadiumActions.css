@@ -1,0 +1,170 @@
+/* Game Day pill — sits beside the scoreboard in the menu hero */
+.st-actions {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+}
+
+.st-pill {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px 6px 6px;
+  border-radius: 999px;
+  cursor: pointer;
+  background: linear-gradient(180deg, #2b323b 0%, #1b2028 60%, #12161c 100%);
+  border: 1px solid var(--st-metal-edge);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 5px 14px rgba(0, 0, 0, 0.5);
+  color: var(--st-text);
+  font-family: var(--st-font-display, "Anton", sans-serif);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-size: 0.72rem;
+  line-height: 1.05;
+  transition: transform 0.14s ease, border-color 0.14s ease;
+}
+.st-pill.compact { padding-right: 16px; }
+.st-pill:hover { transform: translateY(-1px); border-color: rgba(242, 187, 70, 0.5); }
+.st-pill:active { transform: translateY(1px); }
+
+.st-pill-icon {
+  flex: 0 0 auto;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: #1a1400;
+  background: radial-gradient(circle at 36% 28%, var(--st-gold-1), var(--st-gold-2) 55%, var(--st-gold-3) 100%);
+  box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.6), inset 0 -3px 5px rgba(0, 0, 0, 0.3);
+}
+
+.st-pill-label { text-align: left; white-space: nowrap; }
+
+.st-pill.on {
+  border-color: rgba(242, 187, 70, 0.7);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 0 0 2px rgba(242, 187, 70, 0.28),
+    0 6px 18px rgba(242, 187, 70, 0.4);
+}
+.st-pill.on .st-pill-label { color: var(--st-gold-2); }
+
+.st-pill-badge {
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: #e11d36;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 800;
+  display: grid;
+  place-items: center;
+}
+
+/* ---- Game Day sheet ---- */
+.st-sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(3px);
+  /* above the fixed footer (z-index: 1000) so the sheet covers it */
+  z-index: 1100;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.st-sheet {
+  width: 100%;
+  max-width: 480px;
+  border-radius: 20px 20px 0 0;
+  padding: 22px 22px 28px;
+  animation: st-sheet-up 0.24s ease;
+}
+
+@keyframes st-sheet-up {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.st-sheet-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: none;
+  border: none;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: transform 0.12s ease;
+}
+.st-sheet-close:hover { transform: rotate(90deg); }
+.st-sheet-close img { width: 32px; height: 32px; display: block; }
+
+.st-sheet-title {
+  margin: 0 0 12px;
+  font-family: var(--st-font-display);
+  letter-spacing: 0.04em;
+  color: var(--st-gold-2);
+  text-transform: uppercase;
+  font-size: 1.1rem;
+}
+
+.st-sheet-copy {
+  margin: 0 0 16px;
+  color: var(--st-text-muted);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.st-input {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--st-metal-edge);
+  background: rgba(0, 0, 0, 0.35);
+  color: var(--st-text);
+  font-size: 0.95rem;
+  margin-bottom: 12px;
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.55);
+}
+.st-input:focus { outline: none; border-color: var(--st-gold-2); }
+
+.st-sheet-btn {
+  width: 100%;
+  padding: 13px;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  margin-top: 4px;
+}
+.st-sheet-btn.ghost {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--st-metal-edge);
+  color: var(--st-text);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.st-sheet-or {
+  text-align: center;
+  color: var(--st-text-muted);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin: 14px 0 10px;
+}
+
+.st-join-row { display: flex; gap: 10px; align-items: flex-start; }
+.st-join-row .st-input { margin-bottom: 0; }
+.st-join-row .st-sheet-btn { width: auto; flex: 0 0 92px; margin-top: 0; }
+

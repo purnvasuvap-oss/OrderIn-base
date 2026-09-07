@@ -5,9 +5,52 @@ exports[`Login > matches the snapshot 1`] = `
   <div
     class="login-container"
   >
+    <img
+      alt=""
+      aria-hidden="true"
+      class="login-spotlight"
+      src="data:image/svg+xml,%3csvg%20width='64'%20height='72'%20viewBox='0%200%2064%2072'%20xmlns='http://www.w3.org/2000/svg'%3e%3cdefs%3e%3clinearGradient%20id='fixOn'%20x1='0%25'%20y1='0%25'%20x2='100%25'%20y2='100%25'%3e%3cstop%20offset='0%25'%20stop-color='%235a626e'/%3e%3cstop%20offset='100%25'%20stop-color='%231c2128'/%3e%3c/linearGradient%3e%3cradialGradient%20id='lensGlow'%20cx='50%25'%20cy='40%25'%20r='60%25'%3e%3cstop%20offset='0%25'%20stop-color='%23fff4d6'/%3e%3cstop%20offset='45%25'%20stop-color='%23ffe08a'/%3e%3cstop%20offset='100%25'%20stop-color='%23f2bb46'/%3e%3c/radialGradient%3e%3cradialGradient%20id='bloom'%20cx='50%25'%20cy='50%25'%20r='50%25'%3e%3cstop%20offset='0%25'%20stop-color='%23ffe08a'%20stop-opacity='0.65'/%3e%3cstop%20offset='100%25'%20stop-color='%23ffe08a'%20stop-opacity='0'/%3e%3c/radialGradient%3e%3c/defs%3e%3ccircle%20cx='32'%20cy='14'%20r='26'%20fill='url(%23bloom)'/%3e%3cpath%20d='M20%2066%20L14%2040%20Q14%2030%2024%2030%20L40%2030%20Q50%2030%2050%2040%20L44%2066'%20fill='none'%20stroke='url(%23fixOn)'%20stroke-width='5'%20stroke-linecap='round'/%3e%3crect%20x='16'%20y='64'%20width='32'%20height='6'%20rx='2'%20fill='url(%23fixOn)'/%3e%3crect%20x='16'%20y='10'%20width='32'%20height='28'%20rx='8'%20fill='url(%23fixOn)'%20stroke='%23f2bb46'%20stroke-width='1.5'/%3e%3cellipse%20cx='32'%20cy='12'%20rx='13'%20ry='5'%20fill='url(%23lensGlow)'/%3e%3ccircle%20cx='20'%20cy='24'%20r='1.6'%20fill='%239a9ba0'/%3e%3ccircle%20cx='44'%20cy='24'%20r='1.6'%20fill='%239a9ba0'/%3e%3c/svg%3e"
+    />
     <div
-      class="login-box"
+      class="login-box st-plate"
     >
+      <img
+        alt=""
+        aria-hidden="true"
+        class="login-bolt tl"
+        src="data:image/svg+xml,%3csvg%20width='28'%20height='28'%20viewBox='0%200%2028%2028'%20xmlns='http://www.w3.org/2000/svg'%3e%3cdefs%3e%3cradialGradient%20id='boltMetal'%20cx='35%25'%20cy='30%25'%20r='75%25'%3e%3cstop%20offset='0%25'%20stop-color='%23e8eaed'/%3e%3cstop%20offset='45%25'%20stop-color='%239aa0a8'/%3e%3cstop%20offset='100%25'%20stop-color='%2331363d'/%3e%3c/radialGradient%3e%3c/defs%3e%3ccircle%20cx='14'%20cy='14'%20r='13'%20fill='%231a1d22'%20stroke='%230c0f13'%20stroke-width='1.5'/%3e%3cpolygon%20points='14,4%2022.7,9%2022.7,19%2014,24%205.3,19%205.3,9'%20fill='url(%23boltMetal)'%20stroke='%230c0f13'%20stroke-width='1'/%3e%3ccircle%20cx='14'%20cy='14'%20r='3'%20fill='%2320242a'/%3e%3cpath%20d='M9%209%20L19%2019'%20stroke='%23ffffff'%20stroke-opacity='0.18'%20stroke-width='1.5'/%3e%3c/svg%3e"
+      />
+      <img
+        alt=""
+        aria-hidden="true"
+        class="login-bolt tr"
+        src="data:image/svg+xml,%3csvg%20width='28'%20height='28'%20viewBox='0%200%2028%2028'%20xmlns='http://www.w3.org/2000/svg'%3e%3cdefs%3e%3cradialGradient%20id='boltMetal'%20cx='35%25'%20cy='30%25'%20r='75%25'%3e%3cstop%20offset='0%25'%20stop-color='%23e8eaed'/%3e%3cstop%20offset='45%25'%20stop-color='%239aa0a8'/%3e%3cstop%20offset='100%25'%20stop-color='%2331363d'/%3e%3c/radialGradient%3e%3c/defs%3e%3ccircle%20cx='14'%20cy='14'%20r='13'%20fill='%231a1d22'%20stroke='%230c0f13'%20stroke-width='1.5'/%3e%3cpolygon%20points='14,4%2022.7,9%2022.7,19%2014,24%205.3,19%205.3,9'%20fill='url(%23boltMetal)'%20stroke='%230c0f13'%20stroke-width='1'/%3e%3ccircle%20cx='14'%20cy='14'%20r='3'%20fill='%2320242a'/%3e%3cpath%20d='M9%209%20L19%2019'%20stroke='%23ffffff'%20stroke-opacity='0.18'%20stroke-width='1.5'/%3e%3c/svg%3e"
+      />
+      <img
+        alt=""
+        aria-hidden="true"
+        class="login-bolt bl"
+        src="data:image/svg+xml,%3csvg%20width='28'%20height='28'%20viewBox='0%200%2028%2028'%20xmlns='http://www.w3.org/2000/svg'%3e%3cdefs%3e%3cradialGradient%20id='boltMetal'%20cx='35%25'%20cy='30%25'%20r='75%25'%3e%3cstop%20offset='0%25'%20stop-color='%23e8eaed'/%3e%3cstop%20offset='45%25'%20stop-color='%239aa0a8'/%3e%3cstop%20offset='100%25'%20stop-color='%2331363d'/%3e%3c/radialGradient%3e%3c/defs%3e%3ccircle%20cx='14'%20cy='14'%20r='13'%20fill='%231a1d22'%20stroke='%230c0f13'%20stroke-width='1.5'/%3e%3cpolygon%20points='14,4%2022.7,9%2022.7,19%2014,24%205.3,19%205.3,9'%20fill='url(%23boltMetal)'%20stroke='%230c0f13'%20stroke-width='1'/%3e%3ccircle%20cx='14'%20cy='14'%20r='3'%20fill='%2320242a'/%3e%3cpath%20d='M9%209%20L19%2019'%20stroke='%23ffffff'%20stroke-opacity='0.18'%20stroke-width='1.5'/%3e%3c/svg%3e"
+      />
+      <img
+        alt=""
+        aria-hidden="true"
+        class="login-bolt br"
+        src="data:image/svg+xml,%3csvg%20width='28'%20height='28'%20viewBox='0%200%2028%2028'%20xmlns='http://www.w3.org/2000/svg'%3e%3cdefs%3e%3cradialGradient%20id='boltMetal'%20cx='35%25'%20cy='30%25'%20r='75%25'%3e%3cstop%20offset='0%25'%20stop-color='%23e8eaed'/%3e%3cstop%20offset='45%25'%20stop-color='%239aa0a8'/%3e%3cstop%20offset='100%25'%20stop-color='%2331363d'/%3e%3c/radialGradient%3e%3c/defs%3e%3ccircle%20cx='14'%20cy='14'%20r='13'%20fill='%231a1d22'%20stroke='%230c0f13'%20stroke-width='1.5'/%3e%3cpolygon%20points='14,4%2022.7,9%2022.7,19%2014,24%205.3,19%205.3,9'%20fill='url(%23boltMetal)'%20stroke='%230c0f13'%20stroke-width='1'/%3e%3ccircle%20cx='14'%20cy='14'%20r='3'%20fill='%2320242a'/%3e%3cpath%20d='M9%209%20L19%2019'%20stroke='%23ffffff'%20stroke-opacity='0.18'%20stroke-width='1.5'/%3e%3c/svg%3e"
+      />
+      <div
+        aria-hidden="true"
+        class="login-marquee"
+      >
+        <span
+          class="login-marquee-clap"
+        />
+        <span
+          class="login-marquee-text"
+        >
+          Welcome to the Rooftop Lounge
+        </span>
+      </div>
       <img
         alt="OrderIn"
         class="orderin-logo"

@@ -1,0 +1,56 @@
+<svg width="260" height="96" viewBox="0 0 260 96" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="sbBody" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#3c434d"/>
+      <stop offset="50%" stop-color="#242a31"/>
+      <stop offset="100%" stop-color="#14181e"/>
+    </linearGradient>
+    <linearGradient id="sbScreen" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#0b1a14"/>
+      <stop offset="100%" stop-color="#04120c"/>
+    </linearGradient>
+    <radialGradient id="sbRivet" cx="35%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#e4e6e9"/>
+      <stop offset="45%" stop-color="#8a8f98"/>
+      <stop offset="100%" stop-color="#20242a"/>
+    </radialGradient>
+  </defs>
+
+  <!-- mast arms -->
+  <rect x="40" y="2" width="6" height="16" rx="2" fill="url(#sbBody)"/>
+  <rect x="214" y="2" width="6" height="16" rx="2" fill="url(#sbBody)"/>
+
+  <!-- housing -->
+  <rect x="10" y="14" width="240" height="70" rx="12" fill="url(#sbBody)" stroke="#0c0f13" stroke-width="2"/>
+  <rect x="10" y="14" width="240" height="70" rx="12" fill="none" stroke="#f2bb46" stroke-width="1" opacity="0.35"/>
+
+  <!-- LED screen -->
+  <rect x="22" y="24" width="216" height="42" rx="6" fill="url(#sbScreen)" stroke="#0c0f13" stroke-width="1.5"/>
+  <!-- scanline sheen -->
+  <rect x="24" y="26" width="212" height="8" rx="4" fill="#ffffff" opacity="0.05"/>
+
+  <!-- team labels in colour boxes -->
+  <rect x="34" y="28" width="64" height="15" rx="3" fill="#7a1a12"/>
+  <rect x="162" y="28" width="64" height="15" rx="3" fill="#123a6b"/>
+  <text x="66" y="40" text-anchor="middle" font-family="Anton, Arial, sans-serif" font-size="12" letter-spacing="1" fill="#ff6a56">REDS</text>
+  <text x="194" y="40" text-anchor="middle" font-family="Anton, Arial, sans-serif" font-size="12" letter-spacing="1" fill="#79b6ff">BLUES</text>
+  <!-- scores -->
+  <text x="66" y="62" text-anchor="middle" font-family="Anton, Arial, sans-serif" font-size="17" fill="#ff6a56">1</text>
+  <text x="194" y="62" text-anchor="middle" font-family="Anton, Arial, sans-serif" font-size="17" fill="#79b6ff">2</text>
+  <!-- centre divider + clock -->
+  <line x1="130" y1="26" x2="130" y2="56" stroke="#f2bb46" stroke-width="1" opacity="0.4"/>
+  <text x="130" y="46" text-anchor="middle" font-family="Anton, Arial, sans-serif" font-size="14" fill="#f5e9cf">–</text>
+  <rect x="112" y="52" width="36" height="12" rx="3" fill="#0c0f13"/>
+  <text x="130" y="61" text-anchor="middle" font-family="Anton, Arial, sans-serif" font-size="9" letter-spacing="1" fill="#ffe08a">54:1</text>
+
+  <!-- housing rivets -->
+  <circle cx="22" cy="24" r="3" fill="url(#sbRivet)"/>
+  <circle cx="238" cy="24" r="3" fill="url(#sbRivet)"/>
+  <circle cx="22" cy="74" r="3" fill="url(#sbRivet)"/>
+  <circle cx="238" cy="74" r="3" fill="url(#sbRivet)"/>
+
+  <!-- floodlight nubs -->
+  <circle cx="70" cy="79" r="2.4" fill="#ffe08a"/>
+  <circle cx="130" cy="79" r="2.4" fill="#ffe08a"/>
+  <circle cx="190" cy="79" r="2.4" fill="#ffe08a"/>
+</svg>

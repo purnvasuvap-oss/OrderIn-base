@@ -5,6 +5,8 @@ import { db, auth } from "../firebaseConfig";
 import { onAuthStateChanged } from "firebase/auth";
 import "./login.css";
 import { FiUser } from "react-icons/fi";
+import boltHex from "../stadium-icons/bolt-hex.svg";
+import spotlightOn from "../stadium-icons/fixture-spotlight-on.svg";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -450,7 +452,16 @@ const Login = () => {
           <p>Loading...</p>
         </div>
       )}
-      <div className="login-box">
+      <img src={spotlightOn} alt="" className="login-spotlight" aria-hidden="true" />
+      <div className="login-box st-plate">
+        <img src={boltHex} alt="" className="login-bolt tl" aria-hidden="true" />
+        <img src={boltHex} alt="" className="login-bolt tr" aria-hidden="true" />
+        <img src={boltHex} alt="" className="login-bolt bl" aria-hidden="true" />
+        <img src={boltHex} alt="" className="login-bolt br" aria-hidden="true" />
+        <div className="login-marquee" aria-hidden="true">
+          <span className="login-marquee-clap" />
+          <span className="login-marquee-text">Welcome to the Rooftop Lounge</span>
+        </div>
         <img src="/OrderIn.png" alt="OrderIn" className="orderin-logo" />
 
         <>

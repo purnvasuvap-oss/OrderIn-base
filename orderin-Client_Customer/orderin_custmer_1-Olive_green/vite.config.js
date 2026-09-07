@@ -1,9 +1,15 @@
+import os from 'node:os'
+import path from 'node:path'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
   plugins: [react()],
+  // Keep the dep-optimizer cache OUT of the project folder. This repo lives
+  // under OneDrive, whose sync/locking makes Vite's atomic rename of
+  // node_modules/.vite/deps fail with "EPERM: operation not permitted".
+  cacheDir: path.join(os.tmpdir(), 'vite-cache-orderin-olive-green'),
   esbuild: {
     drop: mode === 'production' ? ['console', 'debugger'] : [],
     loader: 'jsx',

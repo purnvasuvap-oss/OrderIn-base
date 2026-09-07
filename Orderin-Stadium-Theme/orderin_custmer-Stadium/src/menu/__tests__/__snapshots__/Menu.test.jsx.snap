@@ -3,11 +3,75 @@
 exports[`Menu > matches the snapshot 1`] = `
 <DocumentFragment>
   <div
-    class="menu-container"
+    class="menu-container st-backdrop"
   >
     <div
       data-testid="header"
     />
+    <div
+      class="st-hero-top"
+    >
+      <div
+        aria-hidden="true"
+        class="st-scoreboard"
+      >
+        <img
+          alt=""
+          class="st-scoreboard-img"
+          src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjYwIiBoZWlnaHQ9Ijk2IiB2aWV3Qm94PSIwIDAgMjYwIDk2IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgogIDxkZWZzPgogICAgPGxpbmVhckdyYWRpZW50IGlkPSJzYkJvZHkiIHgxPSIwJSIgeTE9IjAlIiB4Mj0iMCUiIHkyPSIxMDAlIj4KICAgICAgPHN0b3Agb2Zmc2V0PSIwJSIgc3RvcC1jb2xvcj0iIzNjNDM0ZCIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjUwJSIgc3RvcC1jb2xvcj0iIzI0MmEzMSIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3AtY29sb3I9IiMxNDE4MWUiLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9InNiU2NyZWVuIiB4MT0iMCUiIHkxPSIwJSIgeDI9IjAlIiB5Mj0iMTAwJSI+CiAgICAgIDxzdG9wIG9mZnNldD0iMCUiIHN0b3AtY29sb3I9IiMwYjFhMTQiLz4KICAgICAgPHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSIjMDQxMjBjIi8+CiAgICA8L2xpbmVhckdyYWRpZW50PgogICAgPHJhZGlhbEdyYWRpZW50IGlkPSJzYlJpdmV0IiBjeD0iMzUlIiBjeT0iMzAlIiByPSI3MCUiPgogICAgICA8c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIjZTRlNmU5Ii8+CiAgICAgIDxzdG9wIG9mZnNldD0iNDUlIiBzdG9wLWNvbG9yPSIjOGE4Zjk4Ii8+CiAgICAgIDxzdG9wIG9mZnNldD0iMTAwJSIgc3RvcC1jb2xvcj0iIzIwMjQyYSIvPgogICAgPC9yYWRpYWxHcmFkaWVudD4KICA8L2RlZnM+CgogIDwhLS0gbWFzdCBhcm1zIC0tPgogIDxyZWN0IHg9IjQwIiB5PSIyIiB3aWR0aD0iNiIgaGVpZ2h0PSIxNiIgcng9IjIiIGZpbGw9InVybCgjc2JCb2R5KSIvPgogIDxyZWN0IHg9IjIxNCIgeT0iMiIgd2lkdGg9IjYiIGhlaWdodD0iMTYiIHJ4PSIyIiBmaWxsPSJ1cmwoI3NiQm9keSkiLz4KCiAgPCEtLSBob3VzaW5nIC0tPgogIDxyZWN0IHg9IjEwIiB5PSIxNCIgd2lkdGg9IjI0MCIgaGVpZ2h0PSI3MCIgcng9IjEyIiBmaWxsPSJ1cmwoI3NiQm9keSkiIHN0cm9rZT0iIzBjMGYxMyIgc3Ryb2tlLXdpZHRoPSIyIi8+CiAgPHJlY3QgeD0iMTAiIHk9IjE0IiB3aWR0aD0iMjQwIiBoZWlnaHQ9IjcwIiByeD0iMTIiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2YyYmI0NiIgc3Ryb2tlLXdpZHRoPSIxIiBvcGFjaXR5PSIwLjM1Ii8+CgogIDwhLS0gTEVEIHNjcmVlbiAtLT4KICA8cmVjdCB4PSIyMiIgeT0iMjQiIHdpZHRoPSIyMTYiIGhlaWdodD0iNDIiIHJ4PSI2IiBmaWxsPSJ1cmwoI3NiU2NyZWVuKSIgc3Ryb2tlPSIjMGMwZjEzIiBzdHJva2Utd2lkdGg9IjEuNSIvPgogIDwhLS0gc2NhbmxpbmUgc2hlZW4gLS0+CiAgPHJlY3QgeD0iMjQiIHk9IjI2IiB3aWR0aD0iMjEyIiBoZWlnaHQ9IjgiIHJ4PSI0IiBmaWxsPSIjZmZmZmZmIiBvcGFjaXR5PSIwLjA1Ii8+CgogIDwhLS0gdGVhbSBsYWJlbHMgaW4gY29sb3VyIGJveGVzIC0tPgogIDxyZWN0IHg9IjM0IiB5PSIyOCIgd2lkdGg9IjY0IiBoZWlnaHQ9IjE1IiByeD0iMyIgZmlsbD0iIzdhMWExMiIvPgogIDxyZWN0IHg9IjE2MiIgeT0iMjgiIHdpZHRoPSI2NCIgaGVpZ2h0PSIxNSIgcng9IjMiIGZpbGw9IiMxMjNhNmIiLz4KICA8dGV4dCB4PSI2NiIgeT0iNDAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtZmFtaWx5PSJBbnRvbiwgQXJpYWwsIHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTIiIGxldHRlci1zcGFjaW5nPSIxIiBmaWxsPSIjZmY2YTU2Ij5SRURTPC90ZXh0PgogIDx0ZXh0IHg9IjE5NCIgeT0iNDAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtZmFtaWx5PSJBbnRvbiwgQXJpYWwsIHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTIiIGxldHRlci1zcGFjaW5nPSIxIiBmaWxsPSIjNzliNmZmIj5CTFVFUzwvdGV4dD4KICA8IS0tIHNjb3JlcyAtLT4KICA8dGV4dCB4PSI2NiIgeT0iNjIiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtZmFtaWx5PSJBbnRvbiwgQXJpYWwsIHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTciIGZpbGw9IiNmZjZhNTYiPjE8L3RleHQ+CiAgPHRleHQgeD0iMTk0IiB5PSI2MiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9IkFudG9uLCBBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNyIgZmlsbD0iIzc5YjZmZiI+MjwvdGV4dD4KICA8IS0tIGNlbnRyZSBkaXZpZGVyICsgY2xvY2sgLS0+CiAgPGxpbmUgeDE9IjEzMCIgeTE9IjI2IiB4Mj0iMTMwIiB5Mj0iNTYiIHN0cm9rZT0iI2YyYmI0NiIgc3Ryb2tlLXdpZHRoPSIxIiBvcGFjaXR5PSIwLjQiLz4KICA8dGV4dCB4PSIxMzAiIHk9IjQ2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0iQW50b24sIEFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjE0IiBmaWxsPSIjZjVlOWNmIj7igJM8L3RleHQ+CiAgPHJlY3QgeD0iMTEyIiB5PSI1MiIgd2lkdGg9IjM2IiBoZWlnaHQ9IjEyIiByeD0iMyIgZmlsbD0iIzBjMGYxMyIvPgogIDx0ZXh0IHg9IjEzMCIgeT0iNjEiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtZmFtaWx5PSJBbnRvbiwgQXJpYWwsIHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iOSIgbGV0dGVyLXNwYWNpbmc9IjEiIGZpbGw9IiNmZmUwOGEiPjU0OjE8L3RleHQ+CgogIDwhLS0gaG91c2luZyByaXZldHMgLS0+CiAgPGNpcmNsZSBjeD0iMjIiIGN5PSIyNCIgcj0iMyIgZmlsbD0idXJsKCNzYlJpdmV0KSIvPgogIDxjaXJjbGUgY3g9IjIzOCIgY3k9IjI0IiByPSIzIiBmaWxsPSJ1cmwoI3NiUml2ZXQpIi8+CiAgPGNpcmNsZSBjeD0iMjIiIGN5PSI3NCIgcj0iMyIgZmlsbD0idXJsKCNzYlJpdmV0KSIvPgogIDxjaXJjbGUgY3g9IjIzOCIgY3k9Ijc0IiByPSIzIiBmaWxsPSJ1cmwoI3NiUml2ZXQpIi8+CgogIDwhLS0gZmxvb2RsaWdodCBudWJzIC0tPgogIDxjaXJjbGUgY3g9IjcwIiBjeT0iNzkiIHI9IjIuNCIgZmlsbD0iI2ZmZTA4YSIvPgogIDxjaXJjbGUgY3g9IjEzMCIgY3k9Ijc5IiByPSIyLjQiIGZpbGw9IiNmZmUwOGEiLz4KICA8Y2lyY2xlIGN4PSIxOTAiIGN5PSI3OSIgcj0iMi40IiBmaWxsPSIjZmZlMDhhIi8+Cjwvc3ZnPgo="
+        />
+      </div>
+      <div
+        aria-label="Table actions"
+        class="st-actions"
+        role="group"
+      >
+        <button
+          aria-pressed="false"
+          class="st-pill "
+        >
+          <span
+            class="st-pill-icon"
+          >
+            <svg
+              aria-hidden="true"
+              class="lucide lucide-users"
+              fill="none"
+              height="16"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="16"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"
+              />
+              <path
+                d="M16 3.128a4 4 0 0 1 0 7.744"
+              />
+              <path
+                d="M22 21v-2a4 4 0 0 0-3-3.87"
+              />
+              <circle
+                cx="9"
+                cy="7"
+                r="4"
+              />
+            </svg>
+          </span>
+          <span
+            class="st-pill-label"
+          >
+            Game
+            <br />
+            Day
+          </span>
+        </button>
+      </div>
+    </div>
     <div
       class="hero-bar"
     >
@@ -17,22 +81,13 @@ exports[`Menu > matches the snapshot 1`] = `
         <p
           class="hero-eyebrow"
         >
-          Good morning
+          Welcome to the Rooftop Lounge
         </p>
         <h1
           class="hero-title"
         >
           Our Restaurant
         </h1>
-      </div>
-      <div
-        class="hero-meta"
-      >
-        <span
-          class="table-chip"
-        >
-          Table 4
-        </span>
       </div>
     </div>
     <div
@@ -96,19 +151,20 @@ exports[`Menu > matches the snapshot 1`] = `
       </div>
     </div>
     <button
+      aria-label="Filter"
       class="filter-fab"
     >
       <svg
         aria-hidden="true"
         class="lucide lucide-sliders-horizontal"
         fill="none"
-        height="25"
+        height="22"
         stroke="currentColor"
         stroke-linecap="round"
         stroke-linejoin="round"
         stroke-width="2"
         viewBox="0 0 24 24"
-        width="25"
+        width="22"
         xmlns="http://www.w3.org/2000/svg"
       >
         <path

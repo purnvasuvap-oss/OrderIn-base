@@ -252,7 +252,7 @@ function CounterCode({ onBackClick }) {
   };
 
   return (
-    <div className="counter-code-container">
+    <div className="counter-code-container st-backdrop">
       <header className="counter-code-header">
         <button
           className="counter-back-icon"

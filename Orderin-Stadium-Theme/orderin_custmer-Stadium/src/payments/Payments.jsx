@@ -21,6 +21,24 @@ function Payments({ onBackClick }) {
   const navigate = useNavigate();
   const { getPathWithTable } = useTableNumber();
 
+  // "Divide" on the menu screen routes here with this flag set so the
+  // split-the-bill option opens pre-enabled.
+  const [splitEnabled, setSplitEnabled] = useState(() => {
+    try {
+      return localStorage.getItem("orderin_split_payment") === "1";
+    } catch {
+      return false;
+    }
+  });
+  const [splitCount, setSplitCount] = useState(2);
+  useEffect(() => {
+    try {
+      localStorage.removeItem("orderin_split_payment");
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
   // Fallback onBackClick: navigate back and clean up unpaid orders from Firestore
   const handleBackClick = async () => {
     // Step 1: Delete unpaid orders from Firestore BEFORE navigating back
@@ -330,7 +348,7 @@ function Payments({ onBackClick }) {
   };
 
   return (
-    <div className="payments-container">
+    <div className="payments-container st-backdrop">
       <Loading isLoading={isSaving} />
       <div className="payments-card">
         {/* Close Button */}
@@ -395,6 +413,44 @@ function Payments({ onBackClick }) {
             <span>Total :</span>
             <span>₹{displayedBilling.total.toFixed(2)}</span>
           </div>
+        </div>
+
+        {/* Split the bill (Divide) */}
+        <div className="split-bill">
+          <label className="split-bill-toggle">
+            <input
+              type="checkbox"
+              checked={splitEnabled}
+              onChange={(e) => setSplitEnabled(e.target.checked)}
+            />
+            <span>Split the bill</span>
+          </label>
+          {splitEnabled && (
+            <div className="split-bill-body">
+              <div className="split-count">
+                <button
+                  type="button"
+                  className="qty-button"
+                  onClick={() => setSplitCount((n) => Math.max(2, n - 1))}
+                  aria-label="Fewer people"
+                >
+                  <Minus size={14} />
+                </button>
+                <span className="qty-value">{splitCount} people</span>
+                <button
+                  type="button"
+                  className="qty-button"
+                  onClick={() => setSplitCount((n) => Math.min(20, n + 1))}
+                  aria-label="More people"
+                >
+                  <Plus size={14} />
+                </button>
+              </div>
+              <p className="split-per-person">
+                ₹{(displayedBilling.total / splitCount).toFixed(2)} <span>per person</span>
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Payment Method */}

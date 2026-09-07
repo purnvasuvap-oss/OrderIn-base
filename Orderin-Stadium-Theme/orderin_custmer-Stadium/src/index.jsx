@@ -1,9 +1,16 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
+import './stadium-icons/stadium-theme.css';
 import App from './App';
 import { CartProvider } from './context/CartContext';
 import reportWebVitals from './reportWebVitals';
+
+// One-time cleanup: the withdrawn "Movie Mode" feature could leave this
+// attribute stuck on <html>, and its CSS `filter` breaks every position:fixed
+// element on the page (the footer would scroll with the content).
+document.documentElement.removeAttribute('data-movie-mode');
+try { localStorage.removeItem('orderin_movie_mode'); } catch (e) { /* ignore */ }
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(

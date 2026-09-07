@@ -10,6 +10,7 @@
   background-color: #1c2128;
   padding: 5px;
   border-top: 1px solid #333333;
+  z-index: 1000;
 }
 
 .icon-container {
@@ -34,7 +35,7 @@
 
 .icon-container.active {
   background-color: #F2BB46 ;
-  color: #1E1E1E;
+  color: #000000;
   border-radius: 50%;
   box-shadow: 0 2px 4px rgba(242, 187, 70, 0.2);
 }
@@ -142,7 +143,7 @@
 
 .icon-container span { color: var(--st-text-muted); }
 .icon-container.active span,
-.icon-container.active .footer-icon { color: #ff9500; }
+.icon-container.active .footer-icon { color: #030303; }
 
 
 /* =====================================================================
@@ -179,3 +180,26 @@
 .icon-container.active::before {
   background-image: url('../stadium-icons/fixture-spotlight-on.svg');
 }
+
+/* =====================================================================
+   NEW-UI — 4-tab floodlit nav: light beams + end sparkle (mockup)
+   ===================================================================== */
+.footer-bar { justify-content: space-around; }
+
+.icon-container::after {
+  content: "";
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  width: 88px;
+  height: 132px;
+  transform: translateX(-50%);
+  background: linear-gradient(180deg, rgba(255, 224, 138, 0.28), transparent 82%);
+  clip-path: polygon(41% 0, 59% 0, 100% 100%, 0% 100%);
+  filter: blur(3px);
+  opacity: 0;
+  transition: opacity 0.25s ease;
+  pointer-events: none;
+}
+.icon-container.active::after { opacity: 1; }
+.icon-container:hover::after { opacity: 0.45; }

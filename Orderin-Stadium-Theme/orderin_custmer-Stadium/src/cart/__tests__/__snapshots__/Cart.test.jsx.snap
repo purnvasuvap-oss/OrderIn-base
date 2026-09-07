@@ -3,7 +3,7 @@
 exports[`Cart > matches the snapshot when empty 1`] = `
 <DocumentFragment>
   <div
-    class="cart-container"
+    class="cart-container st-backdrop"
   >
     <header
       class="cart-header"

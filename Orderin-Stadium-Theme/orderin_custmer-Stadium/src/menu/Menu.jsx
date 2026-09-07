@@ -18,6 +18,9 @@ import {
 } from "lucide-react";
 import Header from "../header/header";
 import Footer from "../Footer/Footer";
+import StadiumActions from "./StadiumActions";
+import Scoreboard from "./Scoreboard";
+import closeIcon from "../stadium-icons/icon-close.svg";
 import { getPlaceholder } from "../utils/placeholder";
 import { resolveImageUrl } from "../utils/storageResolver";
 
@@ -423,16 +426,17 @@ function Menu({ setIsLoading }) {
  
 
   return (
-    <div className="menu-container">
+    <div className="menu-container st-backdrop">
       <Header />
+      <div className="st-hero-top">
+        <Scoreboard />
+        <StadiumActions tableNumber={tableNumber} />
+      </div>
 
       <div className="hero-bar">
         <div className="hero-greeting">
-          <p className="hero-eyebrow">{getGreeting()}</p>
+          <p className="hero-eyebrow">Welcome to the Rooftop Lounge</p>
           <h1 className="hero-title">{restaurantName}</h1>
-        </div>
-        <div className="hero-meta">
-          {tableNumber && <span className="table-chip">Table {tableNumber}</span>}
           {activeOrder?.status && (
             <button className="order-status-pill" onClick={() => navigate(getPathWithTable("/orders"))}>
               <Bike size={14} />
@@ -602,8 +606,8 @@ function Menu({ setIsLoading }) {
         )}
       </div>
 
-      <button className="filter-fab" onClick={() => setIsFilterSheetOpen(true)}>
-        <SlidersHorizontal size={25} />
+      <button className="filter-fab" onClick={() => setIsFilterSheetOpen(true)} aria-label="Filter">
+        <SlidersHorizontal size={22} />
         <span>Filter</span>
       </button>
 
@@ -611,6 +615,13 @@ function Menu({ setIsLoading }) {
         <div className="filter-sheet-backdrop" onClick={() => setIsFilterSheetOpen(false)}>
           <div className="filter-sheet" onClick={(e) => e.stopPropagation()}>
             <div className="filter-sheet-handle" />
+            <button
+              className="filter-sheet-close"
+              onClick={() => setIsFilterSheetOpen(false)}
+              aria-label="Close filters"
+            >
+              <img src={closeIcon} alt="" />
+            </button>
             <h3 className="filter-sheet-title">Filters</h3>
 
             <p className="filter-sheet-label">Food type</p>

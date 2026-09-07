@@ -3,7 +3,7 @@
 exports[`ItemDetails > matches the snapshot 1`] = `
 <DocumentFragment>
   <div
-    class="itemdetails-overlay"
+    class="itemdetails-overlay st-backdrop"
   >
     <div
       class="hero-section"

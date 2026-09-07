@@ -447,3 +447,67 @@ input::placeholder { color: var(--st-text-muted) !important; }
   filter: grayscale(0.4);
   box-shadow: none !important;
 }
+
+/* ---- NEW-UI: brick backdrop + spotlight + riveted plate w/ hex bolts ---- */
+.login-container {
+  background-image:
+    radial-gradient(ellipse 55% 34% at 50% 6%, rgba(255, 224, 138, 0.16), transparent 66%),
+    repeating-linear-gradient(0deg, rgba(0,0,0,0.42) 0 26px, rgba(255,255,255,0.02) 26px 29px),
+    repeating-linear-gradient(90deg, rgba(0,0,0,0.36) 0 58px, rgba(255,255,255,0.015) 58px 61px),
+    linear-gradient(180deg, #223041 0%, #16212c 55%, #0a0d11 100%) !important;
+}
+
+.login-spotlight {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  width: 58px;
+  transform: translateX(-50%);
+  z-index: 3;
+  pointer-events: none;
+  filter: drop-shadow(0 6px 12px rgba(0,0,0,0.5));
+}
+
+.login-box { padding-top: 30px; }
+/* the generic st-plate rivets are replaced by the four hex bolts */
+.login-box.st-plate::before,
+.login-box.st-plate::after { display: none; }
+
+.login-bolt {
+  position: absolute;
+  width: 22px;
+  height: 22px;
+  z-index: 3;
+  pointer-events: none;
+}
+.login-bolt.tl { top: 9px; left: 9px; }
+.login-bolt.tr { top: 9px; right: 9px; }
+.login-bolt.bl { bottom: 9px; left: 9px; }
+.login-bolt.br { bottom: 9px; right: 9px; }
+
+.login-marquee {
+  width: 100%;
+  border-radius: 10px;
+  overflow: hidden;
+  background: linear-gradient(180deg, #23272e, #14171c);
+  border: 1px solid var(--st-metal-edge);
+  box-shadow: inset 0 2px 6px rgba(0,0,0,0.6), 0 4px 12px rgba(0,0,0,0.4);
+  margin-bottom: 6px;
+}
+.login-marquee-clap {
+  display: block;
+  height: 14px;
+  background: repeating-linear-gradient(115deg, #f5e9cf 0 14px, #1b1e23 14px 28px);
+  border-bottom: 2px solid var(--st-gold-3);
+}
+.login-marquee-text {
+  display: block;
+  padding: 9px 12px 10px;
+  text-align: center;
+  font-family: var(--st-font-display);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: 0.82rem;
+  color: var(--st-gold-2);
+  text-shadow: 0 2px 4px rgba(0,0,0,0.7);
+}

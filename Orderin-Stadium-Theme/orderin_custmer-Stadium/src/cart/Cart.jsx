@@ -211,7 +211,7 @@ function Cart({ onBackClick }) {
   const grandTotal = subtotal + gst + packing - discount;
 
   return (
-    <div className="cart-container">
+    <div className="cart-container st-backdrop">
       <header className="cart-header">
         <div className="back-icon" onClick={() => { if (onBackClick) onBackClick(); else navigate(getPathWithTable("/menu")); }}>
           <ChevronLeft size={20} />

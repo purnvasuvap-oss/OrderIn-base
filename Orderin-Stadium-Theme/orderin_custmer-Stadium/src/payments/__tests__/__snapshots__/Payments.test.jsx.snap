@@ -3,7 +3,7 @@
 exports[`Payments > matches the snapshot 1`] = `
 <DocumentFragment>
   <div
-    class="payments-container"
+    class="payments-container st-backdrop"
   >
     <div
       class="payments-card"
@@ -190,6 +190,20 @@ exports[`Payments > matches the snapshot 1`] = `
             ₹252.00
           </span>
         </div>
+      </div>
+      <div
+        class="split-bill"
+      >
+        <label
+          class="split-bill-toggle"
+        >
+          <input
+            type="checkbox"
+          />
+          <span>
+            Split the bill
+          </span>
+        </label>
       </div>
       <div
         class="payment-methods"
