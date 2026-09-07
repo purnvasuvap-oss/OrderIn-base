@@ -9,28 +9,13 @@ exports[`Payments > matches the snapshot 1`] = `
       class="payments-card"
     >
       <button
+        aria-label="Close"
         class="close-button"
       >
-        <svg
-          aria-hidden="true"
-          class="lucide lucide-x"
-          fill="none"
-          height="22"
-          stroke="currentColor"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          viewBox="0 0 24 24"
-          width="22"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            d="M18 6 6 18"
-          />
-          <path
-            d="m6 6 12 12"
-          />
-        </svg>
+        <img
+          alt=""
+          src="data:image/svg+xml,%3csvg%20width='32'%20height='32'%20viewBox='0%200%2032%2032'%20xmlns='http://www.w3.org/2000/svg'%3e%3cdefs%3e%3cradialGradient%20id='closeDisc'%20cx='35%25'%20cy='30%25'%20r='75%25'%3e%3cstop%20offset='0%25'%20stop-color='%234a2a18'/%3e%3cstop%20offset='100%25'%20stop-color='%231b0d08'/%3e%3c/radialGradient%3e%3clinearGradient%20id='closeX'%20x1='0%25'%20y1='0%25'%20x2='100%25'%20y2='100%25'%3e%3cstop%20offset='0%25'%20stop-color='%23ffd8a2'/%3e%3cstop%20offset='100%25'%20stop-color='%23b67f2a'/%3e%3c/linearGradient%3e%3c/defs%3e%3ccircle%20cx='16'%20cy='16'%20r='15'%20fill='url(%23closeDisc)'%20stroke='%23d9a544'%20stroke-width='1.5'%20stroke-opacity='0.6'/%3e%3cpath%20d='M11%2011%20L21%2021%20M21%2011%20L11%2021'%20stroke='url(%23closeX)'%20stroke-width='3'%20stroke-linecap='round'/%3e%3c/svg%3e"
+        />
       </button>
       <h2
         class="checkout-header"

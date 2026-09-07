@@ -361,9 +361,9 @@ function Profile({ onBackClick, onCartClick }) {
   };
 
   const handleLikedAddToCart = (item) => {
-    setSelectedItem(item);
-    setTempInstructions("");
-    setIsModalOpen(true);
+    // Open the item's detail page in the menu instead of the instructions modal
+    const slug = String(item.name || "").replace(/\s+/g, "-").toLowerCase();
+    navigate(`/item/${slug}${window.location.search}`, { state: { item } });
   };
 
   const handleSaveInstructions = () => {

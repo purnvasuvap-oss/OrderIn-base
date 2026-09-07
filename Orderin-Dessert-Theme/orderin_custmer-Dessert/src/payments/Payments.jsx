@@ -1,6 +1,7 @@
 // Payments.js
 import React, { useState, useEffect } from "react";
-import { Minus, Plus, Trash2, X, CreditCard, Wallet, Banknote } from "lucide-react";
+import { Minus, Plus, Trash2, CreditCard, Wallet, Banknote } from "lucide-react";
+import closeIcon from "../assets/icon-close.svg";
 import { useCart } from "../context/CartContext";
 import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "../firebaseConfig";
@@ -334,8 +335,8 @@ function Payments({ onBackClick }) {
       <Loading isLoading={isSaving} />
       <div className="payments-card">
         {/* Close Button */}
-        <button className="close-button" onClick={handleBackClick}>
-          <X size={22} />
+        <button className="close-button" onClick={handleBackClick} aria-label="Close">
+          <img src={closeIcon} alt="" />
         </button>
 
         {/* Header */}

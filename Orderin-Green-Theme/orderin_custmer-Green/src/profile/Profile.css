@@ -648,7 +648,7 @@ button {
   width: min(100%, 400px);
   padding: 18px;
   border-radius: 18px;
-  background: #F7F5E9;
+  background: #043927;
   border: 1px solid rgba(63, 68, 28, 0.12);
   color: #F4F6F4;
 }
@@ -664,7 +664,7 @@ button {
   padding: 10px 12px;
   border-radius: 10px;
   border: 1px solid rgba(63, 68, 28, 0.18);
-  background: #ffffff;
+  background: #07553b95;
   color: #F4F6F4;
   resize: vertical;
 }

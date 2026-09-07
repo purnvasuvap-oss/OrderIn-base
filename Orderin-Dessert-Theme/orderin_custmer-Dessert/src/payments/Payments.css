@@ -47,22 +47,25 @@
   position: absolute;
   top: 0.9rem;
   right: 0.9rem;
-  width: 30px;
-  height: 30px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  background: rgba(43, 22, 14, 0.7);
-  border: 1px solid rgba(217, 165, 68, 0.3);
-  color: #f5e7c6;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  background: none;
+  border: none;
   cursor: pointer;
-  transition: border-color 0.2s ease, color 0.2s ease;
+  transition: transform 0.15s ease;
+}
+
+.close-button img {
+  width: 32px;
+  height: 32px;
+  display: block;
 }
 
 .close-button:hover {
-  color: #d9a544;
-  border-color: #d9a544;
+  transform: rotate(90deg);
 }
 
 .checkout-header {
