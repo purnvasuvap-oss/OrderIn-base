@@ -1,4 +1,4 @@
-import { initializeApp } from "firebase/app";
+﻿import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
 import { getFirestore, collection, getDocs, doc, getDoc, updateDoc, onSnapshot } from "firebase/firestore";
 import { getAuth, signInAnonymously, onAuthStateChanged } from "firebase/auth";
@@ -63,7 +63,7 @@ export const verifyMainLogin = async (username, password) => {
     console.warn('Could not determine restaurant status, proceeding with login check', err);
   }
 
-  const userDocRef = doc(db, "Restaurant", "orderin_restaurant_4", "accessControl", "roles", "mainLogin", username);
+  const userDocRef = doc(db, "Restaurant", "orderin_restuarant_6", "accessControl", "roles", "mainLogin", username);
   try {
     console.log('verifyMainLogin - doc path:', userDocRef.path, 'project:', app?.options?.projectId);
     const userDocSnap = await getDoc(userDocRef);
@@ -85,7 +85,7 @@ export const verifyMainLogin = async (username, password) => {
 
 // Returns restaurant status info and whether login actions are allowed.
 export const getRestaurantStatus = async () => {
-  const restRef = doc(db, "Restaurant", "orderin_restaurant_4");
+  const restRef = doc(db, "Restaurant", "orderin_restuarant_6");
   try {
     const snap = await getDoc(restRef);
     if (!snap.exists()) {
@@ -159,7 +159,7 @@ const parseTimestamp = (ts) => {
 
 // If restaurant is Inactive and the 5-day window has expired, update to 'Off'.
 export const checkAndExpireInactiveStatus = async () => {
-  const restRef = doc(db, "Restaurant", "orderin_restaurant_4");
+  const restRef = doc(db, "Restaurant", "orderin_restuarant_6");
   try {
     const snap = await getDoc(restRef);
     if (!snap.exists()) return;
@@ -193,7 +193,7 @@ export const checkAndExpireInactiveStatus = async () => {
 };
 
 export const verifySectionPasscode = async (sectionName, passcode) => {
-  const sectionRef = collection(db, "Restaurant", "orderin_restaurant_4", "accessControl", "roles", sectionName);
+  const sectionRef = collection(db, "Restaurant", "orderin_restuarant_6", "accessControl", "roles", sectionName);
   const querySnapshot = await getDocs(sectionRef);
   for (const doc of querySnapshot.docs) {
     const data = doc.data();
@@ -210,9 +210,9 @@ export const verifySectionPasscode = async (sectionName, passcode) => {
 export function subscribeAcceptingOrders(onUpdate) {
   // NOTE: every other collection in this app (orders, menu, inventory,
   // staff, tables) and the entire customer-facing app read/write
-  // "orderin_restaurant_4" — using a different id here would write this
+  // "orderin_restuarant_6" â€” using a different id here would write this
   // toggle to a document the customer app never looks at.
-  const restRef = doc(db, "Restaurant", "orderin_restaurant_4");
+  const restRef = doc(db, "Restaurant", "orderin_restuarant_6");
   return onSnapshot(restRef, (snap) => {
     const data = snap.exists() ? snap.data() || {} : {};
     const accepting = data.acceptingOrders === undefined ? true : Boolean(data.acceptingOrders);
@@ -225,7 +225,7 @@ export function subscribeAcceptingOrders(onUpdate) {
 // Flip the restaurant's "accepting orders" toggle. Writes directly onto the
 // same Restaurant/{RESTAURANT_ID} doc read by getRestaurantStatus, etc.
 export const setAcceptingOrders = async (value) => {
-  const restRef = doc(db, "Restaurant", "orderin_restaurant_4");
+  const restRef = doc(db, "Restaurant", "orderin_restuarant_6");
   try {
     await updateDoc(restRef, { acceptingOrders: Boolean(value) });
   } catch (error) {

@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+﻿import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import PublicMenu from '../PublicMenu';
@@ -8,7 +8,7 @@ vi.mock('react-router-dom', async (importOriginal) => {
   const actual = await importOriginal();
   return { ...actual, useNavigate: () => mockNavigate };
 });
-vi.mock('../../config/restaurant', () => ({ resolveRestaurantId: () => 'orderin_restaurant_3' }));
+vi.mock('../../config/restaurant', () => ({ resolveRestaurantId: () => 'orderin_restuarant_6' }));
 vi.mock('../../context/CartContext', () => ({ useCart: () => ({ addToCart: vi.fn() }) }));
 // react-pageflip does not work under jsdom — stub the book shell.
 vi.mock('../BookLayout', () => ({

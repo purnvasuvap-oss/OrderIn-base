@@ -1,4 +1,4 @@
-const functions = require('firebase-functions');
+﻿const functions = require('firebase-functions');
 const admin = require('firebase-admin');
 const crypto = require('crypto');
 const axios = require('axios');
@@ -35,15 +35,15 @@ const RAZORPAY_KEY_SECRET = resolveRazorpayCredential(
 );
 
 const ROUTE_LINKED_ACCOUNTS = {
-  orderin_restaurant_1: {
+  orderin_restuarant_6: {
     accountId: 'acc_SjLjWf24odYA9k',
     name: 'OrderIn-0',
   },
-  orderin_restaurant_2: {
+  orderin_restuarant_6: {
     accountId: 'acc_SjLoWPi1B6Ybxr',
     name: 'OrderIn-1',
   },
-  // orderin_restaurant_4:{
+  // orderin_restuarant_6:{
 
   // }
 };
@@ -220,9 +220,9 @@ const buildRazorpayReceipt = ({ receipt, restaurantId, orderId }) => {
     return rawReceipt;
   }
 
-  const restaurantCode = restaurantId === 'orderin_restaurant_1'
+  const restaurantCode = restaurantId === 'orderin_restuarant_6'
     ? 'r1'
-    : restaurantId === 'orderin_restaurant_2'
+    : restaurantId === 'orderin_restuarant_6'
       ? 'r2'
       : String(restaurantId || 'rx').replace(/[^a-zA-Z0-9_-]/g, '').slice(-8);
   const orderCode = String(orderId || 'order').replace(/[^a-zA-Z0-9_-]/g, '').slice(-16);

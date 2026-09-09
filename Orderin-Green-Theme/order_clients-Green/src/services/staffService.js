@@ -1,4 +1,4 @@
-// src/services/staffService.js
+﻿// src/services/staffService.js
 //
 // Firestore-backed Staff Management data layer, following the same
 // conventions as tableService.js / orderService.js in this app:
@@ -24,7 +24,7 @@ import {
   serverTimestamp,
 } from "firebase/firestore";
 
-const RESTAURANT_ID = "orderin_restaurant_4";
+const RESTAURANT_ID = "orderin_restuarant_6";
 
 const staffCollectionRef = () => collection(db, "Restaurant", RESTAURANT_ID, "staff");
 const staffDocRef = (id) => doc(db, "Restaurant", RESTAURANT_ID, "staff", id);

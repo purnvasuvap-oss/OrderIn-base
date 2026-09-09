@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+﻿import React, { useState, useEffect, useRef } from "react";
 import { ChevronLeft, Minus, Plus, Edit3, Trash2 } from "lucide-react";
 import Footer from "../Footer/Footer";
 import { useCart } from "../context/CartContext";
@@ -91,7 +91,7 @@ function Cart({ onBackClick }) {
     const u = JSON.parse(stored);
     if (!u || !u.phone) return;
 
-    const customerRef = doc(db, "Restaurant", "orderin_restaurant_4", "customers", u.phone);
+    const customerRef = doc(db, "Restaurant", "orderin_restuarant_6", "customers", u.phone);
     unsub = onSnapshot(customerRef, (snap) => {
       if (!snap.exists()) {
         setOrderTrackList([]);
@@ -240,7 +240,7 @@ function Cart({ onBackClick }) {
     // refresh) and nothing else guarantees an item that got deleted or
     // marked unavailable in the meantime is caught before checkout.
     try {
-      const menuSnap = await getDocs(collection(db, "Restaurant", "orderin_restaurant_4", "menu"));
+      const menuSnap = await getDocs(collection(db, "Restaurant", "orderin_restuarant_6", "menu"));
       const liveItemsByName = new Map(
         menuSnap.docs.map((d) => [String(d.data().name || "").trim().toLowerCase(), d.data()])
       );
@@ -274,7 +274,7 @@ function Cart({ onBackClick }) {
       }
       const phoneNumber = user.phone;
 
-      const customerRef = doc(db, "Restaurant", "orderin_restaurant_4", "customers", phoneNumber);
+      const customerRef = doc(db, "Restaurant", "orderin_restuarant_6", "customers", phoneNumber);
       const customerSnap = await getDoc(customerRef);
       let pastOrders = [];
       if (customerSnap.exists()) {
@@ -362,7 +362,7 @@ function Cart({ onBackClick }) {
       // Store a backup for recovery
       const pendingOrderBackup = {
         phoneNumber,
-        restaurantId: "orderin_restaurant_4",
+        restaurantId: "orderin_restuarant_6",
         order: orderForFirestore,
       };
       sessionStorage.setItem("pendingOrderForFirestore", JSON.stringify(pendingOrderBackup));

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { FiUpload, FiTrash2 } from 'react-icons/fi';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../firebase';
@@ -53,7 +53,7 @@ const Promotions = () => {
     const fetchPromotions = async () => {
         try {
             setLoadingPromotions(true);
-            const promotionsRef = collection(db, 'Restaurant', 'orderin_restaurant_4', 'promotions');
+            const promotionsRef = collection(db, 'Restaurant', 'orderin_restuarant_6', 'promotions');
             const q = query(promotionsRef, orderBy('createdAt', 'desc'));
             const querySnapshot = await getDocs(q);
 
@@ -170,7 +170,7 @@ const Promotions = () => {
                 const expiryAt = calculateExpiryAt(duration);
 
                 // Save to Firestore (store canonical storage metadata)
-                const promotionsRef = collection(db, 'Restaurant', 'orderin_restaurant_4', 'promotions');
+                const promotionsRef = collection(db, 'Restaurant', 'orderin_restuarant_6', 'promotions');
                 const docRef = await addDoc(promotionsRef, {
                     image_url,
                     image_path,
@@ -210,7 +210,7 @@ const Promotions = () => {
         try {
             // Get promotion metadata locally (to delete image from storage)
             const promotion = promotions.find(p => p.id === promotionId) || null;
-            const promotionsRef = collection(db, 'Restaurant', 'orderin_restaurant_4', 'promotions');
+            const promotionsRef = collection(db, 'Restaurant', 'orderin_restuarant_6', 'promotions');
 
             // If a storage path exists, try to delete the image first (best-effort)
             if (promotion?.image_path) {

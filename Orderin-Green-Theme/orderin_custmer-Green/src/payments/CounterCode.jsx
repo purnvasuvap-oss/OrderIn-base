@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+﻿import React, { useState, useEffect } from "react";
 import { ChevronLeft, CreditCard, ShieldCheck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext";
@@ -145,7 +145,7 @@ function CounterCode({ onBackClick }) {
       }
       const phoneNumber = user.phone;
 
-      const customerRef = doc(db, "Restaurant", "orderin_restaurant_4", "customers", phoneNumber);
+      const customerRef = doc(db, "Restaurant", "orderin_restuarant_6", "customers", phoneNumber);
       const customerSnap = await getDoc(customerRef);
       if (!customerSnap.exists()) {
         alert("Customer record not found");
@@ -216,7 +216,7 @@ function CounterCode({ onBackClick }) {
           const user = safeGetUser();
           if (user && user.phone) {
             const phoneNumber = user.phone;
-            const customerRef = doc(db, "Restaurant", "orderin_restaurant_4", "customers", phoneNumber);
+            const customerRef = doc(db, "Restaurant", "orderin_restuarant_6", "customers", phoneNumber);
             const customerSnap = await getDoc(customerRef);
             
             if (customerSnap.exists()) {

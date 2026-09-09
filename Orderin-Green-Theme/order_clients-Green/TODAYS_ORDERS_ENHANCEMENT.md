@@ -1,4 +1,4 @@
-# Today's Orders Display - Enhanced Date Filtering & Time Format
+﻿# Today's Orders Display - Enhanced Date Filtering & Time Format
 
 ## Summary of Updates
 
@@ -242,7 +242,7 @@ Time: 2:30 PM  ← formatTime() output
 
 ## Firebase Query Path
 
-**Read from:** `/Restaurant/orderin_restaurant_1/customers/{phoneNumber}/pastOrders`
+**Read from:** `/Restaurant/orderin_restuarant_6/customers/{phoneNumber}/pastOrders`
 
 **Fields used:**
 - `timestamp` - Order placement timestamp

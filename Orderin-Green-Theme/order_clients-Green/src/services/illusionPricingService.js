@@ -1,8 +1,8 @@
-// src/services/illusionPricingService.js
+﻿// src/services/illusionPricingService.js
 import { db } from "../firebase";
 import { collection, getDocs, addDoc, Timestamp } from "firebase/firestore";
 
-const RESTAURANT_ID = "orderin_restaurant_4";
+const RESTAURANT_ID = "orderin_restuarant_6";
 
 const menuRef = () => collection(db, "Restaurant", RESTAURANT_ID, "menu");
 const promotionsRef = () => collection(db, "Restaurant", RESTAURANT_ID, "promotions");

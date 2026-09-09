@@ -1,7 +1,7 @@
-import { db } from "../firebase";
+﻿import { db } from "../firebase";
 import { doc, getDoc, updateDoc, arrayUnion, Timestamp } from "firebase/firestore";
 
-const RESTAURANT_PATH = "Restaurant/orderin_restaurant_4";
+const RESTAURANT_PATH = "Restaurant/orderin_restuarant_6";
 
 /**
  * Mirrors Inventory.jsx's own updateStatusBasedOnQuantity so recipe-driven

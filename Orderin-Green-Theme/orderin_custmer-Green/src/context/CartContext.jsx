@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+﻿import React, { createContext, useContext, useState, useEffect } from 'react';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 import { getPlaceholder } from '../utils/placeholder';
@@ -448,7 +448,7 @@ export const CartProvider = ({ children, tableNo = '1' }) => {
         if (!user || !user.phone) return;
         const phoneNumber = user.phone;
 
-        const customerRef = doc(db, "Restaurant", "orderin_restaurant_4", "customers", phoneNumber);
+        const customerRef = doc(db, "Restaurant", "orderin_restuarant_6", "customers", phoneNumber);
         const customerSnap = await getDoc(customerRef);
 
         const data = customerSnap.exists() ? customerSnap.data() : {};

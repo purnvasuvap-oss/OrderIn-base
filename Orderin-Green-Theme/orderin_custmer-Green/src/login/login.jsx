@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+﻿import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
 import { db, auth, subscribeAcceptingOrders } from "../firebaseConfig";
@@ -39,7 +39,7 @@ const Login = () => {
   useEffect(() => {
     const fetchStatus = async () => {
       try {
-        const restaurantRef = doc(db, "Restaurant", "orderin_restaurant_4");
+        const restaurantRef = doc(db, "Restaurant", "orderin_restuarant_6");
         const restaurantSnap = await getDoc(restaurantRef);
         if (restaurantSnap.exists()) {
           const data = restaurantSnap.data();
@@ -151,7 +151,7 @@ const Login = () => {
 
   const saveUserToFirestore = async (phoneNumber, enteredName) => {
     try {
-      const customerRef = doc(db, "Restaurant", "orderin_restaurant_4", "customers", phoneNumber);
+      const customerRef = doc(db, "Restaurant", "orderin_restuarant_6", "customers", phoneNumber);
       const customerSnap = await getDoc(customerRef);
 
       const timestamp = new Date().toISOString();

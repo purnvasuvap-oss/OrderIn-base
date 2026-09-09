@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+﻿import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import routes from "../routes";
 import "./KitchenDisplay.css";
@@ -83,7 +83,7 @@ function KitchenDisplay() {
   useEffect(() => {
     const fetchMenuItems = async () => {
       try {
-        const menuRef = collection(db, "Restaurant", "orderin_restaurant_4", "menu");
+        const menuRef = collection(db, "Restaurant", "orderin_restuarant_6", "menu");
         const snapshot = await getDocs(menuRef);
         setMenuItems(snapshot.docs.map((d) => ({ id: d.id, ...d.data() })));
       } catch (err) {

@@ -1,4 +1,4 @@
-# Manual Order Entry Feature
+﻿# Manual Order Entry Feature
 
 ## Overview
 A comprehensive manual order entry system has been added to the Orders page, allowing restaurant staff to create orders directly by:
@@ -78,7 +78,7 @@ A comprehensive manual order entry system has been added to the Orders page, all
 ```
 
 ### Firebase Path
-`Restaurant/orderin_restaurant_1/orders/{phoneNumber}/ordersList`
+`Restaurant/orderin_restuarant_6/orders/{phoneNumber}/ordersList`
 
 ## UI/UX Features
 
@@ -109,7 +109,7 @@ A comprehensive manual order entry system has been added to the Orders page, all
 ## Integration Points
 
 ### Menu Items Source
-- Fetched from: `Restaurant/orderin_restaurant_1/menu`
+- Fetched from: `Restaurant/orderin_restuarant_6/menu`
 - Includes: id, name, price, and other menu properties
 - Updates on component mount
 

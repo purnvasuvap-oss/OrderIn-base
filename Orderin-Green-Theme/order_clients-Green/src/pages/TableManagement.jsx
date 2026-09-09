@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from "react";
+﻿import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronLeft, Plus, Search, Pencil, X, Trash2 } from "lucide-react";
 import { collection, getDocs } from "firebase/firestore";
@@ -628,7 +628,7 @@ function TableManagement() {
   useEffect(() => {
     const fetchMenuItems = async () => {
       try {
-        const menuRef = collection(db, "Restaurant", "orderin_restaurant_4", "menu");
+        const menuRef = collection(db, "Restaurant", "orderin_restuarant_6", "menu");
         const menuSnapshot = await getDocs(menuRef);
         setMenuItems(menuSnapshot.docs.map((d) => ({ id: d.id, ...d.data() })));
       } catch (err) {

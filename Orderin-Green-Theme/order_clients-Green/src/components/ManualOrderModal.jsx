@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+﻿import React, { useState, useEffect } from "react";
 import {
   doc,
   getDoc,
@@ -113,7 +113,7 @@ function ManualOrderModal({ isOpen, onClose, menuItems, onOrderCreated, initialT
       const customerRef = doc(
         db,
         "Restaurant",
-        "orderin_restaurant_4",
+        "orderin_restuarant_6",
         "customers",
         phoneNumber,
       );

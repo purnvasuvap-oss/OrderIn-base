@@ -1,4 +1,4 @@
-# Complete Troubleshooting Guide - Orders Not Displaying
+﻿# Complete Troubleshooting Guide - Orders Not Displaying
 
 ## Quick Diagnosis Flow
 
@@ -78,7 +78,7 @@ Total orders from today: 0
 
 3. Click `Restaurant` and check for document:
    ```
-   orderin_restaurant_1 (Document)
+   orderin_restuarant_6 (Document)
    ```
 
 4. Click that, and check for:
@@ -88,12 +88,12 @@ Total orders from today: 0
 
 5. If any are missing, create them:
    - Create Collection: `Restaurant`
-   - Create Document: `orderin_restaurant_1`
+   - Create Document: `orderin_restuarant_6`
    - Create Collection: `customers`
 
 **Solution C: Add Test Customer**
 
-1. In Firebase Console, navigate to `Restaurant/orderin_restaurant_1/customers`
+1. In Firebase Console, navigate to `Restaurant/orderin_restuarant_6/customers`
 2. Click "Add Document"
 3. Document ID: `9876543210` (use a phone number)
 4. Add field:
@@ -238,7 +238,7 @@ If updating is complicated:
 ### Problem
 Console logs show:
 ```
-✅ ADDING ORDER TO LIST
+âœ… ADDING ORDER TO LIST
 Total orders from today: 2
 Orders: [...]
 ```

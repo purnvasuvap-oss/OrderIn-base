@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+﻿import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Filter } from "lucide-react";
 import routes from "../routes";
@@ -92,7 +92,7 @@ function App() {
   useEffect(() => {
     const fetchMenuItems = async () => {
       try {
-        const menuRef = collection(db, "Restaurant", "orderin_restaurant_4", "menu");
+        const menuRef = collection(db, "Restaurant", "orderin_restuarant_6", "menu");
         const menuSnapshot = await getDocs(menuRef);
         setMenuItems(menuSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
       } catch (err) {

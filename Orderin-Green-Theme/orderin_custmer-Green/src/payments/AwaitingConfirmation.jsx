@@ -1,4 +1,4 @@
-import React from "react";
+﻿import React from "react";
 import { Clock, CheckCircle, XCircle, ChevronLeft, ShoppingBag } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
@@ -98,7 +98,7 @@ function AwaitingConfirmation() {
       return () => clearInterval(timer);
     }
 
-    const customerRef = doc(db, "Restaurant", "orderin_restaurant_4", "customers", user.phone);
+    const customerRef = doc(db, "Restaurant", "orderin_restuarant_6", "customers", user.phone);
 
     unsubscribe = onSnapshot(customerRef, (snap) => {
       setIsInitialLoad(false);

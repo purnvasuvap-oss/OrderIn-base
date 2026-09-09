@@ -1,4 +1,4 @@
-// Import the functions you need from the SDKs you need
+﻿// Import the functions you need from the SDKs you need
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
@@ -81,10 +81,10 @@ export const db = getFirestore(app);
 // Restaurant id shared with the admin app (Orderin-Maroon-Theme/order_clients-Maroon/src/firebase.js's
 // subscribeAcceptingOrders/setAcceptingOrders use the same literal) — and with
 // every other Restaurant/{id} path in THIS file (Bill.jsx, Cart.jsx, login.jsx,
-// Menu.jsx, etc. all hardcode "orderin_restaurant_4" directly for orders/menu/
+// Menu.jsx, etc. all hardcode "orderin_restaurant_6" directly for orders/menu/
 // customers). Keep this in sync with those — a mismatch here silently breaks
 // the accepting-orders popup/gate with no visible error.
-const RESTAURANT_ID = "orderin_restaurant_4";
+const RESTAURANT_ID = "orderin_restuarant_6";
 
 // Live-subscribe to whether the restaurant is currently accepting new orders.
 // Reads Restaurant/{RESTAURANT_ID}.acceptingOrders — the same field the admin

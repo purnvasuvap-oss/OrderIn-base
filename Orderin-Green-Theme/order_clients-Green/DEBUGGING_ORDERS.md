@@ -1,4 +1,4 @@
-# Orders Fetching - Debugging Guide
+﻿# Orders Fetching - Debugging Guide
 
 ## How to Debug Why Orders Aren't Displaying
 
@@ -237,7 +237,7 @@ If no orders show, manually add a test order in Firebase:
 
 1. Open Firebase Console
 2. Go to Firestore Database
-3. Navigate to: `Restaurant` → `orderin_restaurant_1` → `customers`
+3. Navigate to: `Restaurant` → `orderin_restuarant_6` → `customers`
 4. Create new customer (or use existing):
    - Document ID: `9876543210` (phone number)
    - Add fields:

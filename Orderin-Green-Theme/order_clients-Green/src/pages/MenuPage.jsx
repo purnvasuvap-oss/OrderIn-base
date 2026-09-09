@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+﻿import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import routes from "../routes";
 import { db, getAuthInfo, trySignInAnonymously } from "../firebase";
@@ -167,7 +167,7 @@ const MenuPage = () => {
       const menuCollection = collection(
         db,
         "Restaurant",
-        "orderin_restaurant_4",
+        "orderin_restuarant_6",
         "menu",
       );
       const results = await Promise.allSettled(
@@ -231,7 +231,7 @@ const MenuPage = () => {
         const menuCollection = collection(
           db,
           "Restaurant",
-          "orderin_restaurant_4",
+          "orderin_restuarant_6",
           "menu",
         );
         const menuSnapshot = await getDocs(menuCollection);
@@ -427,7 +427,7 @@ const MenuPage = () => {
       const menuCollection = collection(
         db,
         "Restaurant",
-        "orderin_restaurant_4",
+        "orderin_restuarant_6",
         "menu",
       );
       console.log("Menu collection:", menuCollection);
@@ -965,7 +965,7 @@ const MenuPage = () => {
         const menuCollection = collection(
           db,
           "Restaurant",
-          "orderin_restaurant_4",
+          "orderin_restuarant_6",
           "menu",
         );
         await deleteDoc(doc(menuCollection, itemToDelete.id));
@@ -976,12 +976,12 @@ const MenuPage = () => {
       // Adjust single-row edit index if necessary
       if (editingIndex !== null) {
         if (index === editingIndex) {
-          // Deleted the row being edited — clear edit state
+          // Deleted the row being edited â€” clear edit state
           setEditingIndex(null);
           setEditedItems([]);
           setIsAdding(false);
         } else if (index < editingIndex) {
-          // Row removed above the editing index — shift the index down
+          // Row removed above the editing index â€” shift the index down
           setEditingIndex(editingIndex - 1);
         }
       }

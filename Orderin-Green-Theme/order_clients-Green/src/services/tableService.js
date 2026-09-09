@@ -1,4 +1,4 @@
-import { db } from "../firebase";
+﻿import { db } from "../firebase";
 import {
   collection,
   doc,
@@ -15,7 +15,7 @@ import {
 import { isOrderQueued, isOrderActive } from "./orderService";
 
 // Same restaurant id used throughout orderService.js / firebase.js.
-const RESTAURANT_ID = "orderin_restaurant_4";
+const RESTAURANT_ID = "orderin_restuarant_6";
 
 const TOTAL_SEED_TABLES = 25;
 const DEFAULT_CAPACITY = 4;
