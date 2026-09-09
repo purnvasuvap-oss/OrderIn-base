@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Display Order ID Generator
  * 
  * Generates human-readable display order IDs with format: ORD-DDMMYY<dailySequence>
@@ -23,7 +23,7 @@ import { db } from '../firebaseConfig';
  * Returns the next sequence number and updates the counter atomically
  * 
  * Firestore Structure:
- * - Collection: Restaurant/orderin_restaurant_2/dailyOrderCounters
+ * - Collection: Restaurant/orderin_restuarant_5/dailyOrderCounters
  * - Document ID: DDMMYY (e.g., "181225" for 18-12-2025)
  * - Fields: { count: number, date: string, lastUpdated: timestamp }
  * 
@@ -43,11 +43,11 @@ export const getAndIncrementDailyCounter = async (date = new Date()) => {
     
     const dateKey = dayStr + monthStr + yearStr; // e.g., "181225"
     
-    // Path: Restaurant/orderin_restaurant_2/dailyOrderCounters/<DDMMYY>
+    // Path: Restaurant/orderin_restuarant_5/dailyOrderCounters/<DDMMYY>
     const counterRef = doc(
       db,
       "Restaurant",
-      "orderin_restaurant_3",
+      "orderin_restaurant_5",
       "dailyOrderCounters",
       dateKey
     );
@@ -132,7 +132,7 @@ export const resetDailyCounter = async (date = new Date()) => {
     const counterRef = doc(
       db,
       "Restaurant",
-      "orderin_restaurant_3",
+      "orderin_restuarant_5",
       "dailyOrderCounters",
       dateKey
     );

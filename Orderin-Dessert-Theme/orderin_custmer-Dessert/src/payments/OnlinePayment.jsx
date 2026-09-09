@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+﻿import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useTableNumber } from "../hooks/useTableNumber";
 import { useCart } from "../context/CartContext";
@@ -95,7 +95,7 @@ function OnlinePayment() {
         try {
           const user = JSON.parse(localStorage.getItem('user'));
           if (user && user.phone) {
-            const customerRef = doc(db, "Restaurant", "orderin_restaurant_3", "customers", user.phone);
+            const customerRef = doc(db, "Restaurant", "orderin_restuarant_5", "customers", user.phone);
             const customerSnap = await getDoc(customerRef);
             
             if (customerSnap.exists()) {

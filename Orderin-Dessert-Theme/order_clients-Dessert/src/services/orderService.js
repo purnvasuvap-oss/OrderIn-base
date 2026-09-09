@@ -1,9 +1,9 @@
-import { db } from "../firebase";
+﻿import { db } from "../firebase";
 import { collection, getDocs, doc, updateDoc, getDoc, onSnapshot, runTransaction } from "firebase/firestore";
 import { parseOrderTimestamp } from "../utils/orderDateTime";
 import { deductInventoryForOrder } from "./menuInventoryService";
 
-const RESTAURANT_ID = "orderin_restaurant_3";
+const RESTAURANT_ID = "orderin_restuarant_5";
 
 /**
  * Get today's date at midnight (start of day) for comparison
@@ -172,7 +172,7 @@ const derivePaymentInfo = (order) => {
     paidDisplay = "Manual Order";
   } else if (paymentStatus === "paid") {
     // show Paid or the paid amount if available
-    paidDisplay = rawPaidAmount > 0 ? `₹${rawPaidAmount.toFixed ? rawPaidAmount.toFixed(2) : rawPaidAmount}` : "Paid";
+    paidDisplay = rawPaidAmount > 0 ? `â‚¹${rawPaidAmount.toFixed ? rawPaidAmount.toFixed(2) : rawPaidAmount}` : "Paid";
   } else if (verificationCode) {
     paidDisplay = verificationCode;
   } else if (paymentStatus === "failed") {
@@ -323,7 +323,7 @@ const isOrderFromToday = (timestamp) => {
  * from its OWN timestamp, rather than a calendar-day (midnight-to-midnight)
  * cutoff. isOrderFromToday would drop an order placed at 11:59 PM the
  * instant the clock ticks past midnight, even though the kitchen hasn't
- * finished it yet — this keeps every order visible for a full 24 hours
+ * finished it yet â€” this keeps every order visible for a full 24 hours
  * from when it was actually placed, independent of the wall-clock date.
  * Ported from the Olive Green admin app.
  */
@@ -359,7 +359,7 @@ export const isOrderWithinLast24Hours = (timestamp) => {
 
 /**
  * Fetch all orders from today for all customers
- * Path: /Restaurant/orderin_restaurant_3/customers/<phone_number>/pastOrders
+ * Path: /Restaurant/orderin_restuarant_5/customers/<phone_number>/pastOrders
  * Only returns orders placed today (today's date only)
  * Falls back to showing all orders if no timestamp present
  */
@@ -435,7 +435,7 @@ export const fetchTodaysOrders = async () => {
             
             // Filter only today's orders by timestamp
             if (isOrderFromToday(timestamp)) {
-              console.log(`  ✅ ADDING ORDER TO LIST (has valid timestamp from today) - ${orderId}`);
+              console.log(`  âœ… ADDING ORDER TO LIST (has valid timestamp from today) - ${orderId}`);
               const paymentInfo = derivePaymentInfo(order);
               console.log('subscribeTodaysOrders - paymentInfo for', orderId, paymentInfo);
               ordersWithTimestamp.push({
@@ -458,10 +458,10 @@ export const fetchTodaysOrders = async () => {
                 paidAmount: paymentInfo.paidAmount,
               });
             } else {
-              console.log(`  ❌ ORDER NOT FROM TODAY - SKIPPING (timestamp is from different date)`);
+              console.log(`  âŒ ORDER NOT FROM TODAY - SKIPPING (timestamp is from different date)`);
             }
           } else {
-            console.log(`  ⚠️ NO TIMESTAMP FOUND - Adding to fallback list (will show all orders)`);
+            console.log(`  âš ï¸ NO TIMESTAMP FOUND - Adding to fallback list (will show all orders)`);
             // If no timestamp, add to fallback list
             // This ensures orders still display even if timestamp is missing
             ordersWithoutTimestamp.push({
@@ -481,7 +481,7 @@ export const fetchTodaysOrders = async () => {
           }
         });
       } else {
-        console.log(`⚠️ No pastOrders array found for customer ${phoneNumber}`);
+        console.log(`âš ï¸ No pastOrders array found for customer ${phoneNumber}`);
       }
     }
 
@@ -496,9 +496,9 @@ export const fetchTodaysOrders = async () => {
     console.log(`Orders:`, allOrders);
 
     if (allOrders.length === 0) {
-      console.warn("⚠️ No orders found at all!");
+      console.warn("âš ï¸ No orders found at all!");
     } else if (ordersWithoutTimestamp.length > 0 && ordersWithTimestamp.length === 0) {
-      console.warn("⚠️ Displaying orders without timestamp! Add timestamp field to order objects for proper date filtering.");
+      console.warn("âš ï¸ Displaying orders without timestamp! Add timestamp field to order objects for proper date filtering.");
     }
 
     // Sort orders by timestamp (newest first) if they have timestamps
@@ -512,7 +512,7 @@ export const fetchTodaysOrders = async () => {
 
     return allOrders;
   } catch (error) {
-    console.error("❌ ERROR FETCHING ORDERS:", error);
+    console.error("âŒ ERROR FETCHING ORDERS:", error);
     console.error("Error stack:", error.stack);
     throw error;
   }
@@ -617,7 +617,7 @@ export const subscribeTodaysOrders = (onUpdate, dateFilterFn = isOrderFromToday)
               }
 
               // Prefer backend-provided tax when available (many keys possible),
-              // otherwise apply fallback rule: ₹1 tax for every ₹100 of subtotal.
+              // otherwise apply fallback rule: â‚¹1 tax for every â‚¹100 of subtotal.
               const providedTax = findProvidedTax(order);
               let tax;
               if (providedTax !== null && providedTax !== undefined) {
@@ -738,7 +738,7 @@ export const subscribeAllCustomerOrders = (onUpdate) => {
               let subtotal = 0;
               if (order.items && Array.isArray(order.items)) {
                 itemDetails = order.items.map((it) => {
-                  // parse price robustly (handle strings like "₹123" or "123")
+                  // parse price robustly (handle strings like "â‚¹123" or "123")
                   let itemPrice = 0;
                   if (it && it.price !== undefined && it.price !== null) {
                     const parsed = Number(String(it.price).replace(/[^0-9.-]+/g, ""));
@@ -757,7 +757,7 @@ export const subscribeAllCustomerOrders = (onUpdate) => {
                 });
               }
 
-              // Prefer backend-provided tax when available, otherwise apply ₹1 per ₹100 rule
+              // Prefer backend-provided tax when available, otherwise apply â‚¹1 per â‚¹100 rule
               const providedTax = findProvidedTax(order);
               let tax;
               if (providedTax !== null && providedTax !== undefined) {
@@ -884,7 +884,7 @@ export const subscribeOnlineCustomerOrders = (onUpdate) => {
  *    conflicting concurrent writes instead of losing one.
  * 2. Silent no-op: if `orderIdOrIndex` didn't match any order by id and
  *    `Number(orderIdOrIndex)` was NaN (e.g. a "MANUAL-..." id) or otherwise
- *    out of range, the old code just returned without writing OR throwing —
+ *    out of range, the old code just returned without writing OR throwing â€”
  *    callers (Orders.jsx) then optimistically updated local UI state as if
  *    it had succeeded, so staff would see a status that reverted on refresh.
  *    This now always throws when the order can't be resolved.
@@ -955,7 +955,7 @@ export const acceptOrder = async (phoneNumber, orderIdOrIndex, restaurantId = RE
 
   // Deduct linked-recipe inventory now that the kitchen has committed to
   // making the order. Non-fatal: the order is already accepted, so a
-  // deduction failure shouldn't roll that back or block the kitchen —
+  // deduction failure shouldn't roll that back or block the kitchen â€”
   // it's just logged for staff to reconcile stock manually if needed.
   if (Array.isArray(acceptedItems) && acceptedItems.length > 0) {
     try {
@@ -976,7 +976,7 @@ export const acceptOrder = async (phoneNumber, orderIdOrIndex, restaurantId = RE
  * `reason` (optional) is the staff-selected reason from RejectReasonModal
  * (e.g. "Item Sold Out") and is persisted alongside the status so the
  * customer can be told why. Added as an optional trailing parameter ahead
- * of `restaurantId` — the only caller (Orders.jsx) never passes
+ * of `restaurantId` â€” the only caller (Orders.jsx) never passes
  * `restaurantId` explicitly, so this stays backward compatible.
  */
 export const rejectOrder = async (phoneNumber, orderIdOrIndex, reason = null, restaurantId = RESTAURANT_ID) => {
@@ -1113,7 +1113,7 @@ export const fetchDailyTransitOrders = async () => {
           return;
         }
 
-        console.log(`  ✅ Order ${index} is from today - INCLUDING`);
+        console.log(`  âœ… Order ${index} is from today - INCLUDING`);
 
         const orderId = order.id || `ORD-${phoneNumber}-${index}`;
         
@@ -1201,7 +1201,7 @@ export const fetchDailyTransitOrders = async () => {
     });
     return dailyTransitOrders;
   } catch (error) {
-    console.error("❌ ERROR FETCHING DAILY TRANSIT ORDERS:", error);
+    console.error("âŒ ERROR FETCHING DAILY TRANSIT ORDERS:", error);
     throw error;
   }
 };

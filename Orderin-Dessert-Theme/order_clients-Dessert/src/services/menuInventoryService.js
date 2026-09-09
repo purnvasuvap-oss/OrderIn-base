@@ -1,4 +1,4 @@
-// src/services/menuInventoryService.js
+﻿// src/services/menuInventoryService.js
 //
 // Bridges the menu and inventory collections: lets a menu item declare a
 // "recipe" (which inventory ingredients, and how much of each, 1 unit of the
@@ -8,7 +8,7 @@ import { db } from "../firebase";
 import { collection, doc, getDoc, getDocs, updateDoc, arrayUnion, Timestamp } from "firebase/firestore";
 import { consumeFromBatches, recordInventoryAction } from "./inventoryBatchService";
 
-const RESTAURANT_ID = "orderin_restaurant_3";
+const RESTAURANT_ID = "orderin_restuarant_5";
 const menuCollectionRef = () => collection(db, "Restaurant", RESTAURANT_ID, "menu");
 const inventoryCollectionRef = () => collection(db, "Restaurant", RESTAURANT_ID, "inventory");
 

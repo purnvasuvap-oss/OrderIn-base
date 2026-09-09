@@ -1,4 +1,4 @@
-// Payments.js
+﻿// Payments.js
 import React, { useState, useEffect } from "react";
 import { Minus, Plus, Trash2, CreditCard, Wallet, Banknote } from "lucide-react";
 import closeIcon from "../assets/icon-close.svg";
@@ -118,8 +118,8 @@ function Payments({ onBackClick }) {
       }
       phoneNumber = user.phone; // Assign to the outer variable
 
-      // Firestore path: Restaurant/orderin_restaurant_3/customers/<phoneNumber>
-      const customerRef = doc(db, "Restaurant", "orderin_restaurant_3", "customers", phoneNumber);
+      // Firestore path: Restaurant/orderin_restuarant_5/customers/<phoneNumber>
+      const customerRef = doc(db, "Restaurant", "orderin_restuarant_5", "customers", phoneNumber);
       const customerSnap = await getDoc(customerRef);
       let pastOrders = [];
       if (customerSnap.exists()) {
@@ -220,7 +220,7 @@ function Payments({ onBackClick }) {
 
       const pendingOrderBackup = {
         phoneNumber,
-        restaurantId: 'orderin_restaurant_3',
+        restaurantId: 'orderin_restuarant_5',
         order: orderForFirestore,
       };
       sessionStorage.setItem('pendingOrderForFirestore', JSON.stringify(pendingOrderBackup));
@@ -268,7 +268,7 @@ function Payments({ onBackClick }) {
       // Fetch restaurant information from Firestore
       const fetchRestaurantData = async () => {
         try {
-          const restaurantRef = doc(db, "Restaurant", "orderin_restaurant_3");
+          const restaurantRef = doc(db, "Restaurant", "orderin_restuarant_5");
           const restaurantSnap = await getDoc(restaurantRef);
           
           if (restaurantSnap.exists()) {
@@ -283,7 +283,7 @@ function Payments({ onBackClick }) {
               total: order.total,
               taxRate: TAX_RATE, // 0.05 rupees per rupee (5 paise per rupee)
               useProvidedTax: true, // Tell embedded page: don't recalculate, use this tax value
-              restaurantId: 'orderin_restaurant_3',
+              restaurantId: 'orderin_restuarant_5',
               restaurantName: restaurantData.Restaurant_name || 'Restaurant',
               ifscCode: restaurantData.IFSC || '',
               accountNumber: restaurantData.account || '',

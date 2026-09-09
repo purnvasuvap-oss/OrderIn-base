@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+﻿import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import routes from "../routes";
 import "./Orders.css";
@@ -209,7 +209,7 @@ function Orders() {
         const menuRef = collection(
           db,
           "Restaurant",
-          "orderin_restaurant_3",
+          "orderin_restuarant_5",
           "menu",
         );
         const menuSnapshot = await getDocs(menuRef);

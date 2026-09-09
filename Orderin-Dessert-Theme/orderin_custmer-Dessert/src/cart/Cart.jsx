@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+﻿import React, { useState, useEffect, useRef } from "react";
 import { ChevronLeft, Minus, Plus, Edit3, Trash2 } from "lucide-react";
 import Footer from "../Footer/Footer";
 import { useCart } from "../context/CartContext";
@@ -30,7 +30,7 @@ function Cart({ onBackClick }) {
     const u = JSON.parse(stored);
     if (!u || !u.phone) return;
 
-    const customerRef = doc(db, "Restaurant", "orderin_restaurant_3", "customers", u.phone);
+    const customerRef = doc(db, "Restaurant", "orderin_restuarant_5", "customers", u.phone);
     unsub = onSnapshot(customerRef, (snap) => {
       if (!snap.exists()) {
         setOrderHistory([]);

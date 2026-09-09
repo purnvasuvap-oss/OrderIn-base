@@ -1,4 +1,4 @@
-# Quick Fix Summary - Orders Now Display
+﻿# Quick Fix Summary - Orders Now Display
 
 ## What Was Fixed
 

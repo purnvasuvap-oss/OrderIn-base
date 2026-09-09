@@ -1,4 +1,4 @@
-import "./Inventory.css";
+﻿import "./Inventory.css";
 import { CheckCircle, AlertTriangle, XCircle, X, Flame, Settings2, ClipboardList } from "lucide-react";
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
@@ -130,7 +130,7 @@ function App() {
   useEffect(() => {
     const fetchInventory = async () => {
       try {
-        const inventoryCollection = collection(db, "Restaurant", "orderin_restaurant_3", "inventory");
+        const inventoryCollection = collection(db, "Restaurant", "orderin_restuarant_5", "inventory");
         const inventorySnapshot = await getDocs(inventoryCollection);
         const items = inventorySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         setData(items);
@@ -526,7 +526,7 @@ function App() {
       </div>
 
       {activeTab === "manager" ? (
-        <InventoryItemManager items={data} onChanged={() => refetchAndSync(collection(db, "Restaurant", "orderin_restaurant_3", "inventory"))} />
+        <InventoryItemManager items={data} onChanged={() => refetchAndSync(collection(db, "Restaurant", "orderin_restuarant_5", "inventory"))} />
       ) : (
       <>
       {/* ── Toolbar ── */}
@@ -1124,7 +1124,7 @@ function App() {
                 if (!selectedAlertCategory || !selectedAlertItem || !alertLowThreshold || !alertVeryLowThreshold) {
                   alert("Please complete all fields."); return;
                 }
-                const inventoryCollection = collection(db, "Restaurant", "orderin_restaurant_3", "inventory");
+                const inventoryCollection = collection(db, "Restaurant", "orderin_restuarant_5", "inventory");
                 const itemDocRef = doc(inventoryCollection, selectedAlertItem);
                 try {
                   const existingSnapshot = await getDocs(inventoryCollection);

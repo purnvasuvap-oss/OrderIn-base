@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+﻿import React, { useState, useEffect } from "react";
 import {
   doc,
   getDoc,
@@ -33,7 +33,7 @@ function ManualOrderModal({ isOpen, onClose, menuItems, onOrderCreated, initialT
   const [error, setError] = useState("");
 
   // Re-seed the table number whenever the modal is (re)opened with a
-  // different initialTableNumber — e.g. staff clicks "Seat guests" on table
+  // different initialTableNumber â€” e.g. staff clicks "Seat guests" on table
   // 7, closes the modal, then clicks it again on table 12.
   useEffect(() => {
     if (isOpen) {
@@ -61,7 +61,7 @@ function ManualOrderModal({ isOpen, onClose, menuItems, onOrderCreated, initialT
 
   const updateItemQuantity = (index, quantity) => {
     const updated = [...selectedItems];
-    // The <input type="number" min="1"> is a UI hint only — clamp here so a
+    // The <input type="number" min="1"> is a UI hint only â€” clamp here so a
     // typed/pasted negative or zero value can't reach submission.
     updated[index].quantity = Math.max(1, parseInt(quantity) || 0);
     setSelectedItems(updated);
@@ -113,7 +113,7 @@ function ManualOrderModal({ isOpen, onClose, menuItems, onOrderCreated, initialT
       const customerRef = doc(
         db,
         "Restaurant",
-        "orderin_restaurant_3",
+        "orderin_restuarant_5",
         "customers",
         phoneNumber,
       );
@@ -170,7 +170,7 @@ function ManualOrderModal({ isOpen, onClose, menuItems, onOrderCreated, initialT
       );
 
       // Manual orders are treated as accepted the instant they're created
-      // (see isOrderAccepted in orderService) — they never go through the
+      // (see isOrderAccepted in orderService) â€” they never go through the
       // Pending -> Accept step that normally triggers deduction, so it
       // happens here instead. Non-fatal: the order is already saved.
       deductInventoryForOrder(selectedItems).catch((err) =>
