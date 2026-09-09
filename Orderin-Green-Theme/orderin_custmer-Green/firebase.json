@@ -47,7 +47,7 @@
   },
 
   "hosting": {
-    "site": "orderin-maroon-customer",
+    "site": "orderin-green-customer",
     "public": "dist",
     "ignore": [
       "firebase.json",

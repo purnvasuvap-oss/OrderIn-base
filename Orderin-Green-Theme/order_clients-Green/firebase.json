@@ -14,7 +14,7 @@
     "rules": "storage.rules"
   },
   "hosting": {
-    "site": "orderin-maroon-client",
+    "site": "orderin-green-client",
     "public": "dist",
     "ignore": [
       "firebase.json",
