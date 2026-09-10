@@ -1,9 +1,7 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChefHat, Loader2 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
-import { ROLE_LABELS } from "../lib/auth";
-import { fetchDemoAccounts } from "../lib/accessControl";
 import "./Login.css";
 
 export default function Login() {
@@ -13,15 +11,6 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  // Fetched from the real accessControl accounts, not hardcoded — see
-  // fetchDemoAccounts. Testing-phase convenience only; drop this whole
-  // "demo accounts" section once staff are using their real logins.
-  const [demoAccounts, setDemoAccounts] = useState([]);
-
-  useEffect(() => {
-    fetchDemoAccounts().then(setDemoAccounts).catch(() => setDemoAccounts([]));
-  }, []);
-
   const submit = async (e) => {
     e.preventDefault();
     setError("");
@@ -37,11 +26,6 @@ export default function Login() {
     // a stale forced-redirect from the *previous* session's ProtectedRoute
     // can otherwise carry over and send the next user to the wrong page.
     navigate(res.home, { replace: true });
-  };
-
-  const fillDemo = (acc) => {
-    setUsername(acc.username);
-    setPassword(acc.password);
   };
 
   return (
@@ -69,18 +53,6 @@ export default function Login() {
           </button>
         </form>
 
-        {demoAccounts.length > 0 && (
-          <div className="login-demo">
-            <div className="login-demo-title">Demo accounts</div>
-            <div className="login-demo-grid">
-              {demoAccounts.map((acc) => (
-                <button key={acc.role} type="button" className="login-demo-chip" onClick={() => fillDemo(acc)}>
-                  {ROLE_LABELS[acc.role]}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
