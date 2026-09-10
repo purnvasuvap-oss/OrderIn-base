@@ -2,7 +2,7 @@ import { db } from "../firebase";
 import { collection, getDocs, doc, updateDoc, getDoc, onSnapshot, runTransaction } from "firebase/firestore";
 import { parseOrderTimestamp } from "../utils/orderDateTime";
 
-const RESTAURANT_ID = "orderin_restaurant_3";
+const RESTAURANT_ID = "orderin_restuarant_7";
 
 /**
  * Get today's date at midnight (start of day) for comparison
@@ -358,7 +358,7 @@ export const isOrderWithinLast24Hours = (timestamp) => {
 
 /**
  * Fetch all orders from today for all customers
- * Path: /Restaurant/orderin_restaurant_3/customers/<phone_number>/pastOrders
+ * Path: /Restaurant/orderin_restuarant_7/customers/<phone_number>/pastOrders
  * Only returns orders placed today (today's date only)
  * Falls back to showing all orders if no timestamp present
  */

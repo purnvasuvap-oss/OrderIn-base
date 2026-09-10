@@ -35,15 +35,15 @@ const RAZORPAY_KEY_SECRET = resolveRazorpayCredential(
 );
 
 const ROUTE_LINKED_ACCOUNTS = {
-  orderin_restaurant_1: {
+  orderin_restuarant_7: {
     accountId: 'acc_SjLjWf24odYA9k',
     name: 'OrderIn-0',
   },
-  orderin_restaurant_2: {
+  orderin_restuarant_7: {
     accountId: 'acc_SjLoWPi1B6Ybxr',
     name: 'OrderIn-1',
   },
-  // orderin_restaurant_3:{
+  // orderin_restuarant_7:{
 
   // }
 };
@@ -220,9 +220,9 @@ const buildRazorpayReceipt = ({ receipt, restaurantId, orderId }) => {
     return rawReceipt;
   }
 
-  const restaurantCode = restaurantId === 'orderin_restaurant_1'
+  const restaurantCode = restaurantId === 'orderin_restuarant_7'
     ? 'r1'
-    : restaurantId === 'orderin_restaurant_2'
+    : restaurantId === 'orderin_restuarant_7'
       ? 'r2'
       : String(restaurantId || 'rx').replace(/[^a-zA-Z0-9_-]/g, '').slice(-8);
   const orderCode = String(orderId || 'order').replace(/[^a-zA-Z0-9_-]/g, '').slice(-16);

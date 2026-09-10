@@ -146,7 +146,7 @@ function Bill() {
         }
 
         const phone = user.phone;
-        const customerRef = doc(db, 'Restaurant', 'orderin_restaurant_3', 'customers', phone);
+        const customerRef = doc(db, 'Restaurant', 'orderin_restuarant_7', 'customers', phone);
         console.log('Bill.submitFeedback: user=', user, 'saving to', customerRef.path);
         const entry = { stars: rating, text: feedback || '', createdAt: new Date().toISOString() };
 

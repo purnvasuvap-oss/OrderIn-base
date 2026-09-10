@@ -80,7 +80,7 @@ To properly add timestamps to your orders, follow these steps:
 
 ### Option A: Add Timestamp Field to Existing Orders (Recommended)
 
-1. In Firebase Console, navigate to: `Restaurant/orderin_restaurant_1/customers/+917032933445`
+1. In Firebase Console, navigate to: `Restaurant/orderin_restuarant_7/customers/+917032933445`
 2. Click on `pastOrders` array
 3. For each order:
    - Click the order object

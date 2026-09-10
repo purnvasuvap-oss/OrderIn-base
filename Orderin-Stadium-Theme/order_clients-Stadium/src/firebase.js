@@ -63,7 +63,7 @@ export const verifyMainLogin = async (username, password) => {
     console.warn('Could not determine restaurant status, proceeding with login check', err);
   }
 
-  const userDocRef = doc(db, "Restaurant", "orderin_restaurant_3", "accessControl", "roles", "mainLogin", username);
+  const userDocRef = doc(db, "Restaurant", "orderin_restuarant_7", "accessControl", "roles", "mainLogin", username);
   try {
     console.log('verifyMainLogin - doc path:', userDocRef.path, 'project:', app?.options?.projectId);
     const userDocSnap = await getDoc(userDocRef);
@@ -85,7 +85,7 @@ export const verifyMainLogin = async (username, password) => {
 
 // Returns restaurant status info and whether login actions are allowed.
 export const getRestaurantStatus = async () => {
-  const restRef = doc(db, "Restaurant", "orderin_restaurant_3");
+  const restRef = doc(db, "Restaurant", "orderin_restuarant_7");
   try {
     const snap = await getDoc(restRef);
     if (!snap.exists()) {
@@ -159,7 +159,7 @@ const parseTimestamp = (ts) => {
 
 // If restaurant is Inactive and the 5-day window has expired, update to 'Off'.
 export const checkAndExpireInactiveStatus = async () => {
-  const restRef = doc(db, "Restaurant", "orderin_restaurant_3");
+  const restRef = doc(db, "Restaurant", "orderin_restuarant_7");
   try {
     const snap = await getDoc(restRef);
     if (!snap.exists()) return;
@@ -193,7 +193,7 @@ export const checkAndExpireInactiveStatus = async () => {
 };
 
 export const verifySectionPasscode = async (sectionName, passcode) => {
-  const sectionRef = collection(db, "Restaurant", "orderin_restaurant_3", "accessControl", "roles", sectionName);
+  const sectionRef = collection(db, "Restaurant", "orderin_restuarant_7", "accessControl", "roles", sectionName);
   const querySnapshot = await getDocs(sectionRef);
   for (const doc of querySnapshot.docs) {
     const data = doc.data();

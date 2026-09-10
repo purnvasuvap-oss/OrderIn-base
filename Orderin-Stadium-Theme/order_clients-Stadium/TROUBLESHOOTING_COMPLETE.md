@@ -78,7 +78,7 @@ Total orders from today: 0
 
 3. Click `Restaurant` and check for document:
    ```
-   orderin_restaurant_1 (Document)
+   orderin_restuarant_7 (Document)
    ```
 
 4. Click that, and check for:
@@ -88,12 +88,12 @@ Total orders from today: 0
 
 5. If any are missing, create them:
    - Create Collection: `Restaurant`
-   - Create Document: `orderin_restaurant_1`
+   - Create Document: `orderin_restuarant_7`
    - Create Collection: `customers`
 
 **Solution C: Add Test Customer**
 
-1. In Firebase Console, navigate to `Restaurant/orderin_restaurant_1/customers`
+1. In Firebase Console, navigate to `Restaurant/orderin_restuarant_7/customers`
 2. Click "Add Document"
 3. Document ID: `9876543210` (use a phone number)
 4. Add field:

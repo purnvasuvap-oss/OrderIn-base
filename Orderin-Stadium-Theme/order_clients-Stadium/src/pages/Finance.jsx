@@ -82,7 +82,7 @@ function App() {
   useEffect(() => {
     const fetchMenuItems = async () => {
       try {
-        const menuRef = collection(db, "Restaurant", "orderin_restaurant_3", "menu");
+        const menuRef = collection(db, "Restaurant", "orderin_restuarant_7", "menu");
         const menuSnapshot = await getDocs(menuRef);
         setMenuItems(menuSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
       } catch (err) {

@@ -6,7 +6,7 @@ This implementation fetches real-time orders from Firebase and displays them wit
 ## Architecture
 
 ### Data Structure
-Orders are stored in Firebase at: `/Restaurant/orderin_restaurant_1/customers/<phone_number>/pastOrders`
+Orders are stored in Firebase at: `/Restaurant/orderin_restuarant_7/customers/<phone_number>/pastOrders`
 
 Each order object contains:
 ```javascript
@@ -147,7 +147,7 @@ Automatically handles multiple customers:
 ## Firebase Integration
 
 ### Read Path
-- Collection: `Restaurant/orderin_restaurant_1/customers`
+- Collection: `Restaurant/orderin_restuarant_7/customers`
 - Document: `<phone_number>` (customer phone as document ID)
 - Field: `pastOrders` (array of order objects)
 
@@ -157,12 +157,12 @@ Automatically handles multiple customers:
 
 ### Required Firestore Rules
 Ensure Firestore security rules allow:
-- Reading from `/Restaurant/orderin_restaurant_1/customers/{phoneNumber}`
-- Writing to `/Restaurant/orderin_restaurant_1/customers/{phoneNumber}/pastOrders`
+- Reading from `/Restaurant/orderin_restuarant_7/customers/{phoneNumber}`
+- Writing to `/Restaurant/orderin_restuarant_7/customers/{phoneNumber}/pastOrders`
 
 Example rule:
 ```javascript
-match /Restaurant/orderin_restaurant_1/customers/{phoneNumber} {
+match /Restaurant/orderin_restuarant_7/customers/{phoneNumber} {
   allow read: if request.auth != null;
   allow update: if request.auth != null && request.resource.data.pastOrders != null;
 }

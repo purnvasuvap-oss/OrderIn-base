@@ -112,7 +112,7 @@ function ManualOrderModal({ isOpen, onClose, menuItems, onOrderCreated, initialT
       const customerRef = doc(
         db,
         "Restaurant",
-        "orderin_restaurant_3",
+        "orderin_restuarant_7",
         "customers",
         phoneNumber,
       );

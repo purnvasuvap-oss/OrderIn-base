@@ -27,7 +27,7 @@ const Login = () => {
   useEffect(() => {
     const fetchStatus = async () => {
       try {
-        const restaurantRef = doc(db, "Restaurant", "orderin_restaurant_3");
+        const restaurantRef = doc(db, "Restaurant", "orderin_restuarant_7");
         const restaurantSnap = await getDoc(restaurantRef);
         if (restaurantSnap.exists()) {
           const data = restaurantSnap.data();
@@ -129,7 +129,7 @@ const Login = () => {
 
   const saveUserToFirestore = async (phoneNumber, enteredName) => {
     try {
-      const customerRef = doc(db, "Restaurant", "orderin_restaurant_3", "customers", phoneNumber);
+      const customerRef = doc(db, "Restaurant", "orderin_restuarant_7", "customers", phoneNumber);
       const customerSnap = await getDoc(customerRef);
 
       const timestamp = new Date().toISOString();

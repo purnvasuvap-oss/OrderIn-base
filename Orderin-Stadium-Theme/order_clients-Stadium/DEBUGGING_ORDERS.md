@@ -39,12 +39,12 @@ Orders: [{ id: "ORD-9876543210-0", ... }]
 
 **Causes:**
 - Firebase path is incorrect
-- No documents in `/Restaurant/orderin_restaurant_1/customers` collection
+- No documents in `/Restaurant/orderin_restuarant_7/customers` collection
 - Firebase permissions issue
 
 **Solution:**
 1. Check Firebase Firestore console
-2. Verify path: `Restaurant` → `orderin_restaurant_1` → `customers`
+2. Verify path: `Restaurant` → `orderin_restuarant_7` → `customers`
 3. Verify customer documents exist (should have phone numbers as document IDs)
 
 ### Issue 2: Customer Found But No pastOrders
@@ -237,7 +237,7 @@ If no orders show, manually add a test order in Firebase:
 
 1. Open Firebase Console
 2. Go to Firestore Database
-3. Navigate to: `Restaurant` → `orderin_restaurant_1` → `customers`
+3. Navigate to: `Restaurant` → `orderin_restuarant_7` → `customers`
 4. Create new customer (or use existing):
    - Document ID: `9876543210` (phone number)
    - Add fields:

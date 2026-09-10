@@ -124,7 +124,7 @@ System (Currently):
 1. **Open Firebase Console**
    ```
    Restaurant
-   └── orderin_restaurant_1
+   └── orderin_restuarant_7
        └── customers
            └── +917032933445
                └── pastOrders[0]

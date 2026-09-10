@@ -5,7 +5,7 @@
 ```
 Firestore Database
 └── Restaurant (Collection)
-    └── orderin_restaurant_1 (Document)
+    └── orderin_restuarant_7 (Document)
         └── customers (Collection)
             ├── 9876543210 (Document - Phone Number)
             │   ├── username: "John Doe" (String)
@@ -57,7 +57,7 @@ Firestore Database
 ```json
 {
   "Restaurant": {
-    "orderin_restaurant_1": {
+    "orderin_restuarant_7": {
       "customers": {
         "9876543210": {
           "username": "John Doe",
@@ -131,7 +131,7 @@ To view your data:
 3. **Follow the path:**
    ```
    Restaurant
-     └─ Click "orderin_restaurant_1"
+     └─ Click "orderin_restuarant_7"
         └─ Click "customers"
            └─ Click "9876543210" (or any phone number)
               └─ See "pastOrders" array
@@ -188,7 +188,7 @@ To view your data:
 Before running Orders page, verify:
 
 - [ ] Firebase project is active and connected
-- [ ] Path exists: `Restaurant` → `orderin_restaurant_1` → `customers`
+- [ ] Path exists: `Restaurant` → `orderin_restuarant_7` → `customers`
 - [ ] At least 1 customer document exists (ID = phone number)
 - [ ] Customer document has `username` field
 - [ ] Customer document has `pastOrders` array (not null/empty)
@@ -204,7 +204,7 @@ Before running Orders page, verify:
 
 ### Issue: "Found 0 customer documents"
 **Check:**
-- Path is correct: `Restaurant/orderin_restaurant_1/customers`
+- Path is correct: `Restaurant/orderin_restuarant_7/customers`
 - Collection `customers` exists
 - At least 1 document exists in collection
 - Document IDs are phone numbers (strings)

@@ -21,7 +21,7 @@ Added fallback system that:
 ## To Properly Fix (Add Timestamps):
 
 1. **Open Firebase Console**
-   - Go to: `Restaurant` → `orderin_restaurant_1` → `customers` → `+917032933445`
+   - Go to: `Restaurant` → `orderin_restuarant_7` → `customers` → `+917032933445`
    - Click `pastOrders` array
 
 2. **For each order:**

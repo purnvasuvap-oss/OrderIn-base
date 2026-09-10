@@ -209,7 +209,7 @@ function Orders() {
         const menuRef = collection(
           db,
           "Restaurant",
-          "orderin_restaurant_3",
+          "orderin_restuarant_7",
           "menu",
         );
         const menuSnapshot = await getDocs(menuRef);

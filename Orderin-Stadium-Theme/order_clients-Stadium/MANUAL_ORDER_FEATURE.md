@@ -78,7 +78,7 @@ A comprehensive manual order entry system has been added to the Orders page, all
 ```
 
 ### Firebase Path
-`Restaurant/orderin_restaurant_1/orders/{phoneNumber}/ordersList`
+`Restaurant/orderin_restuarant_7/orders/{phoneNumber}/ordersList`
 
 ## UI/UX Features
 
@@ -109,7 +109,7 @@ A comprehensive manual order entry system has been added to the Orders page, all
 ## Integration Points
 
 ### Menu Items Source
-- Fetched from: `Restaurant/orderin_restaurant_1/menu`
+- Fetched from: `Restaurant/orderin_restuarant_7/menu`
 - Includes: id, name, price, and other menu properties
 - Updates on component mount
 
