@@ -36,6 +36,9 @@ export const buildStoreState = (overrides: Record<string, unknown> = {}) => ({
   watchRestaurants: vi.fn(),
   loadCustomerTransactions: vi.fn().mockResolvedValue(undefined),
   updateTransactionSettlement: vi.fn().mockResolvedValue(undefined),
+  loadRestaurantAccessCredentials: vi.fn().mockResolvedValue([]),
+  saveRestaurantAccessCredential: vi.fn().mockResolvedValue(undefined),
+  deleteRestaurantAccessCredential: vi.fn().mockResolvedValue(undefined),
   logout: vi.fn(),
   ...overrides,
 });

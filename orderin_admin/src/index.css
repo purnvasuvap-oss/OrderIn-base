@@ -657,7 +657,6 @@ p { line-height: 1.6; color: var(--text-secondary); }
 
 .btn:active {
   transform: translateY(0);
-  animation: clickPulse 0.2s ease;
 }
 
 .btn-primary {
@@ -742,8 +741,7 @@ p { line-height: 1.6; color: var(--text-secondary); }
 }
 
 .card:active {
-  transform: translateY(-2px);
-  animation: clickPulse 0.3s ease;
+  transform: none;
 }
 
 .card-header {

@@ -2,6 +2,15 @@ export type PaymentMethod = 'UPI' | 'Card' | 'Cash' | 'Net Banking' | 'Wallet' |
 export type TransactionStatus = 'Paid' | 'Failed' | 'Refunded' | 'Pending';
 export type RestaurantStatus = 'Active' | 'Inactive' | 'Suspended' | 'Off';
 export type SettlementStatus = 'Pending' | 'Paid' | 'Processing';
+export type AccessRole = 'mainLogin' | 'menuAccess' | 'FinanceAccess' | 'InventoryAccess' | 'StaffAccess';
+
+export interface RestaurantAccessCredential {
+  id: string;
+  role: AccessRole;
+  username?: string;
+  secret: string;
+  configured: boolean;
+}
 
 export interface Restaurant {
   id: string;

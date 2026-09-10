@@ -1,7 +1,7 @@
 import { create } from 'zustand';
-import type { Restaurant, Transaction, Settlement, RestaurantStatus, PaymentEntry, PaymentMethod, TransactionStatus, SettlementPeriod, SettlementStatus } from '../types';
+import type { Restaurant, Transaction, Settlement, RestaurantStatus, PaymentEntry, PaymentMethod, TransactionStatus, SettlementPeriod, SettlementStatus, AccessRole, RestaurantAccessCredential } from '../types';
 import { db } from '../config/firebase';
-import { collection, getDocs, query, limit as fbLimit, doc, setDoc, updateDoc, getDoc, onSnapshot } from 'firebase/firestore';
+import { collection, getDocs, query, limit as fbLimit, doc, setDoc, updateDoc, getDoc, onSnapshot, deleteDoc } from 'firebase/firestore';
 import type { Unsubscribe } from 'firebase/firestore';
 
 // Firebase data interfaces
@@ -92,6 +92,8 @@ interface FirebaseOrderData {
   [key: string]: unknown;
 }
 
+const ACCESS_ROLES: AccessRole[] = ['mainLogin', 'menuAccess', 'FinanceAccess', 'InventoryAccess', 'StaffAccess'];
+
 interface AppState {
   restaurants: Restaurant[];
   transactions: Transaction[];
@@ -133,6 +135,15 @@ interface AppState {
     razorpayTaxAmount?: number;
     settlementStatus?: string;
   }) => Promise<void>;
+  loadRestaurantAccessCredentials: (restaurantId: string) => Promise<RestaurantAccessCredential[]>;
+  saveRestaurantAccessCredential: (payload: {
+    restaurantId: string;
+    role: AccessRole;
+    credentialId?: string;
+    username?: string;
+    secret: string;
+  }) => Promise<void>;
+  deleteRestaurantAccessCredential: (restaurantId: string, role: AccessRole, credentialId: string) => Promise<void>;
   logout: () => void;
 }
 
@@ -1628,6 +1639,67 @@ export const useAppStore = create<AppState>((set, get) => {
     await updateDoc(customerRef, {
       pastOrders: updatedPastOrders,
     });
+  },
+
+  loadRestaurantAccessCredentials: async (restaurantId) => {
+    const credentials: RestaurantAccessCredential[] = [];
+
+    for (const role of ACCESS_ROLES) {
+      const roleCollection = collection(db, 'Restaurant', restaurantId, 'accessControl', 'roles', role);
+      const snapshot = await getDocs(roleCollection);
+
+      snapshot.docs.forEach((roleDoc) => {
+        const data = roleDoc.data() as Record<string, unknown>;
+        credentials.push({
+          id: roleDoc.id,
+          role,
+          username: role === 'mainLogin' ? String(data.username || roleDoc.id) : undefined,
+          secret: String(role === 'mainLogin' ? data.password || '' : data.passcodeHash || ''),
+          configured: role === 'mainLogin' ? Boolean(data.password) : Boolean(data.passcodeHash),
+        });
+      });
+    }
+
+    return credentials;
+  },
+
+  saveRestaurantAccessCredential: async ({ restaurantId, role, credentialId, username, secret }) => {
+    const trimmedSecret = secret.trim();
+    if (!trimmedSecret) {
+      throw new Error('A passcode or password is required.');
+    }
+
+    if (role === 'mainLogin') {
+      const trimmedUsername = (username || '').trim();
+      if (!trimmedUsername || trimmedUsername.includes('/')) {
+        throw new Error('A valid username is required.');
+      }
+
+      const documentId = credentialId || encodeURIComponent(trimmedUsername);
+      const credentialRef = doc(db, 'Restaurant', restaurantId, 'accessControl', 'roles', role, documentId);
+      await setDoc(credentialRef, {
+        username: trimmedUsername,
+        password: trimmedSecret,
+        updatedAt: Date.now(),
+      }, { merge: true });
+      return;
+    }
+
+    const credentialRef = doc(
+      db,
+      'Restaurant',
+      restaurantId,
+      'accessControl',
+      'roles',
+      role,
+      credentialId || 'passcode',
+    );
+    await setDoc(credentialRef, { passcodeHash: trimmedSecret, updatedAt: Date.now() }, { merge: true });
+  },
+
+  deleteRestaurantAccessCredential: async (restaurantId, role, credentialId) => {
+    const credentialRef = doc(db, 'Restaurant', restaurantId, 'accessControl', 'roles', role, credentialId);
+    await deleteDoc(credentialRef);
   },
 
   logout: () => {

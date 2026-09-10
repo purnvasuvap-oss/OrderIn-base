@@ -1,5 +1,5 @@
-import { useState, useMemo, useEffect } from 'react';
-import type { RestaurantStatus } from '../types';
+import { useState, useMemo, useEffect, useCallback } from 'react';
+import type { AccessRole, RestaurantAccessCredential, RestaurantStatus } from '../types';
 import { useParams } from 'react-router-dom';
 import { useAppStore } from '../store';
 import { AppLayout } from '../layouts/AppLayout';
@@ -8,19 +8,42 @@ import { Badge } from '../components/Badge';
 import { DataTable } from '../components/DataTable';
 import { Modal } from '../components/Modal';
 import { format } from 'date-fns';
-import { DollarSign, TrendingUp, Zap, Activity, ChevronLeft, Eye, Plus } from 'lucide-react';
+import { DollarSign, TrendingUp, Zap, Activity, ChevronLeft, Eye, EyeOff, Plus, KeyRound, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import type { Transaction, PaymentEntry } from '../types';
 
 export const RestaurantDetailsPage = () => {
   const { restaurantId } = useParams();
   const navigate = useNavigate();
-  const { getRestaurantById, getRestaurantTransactions, getSettlementsByRestaurant, ensureMonthlySettlement, setDefaultSettlementAmount, addPaymentToSettlementById, createNextSettlementIfNeeded, setRestaurantStatus, loadCustomerTransactions } = useAppStore();
+  const {
+    getRestaurantById,
+    getRestaurantTransactions,
+    getSettlementsByRestaurant,
+    ensureMonthlySettlement,
+    setDefaultSettlementAmount,
+    addPaymentToSettlementById,
+    createNextSettlementIfNeeded,
+    setRestaurantStatus,
+    loadCustomerTransactions,
+    loadRestaurantAccessCredentials,
+    saveRestaurantAccessCredential,
+    deleteRestaurantAccessCredential,
+  } = useAppStore();
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
   const [defaultAmountInput, setDefaultAmountInput] = useState<string>('');
   const [paymentInputs, setPaymentInputs] = useState<Record<string, string>>({});
   const [daysRemaining, setDaysRemaining] = useState(30);
+  const [accessCredentials, setAccessCredentials] = useState<RestaurantAccessCredential[]>([]);
+  const [accessUsername, setAccessUsername] = useState('');
+  const [accessSecret, setAccessSecret] = useState('');
+  const [accessDrafts, setAccessDrafts] = useState<Record<string, string>>({});
+  const [accessVisibility, setAccessVisibility] = useState<Record<string, boolean>>({});
+  const [accessHistoryRole, setAccessHistoryRole] = useState<AccessRole | null>(null);
+  const [mainUpdateOpen, setMainUpdateOpen] = useState<Record<string, boolean>>({});
+  const [accessLoading, setAccessLoading] = useState(false);
+  const [accessSaving, setAccessSaving] = useState(false);
+  const [accessError, setAccessError] = useState<string | null>(null);
 
   const getCurrentMonthKey = (): string => {
     return new Date().toLocaleString('default', { month: 'short', year: 'numeric' });
@@ -131,6 +154,71 @@ export const RestaurantDetailsPage = () => {
     
     return () => clearInterval(interval);
   }, [settlement?.settlements]);
+
+  const refreshAccessCredentials = useCallback(async () => {
+    if (!restaurantId) return;
+    setAccessLoading(true);
+    setAccessError(null);
+    try {
+      setAccessCredentials(await loadRestaurantAccessCredentials(restaurantId));
+    } catch (error) {
+      console.error('Failed to load restaurant access credentials:', error);
+      setAccessError('Unable to load passcodes. Check Firebase permissions and try again.');
+    } finally {
+      setAccessLoading(false);
+    }
+  }, [loadRestaurantAccessCredentials, restaurantId]);
+
+  useEffect(() => {
+    if (restaurantId && activeTab === 'passcodes') {
+      void refreshAccessCredentials();
+    }
+  }, [activeTab, refreshAccessCredentials, restaurantId]);
+
+  const saveAccessCredential = async (role: AccessRole, credential?: RestaurantAccessCredential) => {
+    const draftKey = credential ? `${role}:${credential.id}` : role;
+    const secret = credential ? accessDrafts[draftKey] || '' : role === 'mainLogin' ? accessSecret : accessDrafts[role] || '';
+    const username = role === 'mainLogin' ? (credential?.username || accessUsername).trim() : undefined;
+    if (!secret.trim() || (role === 'mainLogin' && !username)) {
+      setAccessError(role === 'mainLogin' ? 'Enter a username and password.' : 'Enter a new passcode.');
+      return;
+    }
+
+    setAccessSaving(true);
+    setAccessError(null);
+    try {
+      await saveRestaurantAccessCredential({
+        restaurantId: restaurantId!,
+        role,
+        credentialId: credential?.id,
+        username,
+        secret,
+      });
+      setAccessSecret('');
+      setAccessUsername('');
+      setAccessDrafts((drafts) => ({ ...drafts, [draftKey]: '' }));
+      await refreshAccessCredentials();
+    } catch (error) {
+      console.error('Failed to save restaurant access credential:', error);
+      setAccessError(error instanceof Error ? error.message : 'Unable to save passcode.');
+    } finally {
+      setAccessSaving(false);
+    }
+  };
+
+  const removeAccessCredential = async (credential: RestaurantAccessCredential) => {
+    setAccessSaving(true);
+    setAccessError(null);
+    try {
+      await deleteRestaurantAccessCredential(restaurantId!, credential.role, credential.id);
+      await refreshAccessCredentials();
+    } catch (error) {
+      console.error('Failed to delete restaurant access credential:', error);
+      setAccessError('Unable to delete passcode. Please try again.');
+    } finally {
+      setAccessSaving(false);
+    }
+  };
 
   const handleSetDefaultAmount = () => {
     const amount = parseFloat(defaultAmountInput || '0');
@@ -332,7 +420,7 @@ export const RestaurantDetailsPage = () => {
 
         <div className="card">
           <div style={{ display: 'flex', borderBottom: '1px solid rgba(6, 182, 212, 0.2)', background: 'rgba(30, 27, 75, 0.5)' }}>
-            {['overview', 'transactions', 'settlement', 'settings'].map((tab) => (
+            {['overview', 'transactions', 'settlement', 'settings', 'passcodes'].map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
@@ -390,6 +478,126 @@ export const RestaurantDetailsPage = () => {
                   <p className="text-sm text-gray-600">IFSC</p>
                   <p className="text-lg font-semibold text-gray-900">{restaurant.IFSC}</p>
                 </div>
+              </div>
+            )}
+
+            {activeTab === 'passcodes' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.35rem' }}>
+                    <KeyRound size={20} color="#06b6d4" />
+                    <h2 style={{ color: '#f1f5f9', fontSize: '1.1rem', fontWeight: 800 }}>Login passcodes</h2>
+                  </div>
+                  <p style={{ color: '#94a3b8', fontSize: '0.875rem' }}>
+                    Manage the credentials used by this restaurant&apos;s client theme. Values are shown only when you choose to reveal them.
+                  </p>
+                </div>
+
+                {accessError && (
+                  <div role="alert" style={{ padding: '0.75rem', borderRadius: '0.5rem', color: '#fecaca', background: 'rgba(127,29,29,0.35)', border: '1px solid rgba(248,113,113,0.35)' }}>
+                    {accessError}
+                  </div>
+                )}
+
+                <div style={{ padding: '1rem', borderRadius: '0.75rem', background: 'rgba(15,23,42,0.55)', border: '1px solid rgba(6,182,212,0.15)' }}>
+                  <p style={{ color: '#f1f5f9', fontWeight: 700, marginBottom: '0.75rem' }}>Main login account</p>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '0.75rem', alignItems: 'end' }}>
+                    <label style={{ color: '#94a3b8', fontSize: '0.8rem' }}>
+                      Username
+                      <input
+                        value={accessUsername}
+                        onChange={(event) => setAccessUsername(event.target.value)}
+                        placeholder="e.g. admin"
+                        style={{ display: 'block', width: '100%', marginTop: '0.35rem', padding: '0.6rem', borderRadius: '0.5rem', border: '1px solid rgba(148,163,184,0.25)', background: 'rgba(15,23,42,0.7)', color: '#f1f5f9' }}
+                      />
+                    </label>
+                    <label style={{ color: '#94a3b8', fontSize: '0.8rem' }}>
+                      New password
+                      <input
+                        type={accessVisibility['new:mainLogin'] ? 'text' : 'password'}
+                        value={accessSecret}
+                        onChange={(event) => setAccessSecret(event.target.value)}
+                        placeholder="Password"
+                        style={{ display: 'block', width: '100%', marginTop: '0.35rem', padding: '0.6rem', borderRadius: '0.5rem', border: '1px solid rgba(148,163,184,0.25)', background: 'rgba(15,23,42,0.7)', color: '#f1f5f9' }}
+                      />
+                    </label>
+                  </div>
+                  <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    {accessCredentials.filter((credential) => credential.role === 'mainLogin').map((credential) => (
+                      <div key={credential.id} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: '0.5rem', alignItems: 'center', padding: '0.6rem 0.75rem', borderRadius: '0.5rem', background: 'rgba(30,41,59,0.65)' }}>
+                        <span style={{ color: '#cbd5e1', fontFamily: 'monospace' }}>{credential.username}</span>
+                        <div style={{ display: 'flex', gap: '0.35rem' }}>
+                          <input
+                            aria-label={`Current password for ${credential.username}`}
+                            type={accessVisibility[`current:${credential.id}`] ? 'text' : 'password'}
+                            value={credential.secret}
+                            readOnly
+                            style={{ minWidth: 0, flex: 1, padding: '0.5rem', borderRadius: '0.4rem', border: '1px solid rgba(148,163,184,0.25)', background: 'rgba(15,23,42,0.7)', color: '#f1f5f9' }}
+                          />
+                          <button type="button" aria-label={`Show current password for ${credential.username}`} onClick={() => setAccessVisibility((values) => ({ ...values, [`current:${credential.id}`]: !values[`current:${credential.id}`] }))} style={{ border: 'none', background: 'none', color: '#94a3b8' }}>
+                            {accessVisibility[`current:${credential.id}`] ? <EyeOff size={16} /> : <Eye size={16} />}
+                          </button>
+                        </div>
+                        <div style={{ display: 'flex', gap: '0.25rem' }}>
+                          <button type="button" disabled={accessSaving} onClick={() => setMainUpdateOpen((values) => ({ ...values, [credential.id]: !values[credential.id] }))} style={{ padding: '0.5rem 0.7rem', borderRadius: '0.4rem', border: 'none', background: '#0891b2', color: 'white', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}>Update</button>
+                          <button type="button" aria-label={`Delete ${credential.username} login`} disabled={accessSaving} onClick={() => void removeAccessCredential(credential)} style={{ border: 'none', background: 'none', color: '#f87171' }}>
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                        {mainUpdateOpen[credential.id] && (
+                          <div style={{ gridColumn: '1 / -1', display: 'flex', gap: '0.35rem', alignItems: 'center' }}>
+                            <input
+                              aria-label={`New password for ${credential.username}`}
+                              type={accessVisibility[`new:${credential.id}`] ? 'text' : 'password'}
+                              value={accessDrafts[`mainLogin:${credential.id}`] || ''}
+                              onChange={(event) => setAccessDrafts((values) => ({ ...values, [`mainLogin:${credential.id}`]: event.target.value }))}
+                              placeholder="New password"
+                              style={{ minWidth: 0, flex: 1, padding: '0.5rem', borderRadius: '0.4rem', border: '1px solid rgba(148,163,184,0.25)', background: 'rgba(15,23,42,0.7)', color: '#f1f5f9' }}
+                            />
+                            <button type="button" aria-label={`Show new password for ${credential.username}`} onClick={() => setAccessVisibility((values) => ({ ...values, [`new:${credential.id}`]: !values[`new:${credential.id}`] }))} style={{ border: 'none', background: 'none', color: '#94a3b8', cursor: 'pointer' }}>
+                              {accessVisibility[`new:${credential.id}`] ? <EyeOff size={16} /> : <Eye size={16} />}
+                            </button>
+                            <button type="button" disabled={accessSaving} onClick={() => void saveAccessCredential('mainLogin', credential)} style={{ padding: '0.5rem 0.7rem', borderRadius: '0.4rem', border: 'none', background: '#0891b2', color: 'white', fontWeight: 700, cursor: 'pointer' }}>Save password</button>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                    <button type="button" disabled={accessSaving} onClick={() => void saveAccessCredential('mainLogin')} style={{ alignSelf: 'flex-start', padding: '0.6rem 1rem', borderRadius: '0.5rem', border: 'none', background: 'linear-gradient(135deg,#06b6d4,#6366f1)', color: 'white', fontWeight: 700 }}>
+                      Add account
+                    </button>
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1rem' }}>
+                  {([
+                    ['menuAccess', 'Menu login'],
+                    ['FinanceAccess', 'Finance login'],
+                    ['InventoryAccess', 'Inventory login'],
+                    ['StaffAccess', 'Staff login'],
+                  ] as const).map(([role, label]) => {
+                    const credentials = accessCredentials.filter((credential) => credential.role === role);
+                    return (
+                      <div key={role} style={{ padding: '1rem', borderRadius: '0.75rem', background: 'rgba(15,23,42,0.55)', border: '1px solid rgba(168,85,247,0.15)' }}>
+                        <p style={{ color: '#f1f5f9', fontWeight: 700 }}>{label}</p>
+                        <p style={{ color: credentials.length > 0 ? '#34d399' : '#fbbf24', fontSize: '0.75rem', margin: '0.35rem 0 0.75rem' }}>
+                          {credentials.length > 0 ? `${credentials.length} passcode${credentials.length === 1 ? '' : 's'} configured` : 'Not configured'}
+                        </p>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', alignItems: 'stretch' }}>
+                          <div style={{ display: 'flex', gap: '0.35rem', flex: 1, width: '100%' }}>
+                            <input aria-label={`New ${label} passcode to add`} type={accessVisibility[`new:${role}`] ? 'text' : 'password'} value={accessDrafts[role] || ''} onChange={(event) => setAccessDrafts((values) => ({ ...values, [role]: event.target.value }))} placeholder="New passcode to add" style={{ minWidth: 0, flex: 1, padding: '0.5rem', borderRadius: '0.4rem', border: '1px solid rgba(148,163,184,0.25)', background: 'rgba(15,23,42,0.7)', color: '#f1f5f9' }} />
+                            <button type="button" aria-label={`Show new ${label} passcode to add`} onClick={() => setAccessVisibility((values) => ({ ...values, [`new:${role}`]: !values[`new:${role}`] }))} style={{ border: 'none', background: 'none', color: '#94a3b8' }}>{accessVisibility[`new:${role}`] ? <EyeOff size={15} /> : <Eye size={15} />}</button>
+                          </div>
+                          <button type="button" disabled={accessSaving} onClick={() => void saveAccessCredential(role)} style={{ width: '100%', padding: '0.5rem 0.75rem', borderRadius: '0.4rem', border: 'none', background: '#7c3aed', color: 'white', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}>Add passcode</button>
+                          <button type="button" onClick={() => setAccessHistoryRole(role)} style={{ width: '100%', padding: '0.5rem 0.75rem', borderRadius: '0.4rem', border: '1px solid rgba(168,85,247,0.5)', background: 'rgba(124,58,237,0.15)', color: '#c4b5fd', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                            View old passcodes ({credentials.length})
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {accessLoading && <p style={{ color: '#94a3b8', fontSize: '0.875rem' }}>Loading credentials...</p>}
               </div>
             )}
 
@@ -723,6 +931,53 @@ export const RestaurantDetailsPage = () => {
             )}
           </div>
         </div>
+
+        <Modal
+          isOpen={accessHistoryRole !== null}
+          onClose={() => setAccessHistoryRole(null)}
+          title={`${accessHistoryRole === 'menuAccess' ? 'Menu' : accessHistoryRole === 'FinanceAccess' ? 'Finance' : accessHistoryRole === 'InventoryAccess' ? 'Inventory' : 'Staff'} old passcodes`}
+        >
+          {accessHistoryRole && (
+            <div style={{ maxHeight: '60vh', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              {accessCredentials.filter((credential) => credential.role === accessHistoryRole).length === 0 ? (
+                <p style={{ color: '#94a3b8', fontSize: '0.875rem' }}>No old passcodes configured.</p>
+              ) : (
+                accessCredentials
+                  .filter((credential) => credential.role === accessHistoryRole)
+                  .map((credential) => (
+                    <div key={credential.id} style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '0.5rem', alignItems: 'center', padding: '0.6rem', borderRadius: '0.5rem', background: 'rgba(15,23,42,0.6)', border: '1px solid rgba(148,163,184,0.15)' }}>
+                      <div style={{ display: 'flex', gap: '0.35rem', alignItems: 'center' }}>
+                        <input
+                          aria-label="Old passcode"
+                          type={accessVisibility[`old:${credential.id}`] ? 'text' : 'password'}
+                          value={credential.secret}
+                          readOnly
+                          style={{ minWidth: 0, flex: 1, padding: '0.55rem', borderRadius: '0.4rem', border: '1px solid rgba(148,163,184,0.25)', background: 'rgba(15,23,42,0.7)', color: '#f1f5f9' }}
+                        />
+                        <button
+                          type="button"
+                          aria-label="Show old passcode"
+                          onClick={() => setAccessVisibility((values) => ({ ...values, [`old:${credential.id}`]: !values[`old:${credential.id}`] }))}
+                          style={{ border: 'none', background: 'none', color: '#94a3b8', cursor: 'pointer' }}
+                        >
+                          {accessVisibility[`old:${credential.id}`] ? <EyeOff size={16} /> : <Eye size={16} />}
+                        </button>
+                      </div>
+                      <button
+                        type="button"
+                        aria-label="Delete old passcode"
+                        disabled={accessSaving}
+                        onClick={() => void removeAccessCredential(credential)}
+                        style={{ border: 'none', background: 'none', color: '#f87171', cursor: 'pointer' }}
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  ))
+              )}
+            </div>
+          )}
+        </Modal>
 
         {selectedTransaction && (
           <Modal
