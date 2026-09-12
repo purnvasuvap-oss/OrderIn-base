@@ -157,6 +157,21 @@ exports[`StaffManagement > matches the snapshot 1`] = `
         </svg>
         Calendar
       </button>
+      <button
+        class="sm-tab "
+      >
+        Audit history
+      </button>
+      <button
+        class="sm-tab "
+      >
+        Notifications
+      </button>
+      <button
+        class="sm-tab "
+      >
+        Payroll
+      </button>
     </div>
     <div
       class="sm-panel"

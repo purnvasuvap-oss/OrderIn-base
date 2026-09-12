@@ -22,6 +22,7 @@ import {
   DAY_LABELS,
   subscribeStaff,
   addStaff,
+  updateStaff,
   pauseStaff,
   restoreStaff,
   resetStaffPin,
@@ -44,6 +45,14 @@ import {
   hoursOf,
   attendanceStatus,
   getAttendanceForDateRange,
+  updateAttendanceRecord,
+  validateShift,
+  isDateUnavailable,
+  validateAvailability,
+  subscribeStaffAuditLog,
+  subscribeStaffNotifications,
+  markStaffNotificationRead,
+  createShiftTemplate,
 } from "../services/staffService";
 
 const ROLE_META = {
@@ -51,6 +60,32 @@ const ROLE_META = {
   "General Manager": { key: "gm", label: "General Manager" },
   Kitchen: { key: "kitchen", label: "Kitchen" },
   Floor: { key: "floor", label: "Floor" },
+};
+
+const getStaffPermissions = () => {
+  const role = typeof sessionStorage !== "undefined" ? sessionStorage.getItem("staffRole") : null;
+  let explicit = null;
+  if (typeof sessionStorage !== "undefined") {
+    try { explicit = JSON.parse(sessionStorage.getItem("staffPermissions") || "null"); } catch { explicit = null; }
+  }
+  // Legacy section-passcode sessions have no identity/role claim. Preserve
+  // their existing manager experience until a role-aware auth provider exists.
+  if (!role) return { role: null, manageStaff: true, editRoster: true, correctAttendance: true };
+  const managerPermissions = ["staff.view", "staff.manage", "roster.edit", "requests.approve", "attendance.correct", "payroll.view", "audit.view", "notifications.manage"];
+  const rolePermissions = {
+    Admin: [...managerPermissions, "staff.roles", "payroll.manage"],
+    "General Manager": managerPermissions,
+    Kitchen: ["staff.view", "roster.edit", "requests.approve"],
+    Floor: ["staff.view"],
+  };
+  const resolved = explicit || rolePermissions[Object.keys(rolePermissions).find((item) => item.toLowerCase() === role.toLowerCase())] || [];
+  const can = (permission) => resolved.includes(permission);
+  return {
+    role,
+    manageStaff: can("staff.manage"),
+    editRoster: can("roster.edit"),
+    correctAttendance: can("attendance.correct"),
+  };
 };
 
 const SHIFT_META = {
@@ -73,15 +108,42 @@ const fmtClock = (ts) => {
 };
 
 /* ======================= Add / Edit Staff modal ======================= */
-function StaffFormModal({ onClose, onConfirm }) {
-  const [name, setName] = useState("");
-  const [role, setRole] = useState("Floor");
-  const [phone, setPhone] = useState("");
-  const [email, setEmail] = useState("");
+function StaffFormModal({ onClose, onConfirm, initialStaff = null }) {
+  const isEdit = Boolean(initialStaff);
+  const [name, setName] = useState(initialStaff?.name || "");
+  const [role, setRole] = useState(initialStaff?.role || "Floor");
+  const [phone, setPhone] = useState(initialStaff?.phone || "");
+  const [email, setEmail] = useState(initialStaff?.email || "");
   const [pin, setPin] = useState("");
-  const [zone, setZone] = useState(ZONES[0]);
-  const [team, setTeam] = useState(TEAMS[0]);
-  const [jobRole, setJobRole] = useState("");
+  const [zone, setZone] = useState(initialStaff?.zone || ZONES[0]);
+  const [team, setTeam] = useState(initialStaff?.team || TEAMS[0]);
+  const [jobRole, setJobRole] = useState(initialStaff?.jobRole || "");
+  const [hireDate, setHireDate] = useState(initialStaff?.hireDate || "");
+  const [employeeId, setEmployeeId] = useState(initialStaff?.employeeId || "");
+  const [photoUrl, setPhotoUrl] = useState(initialStaff?.photoUrl || "");
+  const [emergencyContact, setEmergencyContact] = useState(initialStaff?.emergencyContact || "");
+  const [emergencyRelationship, setEmergencyRelationship] = useState(initialStaff?.emergencyRelationship || "");
+  const [leaveBalances, setLeaveBalances] = useState(initialStaff?.leaveBalances || { vacation: 0, sick: 0 });
+  const [paymentProvider, setPaymentProvider] = useState(initialStaff?.paymentProvider || { provider: "", providerId: "", last4: "" });
+  const [notes, setNotes] = useState(initialStaff?.notes || "");
+  const [preferredShift, setPreferredShift] = useState(initialStaff?.preferredShift || "flexible");
+  const [minWeeklyHours, setMinWeeklyHours] = useState(initialStaff?.minWeeklyHours ?? 0);
+  const [maxWeeklyHours, setMaxWeeklyHours] = useState(initialStaff?.maxWeeklyHours ?? 40);
+  const [availabilityExceptions, setAvailabilityExceptions] = useState(initialStaff?.availabilityExceptions || []);
+  const [employmentType, setEmploymentType] = useState(initialStaff?.employmentType || "full-time");
+  const [address, setAddress] = useState(initialStaff?.address || "");
+  const [skills, setSkills] = useState((initialStaff?.skills || []).join(", "));
+  const [certifications, setCertifications] = useState((initialStaff?.certifications || []).map((item) => typeof item === "string" ? item : `${item.name || ""}${item.expiry ? ` (${item.expiry})` : ""}`).join(", "));
+  const [assignedLocation, setAssignedLocation] = useState(initialStaff?.assignedLocation || "");
+  const [lastWorkingDate, setLastWorkingDate] = useState(initialStaff?.lastWorkingDate || "");
+  const [terminationDate, setTerminationDate] = useState(initialStaff?.terminationDate || "");
+  const [rehireDate, setRehireDate] = useState(initialStaff?.rehireDate || "");
+  const [compensationRate, setCompensationRate] = useState(initialStaff?.compensation?.rate || "");
+  const [documents, setDocuments] = useState((initialStaff?.documents || []).map((item) => item.name || "").join(", "));
+  const [availability, setAvailability] = useState(() => initialStaff?.availability || DAY_LABELS.reduce((days, day) => {
+    days[day] = true;
+    return days;
+  }, {}));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
@@ -98,12 +160,28 @@ function StaffFormModal({ onClose, onConfirm }) {
       setError("PIN must be exactly 4 digits");
       return;
     }
+    const availabilityValidation = typeof validateAvailability === "function"
+      ? validateAvailability({ preferredShift, minWeeklyHours, maxWeeklyHours, exceptions: availabilityExceptions })
+      : { valid: true };
+    if (!availabilityValidation.valid) {
+      setError(availabilityValidation.error);
+      return;
+    }
     setSaving(true);
     setError("");
     try {
-      await onConfirm({ name, role, phone, email, pin, zone, team, jobRole });
+      await onConfirm({
+        name, role, phone, email, pin, zone, team, jobRole, hireDate, employeeId, photoUrl, emergencyContact,
+        emergencyRelationship, leaveBalances, paymentProvider, notes, availability,
+        preferredShift, minWeeklyHours, maxWeeklyHours, availabilityExceptions,
+        employmentType, address, skills: skills.split(",").map((item) => item.trim()).filter(Boolean),
+        certifications: certifications.split(",").map((item) => item.trim()).filter(Boolean),
+        assignedLocation, lastWorkingDate, terminationDate, rehireDate,
+        compensation: { type: "hourly", rate: Number(compensationRate) || 0 },
+        documents: documents.split(",").map((name) => name.trim()).filter(Boolean).map((name) => ({ name, type: "metadata" })),
+      });
     } catch (err) {
-      setError("Failed to add staff: " + err.message);
+      setError(`Failed to ${isEdit ? "update" : "add"} staff: ` + err.message);
       setSaving(false);
     }
   };
@@ -112,7 +190,7 @@ function StaffFormModal({ onClose, onConfirm }) {
     <div className="sm-overlay" onClick={onClose}>
       <div className="sm-modal" onClick={(e) => e.stopPropagation()}>
         <div className="sm-modal-head">
-          <h3>Add Staff</h3>
+          <h3>{isEdit ? "Edit Staff Profile" : "Add Staff"}</h3>
           <button className="sm-icon-btn" onClick={onClose}>
             <X size={18} />
           </button>
@@ -178,8 +256,99 @@ function StaffFormModal({ onClose, onConfirm }) {
             <input
               value={pin}
               onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 4))}
-              placeholder="4-digit PIN"
+              placeholder={isEdit ? "Leave blank to keep current PIN" : "4-digit PIN"}
             />
+          </div>
+          <div className="sm-form-row">
+            <div className="sm-form-group">
+              <label htmlFor="staff-hire-date">Hire date <span className="sm-optional">(optional)</span></label>
+              <input id="staff-hire-date" type="date" value={hireDate} onChange={(e) => setHireDate(e.target.value)} />
+            </div>
+            <div className="sm-form-group">
+              <label htmlFor="staff-employee-id">Employee ID</label>
+              <input id="staff-employee-id" value={employeeId} onChange={(e) => setEmployeeId(e.target.value)} />
+            </div>
+          </div>
+          <div className="sm-form-group">
+            <label htmlFor="staff-photo-url">Photo URL <span className="sm-optional">(metadata only)</span></label>
+            <input id="staff-photo-url" value={photoUrl} onChange={(e) => setPhotoUrl(e.target.value)} />
+          </div>
+          <div className="sm-form-row">
+            <div className="sm-form-group">
+              <label htmlFor="staff-emergency-contact">Emergency contact <span className="sm-optional">(optional)</span></label>
+              <input id="staff-emergency-contact" value={emergencyContact} onChange={(e) => setEmergencyContact(e.target.value)} />
+            </div>
+            <div className="sm-form-group">
+              <label htmlFor="staff-emergency-relationship">Emergency relationship</label>
+              <input id="staff-emergency-relationship" value={emergencyRelationship} onChange={(e) => setEmergencyRelationship(e.target.value)} />
+            </div>
+          </div>
+          <div className="sm-form-row">
+            <div className="sm-form-group"><label htmlFor="staff-vacation-balance">Vacation leave balance</label><input id="staff-vacation-balance" type="number" min="0" value={leaveBalances.vacation ?? 0} onChange={(e) => setLeaveBalances({ ...leaveBalances, vacation: Number(e.target.value) || 0 })} /></div>
+            <div className="sm-form-group"><label htmlFor="staff-sick-balance">Sick leave balance</label><input id="staff-sick-balance" type="number" min="0" value={leaveBalances.sick ?? 0} onChange={(e) => setLeaveBalances({ ...leaveBalances, sick: Number(e.target.value) || 0 })} /></div>
+          </div>
+          <div className="sm-form-row">
+            <div className="sm-form-group"><label htmlFor="staff-payment-provider">Payment provider</label><input id="staff-payment-provider" value={paymentProvider.provider || ""} onChange={(e) => setPaymentProvider({ ...paymentProvider, provider: e.target.value })} placeholder="Provider name" /></div>
+            <div className="sm-form-group"><label htmlFor="staff-payment-provider-id">Provider ID</label><input id="staff-payment-provider-id" value={paymentProvider.providerId || ""} onChange={(e) => setPaymentProvider({ ...paymentProvider, providerId: e.target.value })} /></div>
+            <div className="sm-form-group"><label htmlFor="staff-payment-last4">Account last 4</label><input id="staff-payment-last4" maxLength={4} value={paymentProvider.last4 || ""} onChange={(e) => setPaymentProvider({ ...paymentProvider, last4: e.target.value.replace(/\D/g, "").slice(-4) })} /></div>
+          </div>
+          <div className="sm-form-group">
+            <label>Profile notes <span className="sm-optional">(optional)</span></label>
+            <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} />
+          </div>
+          <div className="sm-form-row">
+            <div className="sm-form-group"><label htmlFor="employment-type">Employment type</label><select id="employment-type" value={employmentType} onChange={(e) => setEmploymentType(e.target.value)}><option value="full-time">Full-time</option><option value="part-time">Part-time</option><option value="contractor">Contractor</option><option value="seasonal">Seasonal</option></select></div>
+            <div className="sm-form-group"><label htmlFor="assigned-location">Assigned location</label><input id="assigned-location" value={assignedLocation} onChange={(e) => setAssignedLocation(e.target.value)} placeholder="Location / branch" /></div>
+          </div>
+          <div className="sm-form-group"><label htmlFor="staff-address">Address</label><input id="staff-address" value={address} onChange={(e) => setAddress(e.target.value)} /></div>
+          <div className="sm-form-row">
+            <div className="sm-form-group"><label htmlFor="staff-skills">Skills</label><input id="staff-skills" value={skills} onChange={(e) => setSkills(e.target.value)} placeholder="comma separated" /></div>
+            <div className="sm-form-group"><label htmlFor="staff-certs">Certifications &amp; expiry</label><input id="staff-certs" value={certifications} onChange={(e) => setCertifications(e.target.value)} placeholder="Food safety (YYYY-MM-DD)" /></div>
+          </div>
+          <div className="sm-form-row">
+            <div className="sm-form-group"><label htmlFor="last-working-date">Last working date</label><input id="last-working-date" type="date" value={lastWorkingDate} onChange={(e) => setLastWorkingDate(e.target.value)} /></div>
+            <div className="sm-form-group"><label htmlFor="termination-date">Termination date</label><input id="termination-date" type="date" value={terminationDate} onChange={(e) => setTerminationDate(e.target.value)} /></div>
+            <div className="sm-form-group"><label htmlFor="rehire-date">Rehire date</label><input id="rehire-date" type="date" value={rehireDate} onChange={(e) => setRehireDate(e.target.value)} /></div>
+          </div>
+          <div className="sm-form-group"><label htmlFor="compensation-rate">Hourly compensation rate</label><input id="compensation-rate" type="number" min="0" step="0.01" value={compensationRate} onChange={(e) => setCompensationRate(e.target.value)} /></div>
+          <div className="sm-form-group"><label htmlFor="staff-documents">Document metadata</label><input id="staff-documents" value={documents} onChange={(e) => setDocuments(e.target.value)} placeholder="ID proof, contract (comma separated)" /></div>
+          <div className="sm-form-group">
+            <label>Regular availability</label>
+            <div className="sm-availability-list">
+              {DAY_LABELS.map((day) => (
+                <label key={day} className="sm-availability-day">
+                  <input
+                    type="checkbox"
+                    checked={availability[day] !== false}
+                    onChange={(e) => setAvailability((current) => ({ ...current, [day]: e.target.checked }))}
+                  />
+                  {day}
+                </label>
+              ))}
+            </div>
+          </div>
+          <div className="sm-form-row">
+            <div className="sm-form-group">
+              <label htmlFor="preferred-shift">Preferred shift</label>
+              <select id="preferred-shift" value={preferredShift} onChange={(e) => setPreferredShift(e.target.value)}>
+                <option value="flexible">Flexible</option><option value="morning">Morning</option><option value="evening">Evening</option><option value="night">Night</option>
+              </select>
+            </div>
+            <div className="sm-form-group">
+              <label htmlFor="min-hours">Min weekly hours</label>
+              <input id="min-hours" type="number" min="0" max="168" value={minWeeklyHours} onChange={(e) => setMinWeeklyHours(e.target.value)} />
+            </div>
+            <div className="sm-form-group">
+              <label htmlFor="max-hours">Max weekly hours</label>
+              <input id="max-hours" type="number" min="0" max="168" value={maxWeeklyHours} onChange={(e) => setMaxWeeklyHours(e.target.value)} />
+            </div>
+          </div>
+          <div className="sm-form-group">
+            <label htmlFor="availability-exception">Temporary availability exception</label>
+            <input id="availability-exception" type="date" onChange={(e) => {
+              if (e.target.value) setAvailabilityExceptions((current) => [...current, { date: e.target.value, type: "unavailable" }]);
+            }} />
+            {availabilityExceptions.map((item) => <span className="sm-tag sm-tag-zone" key={`${item.date}-${item.type}`}>{item.date} unavailable</span>)}
           </div>
         </div>
         <div className="sm-modal-foot">
@@ -187,7 +356,7 @@ function StaffFormModal({ onClose, onConfirm }) {
             Cancel
           </button>
           <button className="sm-btn sm-btn-gold" onClick={handleConfirm} disabled={saving}>
-            {saving ? "Adding…" : "Add member"}
+            {saving ? (isEdit ? "Saving…" : "Adding…") : isEdit ? "Save changes" : "Add member"}
           </button>
         </div>
       </div>
@@ -271,6 +440,8 @@ function StaffTab({ staffList }) {
   const [revealedPins, setRevealedPins] = useState({});
   const [confirmTarget, setConfirmTarget] = useState(null); // { staff, mode: "pause"|"restore" }
   const [resetResult, setResetResult] = useState(null);
+  const [editStaff, setEditStaff] = useState(null);
+  const permissions = getStaffPermissions();
 
   const filtered = useMemo(() => {
     let list = staffList;
@@ -302,9 +473,9 @@ function StaffTab({ staffList }) {
           ))}
         </select>
         <div className="sm-spacer" />
-        <button className="sm-btn sm-btn-gold" onClick={() => setShowAdd(true)}>
+        {permissions.manageStaff && <button className="sm-btn sm-btn-gold" onClick={() => setShowAdd(true)}>
           <Plus size={15} /> Add Staff
-        </button>
+        </button>}
       </div>
 
       <div className="sm-table">
@@ -343,17 +514,23 @@ function StaffTab({ staffList }) {
                 </span>
                 <span className="sm-cell-contact">{s.phone || "—"}</span>
                 <span className="sm-cell-pin">
-                  <span className="sm-pin-value">{revealed ? s.pin : "••••"}</span>
-                  <button className="sm-icon-btn sm-icon-btn-inline" onClick={() => togglePinReveal(s.id)}>
+                  <span className="sm-pin-value">{revealed ? "Set securely" : "••••"}</span>
+                  <button className="sm-icon-btn sm-icon-btn-inline" aria-label="PIN is hidden" onClick={() => togglePinReveal(s.id)}>
                     {revealed ? <EyeOff size={14} /> : <Eye size={14} />}
                   </button>
                 </span>
                 <span>
                   <span className={`sm-status-dot sm-status-dot-${s.status}`} />
-                  {s.status === "active" ? "Active" : "Paused"}
+                  {s.status === "active" ? "Active" : "Inactive"}
                 </span>
                 <span className="sm-cell-actions">
-                  <button
+                  {permissions.manageStaff && <button
+                    className="sm-btn sm-btn-ghost sm-btn-xs"
+                    onClick={() => setEditStaff(s)}
+                  >
+                    Edit
+                  </button>}
+                  {permissions.manageStaff && <button
                     className="sm-btn sm-btn-ghost sm-btn-xs"
                     onClick={async () => {
                       try {
@@ -365,22 +542,22 @@ function StaffTab({ staffList }) {
                     }}
                   >
                     Reset PIN
-                  </button>
-                  {s.status === "active" ? (
+                  </button>}
+                  {permissions.manageStaff && (s.status === "active" ? (
                     <button
                       className="sm-btn sm-btn-danger sm-btn-xs"
                       onClick={() => setConfirmTarget({ staff: s, mode: "pause" })}
                     >
-                      Pause
+                      Deactivate
                     </button>
                   ) : (
                     <button
                       className="sm-btn sm-btn-gold sm-btn-xs"
                       onClick={() => setConfirmTarget({ staff: s, mode: "restore" })}
                     >
-                      Restore
+                      Reactivate
                     </button>
-                  )}
+                  ))}
                 </span>
               </div>
             );
@@ -413,18 +590,28 @@ function StaffTab({ staffList }) {
       {showAdd && (
         <StaffFormModal
           onClose={() => setShowAdd(false)}
-          onConfirm={async ({ name, role, phone, email, pin, zone, team, jobRole }) => {
-            await addStaff({ name, role, phone, email, pin, zone, team, jobRole });
+          onConfirm={async (profile) => {
+            await addStaff(profile);
             setShowAdd(false);
+          }}
+        />
+      )}
+      {editStaff && (
+        <StaffFormModal
+          initialStaff={editStaff}
+          onClose={() => setEditStaff(null)}
+          onConfirm={async (profile) => {
+            await updateStaff(editStaff.id, profile);
+            setEditStaff(null);
           }}
         />
       )}
 
       {confirmTarget && confirmTarget.mode === "pause" && (
         <ConfirmModal
-          title="Pause Staff Member"
-          body={`Pause ${confirmTarget.staff.name}? Their PIN will stop working for clock-in and section access until restored.`}
-          confirmLabel="Pause"
+          title="Deactivate Staff Member"
+          body={`Deactivate ${confirmTarget.staff.name}? Their profile and history will be retained, but their PIN will stop working.`}
+          confirmLabel="Deactivate"
           danger
           onClose={() => setConfirmTarget(null)}
           onConfirm={async () => {
@@ -435,9 +622,9 @@ function StaffTab({ staffList }) {
       )}
       {confirmTarget && confirmTarget.mode === "restore" && (
         <ConfirmModal
-          title="Restore Staff Member"
-          body={`Restore ${confirmTarget.staff.name} to active status?`}
-          confirmLabel="Restore"
+          title="Reactivate Staff Member"
+          body={`Reactivate ${confirmTarget.staff.name} and allow their PIN to be used again?`}
+          confirmLabel="Reactivate"
           onClose={() => setConfirmTarget(null)}
           onConfirm={async () => {
             await restoreStaff(confirmTarget.staff.id);
@@ -453,18 +640,35 @@ function StaffTab({ staffList }) {
 }
 
 /* ======================= Shift editor modal ======================= */
-function ShiftEditorModal({ staff, dayLabel, dayIndex, current, onClose, onSave }) {
+function ShiftEditorModal({ staff, dayLabel, dayIndex, current, unavailable, onClose, onSave }) {
   const [type, setType] = useState(current?.type || "morning");
   const [start, setStart] = useState(current?.start || "09:00");
   const [end, setEnd] = useState(current?.end || "17:00");
   const [isOff, setIsOff] = useState(!current);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
 
   const handleSave = async () => {
+    if (!isOff && unavailable) {
+      setError("This staff member has approved time off on this date.");
+      return;
+    }
+    if (!isOff) {
+      const validation = typeof validateShift === "function"
+        ? validateShift({ type, start, end })
+        : { valid: Boolean(type && start && end), error: "Complete the shift details." };
+      if (!validation.valid) {
+        setError(validation.error);
+        return;
+      }
+    }
     setSaving(true);
+    setError("");
     try {
       await onSave(dayIndex, isOff ? null : { type, start, end });
       onClose();
+    } catch (err) {
+      setError(err.message || "Could not save this shift.");
     } finally {
       setSaving(false);
     }
@@ -482,6 +686,8 @@ function ShiftEditorModal({ staff, dayLabel, dayIndex, current, onClose, onSave 
           </button>
         </div>
         <div className="sm-modal-body">
+          {error && <div className="sm-error">{error}</div>}
+          {unavailable && !isOff && <div className="sm-error">Approved time off makes this date unavailable.</div>}
           <div className="sm-form-group">
             <label>
               <input type="checkbox" checked={isOff} onChange={(e) => setIsOff(e.target.checked)} /> Off this day
@@ -619,6 +825,7 @@ function LogRequestModal({ staffList, kind, onClose, onConfirm }) {
 
 /* ======================= Tab 2: Schedule & Roster ======================= */
 function RosterTab({ staffList }) {
+  const permissions = getStaffPermissions();
   const [weekKey, setWeekKey] = useState(weekKeyFor());
   const [rosterMap, setRosterMap] = useState(new Map());
   const [timeOffList, setTimeOffList] = useState([]);
@@ -645,6 +852,9 @@ function RosterTab({ staffList }) {
 
   const pendingTimeOff = timeOffList.filter((r) => r.status === "pending");
   const pendingSwaps = swapList.filter((r) => r.status === "pending");
+  const requestHistory = [...timeOffList, ...swapList]
+    .filter((r) => r.status !== "pending")
+    .sort((a, b) => String(b.decidedAt || b.createdAt || "").localeCompare(String(a.decidedAt || a.createdAt || "")));
 
   return (
     <div className="sm-panel">
@@ -657,14 +867,19 @@ function RosterTab({ staffList }) {
           <ArrowRight size={16} />
         </button>
         <div className="sm-spacer" />
-        <button className="sm-btn sm-btn-ghost" onClick={() => setLogKind("timeoff")}>
+        {permissions.editRoster && <button className="sm-btn sm-btn-ghost" onClick={() => setLogKind("timeoff")}>
           Log time-off
-        </button>
-        <button className="sm-btn sm-btn-ghost" onClick={() => setLogKind("swap")}>
+        </button>}
+        {permissions.editRoster && <button className="sm-btn sm-btn-ghost" onClick={() => setLogKind("swap")}>
           Log swap
-        </button>
+        </button>}
+        {permissions.editRoster && <button className="sm-btn sm-btn-ghost" onClick={async () => {
+          const name = window.prompt("Shift template name");
+          if (name) await createShiftTemplate({ name, shifts: [{ type: "morning", start: "09:00", end: "17:00" }] });
+        }}>Save template</button>}
         <button
           className="sm-btn sm-btn-gold"
+          disabled={!permissions.editRoster}
           onClick={async () => {
             await publishRoster(weekKey);
             setPublished(true);
@@ -707,7 +922,7 @@ function RosterTab({ staffList }) {
                     <div
                       className="sm-roster-cell"
                       key={i}
-                      onClick={() => setEditCell({ staff: s, dayIndex: i, current: shift })}
+                      onClick={() => permissions.editRoster && setEditCell({ staff: s, dayIndex: i, current: shift })}
                     >
                       {shift ? (
                         <span className={`sm-shift-chip sm-shift-chip-${meta.key}`}>
@@ -742,14 +957,14 @@ function RosterTab({ staffList }) {
                   {r.endDate ? ` → ${r.endDate}` : ""}
                 </div>
                 {r.reason && <div className="sm-request-reason">{r.reason}</div>}
-                <div className="sm-request-actions">
-                  <button className="sm-btn sm-btn-gold sm-btn-xs" onClick={() => decideTimeOffRequest(r.id, "approved")}>
-                    Approve
-                  </button>
-                  <button className="sm-btn sm-btn-danger sm-btn-xs" onClick={() => decideTimeOffRequest(r.id, "denied")}>
-                    Deny
-                  </button>
-                </div>
+                {permissions.editRoster && <div className="sm-request-actions">
+                    <button className="sm-btn sm-btn-gold sm-btn-xs" onClick={() => decideTimeOffRequest(r.id, "approved")}>
+                      Approve
+                    </button>
+                    <button className="sm-btn sm-btn-danger sm-btn-xs" onClick={() => decideTimeOffRequest(r.id, "denied")}>
+                      Deny
+                    </button>
+                  </div>}
               </div>
             ))
           )}
@@ -766,18 +981,32 @@ function RosterTab({ staffList }) {
                 </div>
                 <div className="sm-request-dates">{r.date}</div>
                 {r.reason && <div className="sm-request-reason">{r.reason}</div>}
-                <div className="sm-request-actions">
-                  <button className="sm-btn sm-btn-gold sm-btn-xs" onClick={() => decideSwapRequest(r.id, "approved")}>
-                    Approve
-                  </button>
-                  <button className="sm-btn sm-btn-danger sm-btn-xs" onClick={() => decideSwapRequest(r.id, "denied")}>
-                    Deny
-                  </button>
-                </div>
+                {permissions.editRoster && <div className="sm-request-actions">
+                    <button className="sm-btn sm-btn-gold sm-btn-xs" onClick={() => decideSwapRequest(r.id, "approved")}>
+                      Approve
+                    </button>
+                    <button className="sm-btn sm-btn-danger sm-btn-xs" onClick={() => decideSwapRequest(r.id, "denied")}>
+                      Deny
+                    </button>
+                  </div>}
               </div>
             ))
           )}
         </div>
+      </div>
+      <div className="sm-request-history">
+        <h4>Request history</h4>
+        {requestHistory.length === 0 ? (
+          <div className="sm-state-msg">No decided requests yet.</div>
+        ) : (
+          requestHistory.map((request) => (
+            <div className="sm-request-history-row" key={`${request.id}-${request.status}`}>
+              <span>{request.staffName || "Staff"}{request.withStaffName ? ` ↔ ${request.withStaffName}` : ""}</span>
+              <span>{request.startDate || request.date}{request.endDate ? ` → ${request.endDate}` : ""}</span>
+              <span className={`sm-request-status sm-request-status-${request.status}`}>{request.status}</span>
+            </div>
+          ))
+        )}
       </div>
 
       {editCell && (
@@ -786,6 +1015,11 @@ function RosterTab({ staffList }) {
           dayLabel={DAY_LABELS[editCell.dayIndex]}
           dayIndex={editCell.dayIndex}
           current={editCell.current}
+          unavailable={typeof isDateUnavailable === "function" && isDateUnavailable(
+            dateKeyOf(datesForWeek(weekKey)[editCell.dayIndex]),
+            editCell.staff,
+            timeOffList,
+          )}
           onClose={() => setEditCell(null)}
           onSave={(dayIndex, shift) => setShift(weekKey, editCell.staff.id, dayIndex, shift)}
         />
@@ -819,12 +1053,80 @@ function RosterTab({ staffList }) {
 }
 
 /* ======================= Tab 3: Attendance & Timecards ======================= */
+const toDateTimeInput = (value) => {
+  if (!value) return "";
+  const date = value.toDate ? value.toDate() : new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  const pad = (part) => String(part).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+};
+
+function AttendanceCorrectionModal({ record, onClose, onSave }) {
+  const [clockInAt, setClockInAt] = useState(toDateTimeInput(record.clockInAt));
+  const [clockOutAt, setClockOutAt] = useState(toDateTimeInput(record.clockOutAt));
+  const [breakMinutes, setBreakMinutes] = useState(String(record.breakMinutes || 0));
+  const [correctionReason, setCorrectionReason] = useState("");
+  const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const save = async () => {
+    setSaving(true);
+    setError("");
+    try {
+      await onSave({ clockInAt, clockOutAt, breakMinutes, correctionReason });
+      onClose();
+    } catch (err) {
+      setError(err.message || "Could not correct this timecard.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="sm-overlay" onClick={onClose}>
+      <div className="sm-modal sm-modal-small" onClick={(event) => event.stopPropagation()}>
+        <div className="sm-modal-head">
+          <h3>Correct attendance · {record.staffName}</h3>
+          <button className="sm-icon-btn" onClick={onClose}><X size={18} /></button>
+        </div>
+        <div className="sm-modal-body">
+          {error && <div className="sm-error">{error}</div>}
+          <div className="sm-form-group"><label>Clock in</label><input type="datetime-local" value={clockInAt} onChange={(e) => setClockInAt(e.target.value)} /></div>
+          <div className="sm-form-group"><label>Clock out <span className="sm-optional">(optional)</span></label><input type="datetime-local" value={clockOutAt} onChange={(e) => setClockOutAt(e.target.value)} /></div>
+          <div className="sm-form-group"><label>Break minutes</label><input type="number" min="0" value={breakMinutes} onChange={(e) => setBreakMinutes(e.target.value)} /></div>
+          <div className="sm-form-group"><label>Correction reason</label><textarea rows={3} value={correctionReason} onChange={(e) => setCorrectionReason(e.target.value)} placeholder="Required for an audit trail" /></div>
+        </div>
+        <div className="sm-modal-foot">
+          <button className="sm-btn sm-btn-ghost" onClick={onClose} disabled={saving}>Cancel</button>
+          <button className="sm-btn sm-btn-gold" onClick={save} disabled={saving || !correctionReason.trim()}>{saving ? "Saving…" : "Save correction"}</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function AttendanceTab({ staffList }) {
+  const permissions = getStaffPermissions();
   const [pinDigits, setPinDigits] = useState("");
   const [pinError, setPinError] = useState("");
   const [pinMessage, setPinMessage] = useState("");
   const [attendance, setAttendance] = useState([]);
   const [busyId, setBusyId] = useState(null);
+  const [editingRecord, setEditingRecord] = useState(null);
+  const [rangeStart, setRangeStart] = useState(() => dateKeyOf(new Date(Date.now() - 6 * 86400000)));
+  const [rangeEnd, setRangeEnd] = useState(() => dateKeyOf(new Date()));
+  const [rangeRecords, setRangeRecords] = useState([]);
+  const [reportLoading, setReportLoading] = useState(false);
+
+  const loadReport = async () => {
+    if (!rangeStart || !rangeEnd || rangeStart > rangeEnd) return;
+    setReportLoading(true);
+    try {
+      setRangeRecords(await getAttendanceForDateRange(rangeStart, rangeEnd));
+    } finally {
+      setReportLoading(false);
+    }
+  };
 
   useEffect(() => {
     const unsub = subscribeTodayAttendance(setAttendance);
@@ -888,6 +1190,7 @@ function AttendanceTab({ staffList }) {
   };
 
   return (
+    <>
     <div className="sm-panel sm-att-panel">
       <div className="sm-att-left">
         <div className="sm-punch-card">
@@ -982,6 +1285,10 @@ function AttendanceTab({ staffList }) {
                     </span>
                   </span>
                   <span className="sm-cell-actions">
+                    {permissions.correctAttendance && <button
+                      className="sm-btn sm-btn-ghost sm-btn-xs"
+                      onClick={() => setEditingRecord(r)}
+                    >Correct</button>}
                     {status !== "clocked-out" && status !== "not-in" && (
                       <>
                         <button
@@ -1020,8 +1327,42 @@ function AttendanceTab({ staffList }) {
             })
           )}
         </div>
+        <div className="sm-report-panel">
+          <div className="sm-report-head">
+            <h4>Attendance history &amp; report</h4>
+            <div className="sm-form-row">
+              <input aria-label="Report start date" type="date" value={rangeStart} onChange={(e) => setRangeStart(e.target.value)} />
+              <input aria-label="Report end date" type="date" value={rangeEnd} onChange={(e) => setRangeEnd(e.target.value)} />
+              <button className="sm-btn sm-btn-ghost sm-btn-xs" onClick={loadReport} disabled={reportLoading}>
+                {reportLoading ? "Loading…" : "Load report"}
+              </button>
+            </div>
+          </div>
+          {rangeRecords.length > 0 && (
+            <div className="sm-report-summary">
+              {rangeRecords.length} timecard{rangeRecords.length === 1 ? "" : "s"} ·{" "}
+              {rangeRecords.reduce((total, record) => total + hoursOf(record), 0).toFixed(2)} total hours
+            </div>
+          )}
+          {rangeRecords.map((record) => (
+            <div className="sm-report-row" key={record.id}>
+              <span>{record.dateKey} · {record.staffName}</span>
+              <span>{hoursOf(record).toFixed(2)}h</span>
+              {permissions.correctAttendance && <button className="sm-btn sm-btn-ghost sm-btn-xs" onClick={() => setEditingRecord(record)}>Correct</button>}
+            </div>
+          ))}
+          {!reportLoading && rangeRecords.length === 0 && <div className="sm-state-msg">Choose a date range to view timecards.</div>}
+        </div>
       </div>
     </div>
+    {editingRecord && (
+      <AttendanceCorrectionModal
+        record={editingRecord}
+        onClose={() => setEditingRecord(null)}
+        onSave={(correction) => updateAttendanceRecord(editingRecord.id, correction)}
+      />
+    )}
+    </>
   );
 }
 
@@ -1106,6 +1447,56 @@ const dateKeyOf = (d) => {
   return `${y}-${m}-${day}`;
 };
 
+function StaffOperationsTab({ staffList, mode }) {
+  const [rows, setRows] = useState([]);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (mode === "audit" && typeof subscribeStaffAuditLog === "function") {
+      return subscribeStaffAuditLog(setRows);
+    }
+    if (mode === "notifications" && typeof subscribeStaffNotifications === "function") {
+      return subscribeStaffNotifications(setRows);
+    }
+    return undefined;
+  }, [mode]);
+
+  if (mode === "payroll") {
+    // Payroll now has its own dedicated page (period controls, summary tiles,
+    // per-staff table, and a drill-down per run) instead of living in this
+    // tab — see routes.staffPayroll.
+    return (
+      <div className="sm-panel">
+        <h3>Payroll &amp; compensation</h3>
+        <div className="sm-state-msg">Payroll now has its own page with pay-period controls, summary totals, and per-staff breakdowns.</div>
+        <button className="sm-btn sm-btn-gold" onClick={() => navigate(routes.staffPayroll)}>
+          Open payroll
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="sm-panel">
+      <h3>{mode === "audit" ? "Audit history" : "Staff notifications"}</h3>
+      {rows.length === 0 && <div className="sm-state-msg">No records yet.</div>}
+      {rows.map((row) => (
+        <div className="sm-request-history-row" key={row.id}>
+          <span>{mode === "audit" ? `${row.action} · ${row.actor || "system"}` : row.message}</span>
+          <span>
+            {row.createdAt?.toDate ? row.createdAt.toDate().toLocaleString() : "Recent"}
+            {mode === "notifications" && !row.read && (
+              <button className="sm-btn sm-btn-ghost sm-btn-xs" onClick={() => markStaffNotificationRead?.(row.id)}>
+                Mark read
+              </button>
+            )}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 /* ======================= Tab 4: Calendar ======================= */
 function CalendarTab() {
   // `monthAnchor` is always the 1st of the displayed month.
@@ -1168,6 +1559,7 @@ function CalendarTab() {
       });
       cursor.setDate(cursor.getDate() + 1);
     }
+
     return days;
   }, [monthAnchor]);
 
@@ -1287,6 +1679,7 @@ function StaffManagement() {
           className="sm-back-btn"
           onClick={() => {
             sessionStorage.removeItem("staffAuth");
+            sessionStorage.removeItem("staffRole");
             navigate(routes.dashboard, { replace: true });
           }}
         >
@@ -1327,6 +1720,9 @@ function StaffManagement() {
           <CalendarIcon size={14} style={{ verticalAlign: "-2px", marginRight: 4 }} />
           Calendar
         </button>
+        <button className={`sm-tab ${tab === "audit" ? "on" : ""}`} onClick={() => setTab("audit")}>Audit history</button>
+        <button className={`sm-tab ${tab === "notifications" ? "on" : ""}`} onClick={() => setTab("notifications")}>Notifications</button>
+        <button className={`sm-tab ${tab === "payroll" ? "on" : ""}`} onClick={() => setTab("payroll")}>Payroll</button>
       </div>
 
       {loading ? (
@@ -1337,6 +1733,9 @@ function StaffManagement() {
           {tab === "roster" && <RosterTab staffList={staffList} />}
           {tab === "att" && <AttendanceTab staffList={staffList} />}
           {tab === "calendar" && <CalendarTab />}
+          {tab === "audit" && <StaffOperationsTab staffList={staffList} mode="audit" />}
+          {tab === "notifications" && <StaffOperationsTab staffList={staffList} mode="notifications" />}
+          {tab === "payroll" && <StaffOperationsTab staffList={staffList} mode="payroll" />}
         </>
       )}
     </div>

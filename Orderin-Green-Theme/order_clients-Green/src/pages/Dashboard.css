@@ -418,6 +418,10 @@
   background:#8b5cf6;
 }
 
+.staff-self-service-module::before{
+  background:#14b8a6;
+}
+
 .module-top{
   display:flex;
   gap:16px;
@@ -461,6 +465,10 @@
   color:#8b5cf6;
 }
 
+.teal-text{
+  color:#14b8a6;
+}
+
 /* decorative wave */
 
 .module-card::after{
@@ -497,6 +505,10 @@
 }
 
 .staff-module::after{
+  background:#A3B899;
+}
+
+.staff-self-service-module::after{
   background:#A3B899;
 }
 

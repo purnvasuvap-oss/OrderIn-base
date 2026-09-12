@@ -14,6 +14,9 @@ const routes = {
   tableManagement: "/table-management",
   staffLogin: "/staff-login",
   staffManagement: "/staff-management",
+  staffPayroll: "/staff-management/payroll",
+  staffPayrollRun: "/staff-management/payroll/:runId",
+  staffSelfService: "/staff-self-service",
   kitchen: "/kitchen",
 };
 

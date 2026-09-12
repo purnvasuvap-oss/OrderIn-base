@@ -1,0 +1,129 @@
+/* =========================================================================
+   Payroll — dedicated payroll page (period controls, summary tiles, staff
+   table, run detail). Reuses the .staff-mgmt-page shell/vars/sm-* utility
+   classes from StaffManagement.css (loaded on the same route tree), and adds
+   payroll-only styling scoped under .payroll-page so nothing here leaks.
+   ========================================================================= */
+.payroll-page .payroll-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.payroll-preset-row,
+.payroll-action-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.payroll-preset-row label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--sm-text-2);
+  font-size: 13px;
+}
+.payroll-preset-row input[type="date"] {
+  background: var(--sm-bg);
+  border: 1px solid var(--sm-line);
+  border-radius: 8px;
+  color: var(--sm-text);
+  padding: 6px 8px;
+}
+.sm-btn-ghost.on {
+  border-color: var(--sm-gold);
+  color: var(--sm-gold);
+}
+
+.payroll-status-pill,
+.payroll-pay-pill {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: capitalize;
+  background: var(--sm-line);
+  color: var(--sm-text-2);
+}
+.payroll-status-pill.status-draft { background: var(--sm-off-t); color: var(--sm-off); }
+.payroll-status-pill.status-under_review { background: var(--sm-evening-t); color: var(--sm-evening); }
+.payroll-status-pill.status-approved,
+.payroll-status-pill.status-paid { background: var(--sm-success-t); color: var(--sm-success); }
+.payroll-status-pill.status-processing { background: rgba(212, 175, 55, 0.16); color: var(--sm-gold); }
+.payroll-status-pill.status-failed { background: var(--sm-danger-t); color: var(--sm-danger); }
+.payroll-status-pill.status-reopened { background: var(--sm-night-t); color: var(--sm-night); }
+
+.payroll-pay-pill.pay-unpaid { background: var(--sm-off-t); color: var(--sm-off); }
+.payroll-pay-pill.pay-processing { background: rgba(212, 175, 55, 0.16); color: var(--sm-gold); }
+.payroll-pay-pill.pay-paid { background: var(--sm-success-t); color: var(--sm-success); }
+.payroll-pay-pill.pay-failed { background: var(--sm-danger-t); color: var(--sm-danger); }
+
+.payroll-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 12px;
+}
+.payroll-tile {
+  background: var(--sm-bg);
+  border: 1px solid var(--sm-line);
+  border-radius: 12px;
+  padding: 12px 14px;
+  text-align: center;
+}
+.payroll-tile.highlight {
+  border-color: var(--sm-gold);
+}
+.payroll-tile.tone-success { border-color: var(--sm-success); }
+.payroll-tile.tone-danger { border-color: var(--sm-danger); }
+.payroll-tile-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--sm-text);
+}
+.payroll-tile-label {
+  font-size: 12px;
+  color: var(--sm-text-3);
+  margin-top: 4px;
+}
+
+.payroll-table-wrap {
+  overflow-x: auto;
+}
+.payroll-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.payroll-table th,
+.payroll-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--sm-line);
+  text-align: left;
+  white-space: nowrap;
+}
+.payroll-table th {
+  color: var(--sm-text-3);
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 11px;
+  letter-spacing: 0.02em;
+}
+.payroll-table input[type="number"] {
+  width: 76px;
+  background: var(--sm-bg);
+  border: 1px solid var(--sm-line);
+  border-radius: 6px;
+  color: var(--sm-text);
+  padding: 4px 6px;
+}
+.payroll-row-actions {
+  display: flex;
+  gap: 6px;
+}
+
+@media (max-width: 640px) {
+  .payroll-page { padding: 16px 14px 40px; }
+  .payroll-summary-grid { grid-template-columns: repeat(2, 1fr); }
+}

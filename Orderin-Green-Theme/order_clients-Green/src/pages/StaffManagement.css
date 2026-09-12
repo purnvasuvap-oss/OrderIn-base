@@ -479,6 +479,10 @@
 .sm-status-dot-paused {
   background: var(--sm-text-3);
 }
+.sm-status-dot-inactive,
+.sm-status-dot-archived {
+  background: var(--sm-text-3);
+}
 
 .sm-cell-actions {
   display: flex;
@@ -974,6 +978,67 @@
   }
   .sm-summary-strip .sm-export-btn {
     margin-left: 0;
+  }
+}
+
+.sm-report-panel,
+.sm-request-history {
+  margin-top: 18px;
+  background: var(--sm-panel);
+  border: 1px solid var(--sm-line);
+  border-radius: 14px;
+  padding: 14px;
+}
+.sm-availability-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.sm-availability-day {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--sm-text-2);
+  font-size: 12px;
+}
+.sm-report-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.sm-report-head h4,
+.sm-request-history h4 {
+  margin: 0;
+  color: var(--sm-text);
+}
+.sm-report-summary {
+  color: var(--sm-text-2);
+  font-size: 12px;
+  margin: 10px 0;
+}
+.sm-report-row,
+.sm-request-history-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 0;
+  border-top: 1px solid var(--sm-line);
+  color: var(--sm-text-2);
+  font-size: 12.5px;
+}
+.sm-request-status {
+  text-transform: capitalize;
+  font-weight: 700;
+}
+.sm-request-status-approved { color: var(--sm-success); }
+.sm-request-status-denied { color: var(--sm-danger); }
+@media (max-width: 760px) {
+  .sm-report-row,
+  .sm-request-history-row {
+    grid-template-columns: 1fr auto;
   }
 }
 @media (max-width: 560px) {

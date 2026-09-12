@@ -20,6 +20,9 @@ import NotificationPage from "./pages/NotificationPage.jsx";
 import TableManagement from "./pages/TableManagement.jsx";
 import StaffLogin from "./pages/StaffLogin.jsx";
 import StaffManagement from "./pages/StaffManagement.jsx";
+import Payroll from "./pages/Payroll.jsx";
+import PayrollRunDetail from "./pages/PayrollRunDetail.jsx";
+import StaffSelfService from "./pages/StaffSelfService.jsx";
 import KitchenDisplay from "./pages/KitchenDisplay.jsx";
 import { NotificationProvider } from "./contexts/NotificationContext.jsx";
 
@@ -171,6 +174,42 @@ function App() {
                   <Header />
                   <StaffManagement />
                 </>
+              </SectionProtectedRoute>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path={routes.staffPayroll}
+          element={
+            <ProtectedRoute>
+              <SectionProtectedRoute storageKey="staffAuth" redirectTo={routes.staffLogin}>
+                <>
+                  <Header />
+                  <Payroll />
+                </>
+              </SectionProtectedRoute>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path={routes.staffPayrollRun}
+          element={
+            <ProtectedRoute>
+              <SectionProtectedRoute storageKey="staffAuth" redirectTo={routes.staffLogin}>
+                <>
+                  <Header />
+                  <PayrollRunDetail />
+                </>
+              </SectionProtectedRoute>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path={routes.staffSelfService}
+          element={
+            <ProtectedRoute>
+              <SectionProtectedRoute storageKey="staffAuth" redirectTo={routes.staffLogin}>
+                <StaffSelfService />
               </SectionProtectedRoute>
             </ProtectedRoute>
           }

@@ -10,6 +10,11 @@ vi.mock('react-router-dom', async (importOriginal) => {
   return { ...actual, useNavigate: () => mockNavigate };
 });
 vi.mock('../../firebase', () => ({ verifySectionPasscode: vi.fn() }));
+vi.mock('../../services/staffService', () => ({
+  authenticateStaffPin: vi.fn().mockResolvedValue(null),
+  permissionsForRole: vi.fn(() => ({ permissions: [], can: () => false })),
+  STAFF_PERMISSIONS: { manageStaff: 'staff.manage' },
+}));
 
 const renderPage = () =>
   render(

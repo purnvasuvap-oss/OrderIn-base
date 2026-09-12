@@ -3,25 +3,53 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { verifySectionPasscode } from "../firebase";
 import routes from "../routes";
+import { authenticateStaffPin, permissionsForRole, STAFF_PERMISSIONS } from "../services/staffService";
 
 export default function StaffLogin() {
   const [pin, setPin] = useState("");
+  const [attempts, setAttempts] = useState(0);
+  const [locked, setLocked] = useState(false);
   const navigate = useNavigate();
 
   React.useEffect(() => {
     sessionStorage.removeItem("staffAuth");
+    sessionStorage.removeItem("staffRole");
     localStorage.removeItem("staffAuth");
   }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (locked) return;
     try {
-      const isValid = await verifySectionPasscode("StaffAccess", pin);
-      if (isValid) {
+      const staff = await authenticateStaffPin(pin);
+      if (staff) {
         sessionStorage.setItem("staffAuth", "true");
-        navigate(routes.staffManagement, { replace: true });
+        sessionStorage.setItem("staffId", staff.id);
+        sessionStorage.setItem("staffRole", staff.role);
+        sessionStorage.setItem(
+          "staffPermissions",
+          JSON.stringify(permissionsForRole(staff.role).permissions),
+        );
+        const canManage = permissionsForRole(staff.role).can(STAFF_PERMISSIONS.manageStaff);
+        navigate(canManage ? routes.staffManagement : routes.staffSelfService, { replace: true });
       } else {
-        alert("Wrong Passcode");
+        // Keep the existing manager-only section passcode working for
+        // installations that have not yet created manager staff records.
+        const isManagerPasscode = await verifySectionPasscode("StaffAccess", pin);
+        if (isManagerPasscode) {
+          sessionStorage.setItem("staffAuth", "true");
+          sessionStorage.setItem("staffRole", "General Manager");
+          sessionStorage.setItem("staffPermissions", JSON.stringify([
+            "staff.view", "staff.manage", "roster.edit", "requests.approve",
+            "attendance.correct", "payroll.view", "audit.view", "notifications.manage",
+          ]));
+          navigate(routes.staffManagement, { replace: true });
+          return;
+        }
+        const nextAttempts = attempts + 1;
+        setAttempts(nextAttempts);
+        if (nextAttempts >= 5) setLocked(true);
+        alert("Wrong Passcode or PIN");
       }
     } catch (error) {
       console.error("Error during staff login:", error);
@@ -87,10 +115,13 @@ export default function StaffLogin() {
                   onChange={(e) => setPin(e.target.value)}
                   autoComplete="current-password"
                   required
+                  disabled={locked}
                 />
               </div>
 
-              <button type="submit" className="sub-primary-cta">Enter</button>
+              <button type="submit" className="sub-primary-cta" disabled={locked}>
+                {locked ? "Locked — try later" : "Enter"}
+              </button>
               <button
                 type="button"
                 className="sub-dashboard-back"

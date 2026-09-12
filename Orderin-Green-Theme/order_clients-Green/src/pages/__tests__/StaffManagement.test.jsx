@@ -23,6 +23,7 @@ vi.mock('../../services/staffService', () => {
   DAY_LABELS: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
   subscribeStaff: emptySub,
   addStaff: vi.fn().mockResolvedValue(undefined),
+  updateStaff: vi.fn().mockResolvedValue(undefined),
   pauseStaff: vi.fn(),
   restoreStaff: vi.fn(),
   resetStaffPin: vi.fn(),
@@ -72,6 +73,28 @@ describe('StaffManagement', () => {
   it('shows the Add Staff trigger in the staff directory', () => {
     renderPage();
     expect(screen.getAllByText('Add Staff').length).toBeGreaterThan(0);
+  });
+
+  it('opens the staff profile form with profile and availability fields', async () => {
+    const user = userEvent.setup();
+    renderPage();
+
+    await user.click(screen.getByRole('button', { name: /Add Staff/ }));
+
+    expect(screen.getByRole('heading', { name: 'Add Staff' })).toBeInTheDocument();
+    expect(screen.getByLabelText(/Hire date/)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Emergency contact/)).toBeInTheDocument();
+    expect(screen.getByText('Regular availability')).toBeInTheDocument();
+  });
+
+  it('hides staff mutations when an authenticated staff role is not managerial', () => {
+    sessionStorage.setItem('staffRole', 'Kitchen');
+    try {
+      renderPage();
+      expect(screen.queryByRole('button', { name: /Add Staff/ })).not.toBeInTheDocument();
+    } finally {
+      sessionStorage.removeItem('staffRole');
+    }
   });
 
   it('switches to the Roster tab', async () => {

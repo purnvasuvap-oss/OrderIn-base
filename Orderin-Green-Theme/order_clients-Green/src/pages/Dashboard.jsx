@@ -19,6 +19,7 @@ import {
   Lock,
   ShieldCheck,
   DoorOpen,
+  UserRound,
 } from "lucide-react";
 
 import { subscribeAllCustomerOrders, subscribeRecentOrders } from "../services/orderService";
@@ -445,6 +446,22 @@ const Dashboard = () => {
           </div>
 
           <div className="module-bottom purple-text">Open Staff Management →</div>
+        </div>
+
+        <div className="module-card staff-self-service-module" onClick={goTo(routes.staffSelfService)}>
+          <div className="module-badge">
+            <UserRound size={12} />
+            <span>Staff login</span>
+          </div>
+          <div className="module-top">
+            <img src={StaffIcon} alt="" />
+            <div>
+              <h3>My Staff Portal</h3>
+              <p>View shifts, attendance, requests and staff announcements.</p>
+            </div>
+          </div>
+
+          <div className="module-bottom teal-text">Open Staff Portal →</div>
         </div>
       </div>
 
