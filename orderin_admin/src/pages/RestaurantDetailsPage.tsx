@@ -12,6 +12,18 @@ import { DollarSign, TrendingUp, Zap, Activity, ChevronLeft, Eye, EyeOff, Plus, 
 import { useNavigate } from 'react-router-dom';
 import type { Transaction, PaymentEntry } from '../types';
 
+// Matches Orderin-Only-POS's ROLE_COLLECTIONS (src/lib/accessControl.js) —
+// these four roles are username+password staff logins for the POS app
+// itself, as opposed to menuAccess/FinanceAccess/InventoryAccess/StaffAccess
+// below, which are bare passcodes for the client-theme apps' dashboards.
+const LOGIN_ROLES: AccessRole[] = ['mainLogin', 'managerLogin', 'cashierLogin', 'kitchenLogin'];
+const LOGIN_ROLE_CARDS: { role: AccessRole; title: string }[] = [
+  { role: 'mainLogin', title: 'Main login account' },
+  { role: 'managerLogin', title: 'POS manager login' },
+  { role: 'cashierLogin', title: 'POS cashier login' },
+  { role: 'kitchenLogin', title: 'POS kitchen login' },
+];
+
 export const RestaurantDetailsPage = () => {
   const { restaurantId } = useParams();
   const navigate = useNavigate();
@@ -35,8 +47,8 @@ export const RestaurantDetailsPage = () => {
   const [paymentInputs, setPaymentInputs] = useState<Record<string, string>>({});
   const [daysRemaining, setDaysRemaining] = useState(30);
   const [accessCredentials, setAccessCredentials] = useState<RestaurantAccessCredential[]>([]);
-  const [accessUsername, setAccessUsername] = useState('');
-  const [accessSecret, setAccessSecret] = useState('');
+  const [accessNewUsername, setAccessNewUsername] = useState<Record<string, string>>({});
+  const [accessNewSecret, setAccessNewSecret] = useState<Record<string, string>>({});
   const [accessDrafts, setAccessDrafts] = useState<Record<string, string>>({});
   const [accessVisibility, setAccessVisibility] = useState<Record<string, boolean>>({});
   const [accessHistoryRole, setAccessHistoryRole] = useState<AccessRole | null>(null);
@@ -177,10 +189,11 @@ export const RestaurantDetailsPage = () => {
 
   const saveAccessCredential = async (role: AccessRole, credential?: RestaurantAccessCredential) => {
     const draftKey = credential ? `${role}:${credential.id}` : role;
-    const secret = credential ? accessDrafts[draftKey] || '' : role === 'mainLogin' ? accessSecret : accessDrafts[role] || '';
-    const username = role === 'mainLogin' ? (credential?.username || accessUsername).trim() : undefined;
-    if (!secret.trim() || (role === 'mainLogin' && !username)) {
-      setAccessError(role === 'mainLogin' ? 'Enter a username and password.' : 'Enter a new passcode.');
+    const isLoginRole = LOGIN_ROLES.includes(role);
+    const secret = credential ? accessDrafts[draftKey] || '' : isLoginRole ? accessNewSecret[role] || '' : accessDrafts[role] || '';
+    const username = isLoginRole ? (credential?.username || accessNewUsername[role] || '').trim() : undefined;
+    if (!secret.trim() || (isLoginRole && !username)) {
+      setAccessError(isLoginRole ? 'Enter a username and password.' : 'Enter a new passcode.');
       return;
     }
 
@@ -194,8 +207,10 @@ export const RestaurantDetailsPage = () => {
         username,
         secret,
       });
-      setAccessSecret('');
-      setAccessUsername('');
+      if (isLoginRole) {
+        setAccessNewSecret((values) => ({ ...values, [role]: '' }));
+        setAccessNewUsername((values) => ({ ...values, [role]: '' }));
+      }
       setAccessDrafts((drafts) => ({ ...drafts, [draftKey]: '' }));
       await refreshAccessCredentials();
     } catch (error) {
@@ -489,7 +504,7 @@ export const RestaurantDetailsPage = () => {
                     <h2 style={{ color: '#f1f5f9', fontSize: '1.1rem', fontWeight: 800 }}>Login passcodes</h2>
                   </div>
                   <p style={{ color: '#94a3b8', fontSize: '0.875rem' }}>
-                    Manage the credentials used by this restaurant&apos;s client theme. Values are shown only when you choose to reveal them.
+                    Manage the POS staff logins (used by Orderin-Only-POS) and the client theme&apos;s passcodes. Values are shown only when you choose to reveal them.
                   </p>
                 </div>
 
@@ -499,74 +514,76 @@ export const RestaurantDetailsPage = () => {
                   </div>
                 )}
 
-                <div style={{ padding: '1rem', borderRadius: '0.75rem', background: 'rgba(15,23,42,0.55)', border: '1px solid rgba(6,182,212,0.15)' }}>
-                  <p style={{ color: '#f1f5f9', fontWeight: 700, marginBottom: '0.75rem' }}>Main login account</p>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '0.75rem', alignItems: 'end' }}>
-                    <label style={{ color: '#94a3b8', fontSize: '0.8rem' }}>
-                      Username
-                      <input
-                        value={accessUsername}
-                        onChange={(event) => setAccessUsername(event.target.value)}
-                        placeholder="e.g. admin"
-                        style={{ display: 'block', width: '100%', marginTop: '0.35rem', padding: '0.6rem', borderRadius: '0.5rem', border: '1px solid rgba(148,163,184,0.25)', background: 'rgba(15,23,42,0.7)', color: '#f1f5f9' }}
-                      />
-                    </label>
-                    <label style={{ color: '#94a3b8', fontSize: '0.8rem' }}>
-                      New password
-                      <input
-                        type={accessVisibility['new:mainLogin'] ? 'text' : 'password'}
-                        value={accessSecret}
-                        onChange={(event) => setAccessSecret(event.target.value)}
-                        placeholder="Password"
-                        style={{ display: 'block', width: '100%', marginTop: '0.35rem', padding: '0.6rem', borderRadius: '0.5rem', border: '1px solid rgba(148,163,184,0.25)', background: 'rgba(15,23,42,0.7)', color: '#f1f5f9' }}
-                      />
-                    </label>
-                  </div>
-                  <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                    {accessCredentials.filter((credential) => credential.role === 'mainLogin').map((credential) => (
-                      <div key={credential.id} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: '0.5rem', alignItems: 'center', padding: '0.6rem 0.75rem', borderRadius: '0.5rem', background: 'rgba(30,41,59,0.65)' }}>
-                        <span style={{ color: '#cbd5e1', fontFamily: 'monospace' }}>{credential.username}</span>
-                        <div style={{ display: 'flex', gap: '0.35rem' }}>
-                          <input
-                            aria-label={`Current password for ${credential.username}`}
-                            type={accessVisibility[`current:${credential.id}`] ? 'text' : 'password'}
-                            value={credential.secret}
-                            readOnly
-                            style={{ minWidth: 0, flex: 1, padding: '0.5rem', borderRadius: '0.4rem', border: '1px solid rgba(148,163,184,0.25)', background: 'rgba(15,23,42,0.7)', color: '#f1f5f9' }}
-                          />
-                          <button type="button" aria-label={`Show current password for ${credential.username}`} onClick={() => setAccessVisibility((values) => ({ ...values, [`current:${credential.id}`]: !values[`current:${credential.id}`] }))} style={{ border: 'none', background: 'none', color: '#94a3b8' }}>
-                            {accessVisibility[`current:${credential.id}`] ? <EyeOff size={16} /> : <Eye size={16} />}
-                          </button>
-                        </div>
-                        <div style={{ display: 'flex', gap: '0.25rem' }}>
-                          <button type="button" disabled={accessSaving} onClick={() => setMainUpdateOpen((values) => ({ ...values, [credential.id]: !values[credential.id] }))} style={{ padding: '0.5rem 0.7rem', borderRadius: '0.4rem', border: 'none', background: '#0891b2', color: 'white', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}>Update</button>
-                          <button type="button" aria-label={`Delete ${credential.username} login`} disabled={accessSaving} onClick={() => void removeAccessCredential(credential)} style={{ border: 'none', background: 'none', color: '#f87171' }}>
-                            <Trash2 size={16} />
-                          </button>
-                        </div>
-                        {mainUpdateOpen[credential.id] && (
-                          <div style={{ gridColumn: '1 / -1', display: 'flex', gap: '0.35rem', alignItems: 'center' }}>
+                {LOGIN_ROLE_CARDS.map(({ role, title }) => (
+                  <div key={role} style={{ padding: '1rem', borderRadius: '0.75rem', background: 'rgba(15,23,42,0.55)', border: '1px solid rgba(6,182,212,0.15)' }}>
+                    <p style={{ color: '#f1f5f9', fontWeight: 700, marginBottom: '0.75rem' }}>{title}</p>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '0.75rem', alignItems: 'end' }}>
+                      <label style={{ color: '#94a3b8', fontSize: '0.8rem' }}>
+                        Username
+                        <input
+                          value={accessNewUsername[role] || ''}
+                          onChange={(event) => setAccessNewUsername((values) => ({ ...values, [role]: event.target.value }))}
+                          placeholder="e.g. admin"
+                          style={{ display: 'block', width: '100%', marginTop: '0.35rem', padding: '0.6rem', borderRadius: '0.5rem', border: '1px solid rgba(148,163,184,0.25)', background: 'rgba(15,23,42,0.7)', color: '#f1f5f9' }}
+                        />
+                      </label>
+                      <label style={{ color: '#94a3b8', fontSize: '0.8rem' }}>
+                        New password
+                        <input
+                          type="password"
+                          value={accessNewSecret[role] || ''}
+                          onChange={(event) => setAccessNewSecret((values) => ({ ...values, [role]: event.target.value }))}
+                          placeholder="Password"
+                          style={{ display: 'block', width: '100%', marginTop: '0.35rem', padding: '0.6rem', borderRadius: '0.5rem', border: '1px solid rgba(148,163,184,0.25)', background: 'rgba(15,23,42,0.7)', color: '#f1f5f9' }}
+                        />
+                      </label>
+                    </div>
+                    <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      {accessCredentials.filter((credential) => credential.role === role).map((credential) => (
+                        <div key={credential.id} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: '0.5rem', alignItems: 'center', padding: '0.6rem 0.75rem', borderRadius: '0.5rem', background: 'rgba(30,41,59,0.65)' }}>
+                          <span style={{ color: '#cbd5e1', fontFamily: 'monospace' }}>{credential.username}</span>
+                          <div style={{ display: 'flex', gap: '0.35rem' }}>
                             <input
-                              aria-label={`New password for ${credential.username}`}
-                              type={accessVisibility[`new:${credential.id}`] ? 'text' : 'password'}
-                              value={accessDrafts[`mainLogin:${credential.id}`] || ''}
-                              onChange={(event) => setAccessDrafts((values) => ({ ...values, [`mainLogin:${credential.id}`]: event.target.value }))}
-                              placeholder="New password"
+                              aria-label={`Current password for ${credential.username}`}
+                              type={accessVisibility[`current:${credential.id}`] ? 'text' : 'password'}
+                              value={credential.secret}
+                              readOnly
                               style={{ minWidth: 0, flex: 1, padding: '0.5rem', borderRadius: '0.4rem', border: '1px solid rgba(148,163,184,0.25)', background: 'rgba(15,23,42,0.7)', color: '#f1f5f9' }}
                             />
-                            <button type="button" aria-label={`Show new password for ${credential.username}`} onClick={() => setAccessVisibility((values) => ({ ...values, [`new:${credential.id}`]: !values[`new:${credential.id}`] }))} style={{ border: 'none', background: 'none', color: '#94a3b8', cursor: 'pointer' }}>
-                              {accessVisibility[`new:${credential.id}`] ? <EyeOff size={16} /> : <Eye size={16} />}
+                            <button type="button" aria-label={`Show current password for ${credential.username}`} onClick={() => setAccessVisibility((values) => ({ ...values, [`current:${credential.id}`]: !values[`current:${credential.id}`] }))} style={{ border: 'none', background: 'none', color: '#94a3b8' }}>
+                              {accessVisibility[`current:${credential.id}`] ? <EyeOff size={16} /> : <Eye size={16} />}
                             </button>
-                            <button type="button" disabled={accessSaving} onClick={() => void saveAccessCredential('mainLogin', credential)} style={{ padding: '0.5rem 0.7rem', borderRadius: '0.4rem', border: 'none', background: '#0891b2', color: 'white', fontWeight: 700, cursor: 'pointer' }}>Save password</button>
                           </div>
-                        )}
-                      </div>
-                    ))}
-                    <button type="button" disabled={accessSaving} onClick={() => void saveAccessCredential('mainLogin')} style={{ alignSelf: 'flex-start', padding: '0.6rem 1rem', borderRadius: '0.5rem', border: 'none', background: 'linear-gradient(135deg,#06b6d4,#6366f1)', color: 'white', fontWeight: 700 }}>
-                      Add account
-                    </button>
+                          <div style={{ display: 'flex', gap: '0.25rem' }}>
+                            <button type="button" disabled={accessSaving} onClick={() => setMainUpdateOpen((values) => ({ ...values, [credential.id]: !values[credential.id] }))} style={{ padding: '0.5rem 0.7rem', borderRadius: '0.4rem', border: 'none', background: '#0891b2', color: 'white', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}>Update</button>
+                            <button type="button" aria-label={`Delete ${credential.username} login`} disabled={accessSaving} onClick={() => void removeAccessCredential(credential)} style={{ border: 'none', background: 'none', color: '#f87171' }}>
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                          {mainUpdateOpen[credential.id] && (
+                            <div style={{ gridColumn: '1 / -1', display: 'flex', gap: '0.35rem', alignItems: 'center' }}>
+                              <input
+                                aria-label={`New password for ${credential.username}`}
+                                type={accessVisibility[`new:${credential.id}`] ? 'text' : 'password'}
+                                value={accessDrafts[`${role}:${credential.id}`] || ''}
+                                onChange={(event) => setAccessDrafts((values) => ({ ...values, [`${role}:${credential.id}`]: event.target.value }))}
+                                placeholder="New password"
+                                style={{ minWidth: 0, flex: 1, padding: '0.5rem', borderRadius: '0.4rem', border: '1px solid rgba(148,163,184,0.25)', background: 'rgba(15,23,42,0.7)', color: '#f1f5f9' }}
+                              />
+                              <button type="button" aria-label={`Show new password for ${credential.username}`} onClick={() => setAccessVisibility((values) => ({ ...values, [`new:${credential.id}`]: !values[`new:${credential.id}`] }))} style={{ border: 'none', background: 'none', color: '#94a3b8', cursor: 'pointer' }}>
+                                {accessVisibility[`new:${credential.id}`] ? <EyeOff size={16} /> : <Eye size={16} />}
+                              </button>
+                              <button type="button" disabled={accessSaving} onClick={() => void saveAccessCredential(role, credential)} style={{ padding: '0.5rem 0.7rem', borderRadius: '0.4rem', border: 'none', background: '#0891b2', color: 'white', fontWeight: 700, cursor: 'pointer' }}>Save password</button>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                      <button type="button" disabled={accessSaving} onClick={() => void saveAccessCredential(role)} style={{ alignSelf: 'flex-start', padding: '0.6rem 1rem', borderRadius: '0.5rem', border: 'none', background: 'linear-gradient(135deg,#06b6d4,#6366f1)', color: 'white', fontWeight: 700 }}>
+                        Add account
+                      </button>
+                    </div>
                   </div>
-                </div>
+                ))}
 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1rem' }}>
                   {([

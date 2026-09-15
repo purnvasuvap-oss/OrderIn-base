@@ -34,8 +34,11 @@ const cfg = {
 export const firebaseEnabled = Boolean(cfg.apiKey && cfg.projectId);
 
 // Restaurant doc id this POS syncs under — mirrors the other apps' hardcoded
-// RESTAURANT_ID pattern (e.g. Orderin-RED-Theme's "orderin_restaurant_1").
-export const RESTAURANT_ID = "orderin_restaurant_pos";
+// RESTAURANT_ID pattern (e.g. Orderin-RED-Theme's "orderin_restaurant_1"), but
+// overridable per deployment since each restaurant needs its own POS
+// credentials (Restaurant/{RESTAURANT_ID}/accessControl/...) to line up with
+// what orderin_admin saves for that restaurant.
+export const RESTAURANT_ID = import.meta.env.VITE_RESTAURANT_ID || "orderin_restaurant_pos";
 
 const app = getApps().length ? getApps()[0] : initializeApp(cfg);
 const db = getFirestore(app);

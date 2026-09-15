@@ -92,7 +92,23 @@ interface FirebaseOrderData {
   [key: string]: unknown;
 }
 
-const ACCESS_ROLES: AccessRole[] = ['mainLogin', 'menuAccess', 'FinanceAccess', 'InventoryAccess', 'StaffAccess'];
+const ACCESS_ROLES: AccessRole[] = [
+  'mainLogin',
+  'managerLogin',
+  'cashierLogin',
+  'kitchenLogin',
+  'menuAccess',
+  'FinanceAccess',
+  'InventoryAccess',
+  'StaffAccess',
+];
+
+// mainLogin/managerLogin/cashierLogin/kitchenLogin are the Orderin-Only-POS
+// staff logins (see pos-system/src/lib/accessControl.js's ROLE_COLLECTIONS) —
+// each doc there is {username, password}, matched by username on login. The
+// other four roles gate the client-theme apps' staff dashboards with a bare
+// passcode, so they keep the passcodeHash-only shape below.
+const USERNAME_PASSWORD_ROLES: AccessRole[] = ['mainLogin', 'managerLogin', 'cashierLogin', 'kitchenLogin'];
 
 interface AppState {
   restaurants: Restaurant[];
@@ -1648,14 +1664,15 @@ export const useAppStore = create<AppState>((set, get) => {
       const roleCollection = collection(db, 'Restaurant', restaurantId, 'accessControl', 'roles', role);
       const snapshot = await getDocs(roleCollection);
 
+      const isLoginRole = USERNAME_PASSWORD_ROLES.includes(role);
       snapshot.docs.forEach((roleDoc) => {
         const data = roleDoc.data() as Record<string, unknown>;
         credentials.push({
           id: roleDoc.id,
           role,
-          username: role === 'mainLogin' ? String(data.username || roleDoc.id) : undefined,
-          secret: String(role === 'mainLogin' ? data.password || '' : data.passcodeHash || ''),
-          configured: role === 'mainLogin' ? Boolean(data.password) : Boolean(data.passcodeHash),
+          username: isLoginRole ? String(data.username || roleDoc.id) : undefined,
+          secret: String(isLoginRole ? data.password || '' : data.passcodeHash || ''),
+          configured: isLoginRole ? Boolean(data.password) : Boolean(data.passcodeHash),
         });
       });
     }
@@ -1669,7 +1686,7 @@ export const useAppStore = create<AppState>((set, get) => {
       throw new Error('A passcode or password is required.');
     }
 
-    if (role === 'mainLogin') {
+    if (USERNAME_PASSWORD_ROLES.includes(role)) {
       const trimmedUsername = (username || '').trim();
       if (!trimmedUsername || trimmedUsername.includes('/')) {
         throw new Error('A valid username is required.');
