@@ -1,5 +1,6 @@
 import { initializeApp, getApps } from "firebase/app";
 import { getFirestore, doc, getDoc, setDoc } from "firebase/firestore";
+import { getMessaging, isSupported as isMessagingSupported } from "firebase/messaging";
 
 // Same Firebase project used by the other Orderin apps (order_clients-Maroon,
 // orderin_custmer-Maroon, etc.) — see src/firebase.js in those folders. The
@@ -65,6 +66,26 @@ export async function ensureRestaurantDoc() {
   } catch (err) {
     console.warn("ensureRestaurantDoc failed:", err?.message || err);
   }
+}
+
+// VAPID "Web Push certificate" key from Firebase Console → Project Settings →
+// Cloud Messaging → Web configuration. It authorizes this app (not this
+// server) to ask the browser's push service for a subscription — it is not a
+// secret the way the Razorpay keys are, but without it getToken() below fails.
+export const FCM_VAPID_KEY = import.meta.env.VITE_FCM_VAPID_KEY || "";
+
+// Lazily resolved: getMessaging() throws outside a supporting context
+// (non-HTTPS, no service-worker support, some private-browsing modes), and
+// isSupported() itself needs to run before we touch getMessaging() at all.
+let messagingPromise = null;
+export function getMessagingIfSupported() {
+  if (!firebaseEnabled) return Promise.resolve(null);
+  if (!messagingPromise) {
+    messagingPromise = isMessagingSupported()
+      .then((ok) => (ok ? getMessaging(app) : null))
+      .catch(() => null);
+  }
+  return messagingPromise;
 }
 
 export { app, db };

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Bell, Check, Trash2, X, ShoppingCart, Clock, Boxes, Printer } from "lucide-react";
+import { Bell, Check, Trash2, X, ShoppingCart, Clock, Boxes, Printer, ClipboardList } from "lucide-react";
 import { EVENTS, on } from "../lib/bus";
 import { getHistory, markRead, markAllRead, deleteNotification, clearHistory } from "../lib/notifications";
 import EmptyState from "../components/EmptyState";
@@ -10,6 +10,11 @@ const CATEGORY_META = {
   kitchenDelay: { label: "Kitchen delay", icon: Clock, tone: "var(--warning)" },
   lowStock: { label: "Low stock", icon: Boxes, tone: "var(--danger)" },
   printFail: { label: "Print failed", icon: Printer, tone: "var(--danger)" },
+  // Menu/inventory/staff/supplier/expense/settings edits and order status
+  // changes — see functions/index.js onAuditLogCreated. The title itself
+  // already says what changed ("Menu item added: Paneer Tikka"), so one
+  // shared icon here is enough rather than one per entity type.
+  activity: { label: "Update", icon: ClipboardList, tone: "var(--text-muted)" },
 };
 
 function relativeTime(ts) {
@@ -41,7 +46,7 @@ export default function Notifications() {
       <div className="page-header">
         <div>
           <h2 className="page-title">Notifications</h2>
-          <p className="page-subtitle">Alerts raised on this device — new orders, kitchen delays, low stock and print failures.</p>
+          <p className="page-subtitle">Every alert this restaurant's devices have received — orders, kitchen delays, stock, and anything added, changed, or removed elsewhere in the app.</p>
         </div>
         {items.length > 0 && (
           <div style={{ display: "flex", gap: 8 }}>
@@ -52,7 +57,7 @@ export default function Notifications() {
       </div>
 
       {!items.length ? (
-        <EmptyState icon={Bell} title="No notifications yet" subtitle="New orders, kitchen delays, low stock and failed prints will show up here." />
+        <EmptyState icon={Bell} title="No notifications yet" subtitle="Orders, kitchen delays, stock alerts, and other changes across the app will show up here." />
       ) : (
         <div className="card" style={{ padding: 0, overflow: "hidden" }}>
           {items.map((n) => {

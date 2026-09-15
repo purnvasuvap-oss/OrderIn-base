@@ -17,6 +17,7 @@ import {
   getPrefs as getNotifyPrefs, setPrefs as setNotifyPrefs,
   sendTestNotification, NOTIFY_CATEGORIES,
 } from "../lib/notifications";
+import { registerPush, unregisterPush } from "../lib/push";
 
 // Restaurant-wide configuration (billing, printer, sync, etc.) stays
 // Admin-only — everyone else gets just "My Account" to change their own
@@ -292,6 +293,7 @@ function ChangePasswordForm({ user, changePassword }) {
 // pops a toast" choice are inherently device-local, so prefs live in
 // localStorage (see lib/notifications.js), not the synced settings doc.
 function NotificationSettings({ toast }) {
+  const { user } = useAuth();
   const supported = notifySupported();
   const [perm, setPerm] = useState(notifyPermission());
   const [prefs, setPrefs] = useState(getNotifyPrefs());
@@ -301,8 +303,17 @@ function NotificationSettings({ toast }) {
   const enable = async () => {
     const result = await requestPermission();
     setPerm(result);
-    if (result === "granted") toast.success("Browser notifications enabled");
-    else if (result === "denied") toast.error("Notifications blocked — enable them in your browser's site settings");
+    if (result === "granted") {
+      const token = await registerPush({ employeeId: user?.id, role: user?.role });
+      toast.success(token ? "Notifications enabled — this device will get alerts even when the POS is closed" : "Browser notifications enabled");
+    } else if (result === "denied") {
+      toast.error("Notifications blocked — enable them in your browser's site settings");
+    }
+  };
+
+  const disable = async () => {
+    await unregisterPush();
+    toast.info("This device won't receive background alerts anymore");
   };
 
   return (
@@ -312,16 +323,23 @@ function NotificationSettings({ toast }) {
         <strong style={{ fontSize: 14 }}>Browser notifications</strong>
       </div>
       <p style={{ fontSize: 12.5, color: "var(--text-muted)", margin: 0 }}>
-        Pop up alerts for new orders, kitchen delays, low stock and print failures — on this
-        device, while the POS is open in a tab (a background tab is fine). Works on desktop and
+        New orders, kitchen delays, low-stock alerts, and everything else added, changed, or
+        removed elsewhere in the app reach this device even when the POS tab — or the whole
+        browser — is closed, once enabled. Print failures still only pop up while the POS is
+        open, since only the device doing the printing can act on them. Works on desktop and
         Android Chrome; on iPhone only when added to the home screen.
       </p>
 
       {!supported ? (
         <div style={{ fontSize: 13, color: "var(--warning)" }}>This browser doesn't support notifications.</div>
       ) : perm === "granted" ? (
-        <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "var(--success)" }}>
-          <CheckCircle2 size={15} /> Enabled on this device
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "var(--success)" }}>
+            <CheckCircle2 size={15} /> Enabled on this device
+          </div>
+          <button className="btn btn-outline btn-sm" style={{ alignSelf: "flex-start" }} onClick={disable}>
+            Turn off background alerts on this device
+          </button>
         </div>
       ) : perm === "denied" ? (
         <div style={{ fontSize: 13, color: "var(--danger)" }}>

@@ -5,7 +5,8 @@ import { listPrintJobs } from "../lib/printer";
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
 import { ROLES } from "../lib/auth";
-import { notify, recordNotification } from "../lib/notifications";
+import { notify, recordNotification, permission as notifyPermission } from "../lib/notifications";
+import { registerPush, onForegroundPush } from "../lib/push";
 
 // Which roles care about which event. The per-category toggle in Settings can
 // still mute any of these; this just avoids, say, popping "print failed" at
@@ -65,7 +66,7 @@ export default function NotificationWatcher() {
     // items: [{ key, title, label, body }]
     const raise = (category, items, url) => {
       if (!allowed.has(category) || !items.length) return;
-      items.forEach((it) => recordNotification({ category, title: it.title, body: it.body, url }));
+      items.forEach((it) => recordNotification({ category, title: it.title, body: it.body, url, refId: it.key }));
 
       const single = items.length === 1;
       const title = single ? items[0].title : `${items.length} ${CATEGORY_PLURAL[category]}`;
@@ -148,7 +149,7 @@ export default function NotificationWatcher() {
         invStatus.current.set(i.id, next);
         if (ALERT_STATUSES.has(next) && HEALTHY.has(prev)) {
           dropped.push({
-            key: i.id,
+            key: `${i.id}_${next}`,
             title: `Low stock: ${i.name}`,
             label: i.name,
             body: `${i.stock} ${i.unit || ""} left${next === "out" ? " — out of stock" : ""}`.trim(),
@@ -184,6 +185,28 @@ export default function NotificationWatcher() {
       offJobs();
     };
   }, [role]);
+
+  // Background delivery: if this device already granted notification
+  // permission (via Settings → Notifications), (re)register its FCM token on
+  // every app load — tokens can rotate, and a Cloud Function can only reach
+  // this device by reading whatever's currently in Firestore. This is what
+  // makes newOrder/lowStock/kitchenDelay alerts arrive even with the POS
+  // fully closed; see functions/index.js for the sending side.
+  useEffect(() => {
+    if (!user?.id || notifyPermission() !== "granted") return;
+    registerPush({ employeeId: user.id, role: user.role });
+  }, [user?.id, user?.role]);
+
+  // Foreground delivery: a push that arrives while this tab is open and
+  // focused doesn't auto-display (it's sent data-only, see functions/
+  // index.js), so route it through the same OS-popup/beep path a
+  // locally-detected event uses. The Firestore notification record itself
+  // was already written server-side, so this only needs to raise the popup.
+  useEffect(() => {
+    return onForegroundPush((data) => {
+      notify(data.category, data.title, { body: data.body, tag: data.tag, url: data.url });
+    });
+  }, []);
 
   return null;
 }
