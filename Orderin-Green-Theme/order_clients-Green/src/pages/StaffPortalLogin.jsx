@@ -1,66 +1,52 @@
-// src/pages/StaffLogin.jsx
+// src/pages/StaffPortalLogin.jsx
+//
+// Dedicated login for individual staff members ("My Staff Portal"). Deliberately
+// uses its own session keys (staffPortalAuth / staffPortalStaffId / staffPortalRole /
+// staffPortalPermissions) that are completely separate from the Staff Management
+// session (staffAuth / staffId / staffRole / staffPermissions, set by StaffLogin.jsx)
+// so logging into one never grants access to the other, and each is its own
+// per-browser-session (sessionStorage) login.
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { verifySectionPasscode } from "../firebase";
+import "./Login.css";
 import routes from "../routes";
-import { authenticateStaffPin, permissionsForRole, STAFF_PERMISSIONS } from "../services/staffService";
+import { authenticateStaffPin, permissionsForRole } from "../services/staffService";
 
-export default function StaffLogin() {
+export default function StaffPortalLogin() {
   const [pin, setPin] = useState("");
   const [attempts, setAttempts] = useState(0);
   const [locked, setLocked] = useState(false);
-  const [wrongPortal, setWrongPortal] = useState(false);
   const navigate = useNavigate();
 
   React.useEffect(() => {
-    sessionStorage.removeItem("staffAuth");
-    sessionStorage.removeItem("staffRole");
-    localStorage.removeItem("staffAuth");
+    sessionStorage.removeItem("staffPortalAuth");
+    sessionStorage.removeItem("staffPortalStaffId");
+    sessionStorage.removeItem("staffPortalRole");
+    sessionStorage.removeItem("staffPortalPermissions");
   }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (locked) return;
-    setWrongPortal(false);
     try {
       const staff = await authenticateStaffPin(pin);
       if (staff) {
-        const canManage = permissionsForRole(staff.role).can(STAFF_PERMISSIONS.manageStaff);
-        if (!canManage) {
-          // Valid staff PIN, but Staff Management is manager-only - don't
-          // grant a staff-management session for it.
-          setWrongPortal(true);
-          return;
-        }
-        sessionStorage.setItem("staffAuth", "true");
-        sessionStorage.setItem("staffId", staff.id);
-        sessionStorage.setItem("staffRole", staff.role);
+        sessionStorage.setItem("staffPortalAuth", "true");
+        sessionStorage.setItem("staffPortalStaffId", staff.id);
+        sessionStorage.setItem("staffPortalRole", staff.role);
         sessionStorage.setItem(
-          "staffPermissions",
+          "staffPortalPermissions",
           JSON.stringify(permissionsForRole(staff.role).permissions),
         );
-        navigate(routes.staffManagement, { replace: true });
+        navigate(routes.staffSelfService, { replace: true });
       } else {
-        // Keep the existing manager-only section passcode working for
-        // installations that have not yet created manager staff records.
-        const isManagerPasscode = await verifySectionPasscode("StaffAccess", pin);
-        if (isManagerPasscode) {
-          sessionStorage.setItem("staffAuth", "true");
-          sessionStorage.setItem("staffRole", "General Manager");
-          sessionStorage.setItem("staffPermissions", JSON.stringify([
-            "staff.view", "staff.manage", "roster.edit", "requests.approve",
-            "attendance.correct", "payroll.view", "audit.view", "notifications.manage",
-          ]));
-          navigate(routes.staffManagement, { replace: true });
-          return;
-        }
         const nextAttempts = attempts + 1;
         setAttempts(nextAttempts);
         if (nextAttempts >= 5) setLocked(true);
-        alert("Wrong Passcode or PIN");
+        alert("Wrong PIN");
       }
     } catch (error) {
-      console.error("Error during staff login:", error);
+      console.error("Error during staff portal login:", error);
       alert("Login failed. Please try again.");
     }
   };
@@ -105,26 +91,17 @@ export default function StaffLogin() {
           <section className="sub-login-card" aria-label="login form">
             <div className="login-card-heading">
               <div>
-                <h3>Staff Management Login</h3>
-                <p className="sub">To your account to continue</p>
+                <h3>My Staff Portal Login</h3>
+                <p className="sub">Enter the PIN issued to you by your manager</p>
               </div>
               <span className="login-status-pill is-active">Active</span>
             </div>
 
             <form onSubmit={handleSubmit} className="sub-login-form">
-              {wrongPortal && (
-                <p className="sub-field-error" role="alert">
-                  That PIN belongs to a staff account, not a manager. Please use{" "}
-                  <button type="button" className="sub-inline-link" onClick={() => navigate(routes.staffPortalLogin)}>
-                    My Staff Portal login
-                  </button>{" "}
-                  instead.
-                </p>
-              )}
               <div className="sub-field">
-                <label className="sub-field-label" htmlFor="pin">PIN</label>
+                <label className="sub-field-label" htmlFor="portal-pin">PIN</label>
                 <input
-                  id="pin"
+                  id="portal-pin"
                   name="pin"
                   type="password"
                   placeholder="Enter PIN"

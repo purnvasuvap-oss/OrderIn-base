@@ -19,6 +19,7 @@ import Finance from "./pages/Finance.jsx";
 import NotificationPage from "./pages/NotificationPage.jsx";
 import TableManagement from "./pages/TableManagement.jsx";
 import StaffLogin from "./pages/StaffLogin.jsx";
+import StaffPortalLogin from "./pages/StaffPortalLogin.jsx";
 import StaffManagement from "./pages/StaffManagement.jsx";
 import Payroll from "./pages/Payroll.jsx";
 import PayrollRunDetail from "./pages/PayrollRunDetail.jsx";
@@ -166,6 +167,14 @@ function App() {
           }
         />
         <Route
+          path={routes.staffPortalLogin}
+          element={
+            <ProtectedRoute>
+              <StaffPortalLogin />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path={routes.staffManagement}
           element={
             <ProtectedRoute>
@@ -208,7 +217,7 @@ function App() {
           path={routes.staffSelfService}
           element={
             <ProtectedRoute>
-              <SectionProtectedRoute storageKey="staffAuth" redirectTo={routes.staffLogin}>
+              <SectionProtectedRoute storageKey="staffPortalAuth" redirectTo={routes.staffPortalLogin}>
                 <StaffSelfService />
               </SectionProtectedRoute>
             </ProtectedRoute>

@@ -13,6 +13,7 @@ const routes = {
   notification: "/notification",
   tableManagement: "/table-management",
   staffLogin: "/staff-login",
+  staffPortalLogin: "/staff-portal-login",
   staffManagement: "/staff-management",
   staffPayroll: "/staff-management/payroll",
   staffPayrollRun: "/staff-management/payroll/:runId",

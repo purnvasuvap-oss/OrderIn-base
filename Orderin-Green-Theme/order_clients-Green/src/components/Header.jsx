@@ -23,6 +23,13 @@ export default function Header() {
     sessionStorage.removeItem("financeAuth");
     sessionStorage.removeItem("inventoryAuth");
     sessionStorage.removeItem("staffAuth");
+    sessionStorage.removeItem("staffId");
+    sessionStorage.removeItem("staffRole");
+    sessionStorage.removeItem("staffPermissions");
+    sessionStorage.removeItem("staffPortalAuth");
+    sessionStorage.removeItem("staffPortalStaffId");
+    sessionStorage.removeItem("staffPortalRole");
+    sessionStorage.removeItem("staffPortalPermissions");
 
     navigate("/", { replace: true });
   };

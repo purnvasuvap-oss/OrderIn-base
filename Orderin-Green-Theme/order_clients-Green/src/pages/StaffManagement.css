@@ -1068,6 +1068,142 @@
   }
 }
 
+/* ---- Staff self-service ---- */
+.sm-ss-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 18px;
+  align-items: start;
+}
+.sm-ss-card {
+  background: var(--sm-panel);
+  border: 1px solid var(--sm-line);
+  border-radius: var(--sm-radius);
+  padding: 18px 20px;
+  margin-bottom: 18px;
+  box-shadow: var(--sm-shadow);
+}
+.sm-ss-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+.sm-ss-card-head h3 {
+  margin: 0;
+}
+.sm-ss-card h3 {
+  margin: 0 0 14px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--sm-text);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.sm-ss-card h3 svg {
+  color: var(--sm-gold);
+  flex-shrink: 0;
+}
+.sm-ss-avatar-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--sm-line);
+}
+.sm-ss-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--sm-gold-deep);
+  color: #043927;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+.sm-ss-identity-name {
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--sm-text);
+}
+.sm-ss-identity-role {
+  font-size: 12px;
+  color: var(--sm-text-3);
+  margin-top: 2px;
+}
+.sm-ss-field-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.sm-ss-field {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 13px;
+}
+.sm-ss-field-label {
+  color: var(--sm-text-3);
+  flex-shrink: 0;
+}
+.sm-ss-field-value {
+  color: var(--sm-text);
+  font-weight: 600;
+  text-align: right;
+}
+.sm-ss-schedule-row {
+  display: grid;
+  grid-template-columns: 56px 1fr;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 0;
+  border-top: 1px solid var(--sm-line);
+}
+.sm-ss-schedule-row:first-of-type {
+  border-top: none;
+}
+.sm-ss-schedule-day {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--sm-text-2);
+  text-transform: uppercase;
+}
+.sm-thead-ss-att,
+.sm-trow-ss-att {
+  grid-template-columns: 1.3fr 1fr 1fr 0.8fr 0.8fr;
+}
+@media (max-width: 1000px) {
+  .sm-ss-grid {
+    grid-template-columns: 1fr;
+  }
+  .sm-thead-ss-att {
+    display: none;
+  }
+  .sm-trow-ss-att {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    grid-template-columns: unset;
+    background: var(--sm-panel-2);
+    border-radius: 10px;
+    margin: 10px;
+    padding: 12px 14px;
+    border-top: none;
+    border: 1px solid var(--sm-line);
+  }
+}
+
 /* ---- Calendar tab ---- */
 .sm-cal-grid {
   display: grid;
