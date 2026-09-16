@@ -12,26 +12,41 @@ if (!admin.apps.length) {
   admin.initializeApp();
 }
 
-const FALLBACK_RAZORPAY_KEY_ID = 'rzp_live_Sj1ZPsCyB5iu3t';
-const FALLBACK_RAZORPAY_KEY_SECRET = 'dN2uwxFr0hIZkcV57RXdRXmt';
+// NOTE: this file previously shipped a hardcoded LIVE Razorpay key/secret as a
+// fallback here. That secret was committed to git history and must be treated
+// as compromised - rotate it in the Razorpay dashboard regardless of this fix.
+// Credentials must now come from functions config / env vars only; there is no
+// source fallback, so a missing credential fails loudly instead of silently
+// using a value baked into source control.
 const REMOVED_RAZORPAY_VALUE_HASHES = new Set([
   '0931028ec556aa2d2e65c4c604da9200517b5718df04eedc1cb5b735422b7b44',
   '44f9000b54b1b661e4c2f7fa84aba1cd840827fe6731a99c17fb9a06ce00487b',
+  // sha256 of the leaked live key id/secret that used to be hardcoded below,
+  // so they can never be reintroduced via config/env by accident.
+  crypto.createHash('sha256').update('rzp_live_Sj1ZPsCyB5iu3t').digest('hex'),
+  crypto.createHash('sha256').update('dN2uwxFr0hIZkcV57RXdRXmt').digest('hex'),
 ]);
 const isRemovedRazorpayValue = (value) =>
   REMOVED_RAZORPAY_VALUE_HASHES.has(crypto.createHash('sha256').update(value).digest('hex'));
-const resolveRazorpayCredential = (...values) =>
-  values.find((value) => value && !isRemovedRazorpayValue(value));
+const resolveRazorpayCredential = (name, ...values) => {
+  const resolved = values.find((value) => value && !isRemovedRazorpayValue(value));
+  if (!resolved) {
+    throw new Error(
+      `${name} is not configured. Set it via "firebase functions:config:set razorpay.key_id=... razorpay.key_secret=..." or the RAZORPAY_KEY_ID/RAZORPAY_KEY_SECRET env vars.`
+    );
+  }
+  return resolved;
+};
 
 const RAZORPAY_KEY_ID = resolveRazorpayCredential(
+  'RAZORPAY_KEY_ID',
   functions.config().razorpay?.key_id,
-  process.env.RAZORPAY_KEY_ID,
-  FALLBACK_RAZORPAY_KEY_ID
+  process.env.RAZORPAY_KEY_ID
 );
 const RAZORPAY_KEY_SECRET = resolveRazorpayCredential(
+  'RAZORPAY_KEY_SECRET',
   functions.config().razorpay?.key_secret,
-  process.env.RAZORPAY_KEY_SECRET,
-  FALLBACK_RAZORPAY_KEY_SECRET
+  process.env.RAZORPAY_KEY_SECRET
 );
 
 const ROUTE_LINKED_ACCOUNTS = {
@@ -48,8 +63,19 @@ const ROUTE_LINKED_ACCOUNTS = {
   // }
 };
 
-const setCorsHeaders = (res) => {
-  res.set('Access-Control-Allow-Origin', '*');
+const ALLOWED_ORIGINS = (
+  process.env.ALLOWED_ORIGINS || 'https://orderin-olive-cstmr.web.app'
+)
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+const setCorsHeaders = (req, res) => {
+  const origin = req.get('Origin');
+  if (origin && ALLOWED_ORIGINS.includes(origin)) {
+    res.set('Access-Control-Allow-Origin', origin);
+  }
+  res.set('Vary', 'Origin');
   res.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 };
@@ -974,7 +1000,7 @@ const handleScheduledSettlementReconciliation = async () => {
 };
 
 const onRequest = (handler) => async (req, res) => {
-  setCorsHeaders(res);
+  setCorsHeaders(req, res);
 
   if (req.method === 'OPTIONS') {
     res.status(204).send('');

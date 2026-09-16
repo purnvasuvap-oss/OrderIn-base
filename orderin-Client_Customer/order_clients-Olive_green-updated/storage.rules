@@ -1,9 +1,28 @@
 rules_version = '2';
 
+// No Firebase Auth session exists client-side, so per-user rules aren't
+// possible without a backend auth rework. As a stopgap: reads stay public
+// (menu/promo images are shown to anonymous customers in the sibling app),
+// but writes are restricted to the known upload folders, images only, with
+// a size cap - this blocks using the bucket to host/serve arbitrary files.
 service firebase.storage {
   match /b/{bucket}/o {
     match /{allPaths=**} {
-      allow read, write: if true;
+      allow read: if true;
+    }
+
+    match /menu/{allPaths=**} {
+      allow write: if request.resource.size < 10 * 1024 * 1024
+                   && request.resource.contentType.matches('image/.*');
+    }
+
+    match /promotions/{allPaths=**} {
+      allow write: if request.resource.size < 10 * 1024 * 1024
+                   && request.resource.contentType.matches('image/.*');
+    }
+
+    match /{allPaths=**} {
+      allow write: if false;
     }
   }
 }
