@@ -53,7 +53,10 @@ import {
   subscribeStaffNotifications,
   markStaffNotificationRead,
   createShiftTemplate,
+  subscribeAttendanceSettings,
+  ATTENDANCE_SETTINGS_DEFAULTS,
 } from "../services/staffService";
+import QrAttendancePanel from "../components/StaffAttendance/QrAttendancePanel";
 
 const ROLE_META = {
   Admin: { key: "admin", label: "Admin" },
@@ -1105,6 +1108,22 @@ function AttendanceCorrectionModal({ record, onClose, onSave }) {
   );
 }
 
+const PUNCH_METHOD_LABEL = { qr: "QR", pin: "PIN", manager: "Manager" };
+const PUNCH_METHOD_TITLE = {
+  qr: "Verified by a manager-scanned QR with location check",
+  pin: "PIN keypad (fallback)",
+  manager: "Clocked out by a manager",
+};
+function PunchMethodTag({ method, geo }) {
+  if (!PUNCH_METHOD_LABEL[method]) return null;
+  const distance = method === "qr" && Number.isFinite(geo?.distanceM) ? ` · ${geo.distanceM} m` : "";
+  return (
+    <span className={`sm-qr-tag sm-qr-tag-${method}`} title={PUNCH_METHOD_TITLE[method]}>
+      {PUNCH_METHOD_LABEL[method]}{distance}
+    </span>
+  );
+}
+
 function AttendanceTab({ staffList }) {
   const permissions = getStaffPermissions();
   const [pinDigits, setPinDigits] = useState("");
@@ -1117,6 +1136,9 @@ function AttendanceTab({ staffList }) {
   const [rangeEnd, setRangeEnd] = useState(() => dateKeyOf(new Date()));
   const [rangeRecords, setRangeRecords] = useState([]);
   const [reportLoading, setReportLoading] = useState(false);
+  const [attendanceSettings, setAttendanceSettings] = useState(ATTENDANCE_SETTINGS_DEFAULTS);
+
+  useEffect(() => subscribeAttendanceSettings(setAttendanceSettings), []);
 
   const loadReport = async () => {
     if (!rangeStart || !rangeEnd || rangeStart > rangeEnd) return;
@@ -1193,8 +1215,9 @@ function AttendanceTab({ staffList }) {
     <>
     <div className="sm-panel sm-att-panel">
       <div className="sm-att-left">
-        <div className="sm-punch-card">
-          <h4>Staff Punch Clock</h4>
+        <QrAttendancePanel settings={attendanceSettings} canConfigure={permissions.correctAttendance} />
+        {attendanceSettings.allowPinFallback && <div className="sm-punch-card">
+          <h4>PIN Punch Clock (fallback)</h4>
           <div className="sm-pin-dots">
             {Array.from({ length: 4 }).map((_, i) => (
               <span key={i} className={`sm-pin-dot ${i < pinDigits.length ? "filled" : ""}`} />
@@ -1216,7 +1239,7 @@ function AttendanceTab({ staffList }) {
             </button>
             <span className="sm-key sm-key-blank" aria-hidden="true" />
           </div>
-        </div>
+        </div>}
       </div>
 
       <div className="sm-att-right">
@@ -1261,11 +1284,11 @@ function AttendanceTab({ staffList }) {
                   </span>
                   <span className="sm-att-field">
                     <span className="sm-cell-label">Clock in</span>
-                    <span>{fmtClock(r.clockInAt)}</span>
+                    <span>{fmtClock(r.clockInAt)}<PunchMethodTag method={r.clockInMethod} geo={r.clockInGeo} /></span>
                   </span>
                   <span className="sm-att-field">
                     <span className="sm-cell-label">Clock out</span>
-                    <span>{fmtClock(r.clockOutAt)}</span>
+                    <span>{fmtClock(r.clockOutAt)}<PunchMethodTag method={r.clockOutMethod} geo={r.clockOutGeo} /></span>
                   </span>
                   <span className="sm-att-field">
                     <span className="sm-cell-label">Break</span>

@@ -20,6 +20,7 @@ import {
   where,
   serverTimestamp,
   arrayUnion,
+  runTransaction,
 } from "firebase/firestore";
 import bcrypt from "bcryptjs";
 
@@ -899,10 +900,22 @@ export const punchPin = async (pin) => {
   const secureFields = { pinHash: await hashStaffPin(pin), pinLast4: String(pin).slice(-4), pinFailedAttempts: 0, pinLockedUntil: null };
   if (!staff.pinHash || staff.pinFailedAttempts) await updateDoc(staffDocRef(staff.id), secureFields);
 
-  const dateKey = todayKey();
-  const ref = attendanceDocRef(dateKey, staff.id);
-  const existing = await getDoc(ref);
-  const data = existing.exists() ? existing.data() : null;
+  return punchStaff(staff, { method: "pin" });
+};
+
+/**
+ * Work out today's clock-in/out write for a verified staff member, given the
+ * current attendance doc (or null). Pure so the PIN path can apply it directly
+ * and the QR path can apply it inside the token-burning transaction.
+ * `meta`: { method: "pin"|"qr", geo, verifiedBy, tokenId }.
+ * Returns { action: "in"|"out", method, fields } — "in" is a full overwrite
+ * (setDoc without merge), "out" is an update.
+ */
+const planPunch = (staff, dateKey, data, meta = {}) => {
+  const method = meta.method || "pin";
+  const geo = meta.geo || null;
+  const verifiedBy = meta.verifiedBy || null;
+  const tokenId = meta.tokenId || null;
 
   if (!data || !data.clockInAt || data.clockOutAt) {
     // Not clocked in yet today (or already completed a shift) -> clock IN,
@@ -916,9 +929,10 @@ export const punchPin = async (pin) => {
     if (data && data.clockInAt && data.clockOutAt) {
       priorSessionsMinutes += Math.round(hoursOf(data) * 60);
     }
-    await setDoc(
-      ref,
-      {
+    return {
+      action: "in",
+      method,
+      fields: {
         dateKey,
         staffId: staff.id,
         staffName: staff.name,
@@ -928,12 +942,13 @@ export const punchPin = async (pin) => {
         onBreak: false,
         breakStartAt: null,
         priorSessionsMinutes,
+        clockInMethod: method,
+        clockInGeo: geo,
+        clockInVerifiedBy: verifiedBy,
+        clockInTokenId: tokenId,
         updatedAt: serverTimestamp(),
       },
-      { merge: false },
-    );
-    await writeAudit("attendance.in", staff.id, { dateKey });
-    return { staff, action: "in" };
+    };
   }
 
   // Already clocked in -> clock OUT. If on break, fold the open break into
@@ -943,15 +958,347 @@ export const punchPin = async (pin) => {
     const startMs = data.breakStartAt.toDate ? data.breakStartAt.toDate().getTime() : new Date(data.breakStartAt).getTime();
     extraBreakMinutes = Math.max(0, Math.round((Date.now() - startMs) / 60000));
   }
-  await updateDoc(ref, {
-    clockOutAt: serverTimestamp(),
-    onBreak: false,
-    breakStartAt: null,
-    breakMinutes: (data.breakMinutes || 0) + extraBreakMinutes,
-    updatedAt: serverTimestamp(),
+  return {
+    action: "out",
+    method,
+    fields: {
+      clockOutAt: serverTimestamp(),
+      onBreak: false,
+      breakStartAt: null,
+      breakMinutes: (data.breakMinutes || 0) + extraBreakMinutes,
+      clockOutMethod: method,
+      clockOutGeo: geo,
+      clockOutVerifiedBy: verifiedBy,
+      clockOutTokenId: tokenId,
+      updatedAt: serverTimestamp(),
+    },
+  };
+};
+
+/**
+ * Toggle today's clock-in/out for an already-verified staff member (PIN
+ * keypad path). Returns { staff, action: "in"|"out" }.
+ */
+export const punchStaff = async (staff, meta = {}) => {
+  const dateKey = todayKey();
+  const ref = attendanceDocRef(dateKey, staff.id);
+  const existing = await getDoc(ref);
+  const plan = planPunch(staff, dateKey, existing.exists() ? existing.data() : null, meta);
+  if (plan.action === "in") await setDoc(ref, plan.fields, { merge: false });
+  else await updateDoc(ref, plan.fields);
+  await writeAudit(`attendance.${plan.action}`, staff.id, { dateKey, method: plan.method });
+  return { staff, action: plan.action };
+};
+
+/* ======================= QR + geolocation attendance =======================
+ * Flow: the manager starts a short QR session on the Attendance tab; while it
+ * is active each staff member's portal shows a rotating one-time QR carrying
+ * a token id + nonce. The token doc (not the QR) stores the staff member's
+ * location, so the QR text can't be edited to fake it. The manager scans the
+ * QR; redeemAttendanceToken checks the token, session and distance, then
+ * clocks the staff member in/out via punchStaff.
+ *
+ * firestore.rules enforces the server-side half: tokens are one-time,
+ * unlistable and immutable; expiry uses server time; a token needs a live
+ * session and an active staff member; and an attendance record can only be
+ * tagged "qr" in the same transaction that burns an accepted token for that
+ * staff member. Without per-user auth, rules can't prove *who* scanned, so a
+ * determined attacker with the Firebase config can still forge a scan; the
+ * distance check also trusts the phone's reported location. */
+const attendanceSettingsDocRef = () => doc(db, "Restaurant", RESTAURANT_ID, "attendanceConfig", "settings");
+const qrSessionCollectionRef = () => collection(db, "Restaurant", RESTAURANT_ID, "attendanceQrSessions");
+const qrTokenCollectionRef = () => collection(db, "Restaurant", RESTAURANT_ID, "attendanceQrTokens");
+
+export const ATTENDANCE_QR_PREFIX = "orderin-att:v1";
+export const QR_REFRESH_MS = 30000;
+// Refresh interval plus a grace period so a QR caught just before it rotates
+// still scans.
+export const QR_TOKEN_TTL_MS = 45000;
+export const ATTENDANCE_SETTINGS_DEFAULTS = Object.freeze({
+  lat: null,
+  lng: null,
+  radiusMeters: 100,
+  maxAccuracyMeters: 100,
+  requireManagerProximity: false,
+  allowPinFallback: false,
+  sessionMinutes: 10,
+});
+
+const toMillis = (value) => {
+  if (!value) return 0;
+  if (value.toMillis) return value.toMillis();
+  if (value.toDate) return value.toDate().getTime();
+  return new Date(value).getTime();
+};
+
+const attendanceError = (code, message) => {
+  const err = new Error(message);
+  err.code = code;
+  return err;
+};
+
+const randomNonce = () => {
+  const bytes = new Uint8Array(16);
+  globalThis.crypto.getRandomValues(bytes);
+  return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+};
+
+const isFiniteCoord = (value) => typeof value === "number" && Number.isFinite(value);
+
+/** Great-circle distance in meters between two {lat, lng} points. */
+export const haversineMeters = (a, b) => {
+  const toRad = (deg) => (deg * Math.PI) / 180;
+  const dLat = toRad(b.lat - a.lat);
+  const dLng = toRad(b.lng - a.lng);
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(a.lat)) * Math.cos(toRad(b.lat)) * Math.sin(dLng / 2) ** 2;
+  return 2 * 6371000 * Math.asin(Math.min(1, Math.sqrt(h)));
+};
+
+// Firestore TTL policies (firestore.indexes.json → fieldOverrides) delete
+// docs once `deleteAt` passes, so used/expired QR tokens and old sessions
+// don't pile up. TTL deletion runs within ~24h of the timestamp.
+const QR_TOKEN_RETENTION_MS = 24 * 60 * 60 * 1000;
+const QR_SESSION_RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
+
+/** Browsers only expose camera + geolocation on HTTPS (or localhost). Returns
+ * a user-facing message when that isn't the case, otherwise null. */
+export const insecureContextMessage = () => {
+  if (typeof window === "undefined" || window.isSecureContext !== false) return null;
+  return "Camera and location only work over a secure connection. Open this page using its https:// address.";
+};
+
+/** Promise wrapper around navigator.geolocation with staff-friendly errors. */
+export const getCurrentGeo = (options = {}) => new Promise((resolve, reject) => {
+  const insecure = insecureContextMessage();
+  if (insecure) {
+    reject(attendanceError("insecure-context", insecure));
+    return;
+  }
+  if (typeof navigator === "undefined" || !navigator.geolocation) {
+    reject(attendanceError("geo-unavailable", "Location is not available on this device/browser."));
+    return;
+  }
+  navigator.geolocation.getCurrentPosition(
+    (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude, accuracy: pos.coords.accuracy }),
+    (err) => reject(attendanceError(
+      err.code === 1 ? "geo-denied" : "geo-failed",
+      err.code === 1 ? "Location permission was denied. Allow location access to mark attendance." : "Could not get your location. Move near a window and try again.",
+    )),
+    { enableHighAccuracy: true, timeout: 15000, maximumAge: 0, ...options },
+  );
+});
+
+export const subscribeAttendanceSettings = (onUpdate) => onSnapshot(
+  attendanceSettingsDocRef(),
+  (snap) => onUpdate({ ...ATTENDANCE_SETTINGS_DEFAULTS, ...(snap.exists() ? snap.data() : {}) }),
+  (err) => {
+    console.error("subscribeAttendanceSettings error:", err);
+    onUpdate({ ...ATTENDANCE_SETTINGS_DEFAULTS });
+  },
+);
+
+export const getAttendanceSettings = async () => {
+  const snap = await getDoc(attendanceSettingsDocRef());
+  return { ...ATTENDANCE_SETTINGS_DEFAULTS, ...(snap.exists() ? snap.data() : {}) };
+};
+
+export const saveAttendanceSettings = async (patch) => {
+  const next = { ...patch };
+  if ("lat" in next || "lng" in next) {
+    if (next.lat !== null || next.lng !== null) {
+      if (!isFiniteCoord(next.lat) || Math.abs(next.lat) > 90 || !isFiniteCoord(next.lng) || Math.abs(next.lng) > 180) {
+        throw new Error("Restaurant location must be a valid latitude/longitude.");
+      }
+    }
+  }
+  if ("radiusMeters" in next) {
+    const radius = Number(next.radiusMeters);
+    if (!Number.isFinite(radius) || radius < 20 || radius > 5000) throw new Error("Radius must be between 20 and 5000 meters.");
+    next.radiusMeters = Math.round(radius);
+  }
+  await setDoc(attendanceSettingsDocRef(), { ...next, updatedAt: serverTimestamp() }, { merge: true });
+  await writeAudit("attendance.settings_updated", null, { fields: Object.keys(patch) });
+};
+
+/**
+ * Decide whether a staff location is close enough. Pure, so the same rule
+ * can later move server-side unchanged. The restaurant's saved location is the
+ * reference; the manager's device is used when none is saved, and is also
+ * required when settings.requireManagerProximity is on.
+ * Returns { ok, reason, distanceM, managerDistanceM }.
+ */
+export const evaluateAttendanceGeo = ({ staffGeo, settings = ATTENDANCE_SETTINGS_DEFAULTS, managerGeo = null }) => {
+  const radius = Number(settings.radiusMeters) || ATTENDANCE_SETTINGS_DEFAULTS.radiusMeters;
+  const maxAccuracy = Number(settings.maxAccuracyMeters) || ATTENDANCE_SETTINGS_DEFAULTS.maxAccuracyMeters;
+  if (!staffGeo || !isFiniteCoord(staffGeo.lat) || !isFiniteCoord(staffGeo.lng)) {
+    return { ok: false, reason: "No location attached to this QR." };
+  }
+  if (isFiniteCoord(staffGeo.accuracy) && staffGeo.accuracy > maxAccuracy) {
+    return { ok: false, reason: `Staff location is too imprecise (±${Math.round(staffGeo.accuracy)} m).` };
+  }
+  const hasRestaurant = isFiniteCoord(settings.lat) && isFiniteCoord(settings.lng);
+  const hasManager = managerGeo && isFiniteCoord(managerGeo.lat) && isFiniteCoord(managerGeo.lng);
+  if (!hasRestaurant && !hasManager) {
+    return { ok: false, reason: "No restaurant location is set and the manager's location is unavailable." };
+  }
+  const managerDistanceM = hasManager ? Math.round(haversineMeters(staffGeo, managerGeo)) : null;
+  const distanceM = hasRestaurant ? Math.round(haversineMeters(staffGeo, { lat: settings.lat, lng: settings.lng })) : managerDistanceM;
+  if (distanceM > radius) {
+    return { ok: false, reason: `Staff is ${distanceM} m away from the ${hasRestaurant ? "restaurant" : "manager"} (limit ${radius} m).`, distanceM, managerDistanceM };
+  }
+  if (hasRestaurant && settings.requireManagerProximity) {
+    if (managerDistanceM === null) return { ok: false, reason: "Manager location is required but unavailable.", distanceM, managerDistanceM };
+    if (managerDistanceM > radius) {
+      return { ok: false, reason: `Staff is ${managerDistanceM} m away from the manager (limit ${radius} m).`, distanceM, managerDistanceM };
+    }
+  }
+  return { ok: true, reason: null, distanceM, managerDistanceM };
+};
+
+const activeSessionFrom = (docs) => docs
+  .map((d) => ({ id: d.id, ...d.data() }))
+  .filter((s) => s.active && toMillis(s.expiresAt) > Date.now())
+  .sort((a, b) => toMillis(b.expiresAt) - toMillis(a.expiresAt))[0] || null;
+
+/** Calls back with the current active QR session, or null. */
+export const subscribeActiveQrSession = (onUpdate) => onSnapshot(
+  query(qrSessionCollectionRef(), where("active", "==", true)),
+  (snap) => onUpdate(activeSessionFrom(snap.docs)),
+  (err) => {
+    console.error("subscribeActiveQrSession error:", err);
+    onUpdate(null);
+  },
+);
+
+/** Manager action: open a fresh QR session (ending any previous one). */
+export const startQrSession = async ({ managerGeo = null, startedBy = null, minutes } = {}) => {
+  const settings = await getAttendanceSettings();
+  const hasRestaurant = isFiniteCoord(settings.lat) && isFiniteCoord(settings.lng);
+  if (!hasRestaurant && !managerGeo) {
+    throw attendanceError("no-reference-location", "Set the restaurant location in QR settings, or allow location access on this device.");
+  }
+  const existing = await getDocs(query(qrSessionCollectionRef(), where("active", "==", true)));
+  await Promise.all(existing.docs.map((d) => updateDoc(d.ref, { active: false, endedAt: serverTimestamp() })));
+  const durationMs = (Number(minutes) || settings.sessionMinutes || ATTENDANCE_SETTINGS_DEFAULTS.sessionMinutes) * 60000;
+  const ref = await addDoc(qrSessionCollectionRef(), {
+    active: true,
+    startedBy,
+    managerGeo,
+    createdAt: serverTimestamp(),
+    expiresAt: new Date(Date.now() + durationMs),
+    deleteAt: new Date(Date.now() + durationMs + QR_SESSION_RETENTION_MS),
   });
-  await writeAudit(`attendance.${existing.exists() && data?.clockInAt ? "out" : "in"}`, staff.id, { dateKey });
-  return { staff, action: "out" };
+  await writeAudit("attendance.qr_session_started", null, { sessionId: ref.id });
+  return { id: ref.id, expiresAt: new Date(Date.now() + durationMs) };
+};
+
+export const endQrSession = async (sessionId) => {
+  if (!sessionId) return;
+  await updateDoc(doc(qrSessionCollectionRef(), sessionId), { active: false, endedAt: serverTimestamp() });
+  await writeAudit("attendance.qr_session_ended", null, { sessionId });
+};
+
+/** Staff-portal action: mint a one-time token for the current session and
+ * return the text to render as a QR. */
+export const createAttendanceToken = async ({ staffId, sessionId, geo }) => {
+  if (!staffId || !sessionId) throw attendanceError("invalid-token-request", "No active attendance session.");
+  if (!geo || !isFiniteCoord(geo.lat) || !isFiniteCoord(geo.lng)) {
+    throw attendanceError("geo-required", "Your location is needed to generate the attendance QR.");
+  }
+  const nonce = randomNonce();
+  const expiresAt = new Date(Date.now() + QR_TOKEN_TTL_MS);
+  const ref = await addDoc(qrTokenCollectionRef(), {
+    staffId,
+    sessionId,
+    nonce,
+    geo: { lat: geo.lat, lng: geo.lng, accuracy: isFiniteCoord(geo.accuracy) ? geo.accuracy : null },
+    createdAt: serverTimestamp(),
+    expiresAt,
+    deleteAt: new Date(Date.now() + QR_TOKEN_RETENTION_MS),
+    usedAt: null,
+    result: null,
+  });
+  return { tokenId: ref.id, payload: `${ATTENDANCE_QR_PREFIX}:${ref.id}:${nonce}`, expiresAt };
+};
+
+/** Staff portal watches its current token to show the scan outcome. */
+export const subscribeAttendanceToken = (tokenId, onUpdate) => onSnapshot(
+  doc(qrTokenCollectionRef(), tokenId),
+  (snap) => onUpdate(snap.exists() ? { id: snap.id, ...snap.data() } : null),
+  (err) => console.error("subscribeAttendanceToken error:", err),
+);
+
+export const parseAttendanceQr = (text) => {
+  const parts = String(text || "").trim().split(":");
+  if (parts.length !== 4 || `${parts[0]}:${parts[1]}` !== ATTENDANCE_QR_PREFIX) return null;
+  const [, , tokenId, nonce] = parts;
+  if (!/^[A-Za-z0-9]{10,40}$/.test(tokenId) || !/^[0-9a-f]{32}$/.test(nonce)) return null;
+  return { tokenId, nonce };
+};
+
+/**
+ * Manager scan: validate the token and location, burn the token, then punch.
+ * Every scanned token is marked used (accepted or rejected) so it can't be
+ * retried; the staff portal mints a fresh one on its next refresh.
+ * Returns { staff, action, distanceM }. Throws an Error with `.code` on reject.
+ */
+export const redeemAttendanceToken = async (qrText, { sessionId, managerGeo = null, verifiedBy = null } = {}) => {
+  const parsed = parseAttendanceQr(qrText);
+  if (!parsed) throw attendanceError("invalid-qr", "This is not an OrderIn attendance QR.");
+  if (!sessionId) throw attendanceError("no-session", "Start a QR attendance session first.");
+  const settings = await getAttendanceSettings();
+  const tokenRef = doc(qrTokenCollectionRef(), parsed.tokenId);
+
+  const outcome = await runTransaction(db, async (tx) => {
+    const tokenSnap = await tx.get(tokenRef);
+    if (!tokenSnap.exists()) return { error: attendanceError("invalid-qr", "QR not recognised. Ask the staff member to refresh it.") };
+    const token = tokenSnap.data();
+    if (token.nonce !== parsed.nonce) return { error: attendanceError("invalid-qr", "QR does not match. Ask the staff member to refresh it.") };
+    if (token.usedAt) return { error: attendanceError("token-used", "This QR was already scanned. Ask for a fresh one.") };
+
+    // All transaction reads must happen before any write.
+    const staffSnap = await tx.get(staffDocRef(token.staffId));
+    const sessionSnap = await tx.get(doc(qrSessionCollectionRef(), sessionId));
+    const dateKey = todayKey();
+    const attendanceRef = attendanceDocRef(dateKey, token.staffId);
+    const attendanceSnap = await tx.get(attendanceRef);
+
+    const reject = (code, message, extra = {}) => {
+      tx.update(tokenRef, { usedAt: serverTimestamp(), result: { status: "rejected", code, reason: message, ...extra } });
+      return { error: attendanceError(code, message), token };
+    };
+    if (toMillis(token.expiresAt) < Date.now()) return reject("token-expired", "QR expired. Ask the staff member to show the new one.");
+    if (token.sessionId !== sessionId) return reject("session-mismatch", "QR belongs to a different attendance session.");
+    const session = sessionSnap.exists() ? sessionSnap.data() : null;
+    if (!session?.active || toMillis(session.expiresAt) < Date.now()) return reject("session-ended", "This attendance session has ended. Start a new one.");
+
+    const staff = staffSnap.exists() ? { id: staffSnap.id, ...staffSnap.data() } : null;
+    if (!isActiveStaff(staff)) return reject("inactive-staff", "This staff account is not active.");
+
+    const geoCheck = evaluateAttendanceGeo({ staffGeo: token.geo, settings, managerGeo });
+    if (!geoCheck.ok) return reject("geo-rejected", geoCheck.reason, { distanceM: geoCheck.distanceM ?? null });
+
+    const geo = { ...token.geo, distanceM: geoCheck.distanceM, managerDistanceM: geoCheck.managerDistanceM };
+    const plan = planPunch(staff, dateKey, attendanceSnap.exists() ? attendanceSnap.data() : null, {
+      method: "qr", geo, verifiedBy, tokenId: parsed.tokenId,
+    });
+    tx.update(tokenRef, {
+      usedAt: serverTimestamp(),
+      result: { status: "accepted", action: plan.action, distanceM: geoCheck.distanceM, attendanceId: attendanceRef.id },
+    });
+    if (plan.action === "in") tx.set(attendanceRef, plan.fields);
+    else tx.update(attendanceRef, plan.fields);
+    return { token, staff, geoCheck, action: plan.action, dateKey };
+  });
+
+  if (outcome.error) {
+    if (outcome.token) await writeAudit("attendance.qr_rejected", outcome.token.staffId, { code: outcome.error.code, sessionId });
+    throw outcome.error;
+  }
+  const { staff, geoCheck, action, dateKey } = outcome;
+  await writeAudit(`attendance.${action}`, staff.id, { dateKey, method: "qr", sessionId });
+  const { pin, pinHash, ...safeStaff } = staff;
+  return { staff: safeStaff, action, distanceM: geoCheck.distanceM };
 };
 
 /** Toggle break on/off for an attendance record (manager row action). */
@@ -992,6 +1339,11 @@ export const clockOutRecord = async (attendanceRecordId, record) => {
     onBreak: false,
     breakStartAt: null,
     breakMinutes: (record.breakMinutes || 0) + extraBreakMinutes,
+    // Stamped so firestore.rules can tell a manager clock-out from a forged one.
+    clockOutMethod: "manager",
+    clockOutGeo: null,
+    clockOutTokenId: null,
+    clockOutVerifiedBy: typeof sessionStorage !== "undefined" ? sessionStorage.getItem("staffId") || sessionStorage.getItem("staffRole") || "manager" : "manager",
     updatedAt: serverTimestamp(),
   });
 };

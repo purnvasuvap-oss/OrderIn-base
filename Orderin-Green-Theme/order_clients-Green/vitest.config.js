@@ -1,4 +1,4 @@
-import { defineConfig } from 'vitest/config';
+import { defineConfig, configDefaults } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 
 // Dedicated Vitest config; the app's vite.config.js stays build-only.
@@ -8,6 +8,8 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.js'],
+    // Emulator-backed rules tests run separately via `npm run test:rules`.
+    exclude: [...configDefaults.exclude, 'rules-tests/**'],
     css: false,
     clearMocks: true,
     restoreMocks: true,

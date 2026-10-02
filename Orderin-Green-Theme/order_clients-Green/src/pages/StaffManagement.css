@@ -1283,3 +1283,152 @@
     border: 1px solid var(--sm-line);
   }
 }
+
+/* ---- QR + geolocation attendance ---- */
+.sm-qr-panel {
+  text-align: left;
+  margin-bottom: 14px;
+}
+.sm-qr-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.sm-qr-head h4 {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.sm-qr-start {
+  width: 100%;
+  margin-top: 6px;
+}
+.sm-qr-session-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.sm-qr-live {
+  color: var(--sm-success);
+  font-size: 12.5px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.sm-qr-scanner {
+  margin: 8px 0;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #000;
+}
+.sm-qr-video {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+}
+.sm-qr-results {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  max-height: 180px;
+  overflow-y: auto;
+  font-size: 12.5px;
+}
+.sm-qr-results li {
+  padding: 6px 8px;
+  border-radius: 6px;
+  margin-bottom: 4px;
+}
+.sm-qr-results li.ok {
+  background: var(--sm-success-t);
+  color: var(--sm-success);
+}
+.sm-qr-results li.bad {
+  background: var(--sm-danger-t);
+  color: var(--sm-danger);
+}
+.sm-qr-settings {
+  border-top: 1px solid var(--sm-line);
+  padding-top: 10px;
+  margin-bottom: 6px;
+}
+.sm-qr-loc-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.sm-qr-loc {
+  font-size: 12.5px;
+  color: var(--sm-text-2);
+  font-variant-numeric: tabular-nums;
+}
+.sm-qr-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 12.5px;
+  color: var(--sm-text-2);
+  margin-bottom: 8px;
+}
+.sm-qr-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 10px;
+}
+.sm-qr-tag {
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  font-size: 10.5px;
+  background: var(--sm-admin-t);
+  color: var(--sm-gold);
+  white-space: nowrap;
+}
+.sm-qr-staff-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+.sm-qr-box {
+  /* QR needs dark-on-light contrast to scan reliably, regardless of theme. */
+  background: #fff;
+  padding: 10px;
+  border-radius: 12px;
+  line-height: 0;
+}
+.sm-qr-box svg {
+  width: min(220px, 70vw);
+  height: auto;
+}
+.sm-qr-setup {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(212, 175, 55, 0.4);
+  background: var(--sm-admin-t);
+  color: var(--sm-text-2);
+  font-size: 12.5px;
+}
+.sm-qr-setup strong {
+  color: var(--sm-gold);
+}
+.sm-qr-loc-row input {
+  flex: 1;
+  min-width: 140px;
+}
+.sm-qr-tag-pin,
+.sm-qr-tag-manager {
+  background: rgba(244, 246, 244, 0.08);
+  color: var(--sm-text-3);
+}

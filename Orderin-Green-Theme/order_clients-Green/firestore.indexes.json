@@ -1,4 +1,17 @@
 {
   "indexes": [],
-  "fieldOverrides": []
+  "fieldOverrides": [
+    {
+      "collectionGroup": "attendanceQrTokens",
+      "fieldPath": "deleteAt",
+      "ttl": true,
+      "indexes": []
+    },
+    {
+      "collectionGroup": "attendanceQrSessions",
+      "fieldPath": "deleteAt",
+      "ttl": true,
+      "indexes": []
+    }
+  ]
 }

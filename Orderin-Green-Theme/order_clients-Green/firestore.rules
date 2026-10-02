@@ -1,8 +1,206 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /{document=**} {
+
+    // The Firebase project (orderin-7f8bc) is shared by every OrderIn app, so
+    // this file governs all of them when deployed. Everything stays open
+    // exactly as before EXCEPT the Green restaurant's attendance data below.
+    // Deploy rules from this app only — the other apps' firestore.rules files
+    // are still allow-all and would remove these protections.
+
+    function isLockedAttendance(rid, coll) {
+      return rid == 'orderin_restuarant_6'
+        && coll in ['attendance', 'attendanceQrTokens', 'attendanceQrSessions', 'attendanceConfig'];
+    }
+
+    match /{top}/{rest=**} {
+      allow read, write: if top != 'Restaurant';
+    }
+    match /Restaurant/{rid} {
       allow read, write: if true;
+    }
+    match /Restaurant/{rid}/{coll}/{rest=**} {
+      allow read, write: if !isLockedAttendance(rid, coll);
+    }
+
+    // ---------------- QR + geolocation attendance (Green) ----------------
+    // There is no per-user Firebase Auth yet, so these rules can't prove WHO
+    // made a write. What they do enforce server-side:
+    //   * QR tokens are one-time, immutable, can't be listed (nonces can't be
+    //     harvested), expire by server time and need a live session + an
+    //     active staff member.
+    //   * An attendance record can only be tagged "qr" in the same
+    //     transaction that burns an accepted token for that staff member,
+    //     carrying the token's location, stamped at server time.
+    //   * PIN punches only when the PIN fallback setting is on; punches can't
+    //     be backdated; time edits must be reasoned corrections; no deletes.
+
+    function greenDoc(coll, id) {
+      return /databases/$(database)/documents/Restaurant/orderin_restuarant_6/$(coll)/$(id);
+    }
+
+    function validGeo(g) {
+      return g is map
+        && g.keys().hasAll(['lat', 'lng'])
+        && g.keys().hasOnly(['lat', 'lng', 'accuracy'])
+        && g.lat is number && g.lng is number
+        && math.abs(g.lat) <= 90 && math.abs(g.lng) <= 180
+        && (g.get('accuracy', null) == null || g.accuracy is number);
+    }
+
+    function staffIsActive(staffId) {
+      let p = greenDoc('staff', staffId);
+      return staffId is string && exists(p)
+        && !(get(p).data.get('status', 'active') in ['inactive', 'archived', 'paused', 'on-leave', 'terminated']);
+    }
+
+    function sessionIsLive(sessionId) {
+      let p = greenDoc('attendanceQrSessions', sessionId);
+      return sessionId is string && exists(p)
+        && get(p).data.active == true
+        && get(p).data.expiresAt > request.time;
+    }
+
+    function pinFallbackOn() {
+      let p = greenDoc('attendanceConfig', 'settings');
+      return exists(p) && get(p).data.get('allowPinFallback', false) == true;
+    }
+
+    match /Restaurant/orderin_restuarant_6/attendanceConfig/{docId} {
+      function validSettings(d) {
+        return d.keys().hasOnly(['lat', 'lng', 'radiusMeters', 'maxAccuracyMeters',
+            'requireManagerProximity', 'allowPinFallback', 'sessionMinutes', 'updatedAt'])
+          && ((d.get('lat', null) == null && d.get('lng', null) == null)
+            || (d.lat is number && d.lng is number && math.abs(d.lat) <= 90 && math.abs(d.lng) <= 180))
+          && (!('radiusMeters' in d) || (d.radiusMeters is int && d.radiusMeters >= 20 && d.radiusMeters <= 5000))
+          && (!('maxAccuracyMeters' in d) || (d.maxAccuracyMeters is number && d.maxAccuracyMeters > 0 && d.maxAccuracyMeters <= 1000))
+          && (!('requireManagerProximity' in d) || d.requireManagerProximity is bool)
+          && (!('allowPinFallback' in d) || d.allowPinFallback is bool)
+          && (!('sessionMinutes' in d) || (d.sessionMinutes is int && d.sessionMinutes >= 1 && d.sessionMinutes <= 60))
+          && d.updatedAt == request.time;
+      }
+      allow read: if true;
+      allow create, update: if docId == 'settings' && validSettings(request.resource.data);
+      allow delete: if false;
+    }
+
+    match /Restaurant/orderin_restuarant_6/attendanceQrSessions/{sessionId} {
+      allow read: if true;
+      allow create: if request.resource.data.keys().hasOnly(['active', 'startedBy', 'managerGeo', 'createdAt', 'expiresAt', 'deleteAt'])
+        && request.resource.data.active == true
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.expiresAt is timestamp
+        && request.resource.data.expiresAt > request.time
+        && request.resource.data.expiresAt <= request.time + duration.value(61, 'm')
+        && request.resource.data.deleteAt is timestamp
+        && (request.resource.data.get('managerGeo', null) == null || validGeo(request.resource.data.managerGeo));
+      // Only ending a live session; nothing else about it can change.
+      allow update: if resource.data.active == true
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['active', 'endedAt'])
+        && request.resource.data.active == false
+        && request.resource.data.endedAt == request.time;
+      allow delete: if false;
+    }
+
+    match /Restaurant/orderin_restuarant_6/attendanceQrTokens/{tokenId} {
+      function attendanceUsesToken(token, result) {
+        let a = greenDoc('attendance', result.attendanceId);
+        return result.attendanceId is string
+          && getAfter(a).data.staffId == token.staffId
+          && getAfter(a).data.get(result.action == 'in' ? 'clockInTokenId' : 'clockOutTokenId', null) == tokenId;
+      }
+      // get only: tokens are fetched by their random id, never listed.
+      allow get: if true;
+      allow list: if false;
+      allow create: if request.resource.data.keys().hasOnly(['staffId', 'sessionId', 'nonce', 'geo', 'createdAt', 'expiresAt', 'deleteAt', 'usedAt', 'result'])
+        && staffIsActive(request.resource.data.staffId)
+        && sessionIsLive(request.resource.data.sessionId)
+        && request.resource.data.nonce is string
+        && request.resource.data.nonce.matches('^[0-9a-f]{32}$')
+        && validGeo(request.resource.data.geo)
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.expiresAt is timestamp
+        && request.resource.data.expiresAt > request.time
+        && request.resource.data.expiresAt <= request.time + duration.value(90, 's')
+        && request.resource.data.deleteAt is timestamp
+        && request.resource.data.usedAt == null
+        && request.resource.data.result == null;
+      // Burn once: rejected any time, accepted only while valid and only
+      // together with the attendance write it authorises.
+      allow update: if resource.data.usedAt == null
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['usedAt', 'result'])
+        && request.resource.data.usedAt == request.time
+        && request.resource.data.result is map
+        && (request.resource.data.result.status == 'rejected'
+          || (request.resource.data.result.status == 'accepted'
+            && request.resource.data.result.action in ['in', 'out']
+            && resource.data.expiresAt > request.time
+            && sessionIsLive(resource.data.sessionId)
+            && staffIsActive(resource.data.staffId)
+            && attendanceUsesToken(resource.data, request.resource.data.result)));
+      allow delete: if false;
+    }
+
+    match /Restaurant/orderin_restuarant_6/attendance/{recordId} {
+      function validAttendance(d) {
+        return d.staffId is string && d.dateKey is string
+          && recordId == d.dateKey + '_' + d.staffId
+          && d.get('clockInMethod', null) in [null, 'pin', 'qr']
+          && d.get('clockOutMethod', null) in [null, 'pin', 'qr', 'manager'];
+      }
+
+      function stampKeys(side) {
+        return ['clock' + side + 'Method', 'clock' + side + 'Geo', 'clock' + side + 'TokenId', 'clock' + side + 'VerifiedBy'];
+      }
+
+      // The token must be burned (accepted) in this same write, for this
+      // staff member and record, and the stamped location must be its own.
+      function tokenBurnedFor(tokenId, d, action, geo) {
+        let p = greenDoc('attendanceQrTokens', tokenId);
+        return tokenId is string
+          && exists(p)
+          && get(p).data.usedAt == null
+          && get(p).data.staffId == d.staffId
+          && getAfter(p).data.result.status == 'accepted'
+          && getAfter(p).data.result.action == action
+          && getAfter(p).data.result.attendanceId == recordId
+          && geo.lat == get(p).data.geo.lat
+          && geo.lng == get(p).data.geo.lng;
+      }
+
+      // A newly written clock-in/out stamp must be a genuine, current punch.
+      function stampOk(d, side, action) {
+        let m = d.get('clock' + side + 'Method', null);
+        let at = d.get('clock' + side + 'At', null);
+        return m == null
+          || (m == 'qr' && at == request.time
+            && tokenBurnedFor(d.get('clock' + side + 'TokenId', null), d, action, d.get('clock' + side + 'Geo', null)))
+          || (m == 'pin' && at == request.time && pinFallbackOn())
+          || (m == 'manager' && side == 'Out' && at == request.time);
+      }
+
+      allow read: if true;
+      allow delete: if false;
+      allow create: if validAttendance(request.resource.data)
+        && request.resource.data.get('clockInMethod', null) != null
+        && stampOk(request.resource.data, 'In', 'in')
+        && stampOk(request.resource.data, 'Out', 'out');
+      allow update: if validAttendance(request.resource.data)
+        && request.resource.data.staffId == resource.data.staffId
+        && request.resource.data.dateKey == resource.data.dateKey
+        && updateOk(request.resource.data, request.resource.data.diff(resource.data).affectedKeys());
+
+      function updateOk(d, changed) {
+        let inStamp = changed.hasAny(stampKeys('In'));
+        let outStamp = changed.hasAny(stampKeys('Out'));
+        let isCorrection = d.get('correctedAt', null) == request.time
+          && d.get('correctionReason', '') is string
+          && d.get('correctionReason', '').size() > 0;
+        return (!inStamp || (d.get('clockInMethod', null) != null && stampOk(d, 'In', 'in')))
+          && (!outStamp || stampOk(d, 'Out', 'out'))
+          && (!changed.hasAny(['clockInAt']) || inStamp || isCorrection)
+          && (!changed.hasAny(['clockOutAt']) || inStamp || outStamp || isCorrection);
+      }
     }
   }
 }

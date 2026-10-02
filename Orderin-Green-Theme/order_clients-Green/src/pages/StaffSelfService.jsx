@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import routes from "../routes";
 import "./StaffManagement.css";
+import StaffAttendanceQrCard from "../components/StaffAttendance/StaffAttendanceQrCard";
 import {
   subscribeStaff,
   subscribeRoster,
@@ -272,6 +273,8 @@ export default function StaffSelfService() {
   const totalHours = attendance.reduce((sum, record) => sum + hoursFor(record), 0);
   const pendingRequests = [...timeOff, ...swaps].filter((item) => (item.status || "pending") === "pending").length;
   const unreadCount = notifications.filter((item) => !item.read).length;
+  const todayDateKey = new Date().toLocaleDateString("en-CA");
+  const clockedIn = attendance.some((record) => record.dateKey === todayDateKey && record.clockInAt && !record.clockOutAt);
 
   const submitTimeOff = async ({ startDate, endDate, reason }) => {
     await addTimeOffRequest({ staffId, staffName: staff.name, startDate, endDate, reason: reason || "Staff self-service request" });
@@ -324,6 +327,8 @@ export default function StaffSelfService() {
           <div className="sm-statc-lbl">New announcements</div>
         </div>
       </div>
+
+      {staffId && <StaffAttendanceQrCard staffId={staffId} clockedIn={clockedIn} />}
 
       <div className="sm-ss-grid">
         <section className="sm-ss-card">

@@ -4,6 +4,10 @@ import { MemoryRouter } from 'react-router-dom';
 import StaffManagement from '../StaffManagement';
 
 const mockNavigate = vi.fn();
+const { QR_DEFAULTS, mockAttendanceSettings } = vi.hoisted(() => {
+  const defaults = { lat: null, lng: null, radiusMeters: 100, maxAccuracyMeters: 100, requireManagerProximity: false, allowPinFallback: false, sessionMinutes: 10 };
+  return { QR_DEFAULTS: defaults, mockAttendanceSettings: { current: defaults } };
+});
 vi.mock('react-router-dom', async (importOriginal) => {
   const actual = await importOriginal();
   return { ...actual, useNavigate: () => mockNavigate };
@@ -46,6 +50,21 @@ vi.mock('../../services/staffService', () => {
   hoursOf: vi.fn(() => 0),
   attendanceStatus: vi.fn(() => 'off'),
   getAttendanceForDateRange: vi.fn().mockResolvedValue([]),
+  ATTENDANCE_SETTINGS_DEFAULTS: mockAttendanceSettings.current,
+  subscribeAttendanceSettings: (cb) => {
+    cb(mockAttendanceSettings.current);
+    return () => {};
+  },
+  subscribeActiveQrSession: (cb) => {
+    cb(null);
+    return () => {};
+  },
+  startQrSession: vi.fn(),
+  endQrSession: vi.fn(),
+  redeemAttendanceToken: vi.fn(),
+  saveAttendanceSettings: vi.fn(),
+  getCurrentGeo: vi.fn(),
+  insecureContextMessage: () => null,
   };
 });
 
@@ -104,6 +123,28 @@ describe('StaffManagement', () => {
     await user.click(screen.getByRole('button', { name: 'Schedule & Roster' }));
 
     expect(screen.getByRole('button', { name: 'Schedule & Roster' })).toHaveClass('on');
+  });
+
+  it('shows QR attendance and hides the PIN keypad by default', async () => {
+    const user = userEvent.setup();
+    renderPage();
+
+    await user.click(screen.getByRole('button', { name: /Attendance/ }));
+
+    expect(screen.getByRole('button', { name: 'Start QR Attendance' })).toBeInTheDocument();
+    expect(screen.queryByText(/PIN Punch Clock/)).not.toBeInTheDocument();
+  });
+
+  it('shows the PIN keypad when PIN fallback is enabled', async () => {
+    mockAttendanceSettings.current = { ...QR_DEFAULTS, allowPinFallback: true };
+    try {
+      const user = userEvent.setup();
+      renderPage();
+      await user.click(screen.getByRole('button', { name: /Attendance/ }));
+      expect(screen.getByText(/PIN Punch Clock/)).toBeInTheDocument();
+    } finally {
+      mockAttendanceSettings.current = QR_DEFAULTS;
+    }
   });
 
   it('navigates back to the dashboard', async () => {
