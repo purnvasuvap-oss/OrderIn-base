@@ -39,7 +39,6 @@ import {
   addSwapRequest,
   decideSwapRequest,
   subscribeTodayAttendance,
-  punchPin,
   toggleBreak,
   clockOutRecord,
   hoursOf,
@@ -53,10 +52,9 @@ import {
   subscribeStaffNotifications,
   markStaffNotificationRead,
   createShiftTemplate,
-  subscribeAttendanceSettings,
-  ATTENDANCE_SETTINGS_DEFAULTS,
 } from "../services/staffService";
-import QrAttendancePanel from "../components/StaffAttendance/QrAttendancePanel";
+import { subscribeAttendanceSettings, ATTENDANCE_SETTINGS_DEFAULTS } from "../services/attendanceService";
+import { AttendanceDisplayCard, AttendanceApprovals } from "../components/StaffAttendance/AttendanceAdmin";
 
 const ROLE_META = {
   Admin: { key: "admin", label: "Admin" },
@@ -1108,27 +1106,29 @@ function AttendanceCorrectionModal({ record, onClose, onSave }) {
   );
 }
 
-const PUNCH_METHOD_LABEL = { qr: "QR", pin: "PIN", manager: "Manager" };
+const PUNCH_METHOD_LABEL = { qr: "QR", manual: "Manual", manager: "Manager", pin: "PIN" };
 const PUNCH_METHOD_TITLE = {
-  qr: "Verified by a manager-scanned QR with location check",
-  pin: "PIN keypad (fallback)",
+  qr: "Entrance QR scanned on the registered phone, inside the radius, with a face check",
+  manual: "Manual attendance approved by a manager",
   manager: "Clocked out by a manager",
+  pin: "Legacy PIN keypad",
 };
-function PunchMethodTag({ method, geo }) {
+function PunchMethodTag({ method, geo, face, selfie, verifiedBy }) {
   if (!PUNCH_METHOD_LABEL[method]) return null;
-  const distance = method === "qr" && Number.isFinite(geo?.distanceM) ? ` · ${geo.distanceM} m` : "";
+  const details = [];
+  if (method === "qr" && Number.isFinite(geo?.distanceM)) details.push(`${geo.distanceM} m`);
+  if (method === "qr" && Number.isFinite(face?.similarity)) details.push(`face ${Math.round(face.similarity * 100)}%`);
+  const title = [PUNCH_METHOD_TITLE[method], verifiedBy?.role ? `Approved by ${verifiedBy.role}` : ""].filter(Boolean).join(" · ");
   return (
-    <span className={`sm-qr-tag sm-qr-tag-${method}`} title={PUNCH_METHOD_TITLE[method]}>
-      {PUNCH_METHOD_LABEL[method]}{distance}
+    <span className={`sm-qr-tag sm-qr-tag-${method}`} title={title}>
+      {selfie && <img className="sm-qr-tag-selfie" src={selfie} alt="Scan selfie" />}
+      {PUNCH_METHOD_LABEL[method]}{details.length ? ` · ${details.join(" · ")}` : ""}
     </span>
   );
 }
 
 function AttendanceTab({ staffList }) {
   const permissions = getStaffPermissions();
-  const [pinDigits, setPinDigits] = useState("");
-  const [pinError, setPinError] = useState("");
-  const [pinMessage, setPinMessage] = useState("");
   const [attendance, setAttendance] = useState([]);
   const [busyId, setBusyId] = useState(null);
   const [editingRecord, setEditingRecord] = useState(null);
@@ -1154,29 +1154,6 @@ function AttendanceTab({ staffList }) {
     const unsub = subscribeTodayAttendance(setAttendance);
     return () => unsub();
   }, []);
-
-  const handleDigit = async (digit) => {
-    if (pinDigits.length >= 4) return;
-    const next = pinDigits + digit;
-    setPinDigits(next);
-    setPinError("");
-    if (next.length === 4) {
-      try {
-        const { staff, action } = await punchPin(next);
-        setPinMessage(`${staff.name} clocked ${action === "in" ? "IN" : "OUT"}`);
-      } catch (err) {
-        setPinError(err.message || "Invalid or inactive PIN");
-      } finally {
-        setPinDigits("");
-        setTimeout(() => setPinMessage(""), 3000);
-      }
-    }
-  };
-
-  const clearPin = () => {
-    setPinDigits("");
-    setPinError("");
-  };
 
   const summary = useMemo(() => {
     let onShift = 0;
@@ -1213,33 +1190,10 @@ function AttendanceTab({ staffList }) {
 
   return (
     <>
+    {permissions.correctAttendance && <AttendanceApprovals />}
     <div className="sm-panel sm-att-panel">
       <div className="sm-att-left">
-        <QrAttendancePanel settings={attendanceSettings} canConfigure={permissions.correctAttendance} />
-        {attendanceSettings.allowPinFallback && <div className="sm-punch-card">
-          <h4>PIN Punch Clock (fallback)</h4>
-          <div className="sm-pin-dots">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <span key={i} className={`sm-pin-dot ${i < pinDigits.length ? "filled" : ""}`} />
-            ))}
-          </div>
-          {pinError && <div className="sm-error">{pinError}</div>}
-          {pinMessage && <div className="sm-success">{pinMessage}</div>}
-          <div className="sm-keypad">
-            {["1", "2", "3", "4", "5", "6", "7", "8", "9"].map((n) => (
-              <button key={n} className="sm-key" onClick={() => handleDigit(n)}>
-                {n}
-              </button>
-            ))}
-            <button className="sm-key sm-key-fn" onClick={clearPin}>
-              Clear
-            </button>
-            <button className="sm-key" onClick={() => handleDigit("0")}>
-              0
-            </button>
-            <span className="sm-key sm-key-blank" aria-hidden="true" />
-          </div>
-        </div>}
+        <AttendanceDisplayCard settings={attendanceSettings} canConfigure={permissions.correctAttendance} />
       </div>
 
       <div className="sm-att-right">
@@ -1284,11 +1238,11 @@ function AttendanceTab({ staffList }) {
                   </span>
                   <span className="sm-att-field">
                     <span className="sm-cell-label">Clock in</span>
-                    <span>{fmtClock(r.clockInAt)}<PunchMethodTag method={r.clockInMethod} geo={r.clockInGeo} /></span>
+                    <span>{fmtClock(r.clockInAt)}<PunchMethodTag method={r.clockInMethod} geo={r.clockInGeo} face={r.clockInFace} selfie={r.clockInSelfie} verifiedBy={r.clockInVerifiedBy} /></span>
                   </span>
                   <span className="sm-att-field">
                     <span className="sm-cell-label">Clock out</span>
-                    <span>{fmtClock(r.clockOutAt)}<PunchMethodTag method={r.clockOutMethod} geo={r.clockOutGeo} /></span>
+                    <span>{fmtClock(r.clockOutAt)}<PunchMethodTag method={r.clockOutMethod} geo={r.clockOutGeo} face={r.clockOutFace} selfie={r.clockOutSelfie} verifiedBy={r.clockOutVerifiedBy} /></span>
                   </span>
                   <span className="sm-att-field">
                     <span className="sm-cell-label">Break</span>

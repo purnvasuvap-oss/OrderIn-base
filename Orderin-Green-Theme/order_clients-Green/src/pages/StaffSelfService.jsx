@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import routes from "../routes";
 import "./StaffManagement.css";
-import StaffAttendanceQrCard from "../components/StaffAttendance/StaffAttendanceQrCard";
+import StaffAttendanceCard from "../components/StaffAttendance/StaffAttendanceCard";
 import {
   subscribeStaff,
   subscribeRoster,
@@ -328,7 +328,7 @@ export default function StaffSelfService() {
         </div>
       </div>
 
-      {staffId && <StaffAttendanceQrCard staffId={staffId} clockedIn={clockedIn} />}
+      {staff && <StaffAttendanceCard staff={staff} clockedIn={clockedIn} />}
 
       <div className="sm-ss-grid">
         <section className="sm-ss-card">

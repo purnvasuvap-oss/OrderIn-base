@@ -17,6 +17,7 @@ const routes = {
   staffManagement: "/staff-management",
   staffPayroll: "/staff-management/payroll",
   staffPayrollRun: "/staff-management/payroll/:runId",
+  attendanceDisplay: "/staff-management/attendance-display",
   staffSelfService: "/staff-self-service",
   kitchen: "/kitchen",
 };

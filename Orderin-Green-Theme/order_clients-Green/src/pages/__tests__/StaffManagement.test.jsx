@@ -4,9 +4,9 @@ import { MemoryRouter } from 'react-router-dom';
 import StaffManagement from '../StaffManagement';
 
 const mockNavigate = vi.fn();
-const { QR_DEFAULTS, mockAttendanceSettings } = vi.hoisted(() => {
-  const defaults = { lat: null, lng: null, radiusMeters: 100, maxAccuracyMeters: 100, requireManagerProximity: false, allowPinFallback: false, sessionMinutes: 10 };
-  return { QR_DEFAULTS: defaults, mockAttendanceSettings: { current: defaults } };
+const { ATT_DEFAULTS, mockAttendance } = vi.hoisted(() => {
+  const defaults = { lat: 12.97, lng: 77.59, radiusMeters: 100, maxAccuracyMeters: 100, faceMatchThreshold: 0.6 };
+  return { ATT_DEFAULTS: defaults, mockAttendance: { devices: [], requests: [] } };
 });
 vi.mock('react-router-dom', async (importOriginal) => {
   const actual = await importOriginal();
@@ -50,21 +50,28 @@ vi.mock('../../services/staffService', () => {
   hoursOf: vi.fn(() => 0),
   attendanceStatus: vi.fn(() => 'off'),
   getAttendanceForDateRange: vi.fn().mockResolvedValue([]),
-  ATTENDANCE_SETTINGS_DEFAULTS: mockAttendanceSettings.current,
-  subscribeAttendanceSettings: (cb) => {
-    cb(mockAttendanceSettings.current);
+  };
+});
+
+vi.mock('../../services/attendanceService', async (importOriginal) => {
+  const actual = await importOriginal();
+  const sub = (value) => (cb) => {
+    cb(typeof value === 'function' ? value() : value);
     return () => {};
-  },
-  subscribeActiveQrSession: (cb) => {
-    cb(null);
-    return () => {};
-  },
-  startQrSession: vi.fn(),
-  endQrSession: vi.fn(),
-  redeemAttendanceToken: vi.fn(),
-  saveAttendanceSettings: vi.fn(),
-  getCurrentGeo: vi.fn(),
-  insecureContextMessage: () => null,
+  };
+  return {
+    ...actual,
+    ATTENDANCE_SETTINGS_DEFAULTS: ATT_DEFAULTS,
+    subscribeAttendanceSettings: sub(ATT_DEFAULTS),
+    subscribeActiveKioskSession: sub(null),
+    subscribeAllDevices: sub(() => mockAttendance.devices),
+    subscribeAttendanceRequests: sub(() => mockAttendance.requests),
+    saveAttendanceSettings: vi.fn(),
+    decideDevice: vi.fn(),
+    revokeDevice: vi.fn(),
+    decideManualRequest: vi.fn(),
+    getCurrentGeo: vi.fn(),
+    insecureContextMessage: () => null,
   };
 });
 
@@ -125,25 +132,42 @@ describe('StaffManagement', () => {
     expect(screen.getByRole('button', { name: 'Schedule & Roster' })).toHaveClass('on');
   });
 
-  it('shows QR attendance and hides the PIN keypad by default', async () => {
+  it('shows the attendance display entry point and no PIN keypad', async () => {
     const user = userEvent.setup();
     renderPage();
 
     await user.click(screen.getByRole('button', { name: /Attendance/ }));
 
-    expect(screen.getByRole('button', { name: 'Start QR Attendance' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Open Attendance Display' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Attendance approvals/ })).toBeInTheDocument();
     expect(screen.queryByText(/PIN Punch Clock/)).not.toBeInTheDocument();
   });
 
-  it('shows the PIN keypad when PIN fallback is enabled', async () => {
-    mockAttendanceSettings.current = { ...QR_DEFAULTS, allowPinFallback: true };
+  it('follows the approval chain for pending phones and manual requests', async () => {
+    mockAttendance.devices = [
+      { id: 'dev1', staffId: 's1', staffName: 'Priya', staffRole: 'Floor', label: 'Vivo Y35', platform: 'Android · Chrome', status: 'pending', faceThumbnail: 'data:image/jpeg;base64,x' },
+    ];
+    mockAttendance.requests = [
+      { id: 'r1', staffId: 'm1', staffName: 'Ravi', staffRole: 'General Manager', dateKey: '2026-10-01', reason: 'Phone broken', status: 'pending' },
+    ];
+    sessionStorage.setItem('staffRole', 'General Manager');
+    sessionStorage.setItem('staffId', 'gm-2');
     try {
       const user = userEvent.setup();
       renderPage();
       await user.click(screen.getByRole('button', { name: /Attendance/ }));
-      expect(screen.getByText(/PIN Punch Clock/)).toBeInTheDocument();
+
+      const approveButtons = screen.getAllByRole('button', { name: 'Approve' });
+      // A GM can approve floor staff's phone…
+      expect(approveButtons[0]).toBeEnabled();
+      // …but another manager's request needs the Admin.
+      expect(approveButtons[1]).toBeDisabled();
+      expect(approveButtons[1].closest('span')).toHaveAttribute('title', expect.stringMatching(/Admin/));
     } finally {
-      mockAttendanceSettings.current = QR_DEFAULTS;
+      sessionStorage.removeItem('staffRole');
+      sessionStorage.removeItem('staffId');
+      mockAttendance.devices = [];
+      mockAttendance.requests = [];
     }
   });
 

@@ -2,13 +2,13 @@
   "indexes": [],
   "fieldOverrides": [
     {
-      "collectionGroup": "attendanceQrTokens",
+      "collectionGroup": "attendanceKioskCodes",
       "fieldPath": "deleteAt",
       "ttl": true,
       "indexes": []
     },
     {
-      "collectionGroup": "attendanceQrSessions",
+      "collectionGroup": "attendanceKioskSessions",
       "fieldPath": "deleteAt",
       "ttl": true,
       "indexes": []

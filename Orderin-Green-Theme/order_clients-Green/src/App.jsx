@@ -23,6 +23,7 @@ import StaffPortalLogin from "./pages/StaffPortalLogin.jsx";
 import StaffManagement from "./pages/StaffManagement.jsx";
 import Payroll from "./pages/Payroll.jsx";
 import PayrollRunDetail from "./pages/PayrollRunDetail.jsx";
+import AttendanceDisplay from "./pages/AttendanceDisplay.jsx";
 import StaffSelfService from "./pages/StaffSelfService.jsx";
 import KitchenDisplay from "./pages/KitchenDisplay.jsx";
 import { NotificationProvider } from "./contexts/NotificationContext.jsx";
@@ -196,6 +197,16 @@ function App() {
                   <Header />
                   <Payroll />
                 </>
+              </SectionProtectedRoute>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path={routes.attendanceDisplay}
+          element={
+            <ProtectedRoute>
+              <SectionProtectedRoute storageKey="staffAuth" redirectTo={routes.staffLogin}>
+                <AttendanceDisplay />
               </SectionProtectedRoute>
             </ProtectedRoute>
           }

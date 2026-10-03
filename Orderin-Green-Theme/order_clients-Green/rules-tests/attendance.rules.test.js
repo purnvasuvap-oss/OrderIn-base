@@ -1,5 +1,6 @@
-// Firestore rules tests for QR + geolocation attendance. Runs the real
-// staffService code against the local emulator with firestore.rules loaded.
+// Firestore rules tests for staff attendance (entrance QR + registered phone +
+// face check, and manager-approved manual attendance). Drives the real
+// attendanceService / staffService code against the local emulator.
 //   npm run test:rules
 import { readFileSync } from "node:fs";
 import { initializeTestEnvironment, assertFails, assertSucceeds } from "@firebase/rules-unit-testing";
@@ -14,30 +15,82 @@ vi.mock("../src/firebase", () => ({
   },
 }));
 
-const svc = await import("../src/services/staffService");
+const att = await import("../src/services/attendanceService");
+const staffSvc = await import("../src/services/staffService");
 
 const RID = "orderin_restuarant_6";
 const R = (...segments) => ["Restaurant", RID, ...segments].join("/");
 const RESTAURANT = { lat: 12.9716, lng: 77.5946 };
 const near = { lat: RESTAURANT.lat + 0.0003, lng: RESTAURANT.lng, accuracy: 20 };
-const todayId = (staffId) => `${svc.todayKey()}_${staffId}`;
+const GM = { id: "m1", role: "General Manager" };
+const GM2 = { id: "m2", role: "General Manager" };
+const ADMIN = { id: "a1", role: "Admin" };
+const FACE = { embedding: Array.from({ length: 1024 }, (_, i) => (i % 7) / 10), thumbnail: "data:image/jpeg;base64,AAAA", real: 0.9, live: 0.9 };
+const STAFF = {
+  s1: { id: "s1", name: "Anirudh", role: "Floor", status: "active" },
+  s2: { id: "s2", name: "Paused", role: "Floor", status: "paused" },
+  m1: { id: "m1", name: "Ravi", role: "General Manager", status: "active" },
+  m2: { id: "m2", name: "Meena", role: "General Manager", status: "active" },
+  a1: { id: "a1", name: "Owner", role: "Admin", status: "active" },
+};
 
 let env;
 let db;
+let seq = 0;
 
-const seed = async ({ allowPinFallback = false } = {}) => {
+const makeIdentity = async () => {
+  const pair = await crypto.subtle.generateKey({ name: "ECDSA", namedCurve: "P-256" }, false, ["sign", "verify"]);
+  const jwk = await crypto.subtle.exportKey("jwk", pair.publicKey);
+  seq += 1;
+  return {
+    deviceId: `device${String(seq).padStart(6, "0")}`,
+    publicKeyJwk: { kty: jwk.kty, crv: jwk.crv, x: jwk.x, y: jwk.y },
+    sign: async (text) => `sig:${text}`,
+  };
+};
+
+const seed = async () => {
   await env.clearFirestore();
   await env.withSecurityRulesDisabled(async (ctx) => {
     const admin = ctx.firestore();
-    await setDoc(doc(admin, R("staff", "s1")), { name: "Priya", status: "active" });
-    await setDoc(doc(admin, R("staff", "s2")), { name: "Arun", status: "paused" });
+    await Promise.all(Object.values(STAFF).map(({ id, ...data }) => setDoc(doc(admin, R("staff", id)), data)));
     await setDoc(doc(admin, R("attendanceConfig", "settings")), {
-      ...RESTAURANT, radiusMeters: 100, allowPinFallback, updatedAt: new Date(),
+      ...RESTAURANT, radiusMeters: 100, faceMatchThreshold: 0.6, updatedAt: new Date(),
     });
   });
 };
 
-const startSession = async () => (await svc.startQrSession({ managerGeo: RESTAURANT, startedBy: "m1" })).id;
+/** Registers + approves a phone for staff, returns its identity. */
+const registeredPhone = async (staffId, approver = GM) => {
+  const identity = await makeIdentity();
+  await att.requestDeviceRegistration({ staff: STAFF[staffId], identity, label: "Vivo Y35", face: FACE });
+  const device = { id: identity.deviceId, ...(await getDoc(doc(db, R("staffDevices", identity.deviceId)))).data() };
+  await att.decideDevice(device, "approved", approver);
+  return identity;
+};
+
+const scan = async (staffId, identity, overrides = {}) => {
+  const session = overrides.sessionId || (await att.startKioskSession({ startedBy: "m1" })).id;
+  const code = await att.createKioskCode(session);
+  return att.recordKioskScan({
+    staff: STAFF[staffId],
+    identity,
+    codeId: code.codeId,
+    geo: near,
+    geoCheck: { ok: true, distanceM: 33 },
+    face: { similarity: 0.82, real: 0.9, live: 0.9 },
+    selfie: "data:image/jpeg;base64,BBBB",
+    ...overrides,
+  });
+};
+
+/** A hand-built "qr" attendance write, for forgery attempts. */
+const forgedQrRecord = (staffId, { codeId, deviceId, similarity = 0.82, distanceM = 33 }) => ({
+  dateKey: staffSvc.todayKey(), staffId, staffName: "x", clockInAt: serverTimestamp(), clockOutAt: null,
+  clockInMethod: "qr", clockInDeviceId: deviceId, clockInKioskCode: codeId, clockInDeviceSig: "sig",
+  clockInFace: { similarity, real: 0.9, live: 0.9 }, clockInGeo: { lat: near.lat, lng: near.lng, accuracy: 20, distanceM },
+  updatedAt: serverTimestamp(),
+});
 
 beforeAll(async () => {
   env = await initializeTestEnvironment({
@@ -52,123 +105,147 @@ afterAll(async () => {
   await env?.cleanup();
 });
 
-describe("QR attendance happy path (real service code)", () => {
+describe("happy path (real service code)", () => {
   beforeEach(() => seed());
 
-  it("starts a session, mints a token, and clocks in then out", async () => {
-    const sessionId = await startSession();
-    const first = await svc.createAttendanceToken({ staffId: "s1", sessionId, geo: near });
-    await expect(svc.redeemAttendanceToken(first.payload, { sessionId, verifiedBy: "m1" })).resolves.toMatchObject({ action: "in" });
+  it("registers a phone, approves it, then clocks in and out by scanning the display", async () => {
+    const phone = await registeredPhone("s1");
+    expect((await getDoc(doc(db, R("staffFaces", "s1")))).data()).toMatchObject({ deviceId: phone.deviceId });
 
-    const record = (await getDoc(doc(db, R("attendance", todayId("s1"))))).data();
-    expect(record).toMatchObject({ clockInMethod: "qr", clockInTokenId: first.tokenId });
-
-    const second = await svc.createAttendanceToken({ staffId: "s1", sessionId, geo: near });
-    await expect(svc.redeemAttendanceToken(second.payload, { sessionId })).resolves.toMatchObject({ action: "out" });
+    const session = (await att.startKioskSession({ startedBy: "m1" })).id;
+    await expect(scan("s1", phone, { sessionId: session })).resolves.toMatchObject({ action: "in" });
+    await expect(scan("s1", phone, { sessionId: session })).resolves.toMatchObject({ action: "out" });
+    // Second shift the same day: the heaviest write (both sides' stamps change).
+    await expect(scan("s1", phone, { sessionId: session })).resolves.toMatchObject({ action: "in" });
+    await expect(scan("s1", phone, { sessionId: session })).resolves.toMatchObject({ action: "out" });
+    const record = (await getDoc(doc(db, R("attendance", `${staffSvc.todayKey()}_s1`)))).data();
+    expect(record).toMatchObject({ clockInMethod: "qr", clockOutMethod: "qr", clockInDeviceId: phone.deviceId });
   });
 
-  it("allows break toggles, manager clock-out, reasoned corrections and ending a session", async () => {
-    const sessionId = await startSession();
-    const token = await svc.createAttendanceToken({ staffId: "s1", sessionId, geo: near });
-    await svc.redeemAttendanceToken(token.payload, { sessionId });
-    const id = todayId("s1");
+  it("keeps breaks, manager clock-out and reasoned corrections working", async () => {
+    const phone = await registeredPhone("s1");
+    await scan("s1", phone);
+    const id = `${staffSvc.todayKey()}_s1`;
     const read = async () => (await getDoc(doc(db, R("attendance", id)))).data();
-
-    await assertSucceeds(svc.toggleBreak(id, await read()));
-    await assertSucceeds(svc.toggleBreak(id, await read()));
-    await assertSucceeds(svc.clockOutRecord(id, await read()));
-    await assertSucceeds(svc.updateAttendanceRecord(id, {
-      clockInAt: new Date(Date.now() - 3600000), clockOutAt: new Date(), breakMinutes: 5, correctionReason: "Forgot to scan",
+    await assertSucceeds(staffSvc.toggleBreak(id, await read()));
+    await assertSucceeds(staffSvc.toggleBreak(id, await read()));
+    await assertSucceeds(staffSvc.clockOutRecord(id, await read()));
+    await assertSucceeds(staffSvc.updateAttendanceRecord(id, {
+      clockInAt: new Date(Date.now() - 3600000), clockOutAt: new Date(), breakMinutes: 5, correctionReason: "Scanned late",
     }));
-    await assertSucceeds(svc.endQrSession(sessionId));
   });
 
-  it("rejected scans burn the token without touching attendance", async () => {
-    const sessionId = await startSession();
-    const far = await svc.createAttendanceToken({ staffId: "s1", sessionId, geo: { lat: 13.1, lng: 77.6, accuracy: 10 } });
-    await expect(svc.redeemAttendanceToken(far.payload, { sessionId })).rejects.toMatchObject({ code: "geo-rejected" });
-    expect((await getDoc(doc(db, R("attendance", todayId("s1"))))).exists()).toBe(false);
+  it("approving a new phone retires the old one", async () => {
+    const oldPhone = await registeredPhone("s1");
+    const newPhone = await registeredPhone("s1");
+    expect((await getDoc(doc(db, R("staffDevices", oldPhone.deviceId)))).data().status).toBe("revoked");
+    await expect(scan("s1", oldPhone)).rejects.toMatchObject({ code: "device-not-registered" });
+    await expect(scan("s1", newPhone)).resolves.toMatchObject({ action: "in" });
   });
 
-  it("PIN punches work only when the fallback is enabled", async () => {
-    const pinPunch = () => setDoc(doc(db, R("attendance", todayId("s1"))), {
-      dateKey: svc.todayKey(), staffId: "s1", staffName: "Priya", clockInAt: serverTimestamp(), clockOutAt: null,
-      clockInMethod: "pin", clockInGeo: null, clockInVerifiedBy: null, clockInTokenId: null, updatedAt: serverTimestamp(),
-    });
-    await assertFails(pinPunch());
-    await seed({ allowPinFallback: true });
-    await assertSucceeds(pinPunch());
+  it("manual attendance: staff → manager, manager → Admin", async () => {
+    const inTime = "00:01";
+    const dateKey = staffSvc.todayKey();
+    const staffReq = await att.submitManualRequest({ staff: STAFF.s1, dateKey, inTime, reason: "Phone broken" });
+    const staffRequest = { id: staffReq, ...(await getDoc(doc(db, R("attendanceRequests", staffReq)))).data() };
+    await assertSucceeds(att.decideManualRequest(staffRequest, "approved", { approver: GM }));
+    expect((await getDoc(doc(db, R("attendance", `${dateKey}_s1`)))).data()).toMatchObject({ clockInMethod: "manual", clockInRequestId: staffReq });
+
+    const gmReq = await att.submitManualRequest({ staff: STAFF.m1, dateKey, inTime, reason: "Phone broken" });
+    const gmRequest = { id: gmReq, ...(await getDoc(doc(db, R("attendanceRequests", gmReq)))).data() };
+    await expect(att.decideManualRequest(gmRequest, "approved", { approver: GM2 })).rejects.toMatchObject({ code: "not-allowed" });
+    await assertSucceeds(att.decideManualRequest(gmRequest, "approved", { approver: ADMIN }));
+
+    // In + out in one request (both sides stamped in a single write).
+    const yesterday = new Date(Date.now() - 86400000).toLocaleDateString("en-CA");
+    const fullReq = await att.submitManualRequest({ staff: STAFF.s1, dateKey: yesterday, inTime: "09:00", outTime: "17:00", reason: "Phone broken" });
+    const fullRequest = { id: fullReq, ...(await getDoc(doc(db, R("attendanceRequests", fullReq)))).data() };
+    await assertSucceeds(att.decideManualRequest(fullRequest, "approved", { approver: GM }));
+    expect((await getDoc(doc(db, R("attendance", `${yesterday}_s1`)))).data()).toMatchObject({ clockInMethod: "manual", clockOutMethod: "manual" });
+
   });
 });
 
-describe("forgery attempts are blocked", () => {
+describe("forgery attempts are blocked by the rules", () => {
   beforeEach(() => seed());
 
-  it("cannot list tokens or reuse / rewrite one", async () => {
-    const sessionId = await startSession();
-    const token = await svc.createAttendanceToken({ staffId: "s1", sessionId, geo: near });
-    await assertFails(getDocs(collection(db, R("attendanceQrTokens"))));
-    await assertSucceeds(getDoc(doc(db, R("attendanceQrTokens", token.tokenId))));
-
-    await svc.redeemAttendanceToken(token.payload, { sessionId });
-    const ref = doc(db, R("attendanceQrTokens", token.tokenId));
-    await assertFails(updateDoc(ref, { usedAt: serverTimestamp(), result: { status: "rejected" } }));
-    await assertFails(updateDoc(ref, { geo: { lat: 0, lng: 0 } }));
-    await assertFails(deleteDoc(ref));
-  });
-
-  it("cannot mark a token accepted without the matching attendance write", async () => {
-    const sessionId = await startSession();
-    const token = await svc.createAttendanceToken({ staffId: "s1", sessionId, geo: near });
-    await assertFails(updateDoc(doc(db, R("attendanceQrTokens", token.tokenId)), {
-      usedAt: serverTimestamp(), result: { status: "accepted", action: "in", attendanceId: todayId("s1") },
+  it("display codes can't be listed, edited or deleted", async () => {
+    const session = (await att.startKioskSession({ startedBy: "m1" })).id;
+    const code = await att.createKioskCode(session);
+    await assertFails(getDocs(collection(db, R("attendanceKioskCodes"))));
+    await assertSucceeds(getDoc(doc(db, R("attendanceKioskCodes", code.codeId))));
+    await assertFails(updateDoc(doc(db, R("attendanceKioskCodes", code.codeId)), { expiresAt: new Date(Date.now() + 86400000) }));
+    await assertFails(deleteDoc(doc(db, R("attendanceKioskCodes", code.codeId))));
+    await assertFails(setDoc(doc(db, R("attendanceKioskCodes", "longlivedcode000001")), {
+      sessionId: session, nonce: "a".repeat(32), createdAt: serverTimestamp(), expiresAt: new Date(Date.now() + 3600000), deleteAt: new Date(),
     }));
   });
 
-  it("cannot tag attendance as QR without burning a real token", async () => {
-    const sessionId = await startSession();
-    const token = await svc.createAttendanceToken({ staffId: "s1", sessionId, geo: near });
-    await assertFails(setDoc(doc(db, R("attendance", todayId("s1"))), {
-      dateKey: svc.todayKey(), staffId: "s1", staffName: "Priya", clockInAt: serverTimestamp(), clockOutAt: null,
-      clockInMethod: "qr", clockInGeo: near, clockInTokenId: token.tokenId, clockInVerifiedBy: "m1", updatedAt: serverTimestamp(),
+  it("a phone can't be self-approved, approved past the chain, or hijacked", async () => {
+    const identity = await makeIdentity();
+    await att.requestDeviceRegistration({ staff: STAFF.m1, identity, label: "Pixel", face: FACE });
+    const ref = doc(db, R("staffDevices", identity.deviceId));
+    const approve = (decidedBy) => updateDoc(ref, { status: "active", decidedBy, decidedAt: serverTimestamp() });
+    await assertFails(approve(GM)); // self-approval (m1 approving own phone)
+    await assertFails(approve(GM2)); // a manager's phone needs the Admin
+    const thief = await makeIdentity();
+    await assertFails(setDoc(doc(db, R("staffDevices", identity.deviceId)), {
+      ...(await getDoc(ref)).data(), staffId: "s1", staffName: "Anirudh", staffRole: "Floor", publicKeyJwk: thief.publicKeyJwk,
+      consentAt: serverTimestamp(), requestedAt: serverTimestamp(),
+    }));
+    // Approval without writing the face alongside is refused too.
+    await assertFails(updateDoc(ref, { status: "active", decidedBy: ADMIN, decidedAt: serverTimestamp() }));
+    await assertFails(setDoc(doc(db, R("staffFaces", "m1")), { staffId: "m1", deviceId: identity.deviceId, embedding: [1], thumbnail: "x", approvedAt: serverTimestamp() }));
+  });
+
+  it("a phone request must carry the staff member's real role", async () => {
+    const identity = await makeIdentity();
+    await expect(att.requestDeviceRegistration({ staff: { ...STAFF.m1, role: "Floor" }, identity, label: "Pixel", face: FACE }))
+      .rejects.toThrow();
+  });
+
+  it("QR attendance needs a live code, an active phone, a good face score and a distance in range", async () => {
+    const phone = await registeredPhone("s1");
+    const session = (await att.startKioskSession({ startedBy: "m1" })).id;
+    const code = await att.createKioskCode(session);
+    const ref = doc(db, R("attendance", `${staffSvc.todayKey()}_s1`));
+
+    await assertFails(setDoc(ref, forgedQrRecord("s1", { codeId: code.codeId, deviceId: phone.deviceId, similarity: 0.3 })));
+    await assertFails(setDoc(ref, forgedQrRecord("s1", { codeId: code.codeId, deviceId: phone.deviceId, distanceM: 5000 })));
+    await assertFails(setDoc(ref, forgedQrRecord("s1", { codeId: "nosuchcode00000001", deviceId: phone.deviceId })));
+    const otherPhone = await registeredPhone("m2", ADMIN);
+    await assertFails(setDoc(ref, forgedQrRecord("s1", { codeId: code.codeId, deviceId: otherPhone.deviceId })));
+    await att.endKioskSession(session);
+    await assertFails(setDoc(ref, forgedQrRecord("s1", { codeId: code.codeId, deviceId: phone.deviceId })));
+  });
+
+  it("manual attendance can't be written without an approved request", async () => {
+    const reqId = await att.submitManualRequest({ staff: STAFF.s1, dateKey: staffSvc.todayKey(), inTime: "00:01", reason: "Phone broken" });
+    const req = (await getDoc(doc(db, R("attendanceRequests", reqId)))).data();
+    await assertFails(setDoc(doc(db, R("attendance", `${staffSvc.todayKey()}_s1`)), {
+      dateKey: staffSvc.todayKey(), staffId: "s1", staffName: "x", clockInAt: req.inAt, clockOutAt: null,
+      clockInMethod: "manual", clockInRequestId: reqId, updatedAt: serverTimestamp(),
+    }));
+    // A manager can't relabel themselves as floor staff to dodge the Admin.
+    await assertFails(setDoc(doc(db, R("attendanceRequests", "sneaky")), {
+      type: "manual", staffId: "m1", staffName: "Ravi", staffRole: "Floor", dateKey: staffSvc.todayKey(), inAt: new Date(), outAt: null,
+      reason: "Phone broken", status: "pending", createdAt: serverTimestamp(), decidedBy: null, decidedAt: null, decisionNote: "",
+    }));
+    // Nor approve a request directly without the attendance write.
+    await assertFails(updateDoc(doc(db, R("attendanceRequests", reqId)), {
+      status: "approved", decidedBy: GM, decidedAt: serverTimestamp(), attendanceId: `${staffSvc.todayKey()}_s1`,
     }));
   });
 
-  it("cannot backdate punches, edit times without a reason, or delete records", async () => {
-    await seed({ allowPinFallback: true });
-    const ref = doc(db, R("attendance", todayId("s1")));
+  it("no legacy PIN punches, no backdating, no deletes", async () => {
+    const ref = doc(db, R("attendance", `${staffSvc.todayKey()}_s1`));
     await assertFails(setDoc(ref, {
-      dateKey: svc.todayKey(), staffId: "s1", staffName: "Priya", clockInAt: new Date(Date.now() - 4 * 3600000),
-      clockOutAt: null, clockInMethod: "pin", updatedAt: serverTimestamp(),
+      dateKey: staffSvc.todayKey(), staffId: "s1", clockInAt: serverTimestamp(), clockInMethod: "pin",
     }));
-    await assertSucceeds(setDoc(ref, {
-      dateKey: svc.todayKey(), staffId: "s1", staffName: "Priya", clockInAt: serverTimestamp(),
-      clockOutAt: null, clockInMethod: "pin", updatedAt: serverTimestamp(),
-    }));
+    const phone = await registeredPhone("s1");
+    await scan("s1", phone);
     await assertFails(updateDoc(ref, { clockInAt: new Date(Date.now() - 4 * 3600000) }));
     await assertFails(deleteDoc(ref));
-    await assertFails(setDoc(doc(db, R("attendance", "2020-01-01_someoneElse")), {
-      dateKey: svc.todayKey(), staffId: "s1", clockInAt: serverTimestamp(), clockInMethod: "pin",
-    }));
-  });
-
-  it("cannot mint tokens for inactive staff, ended sessions, or with long expiry", async () => {
-    const sessionId = await startSession();
-    await assertFails(svc.createAttendanceToken({ staffId: "s2", sessionId, geo: near }));
-    await assertFails(setDoc(doc(db, R("attendanceQrTokens", "forgedtoken0000000001")), {
-      staffId: "s1", sessionId, nonce: "a".repeat(32), geo: near, createdAt: serverTimestamp(),
-      expiresAt: new Date(Date.now() + 3600000), deleteAt: new Date(Date.now() + 86400000), usedAt: null, result: null,
-    }));
-    await svc.endQrSession(sessionId);
-    await assertFails(svc.createAttendanceToken({ staffId: "s1", sessionId, geo: near }));
-    await assertFails(updateDoc(doc(db, R("attendanceQrSessions", sessionId)), { active: true }));
-  });
-
-  it("validates attendance settings", async () => {
-    await expect(svc.saveAttendanceSettings({ radiusMeters: 100000 })).rejects.toThrow(/Radius/);
-    await assertFails(setDoc(doc(db, R("attendanceConfig", "settings")), { radiusMeters: 5, updatedAt: serverTimestamp() }, { merge: true }));
-    await assertFails(setDoc(doc(db, R("attendanceConfig", "settings")), { lat: 999, lng: 0, updatedAt: serverTimestamp() }, { merge: true }));
-    await assertSucceeds(svc.saveAttendanceSettings({ radiusMeters: 150, allowPinFallback: true }));
   });
 });
 
@@ -179,12 +256,12 @@ describe("everything else in the shared project stays open", () => {
     await assertSucceeds(setDoc(doc(db, "Restaurant", RID), { name: "Green" }, { merge: true }));
     await assertSucceeds(setDoc(doc(db, R("orders", "o1")), { total: 10 }));
     await assertSucceeds(getDocs(collection(db, R("orders"))));
-    await assertSucceeds(setDoc(doc(db, R("staff", "s9")), { name: "New", pinHash: "x" }));
+    await assertSucceeds(setDoc(doc(db, R("staff", "s9")), { name: "New" }));
     await assertSucceeds(setDoc(doc(db, R("settings", "general")), { anything: true }));
     await assertSucceeds(setDoc(doc(db, "Restaurant", "orderin_restaurant_4", "attendance", "x"), { anything: true }));
     await assertSucceeds(deleteDoc(doc(db, "Restaurant", "orderin_restaurant_4", "attendance", "x")));
     await assertSucceeds(setDoc(doc(db, "customers", "c1", "pastOrders", "p1"), { a: 1 }));
-    await assertSucceeds(getDocs(collection(db, "customers")));
     await assertSucceeds(getDocs(collection(db, R("attendance"))));
+    await assertSucceeds(getDocs(collection(db, R("staffDevices"))));
   });
 });
