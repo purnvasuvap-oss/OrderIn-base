@@ -19,7 +19,6 @@ import {
   query,
   where,
   serverTimestamp,
-  arrayUnion,
 } from "firebase/firestore";
 import bcrypt from "bcryptjs";
 
@@ -44,9 +43,6 @@ const attendanceDocRef = (dateKey, staffId) =>
 const auditCollectionRef = () => collection(db, "Restaurant", RESTAURANT_ID, "staffAuditLog");
 const notificationCollectionRef = () => collection(db, "Restaurant", RESTAURANT_ID, "staffNotifications");
 const pinAttemptCollectionRef = () => collection(db, "Restaurant", RESTAURANT_ID, "staffPinAttempts");
-const payrollRunsCollectionRef = () => collection(db, "Restaurant", RESTAURANT_ID, "payrollRuns");
-const payrollRunDocRef = (periodKey) => doc(payrollRunsCollectionRef(), periodKey);
-const payrollRowsCollectionRef = (periodKey) => collection(payrollRunDocRef(periodKey), "rows");
 
 export const ROLES = ["Admin", "General Manager", "Kitchen", "Floor"];
 export const DAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -298,7 +294,7 @@ export const addStaff = async ({
   name, role, phone, email, pin, status = "active", zone, team, jobRole,
   hireDate, emergencyContact, notes, availability, employmentType, address, skills,
   certifications, assignedLocation, terminationDate, lastWorkingDate, rehireDate,
-  documents, preferredShift, minWeeklyHours, maxWeeklyHours, compensation,
+  documents, preferredShift, minWeeklyHours, maxWeeklyHours,
   availabilityExceptions,
   employeeId, photoUrl, emergencyRelationship, leaveBalances, paymentProvider,
 }) => {
@@ -351,7 +347,6 @@ export const addStaff = async ({
     preferredShift: preferredShift || null,
     minWeeklyHours: Number.isFinite(Number(minWeeklyHours)) ? Number(minWeeklyHours) : 0,
     maxWeeklyHours: Number.isFinite(Number(maxWeeklyHours)) ? Number(maxWeeklyHours) : 40,
-    compensation: compensation || null,
     employeeId: employeeId && String(employeeId).trim() ? String(employeeId).trim() : null,
     photoUrl: photoUrl && String(photoUrl).trim() ? String(photoUrl).trim() : null,
     emergencyRelationship: emergencyRelationship && String(emergencyRelationship).trim() ? String(emergencyRelationship).trim() : null,
@@ -376,12 +371,13 @@ export const updateStaff = async (id, {
   name, role, phone, email, zone, team, jobRole, hireDate, emergencyContact, notes,
   availability, employmentType, address, skills, certifications, assignedLocation,
   terminationDate, lastWorkingDate, rehireDate, documents, preferredShift,
-  minWeeklyHours, maxWeeklyHours, compensation, availabilityExceptions,
+  minWeeklyHours, maxWeeklyHours, availabilityExceptions,
   employeeId, photoUrl, emergencyRelationship, leaveBalances, paymentProvider,
 }) => {
+  // Compensation is maintained in the payroll profile, not the staff record.
   await updateDoc(staffDocRef(id), {
     name: (name || "").trim(),
-    role,
+    ...(role !== undefined ? { role } : {}),
     phone: (phone || "").trim(),
     email: email && email.trim() ? email.trim() : null,
     zone: zone && zone.trim() ? zone.trim() : null,
@@ -404,7 +400,6 @@ export const updateStaff = async (id, {
     preferredShift: preferredShift || null,
     minWeeklyHours: Number.isFinite(Number(minWeeklyHours)) ? Number(minWeeklyHours) : 0,
     maxWeeklyHours: Number.isFinite(Number(maxWeeklyHours)) ? Number(maxWeeklyHours) : 40,
-    compensation: compensation || null,
     employeeId: employeeId && String(employeeId).trim() ? String(employeeId).trim() : null,
     photoUrl: photoUrl && String(photoUrl).trim() ? String(photoUrl).trim() : null,
     emergencyRelationship: emergencyRelationship && String(emergencyRelationship).trim() ? String(emergencyRelationship).trim() : null,
@@ -1015,257 +1010,5 @@ export const createShiftTemplate = async ({ name, shifts, createdBy = null }) =>
   return ref.id;
 };
 
-export const payrollPeriodKey = (startKey, endKey) => {
-  const isDate = (value) => {
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(String(value))) return false;
-    const parsed = new Date(`${value}T00:00:00Z`);
-    return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
-  };
-  if (!isDate(startKey) || !isDate(endKey) || startKey > endKey) {
-    throw new Error("Payroll period must use valid YYYY-MM-DD dates.");
-  }
-  return `${startKey}_${endKey}`;
-};
-
-export const PAYROLL_STATUSES = Object.freeze([
-  "draft", "under_review", "approved", "processing", "paid", "failed", "reopened",
-]);
-const PAYROLL_TRANSITIONS = Object.freeze({
-  draft: ["under_review"],
-  under_review: ["draft", "approved"],
-  approved: ["processing", "reopened"],
-  processing: ["paid", "failed"],
-  failed: ["processing", "reopened"],
-  paid: [],
-  reopened: ["under_review", "approved"],
-});
-export const canTransitionPayrollStatus = (current, next) => current === next ||
-  (PAYROLL_TRANSITIONS[current] || []).includes(next);
-export const validatePayrollStatusTransition = (current, next) => {
-  if (!PAYROLL_STATUSES.includes(next) || !canTransitionPayrollStatus(current, next)) {
-    return { valid: false, error: `Cannot change payroll status from ${current || "unknown"} to ${next}.` };
-  }
-  return { valid: true };
-};
-
-/** Row-level payment status is tracked separately from the run-level workflow
- * status above — a run can be "processing" while individual rows are still
- * settling (paid/failed one at a time). */
-export const PAYMENT_STATUSES = Object.freeze(["unpaid", "processing", "paid", "failed"]);
-
-const money = (value) => Number((Number(value) || 0).toFixed(2));
-const numericMapValue = (map, id) => Number(map?.[id] ?? (map instanceof Map ? map.get(id) : 0)) || 0;
-
-export const calculatePayroll = (records = [], staffList = [], startKey = "", endKey = "", options = {}) => {
-  const byId = new Map(staffList.map((staff) => [staff.id, staff]));
-  const rows = new Map();
-  records.filter((record) => (!startKey || record.dateKey >= startKey) && (!endKey || record.dateKey <= endKey))
-    .forEach((record) => {
-      const staff = byId.get(record.staffId) || record;
-      const row = rows.get(record.staffId) || {
-        staffId: record.staffId, employeeId: staff.employeeId || null,
-        staffName: record.staffName || staff.name || "Staff", role: staff.role || null, hours: 0, regularHours: 0,
-        overtimeHours: 0, breakHours: 0, tips: numericMapValue(options.tipsByStaff, record.staffId),
-        bonuses: numericMapValue(options.bonusesByStaff, record.staffId),
-        deductions: numericMapValue(options.deductionsByStaff, record.staffId),
-        basePay: 0, gross: 0, netPay: 0, approvalStatus: options.approvalStatus || "draft",
-        paymentStatus: "unpaid", paymentReference: null, retryCount: 0,
-      };
-      row.hours += hoursOf(record);
-      row.breakHours += Number(record.breakMinutes || 0) / 60;
-      rows.set(record.staffId, row);
-    });
-  // Include salaried staff even when they have no punch records.
-  staffList.filter((staff) => staff.compensation?.type === "salary" && !rows.has(staff.id)).forEach((staff) => {
-    rows.set(staff.id, {
-      staffId: staff.id, employeeId: staff.employeeId || null, staffName: staff.name || "Staff", role: staff.role || null,
-      hours: 0, regularHours: 0, overtimeHours: 0, breakHours: 0,
-      tips: numericMapValue(options.tipsByStaff, staff.id),
-      bonuses: numericMapValue(options.bonusesByStaff, staff.id),
-      deductions: numericMapValue(options.deductionsByStaff, staff.id),
-      basePay: 0, gross: 0, netPay: 0, approvalStatus: options.approvalStatus || "draft",
-      paymentStatus: "unpaid", paymentReference: null, retryCount: 0,
-    });
-  });
-  return Array.from(rows.values()).map((row) => {
-    const staff = byId.get(row.staffId) || {};
-    const compensation = staff.compensation || {};
-    const rate = Number(compensation.rate || staff.hourlyRate || 0);
-    const overtimeRate = Number(compensation.overtimeRate || rate * 1.5);
-    row.hours = money(row.hours);
-    row.breakHours = money(row.breakHours);
-    row.regularHours = money(Math.min(row.hours, Number(options.overtimeThreshold || 40)));
-    row.overtimeHours = money(Math.max(0, row.hours - row.regularHours));
-    row.rate = money(rate);
-    row.overtimeRate = money(overtimeRate);
-    row.basePay = compensation.type === "salary"
-      ? money(compensation.amount || compensation.rate || 0)
-      : money(row.regularHours * rate + row.overtimeHours * overtimeRate);
-    row.tips = money(row.tips);
-    row.bonuses = money(row.bonuses);
-    row.deductions = money(row.deductions);
-    row.gross = money(row.basePay + row.tips + row.bonuses);
-    row.netPay = money(Math.max(0, row.gross - row.deductions));
-    return row;
-  });
-};
-
-export const payrollCsv = (rows = []) => [
-  "Staff ID,Employee ID,Staff Name,Role,Hours,Regular Hours,Overtime Hours,Break Hours,Hourly Rate,Overtime Rate,Tips,Bonuses,Deductions,Gross Pay,Net Pay,Approval Status,Payment Status,Payment Reference",
-  ...rows.map((row) => [
-    row.staffId, row.employeeId, row.staffName, row.role, row.hours, row.regularHours, row.overtimeHours,
-    row.breakHours, row.rate, row.overtimeRate, row.tips, row.bonuses, row.deductions, row.gross, row.netPay,
-    row.approvalStatus, row.paymentStatus, row.paymentReference,
-  ].map((value) => `"${String(value ?? "").replaceAll('"', '""')}"`).join(",")),
-].join("\n");
-
-export const subscribePayrollRuns = (onUpdate) => {
-  try {
-    return onSnapshot(payrollRunsCollectionRef(), (snapshot) => {
-      onUpdate?.(snapshot.docs.map((item) => ({ id: item.id, ...item.data() }))
-        .sort((a, b) => String(b.startDate || "").localeCompare(String(a.startDate || ""))));
-    }, () => onUpdate?.([]));
-  } catch {
-    onUpdate?.([]);
-    return () => {};
-  }
-};
-
-export const subscribePayrollRun = (periodKey, onUpdate) => {
-  if (!periodKey) { onUpdate?.(null); return () => {}; }
-  try {
-    return onSnapshot(payrollRunDocRef(periodKey), (snapshot) => {
-      onUpdate?.(snapshot.exists() ? { id: snapshot.id, ...snapshot.data() } : null);
-    }, () => onUpdate?.(null));
-  } catch {
-    onUpdate?.(null);
-    return () => {};
-  }
-};
-
-export const getPayrollRun = async (periodKey) => {
-  const snapshot = await getDoc(payrollRunDocRef(periodKey));
-  return snapshot.exists() ? { id: snapshot.id, ...snapshot.data() } : null;
-};
-
-export const subscribePayrollRows = (periodKey, onUpdate) => {
-  if (!periodKey) { onUpdate?.([]); return () => {}; }
-  try {
-    return onSnapshot(payrollRowsCollectionRef(periodKey), (snapshot) => {
-      onUpdate?.(snapshot.docs.map((item) => ({ id: item.id, ...item.data() })));
-    }, () => onUpdate?.([]));
-  } catch {
-    onUpdate?.([]);
-    return () => {};
-  }
-};
-
-/** Upsert a period exactly once. A period key is the Firestore document ID,
- * making retries idempotent and preventing duplicate payroll runs. */
-export const savePayrollRun = async ({
-  startDate, endDate, rows = [], createdBy = null, notes = "",
-}) => {
-  const periodKey = payrollPeriodKey(startDate, endDate);
-  const runRef = payrollRunDocRef(periodKey);
-  const existing = await getDoc(runRef);
-  if (existing.exists()) {
-    const current = existing.data();
-    if (current.status === "approved") return { id: existing.id, ...current, idempotent: true };
-    await updateDoc(runRef, { rowCount: rows.length, staffIds: rows.map((row) => row.staffId), updatedAt: serverTimestamp() });
-    await Promise.all(rows.map((row) => setDoc(doc(payrollRowsCollectionRef(periodKey), row.staffId), {
-      ...row, periodKey, updatedAt: serverTimestamp(),
-    }, { merge: true })));
-    await writeAudit("payroll.updated", periodKey, { rowCount: rows.length });
-    return { id: existing.id, ...current, rowCount: rows.length, staffIds: rows.map((row) => row.staffId), idempotent: true };
-  }
-  const payload = {
-    periodKey, startDate, endDate, status: "draft", notes: notes || "",
-    rowCount: rows.length, staffIds: rows.map((row) => row.staffId), createdBy,
-    createdAt: serverTimestamp(), updatedAt: serverTimestamp(),
-  };
-  await setDoc(runRef, payload);
-  await Promise.all(rows.map((row) => setDoc(doc(payrollRowsCollectionRef(periodKey), row.staffId), {
-    ...row, periodKey, updatedAt: serverTimestamp(),
-  })));
-  await writeAudit("payroll.created", periodKey, { startDate, endDate, rowCount: rows.length });
-  return { id: periodKey, ...payload, idempotent: false };
-};
-
-export const createPayrollRun = async (args) => savePayrollRun(args);
-
-export const updatePayrollRunStatus = async (periodKey, nextStatus, { actor = null, note = "" } = {}) => {
-  const ref = payrollRunDocRef(periodKey);
-  const snapshot = await getDoc(ref);
-  if (!snapshot.exists()) throw new Error("Payroll run not found.");
-  const current = snapshot.data().status || "draft";
-  const validation = validatePayrollStatusTransition(current, nextStatus);
-  if (!validation.valid) throw new Error(validation.error);
-  if (current === nextStatus) return { id: periodKey, ...snapshot.data() };
-  const historyEntry = { status: nextStatus, from: current, actor, note: note || "", changedAt: new Date().toISOString() };
-  await updateDoc(ref, {
-    status: nextStatus, updatedAt: serverTimestamp(), approvalHistory: arrayUnion(historyEntry),
-  });
-  await writeAudit(`payroll.${nextStatus}`, periodKey, { from: current, to: nextStatus });
-  return { id: periodKey, ...snapshot.data(), status: nextStatus, approvalHistory: [...(snapshot.data().approvalHistory || []), historyEntry] };
-};
-export const approvePayrollRun = (periodKey, opts) => updatePayrollRunStatus(periodKey, "approved", opts);
-export const reopenPayrollRun = (periodKey, opts) => updatePayrollRunStatus(periodKey, "reopened", opts);
-export const submitPayrollForReview = (periodKey, opts) => updatePayrollRunStatus(periodKey, "under_review", opts);
-export const calculatePayrollReport = calculatePayroll;
-export const exportPayrollCsv = payrollCsv;
-
-/** Aggregates a payroll run's rows into the summary tiles the payroll page
- * shows (total staff, hours breakdown, gross/net, paid/failed amounts). */
-export const summarizePayrollRows = (rows = []) => rows.reduce((summary, row) => ({
-  totalStaff: summary.totalStaff + 1,
-  regularHours: money(summary.regularHours + Number(row.regularHours || 0)),
-  overtimeHours: money(summary.overtimeHours + Number(row.overtimeHours || 0)),
-  breakHours: money(summary.breakHours + Number(row.breakHours || 0)),
-  tips: money(summary.tips + Number(row.tips || 0)),
-  bonuses: money(summary.bonuses + Number(row.bonuses || 0)),
-  deductions: money(summary.deductions + Number(row.deductions || 0)),
-  gross: money(summary.gross + Number(row.gross || 0)),
-  net: money(summary.net + Number(row.netPay || 0)),
-  paidAmount: money(summary.paidAmount + (row.paymentStatus === "paid" ? Number(row.netPay || 0) : 0)),
-  failedAmount: money(summary.failedAmount + (row.paymentStatus === "failed" ? Number(row.netPay || 0) : 0)),
-}), {
-  totalStaff: 0, regularHours: 0, overtimeHours: 0, breakHours: 0, tips: 0, bonuses: 0,
-  deductions: 0, gross: 0, net: 0, paidAmount: 0, failedAmount: 0,
-});
-
-/** Placeholder for the real payout rail: RazorpayX Payouts requires a
- * business account, KYC, and server-side API credentials, none of which
- * exist yet (see docs/staff-payroll-review.md §3). Until that backend is
- * wired up, "sending" a bulk payment just marks the run/rows as
- * "processing" so the workflow and UI are ready to plug a real payout call
- * into later — no money actually moves here. */
-export const sendBulkPayments = async (periodKey, { actor = null } = {}) => {
-  const run = await updatePayrollRunStatus(periodKey, "processing", { actor, note: "Bulk payment initiated (payout provider not yet connected)." });
-  const rowsSnapshot = await getDocs(payrollRowsCollectionRef(periodKey));
-  await Promise.all(rowsSnapshot.docs.map((rowDoc) => updateDoc(rowDoc.ref, {
-    paymentStatus: "processing", updatedAt: serverTimestamp(),
-  })));
-  await writeAudit("payroll.payments_initiated", periodKey, { rowCount: rowsSnapshot.size });
-  return run;
-};
-
-/** Manual reconciliation until RazorpayX webhooks exist: lets a manager
- * record the outcome of a payment for one staff row. */
-export const markPayrollRowPaymentStatus = async (periodKey, staffId, status, { reference = null, failureReason = "" } = {}) => {
-  if (!PAYMENT_STATUSES.includes(status)) throw new Error(`Unknown payment status: ${status}`);
-  const rowRef = doc(payrollRowsCollectionRef(periodKey), staffId);
-  const snapshot = await getDoc(rowRef);
-  if (!snapshot.exists()) throw new Error("Payroll row not found.");
-  const retryCount = status === "processing" && snapshot.data().paymentStatus === "failed"
-    ? Number(snapshot.data().retryCount || 0) + 1
-    : Number(snapshot.data().retryCount || 0);
-  await updateDoc(rowRef, {
-    paymentStatus: status, paymentReference: reference, failureReason: failureReason || "",
-    retryCount, updatedAt: serverTimestamp(),
-  });
-  await writeAudit("payroll.row_payment_status", periodKey, { staffId, status, reference });
-  return { id: staffId, ...snapshot.data(), paymentStatus: status, paymentReference: reference, failureReason, retryCount };
-};
-
-export const retryFailedPayment = (periodKey, staffId) =>
-  markPayrollRowPaymentStatus(periodKey, staffId, "processing");
+/* Payroll (monthly salary, increments, bonuses, deductions) lives in
+ * payrollService.js. */

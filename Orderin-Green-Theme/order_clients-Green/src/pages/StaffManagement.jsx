@@ -54,6 +54,7 @@ import {
   createShiftTemplate,
 } from "../services/staffService";
 import { subscribeAttendanceSettings, ATTENDANCE_SETTINGS_DEFAULTS } from "../services/attendanceService";
+import { subscribeJobRoles } from "../services/payrollService";
 import { AttendanceDisplayCard, AttendanceApprovals } from "../components/StaffAttendance/AttendanceAdmin";
 
 const ROLE_META = {
@@ -139,7 +140,12 @@ function StaffFormModal({ onClose, onConfirm, initialStaff = null }) {
   const [lastWorkingDate, setLastWorkingDate] = useState(initialStaff?.lastWorkingDate || "");
   const [terminationDate, setTerminationDate] = useState(initialStaff?.terminationDate || "");
   const [rehireDate, setRehireDate] = useState(initialStaff?.rehireDate || "");
-  const [compensationRate, setCompensationRate] = useState(initialStaff?.compensation?.rate || "");
+  const [jobRoleOptions, setJobRoleOptions] = useState([]);
+  useEffect(() => subscribeJobRoles((roles) => setJobRoleOptions(roles.map((r) => r.name))), []);
+  // Access levels are the owner's call: only an Admin session may change an
+  // existing employee's level or create Admins / General Managers.
+  const actingAsAdmin = String(sessionStorage.getItem("staffRole") || "").toLowerCase() === "admin";
+  const roleChoices = actingAsAdmin ? ROLES : ROLES.filter((r) => r === "Kitchen" || r === "Floor" || r === initialStaff?.role);
   const [documents, setDocuments] = useState((initialStaff?.documents || []).map((item) => item.name || "").join(", "));
   const [availability, setAvailability] = useState(() => initialStaff?.availability || DAY_LABELS.reduce((days, day) => {
     days[day] = true;
@@ -178,7 +184,6 @@ function StaffFormModal({ onClose, onConfirm, initialStaff = null }) {
         employmentType, address, skills: skills.split(",").map((item) => item.trim()).filter(Boolean),
         certifications: certifications.split(",").map((item) => item.trim()).filter(Boolean),
         assignedLocation, lastWorkingDate, terminationDate, rehireDate,
-        compensation: { type: "hourly", rate: Number(compensationRate) || 0 },
         documents: documents.split(",").map((name) => name.trim()).filter(Boolean).map((name) => ({ name, type: "metadata" })),
       });
     } catch (err) {
@@ -204,13 +209,14 @@ function StaffFormModal({ onClose, onConfirm, initialStaff = null }) {
           </div>
           <div className="sm-form-group">
             <label>Access Level</label>
-            <select value={role} onChange={(e) => setRole(e.target.value)}>
-              {ROLES.map((r) => (
+            <select value={role} onChange={(e) => setRole(e.target.value)} disabled={isEdit && !actingAsAdmin}>
+              {roleChoices.map((r) => (
                 <option key={r} value={r}>
                   {r}
                 </option>
               ))}
             </select>
+            {!actingAsAdmin && <p className="sm-hint">Only the Admin can change access levels (Payroll → Employees &amp; roles).</p>}
           </div>
           <div className="sm-form-row">
             <div className="sm-form-group">
@@ -236,7 +242,10 @@ function StaffFormModal({ onClose, onConfirm, initialStaff = null }) {
           </div>
           <div className="sm-form-group">
             <label>Job Role <span className="sm-optional">(optional)</span></label>
-            <input value={jobRole} onChange={(e) => setJobRole(e.target.value)} placeholder="e.g. Sous Chef" />
+            <input value={jobRole} onChange={(e) => setJobRole(e.target.value)} placeholder="e.g. Sous Chef" list="staff-job-roles" />
+            <datalist id="staff-job-roles">
+              {jobRoleOptions.map((name) => <option key={name} value={name} />)}
+            </datalist>
           </div>
           <div className="sm-form-group">
             <label>Phone</label>
@@ -311,7 +320,6 @@ function StaffFormModal({ onClose, onConfirm, initialStaff = null }) {
             <div className="sm-form-group"><label htmlFor="termination-date">Termination date</label><input id="termination-date" type="date" value={terminationDate} onChange={(e) => setTerminationDate(e.target.value)} /></div>
             <div className="sm-form-group"><label htmlFor="rehire-date">Rehire date</label><input id="rehire-date" type="date" value={rehireDate} onChange={(e) => setRehireDate(e.target.value)} /></div>
           </div>
-          <div className="sm-form-group"><label htmlFor="compensation-rate">Hourly compensation rate</label><input id="compensation-rate" type="number" min="0" step="0.01" value={compensationRate} onChange={(e) => setCompensationRate(e.target.value)} /></div>
           <div className="sm-form-group"><label htmlFor="staff-documents">Document metadata</label><input id="staff-documents" value={documents} onChange={(e) => setDocuments(e.target.value)} placeholder="ID proof, contract (comma separated)" /></div>
           <div className="sm-form-group">
             <label>Regular availability</label>
@@ -1445,8 +1453,8 @@ function StaffOperationsTab({ staffList, mode }) {
     return (
       <div className="sm-panel">
         <h3>Payroll &amp; compensation</h3>
-        <div className="sm-state-msg">Payroll now has its own page with pay-period controls, summary totals, and per-staff breakdowns.</div>
-        <button className="sm-btn sm-btn-gold" onClick={() => navigate(routes.staffPayroll)}>
+        <div className="sm-state-msg">Payroll is restricted to the Admin (owner) and needs the Admin PIN or payroll passcode, even when you're signed in here.</div>
+        <button className="sm-btn sm-btn-gold" onClick={() => navigate(routes.payrollLogin)}>
           Open payroll
         </button>
       </div>

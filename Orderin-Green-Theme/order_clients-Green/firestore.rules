@@ -3,8 +3,8 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     // The Firebase project (orderin-7f8bc) is shared by every OrderIn app, so
-    // this file governs all of them when deployed. Everything stays open
-    // exactly as before EXCEPT the Green restaurant's attendance data below.
+    // this file governs all of them when deployed. Most paths remain open as
+    // before, with Green attendance-specific restrictions below.
     // Deploy rules from this app only — the other apps' firestore.rules files
     // are still allow-all and would remove these protections.
 
@@ -16,6 +16,11 @@ service cloud.firestore {
           'attendanceQrTokens', 'attendanceQrSessions'];
     }
 
+    function isPrivatePayrollCollection(rid, coll) {
+      return rid == 'orderin_restuarant_6'
+        && coll in ['payrollRuns', 'payrollConfig', 'staffPayrollProfiles'];
+    }
+
     match /{top}/{rest=**} {
       allow read, write: if top != 'Restaurant';
     }
@@ -23,7 +28,34 @@ service cloud.firestore {
       allow read, write: if true;
     }
     match /Restaurant/{rid}/{coll}/{rest=**} {
-      allow read, write: if !isLockedAttendance(rid, coll);
+      allow read, write: if !isLockedAttendance(rid, coll) && !isPrivatePayrollCollection(rid, coll);
+    }
+
+    // Browser-only PIN sessions cannot be verified by Firestore rules, so
+    // these paths are client-accessible. Do not store sensitive payroll data
+    // here if server-enforced staff/admin identity is required.
+    match /Restaurant/{rid}/payrollRuns/{runId} {
+      allow read, write: if rid == 'orderin_restuarant_6';
+
+      match /rows/{staffId} {
+        allow read, write: if rid == 'orderin_restuarant_6';
+      }
+    }
+
+    match /Restaurant/{rid}/payrollConfig/{docId} {
+      allow read, write: if rid == 'orderin_restuarant_6';
+    }
+
+    match /Restaurant/{rid}/staffPayrollProfiles/{staffId} {
+      allow read, write: if rid == 'orderin_restuarant_6';
+
+      match /runs/{runId} {
+        allow read, write: if rid == 'orderin_restuarant_6';
+      }
+
+      match /salaryHistory/{historyId} {
+        allow read, write: if rid == 'orderin_restuarant_6';
+      }
     }
 
     // ------------------------ Staff attendance (Green) ------------------------

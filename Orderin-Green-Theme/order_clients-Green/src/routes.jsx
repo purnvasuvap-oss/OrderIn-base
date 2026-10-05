@@ -15,6 +15,7 @@ const routes = {
   staffLogin: "/staff-login",
   staffPortalLogin: "/staff-portal-login",
   staffManagement: "/staff-management",
+  payrollLogin: "/payroll-login",
   staffPayroll: "/staff-management/payroll",
   staffPayrollRun: "/staff-management/payroll/:runId",
   attendanceDisplay: "/staff-management/attendance-display",

@@ -1657,3 +1657,18 @@
     flex-wrap: wrap;
   }
 }
+
+/* ---- staff portal payslip ---- */
+.sm-payslip {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--sm-line);
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+}
+.sm-payslip-line { display: flex; justify-content: space-between; gap: 12px; font-variant-numeric: tabular-nums; }
+.sm-payslip-line.minus { color: var(--sm-text-2); }
+.sm-payslip-line.total { font-weight: 700; border-top: 1px solid var(--sm-line); padding-top: 6px; margin-top: 4px; }

@@ -585,33 +585,24 @@ If GPS is unavailable or too inaccurate to trust, the system should not silently
 
 ## 22. Payroll
 
-Where most of this document describes one shared feature set, payroll is the clearest exception, so it's worth being precise about what exists and where.
-
-Every theme has the payroll *foundation*: hourly and salaried compensation, pay-period calculation, regular and overtime hours, break-hour tracking, tips and deductions, gross and net pay, payroll run creation with draft/approved/reopened states, run history, CSV export, and payroll audit records.
-
-**The Green theme** has gone a step further and shipped a full dedicated payroll workflow, live today at:
+Payroll is theme-specific. **The Green theme** currently has a dedicated monthly, fixed-salary payroll register at:
 
 ```text
 /staff-management/payroll
 /staff-management/payroll/:runId
 ```
 
-That workflow includes:
+The current Green workflow supports monthly base salary, increments, one-off bonuses, configured employment-tax/PF defaults, insurance and other deductions, a draft/finalized/paid run history, CSV export, printable payslips, staff self-service payslip viewing, and manual payment-reference recording. Finalizing applies an entered increment to the employee's base salary from the following month. “Paid” means an Admin recorded the payment; no funds are transferred or verified by OrderIn.
 
-- Pay-period presets (weekly, biweekly, monthly) alongside a custom date range
-- A summary panel — total staff, regular and overtime hours, break hours, tips, bonuses, deductions, gross and net payroll, and paid/failed amounts for the period
-- A per-staff table (employee, employee ID, role, hours, hourly and overtime rate, tips, bonuses, deductions, gross, net, payment status, and per-row actions)
-- A five-stage approval workflow — **Draft → Under review → Approved → Processing → Paid**, with a **Failed** state that can be retried or resolved manually, and a **Reopened** state for sending an approved run back for correction
-- A run detail page showing attendance, hours, and pay per staff member, the full approval history with who changed what and when, and per-row payslip export
-- Manual payment-status reconciliation (mark a row paid or failed, with a reference or failure reason) — a placeholder for the real payout rail described in Section 23, so the workflow is fully usable today even before RazorpayX is connected
+This workflow does **not** calculate payroll from attendance, hours, overtime, leave, or tips. It has no weekly/biweekly/custom date-range runs, multi-stage approval, failed-payment/retry workflow, or automated payout. Its current browser-side login and route checks are not server-side authorization; the Green Firestore rules currently allow broad restaurant reads/writes, including payroll data. Do not use real payroll data until payroll access is enforced by trusted backend authorization and the rules are verified.
 
-This has not yet been rolled out to Red, Maroon, Black, Dessert, Stadium, Olive Green, or the POS product. Those themes still use the earlier inline payroll tab inside Staff Management. Porting the Green implementation to the rest of the family is the natural next step and is reflected in the roadmap (Section 27).
+The monthly register is currently Green-theme-specific. Do not assume the same screens or workflow exist in Red, Maroon, Black, Dessert, Stadium, Olive Green, or the POS product. See [Green Theme Payroll Guide](./GREEN-THEME-PAYROLL-GUIDE.md) for operating details, calculation examples, known gaps, and recommended decisions.
 
 ---
 
 ## 23. Planned Staff Payments
 
-Actually paying staff — as opposed to calculating what they're owed — is not a generally available capability yet in any theme.
+Automated staff payouts are not available in any theme. Green supports fixed agreed pay per month, week, day, or contract period, stores staff UPI IDs in a private payroll profile, and can open an external UPI app with the recipient and amount prepared. An Admin still initiates the transfer outside OrderIn and records a reference; the app does not verify or move funds. Payroll-specific custom-token authentication and Firestore rules have passed targeted local emulator tests in Green, but must still be deployed before being treated as production security.
 
 ### Recommended architecture
 
@@ -633,7 +624,7 @@ Staff payment history
 
 ### Razorpay recommendation
 
-Keep using Razorpay Checkout/Payment Gateway for customer collections (Section 16). Use RazorpayX Payouts separately for staff payments — they are different products with different onboarding requirements.
+Keep using Razorpay Checkout/Payment Gateway for customer collections (Section 16). Customer checkout credentials and payment flows do not authorize payroll payouts. A future RazorpayX Payouts integration would be a separate product, require payout onboarding and a trusted server-side flow, and must not reuse checkout secrets as a payout credential. The current Green workflow intentionally uses manual UPI, not RazorpayX.
 
 ### Bulk payment requirements
 
@@ -706,7 +697,7 @@ Actor, actor role, action, affected record, timestamp, previous value where rele
 | PIN attendance | Implemented |
 | Attendance calendar and date-range lookup | Implemented |
 | Payroll calculation and approval states | Implemented foundation (all themes) |
-| Dedicated payroll workflow with run detail and manual reconciliation | Implemented — Green theme only |
+| Dedicated payroll workflow with monthly, weekly, daily, and contract-period pay; manual UPI reconciliation | Implemented in Green; payment remains manual |
 | Payroll export | Implemented |
 | Staff audit records | Implemented foundation |
 | Staff notifications (in-app) | Implemented foundation |
@@ -715,12 +706,12 @@ Actor, actor role, action, affected record, timestamp, previous value where rele
 | Manager GPS override | Planned |
 | Dedicated payroll page — remaining themes | Rollout of the Green implementation |
 | RazorpayX staff payouts | Planned integration |
-| Bulk staff payments | Planned integration |
+| Bulk staff payments | Green can bulk-record selected/all manual payments; automated bulk payouts remain planned |
 | Payslip PDF generation | Planned |
 | Full HR document management | Planned |
 | Full performance management | Planned |
-| Firestore/Storage security rules hardening | Required before any restaurant goes live on real data |
-| Production backend authorization hardening | Required before production scale |
+| Firestore/Storage security rules hardening | Required before any restaurant goes live on real data; Green payroll-specific rules need emulator verification and deployment |
+| Production backend authorization hardening | Green payroll callable auth added; validate and deploy before real payroll use |
 
 ---
 
@@ -736,7 +727,7 @@ Dedicated profile pages, improved self-service navigation, attendance reports, r
 
 ### Release 3: Payroll operations
 
-Dedicated payroll page, pay-period approval, payroll locking, tips and deductions, payment status tracking, payment reconciliation — **already delivered in the Green theme**; the remaining work in this release is porting it to Red, Maroon, Black, Dessert, Stadium, Olive Green, and the POS product.
+Dedicated Green payroll page, fixed-period runs, payroll locking, manual UPI reconciliation, payment status tracking, and staff-only payslip views — **implemented in the Green theme**. This does not include attendance-derived wages, statutory compliance, or actual money transfer. Security-rule emulator validation and deployment remain a prerequisite to live payroll use; the remaining product work includes broader theme rollout.
 
 ### Release 4: Secure payouts
 

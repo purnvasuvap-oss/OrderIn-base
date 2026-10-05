@@ -22,7 +22,7 @@ import StaffLogin from "./pages/StaffLogin.jsx";
 import StaffPortalLogin from "./pages/StaffPortalLogin.jsx";
 import StaffManagement from "./pages/StaffManagement.jsx";
 import Payroll from "./pages/Payroll.jsx";
-import PayrollRunDetail from "./pages/PayrollRunDetail.jsx";
+import PayrollLogin from "./pages/PayrollLogin.jsx";
 import AttendanceDisplay from "./pages/AttendanceDisplay.jsx";
 import StaffSelfService from "./pages/StaffSelfService.jsx";
 import KitchenDisplay from "./pages/KitchenDisplay.jsx";
@@ -189,10 +189,18 @@ function App() {
           }
         />
         <Route
+          path={routes.payrollLogin}
+          element={
+            <ProtectedRoute>
+              <PayrollLogin />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path={routes.staffPayroll}
           element={
             <ProtectedRoute>
-              <SectionProtectedRoute storageKey="staffAuth" redirectTo={routes.staffLogin}>
+              <SectionProtectedRoute storageKey="payrollAuth" redirectTo={routes.payrollLogin}>
                 <>
                   <Header />
                   <Payroll />
@@ -215,10 +223,10 @@ function App() {
           path={routes.staffPayrollRun}
           element={
             <ProtectedRoute>
-              <SectionProtectedRoute storageKey="staffAuth" redirectTo={routes.staffLogin}>
+              <SectionProtectedRoute storageKey="payrollAuth" redirectTo={routes.payrollLogin}>
                 <>
                   <Header />
-                  <PayrollRunDetail />
+                  <Payroll />
                 </>
               </SectionProtectedRoute>
             </ProtectedRoute>

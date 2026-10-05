@@ -1,63 +1,64 @@
-// src/pages/StaffPortalLogin.jsx
+// src/pages/PayrollLogin.jsx
 //
-// Dedicated login for individual staff members ("My Staff Portal"). Deliberately
-// uses its own session keys (staffPortalAuth / staffPortalStaffId / staffPortalRole /
-// staffPortalPermissions) that are completely separate from the Staff Management
-// session (staffAuth / staffId / staffRole / staffPermissions, set by StaffLogin.jsx)
-// so logging into one never grants access to the other, and each is its own
-// per-browser-session (sessionStorage) login.
+// Payroll access uses the existing client-side PayrollAccess section passcode.
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import "./Login.css";
 import routes from "../routes";
-import { authenticateStaffPin, permissionsForRole } from "../services/staffService";
+import { verifySectionPasscode } from "../firebase";
 import { signOutPayrollUser } from "../services/payrollAuthService";
 
-export default function StaffPortalLogin() {
+export const PAYROLL_SESSION_KEYS = ["payrollAuth", "payrollAdminId", "payrollAdminName"];
+export const clearPayrollSession = () => PAYROLL_SESSION_KEYS.forEach((key) => sessionStorage.removeItem(key));
+
+const MAX_ATTEMPTS = 5;
+
+export default function PayrollLogin() {
   const [pin, setPin] = useState("");
   const [attempts, setAttempts] = useState(0);
-  const [locked, setLocked] = useState(false);
-  const [authReady, setAuthReady] = useState(false);
-  const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [authReady, setAuthReady] = useState(false);
   const navigate = useNavigate();
+  const locked = attempts >= MAX_ATTEMPTS;
 
+  // Landing on the login page always ends any previous payroll session.
   React.useEffect(() => {
-    sessionStorage.removeItem("staffPortalAuth");
-    sessionStorage.removeItem("staffPortalStaffId");
-    sessionStorage.removeItem("staffPortalRole");
-    sessionStorage.removeItem("staffPortalPermissions");
-    ["payrollAuth", "payrollAdminId", "payrollAdminName"].forEach((key) => sessionStorage.removeItem(key));
-    signOutPayrollUser().then(() => setAuthReady(true)).catch((error) => {
-      console.error("Could not clear previous staff portal auth session:", error);
+    clearPayrollSession();
+    ["staffPortalAuth", "staffPortalStaffId", "staffPortalRole", "staffPortalPermissions"].forEach((key) => sessionStorage.removeItem(key));
+    signOutPayrollUser().then(() => setAuthReady(true)).catch((err) => {
+      console.error("Could not clear previous payroll auth session:", err);
       setError("Could not clear the previous login. Reload the page and try again.");
     });
   }, []);
 
+  const grant = () => {
+    sessionStorage.setItem("payrollAuth", "true");
+    sessionStorage.setItem("payrollAdminId", "payroll-owner");
+    sessionStorage.setItem("payrollAdminName", "Admin");
+    navigate(routes.staffPayroll, { replace: true });
+  };
+
+  const fail = (message) => {
+    const next = attempts + 1;
+    setAttempts(next);
+    setPin("");
+    setError(next >= MAX_ATTEMPTS ? "Too many attempts. Payroll login is locked — reload the page later to try again." : message);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (locked || busy || !authReady) return;
+    if (locked || busy || !authReady || !pin.trim()) return;
     setBusy(true);
     setError("");
     try {
-      const staff = await authenticateStaffPin(pin.trim());
-      if (staff) {
-        sessionStorage.setItem("staffPortalAuth", "true");
-        sessionStorage.setItem("staffPortalStaffId", staff.id);
-        sessionStorage.setItem("staffPortalRole", staff.role);
-        sessionStorage.setItem(
-          "staffPortalPermissions",
-          JSON.stringify(permissionsForRole(staff.role).permissions),
-        );
-        navigate(routes.staffSelfService, { replace: true });
+      const isValid = await verifySectionPasscode("PayrollAccess", pin.trim());
+      if (isValid) {
+        grant();
       } else {
-        const nextAttempts = attempts + 1;
-        setAttempts(nextAttempts);
-        if (nextAttempts >= 5) setLocked(true);
-        setError("Wrong PIN");
+        fail("Wrong payroll passcode.");
       }
     } catch (error) {
-      console.error("Error during staff portal login:", error);
+      console.error("Error during payroll login:", error);
       setError("Login failed. Please try again.");
     } finally {
       setBusy(false);
@@ -80,15 +81,11 @@ export default function StaffPortalLogin() {
         <div className="sub-illustration login-visual">
           <div className="sub-circle-outer" aria-hidden="true">
             <div className="sub-circle-inner" aria-hidden="true"></div>
-            <img
-              src="/images/OFD.png"
-              alt="food illustration"
-              className="sub-food-img"
-            />
+            <img src="/images/OFD.png" alt="food illustration" className="sub-food-img" />
           </div>
           <div className="login-brand-caption">
             <span>OrderIn Console</span>
-            <p className="sub-tagline">Personalized Restaurant<br/>Control Unit</p>
+            <p className="sub-tagline">Personalized Restaurant<br />Control Unit</p>
           </div>
         </div>
       </aside>
@@ -98,27 +95,27 @@ export default function StaffPortalLogin() {
           <header className="sub-login-header">
             <p className="login-eyebrow">Restaurant Portal</p>
             <h2 className="sub-restaurant-name">XYZ Restaurant</h2>
-            <p className="sub-welcome-text">Welcome back</p>
+            <p className="sub-welcome-text">Admin access</p>
           </header>
 
-          <section className="sub-login-card" aria-label="login form">
+          <section className="sub-login-card" aria-label="payroll login form">
             <div className="login-card-heading">
               <div>
-                <h3>My Staff Portal Login</h3>
-                <p className="sub">Enter the PIN issued to you by your manager</p>
+                <h3>Payroll Login</h3>
+                <p className="sub">Admin (owner) only — managers and staff can't open payroll</p>
               </div>
-              <span className="login-status-pill is-active">Active</span>
+              <span className="login-status-pill is-active">Admin</span>
             </div>
 
             <form onSubmit={handleSubmit} className="sub-login-form">
               {error && <p className="sub-field-error" role="alert">{error}</p>}
               <div className="sub-field">
-                <label className="sub-field-label" htmlFor="portal-pin">PIN</label>
+                <label className="sub-field-label" htmlFor="payroll-pin">Payroll passcode</label>
                 <input
-                  id="portal-pin"
+                  id="payroll-pin"
                   name="pin"
                   type="password"
-                  placeholder="Enter PIN"
+                  placeholder="Enter payroll passcode"
                   value={pin}
                   onChange={(e) => setPin(e.target.value)}
                   autoComplete="current-password"
@@ -128,7 +125,7 @@ export default function StaffPortalLogin() {
               </div>
 
               <button type="submit" className="sub-primary-cta" disabled={locked || busy || !authReady}>
-                {locked ? "Locked — try later" : busy ? "Checking…" : !authReady ? "Preparing secure login…" : "Enter"}
+                {locked ? "Locked — try later" : busy ? "Checking…" : !authReady ? "Preparing secure login…" : "Open Payroll"}
               </button>
               <button
                 type="button"
@@ -143,7 +140,7 @@ export default function StaffPortalLogin() {
           <div className="sub-contact-info login-support-card">
             <span>Support</span>
             <p>
-              Contact PurnVasu for queries<br/>
+              Contact PurnVasu for queries<br />
               <strong>OrderIn.vap@gmail.com</strong>
             </p>
           </div>

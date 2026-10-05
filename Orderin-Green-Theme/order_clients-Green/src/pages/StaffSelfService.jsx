@@ -13,6 +13,18 @@ import routes from "../routes";
 import "./StaffManagement.css";
 import StaffAttendanceCard from "../components/StaffAttendance/StaffAttendanceCard";
 import {
+  subscribeMyPayrollRuns,
+  subscribeMyPayrollProfile,
+  subscribeMyPayslip,
+  saveMyPayrollUpi,
+  frequencyFromRun,
+  periodLabel,
+  formatRupees,
+  computeRow,
+} from "../services/payrollService";
+import { printPayslip } from "../components/Payroll/payslip";
+import { signOutPayrollUser } from "../services/payrollAuthService";
+import {
   subscribeStaff,
   subscribeRoster,
   weekKeyFor,
@@ -27,8 +39,6 @@ import {
   subscribeStaffNotifications,
   resetStaffPin,
   updateStaffPersonalInfo,
-  subscribePayrollRuns,
-  subscribePayrollRows,
 } from "../services/staffService";
 
 const DAY_NAMES = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -223,8 +233,14 @@ export default function StaffSelfService() {
   const [swaps, setSwaps] = useState([]);
   const [notifications, setNotifications] = useState([]);
   const [payrollRuns, setPayrollRuns] = useState([]);
+  const [payrollProfile, setPayrollProfile] = useState(null);
+  const [upiId, setUpiId] = useState("");
+  const [payrollError, setPayrollError] = useState("");
+  const [savingUpi, setSavingUpi] = useState(false);
+  const [leaving, setLeaving] = useState(false);
+  const [authError, setAuthError] = useState("");
   const [selectedRun, setSelectedRun] = useState(null);
-  const [payrollRows, setPayrollRows] = useState([]);
+  const [payslip, setPayslip] = useState(null);
   const [message, setMessage] = useState("");
   const [editing, setEditing] = useState(false);
   const [profile, setProfile] = useState({});
@@ -255,12 +271,31 @@ export default function StaffSelfService() {
   useEffect(() => subscribeTimeOffRequests((items) => setTimeOff(items.filter((item) => item.staffId === staffId))), [staffId]);
   useEffect(() => subscribeSwapRequests((items) => setSwaps(items.filter((item) => item.staffId === staffId))), [staffId]);
   useEffect(() => subscribeStaffNotifications(setNotifications, staffId), [staffId]);
-  useEffect(() => typeof subscribePayrollRuns === "function"
-    ? subscribePayrollRuns((runs) => setPayrollRuns(runs.filter((run) => !Array.isArray(run.staffIds) || run.staffIds.includes(staffId))))
-    : undefined, [staffId]);
+  useEffect(() => subscribeMyPayrollProfile(staffId, (nextProfile, error) => {
+    if (error) {
+      setPayrollError("Your payroll profile could not be loaded. Please contact an Admin.");
+      return;
+    }
+    setPayrollProfile(nextProfile);
+    setUpiId(nextProfile?.upiId || "");
+  }), [staffId]);
+  useEffect(() => subscribeMyPayrollRuns(staffId, (runs, error) => {
+    if (error) {
+      setPayrollError("Your payslip history could not be loaded. Please contact an Admin.");
+      return;
+    }
+    setPayrollRuns(runs.filter((run) => ["finalized", "paid"].includes(run.status)));
+  }), [staffId]);
   useEffect(() => {
-    if (!selectedRun || typeof subscribePayrollRows !== "function") return undefined;
-    return subscribePayrollRows(selectedRun.periodKey, (rows) => setPayrollRows(rows.filter((row) => row.staffId === staffId)));
+    setPayslip(null);
+    if (!selectedRun) return undefined;
+    return subscribeMyPayslip(selectedRun.id, staffId, (row, error) => {
+      if (error) {
+        setPayrollError("This payslip could not be loaded. Please contact an Admin.");
+        return;
+      }
+      setPayslip(row ? computeRow(row) : null);
+    });
   }, [selectedRun, staffId]);
 
   useEffect(() => {
@@ -300,13 +335,27 @@ export default function StaffSelfService() {
   };
 
   const profileFieldLabel = { emergencyContact: "Emergency contact", emergencyRelationship: "Emergency relationship", photoUrl: "Photo URL" };
+  const leavePortal = async () => {
+    ["staffPortalAuth", "staffPortalStaffId", "staffPortalRole", "staffPortalPermissions",
+      "payrollAuth", "payrollAdminId", "payrollAdminName"].forEach((key) => sessionStorage.removeItem(key));
+    setLeaving(true);
+    try {
+      await signOutPayrollUser();
+      navigate(routes.dashboard);
+    } catch (error) {
+      console.error("Could not end staff portal auth session:", error);
+      setAuthError("Could not end the secure staff session. Please retry before leaving this page.");
+      setLeaving(false);
+    }
+  };
 
   return (
     <main className="staff-mgmt-page" aria-label="Staff self-service">
       <div className="sm-pagehead">
         <div><h1 className="sm-page-h1">My Staff Portal</h1><div className="sm-page-sub">{staff?.name || "Staff self-service"}</div></div>
-        <button className="sm-back-btn" onClick={() => navigate(routes.dashboard)}>Back</button>
+        <button className="sm-back-btn" disabled={leaving} onClick={leavePortal}>{leaving ? "Signing out…" : "Back"}</button>
       </div>
+      {authError && <div className="sm-error" role="alert">{authError}</div>}
       {message && <div className="sm-success" role="status">{message}</div>}
 
       <div className="sm-stats">
@@ -426,16 +475,58 @@ export default function StaffSelfService() {
 
       <section className="sm-ss-card">
         <h3><Wallet size={16} /> Pay &amp; payslip history</h3>
+        {payrollError && <div className="sm-error" role="alert">{payrollError}</div>}
+        <div className="sm-form-row">
+          <div className="sm-form-group">
+            <label htmlFor="staff-upi-id">Your UPI ID</label>
+            <input id="staff-upi-id" value={upiId} maxLength={320} placeholder="name@bank" onChange={(event) => setUpiId(event.target.value)} />
+          </div>
+          <button
+            className="sm-btn sm-btn-gold"
+            disabled={savingUpi || !payrollProfile}
+            onClick={async () => {
+              setSavingUpi(true);
+              setPayrollError("");
+              try {
+                await saveMyPayrollUpi(staffId, upiId);
+                setMessage("UPI ID saved. Admins can use it to prepare a manual payment.");
+              } catch (error) {
+                setPayrollError(error.message || "Could not save your UPI ID.");
+              } finally {
+                setSavingUpi(false);
+              }
+            }}
+          >{savingUpi ? "Saving…" : "Save UPI ID"}</button>
+        </div>
+        <p className="sm-hint">OrderIn does not send money. An Admin makes and confirms any transfer in an external UPI app.</p>
         {!payrollRuns.length ? (
-          <div className="sm-state-msg">No payslips available yet. Payment provider transfers are disabled until a provider is configured.</div>
+          <div className="sm-state-msg">No payslips yet. They appear here once a pay period is finalized.</div>
         ) : (
           payrollRuns.map((run) => (
             <div className="sm-request-card" key={run.id}>
-              <div className="sm-request-who">{run.startDate} – {run.endDate}</div>
-              <div className="sm-request-dates">{run.status}{selectedRun?.id === run.id && payrollRows.length ? ` · Net ${payrollRows.reduce((sum, row) => sum + Number(row.netPay || 0), 0).toFixed(2)}` : ""}</div>
+              <div className="sm-request-who">{periodLabel(frequencyFromRun(run), run.periodKey || run.id)}</div>
+              <div className="sm-request-dates">{run.status === "paid" ? "Paid" : "Finalized"}</div>
               <div className="sm-request-actions">
-                <button className="sm-btn sm-btn-ghost sm-btn-xs" onClick={() => setSelectedRun(run)}>View payslip</button>
+                <button className="sm-btn sm-btn-ghost sm-btn-xs" onClick={() => setSelectedRun(selectedRun?.id === run.id ? null : run)}>
+                  {selectedRun?.id === run.id ? "Hide" : "View payslip"}
+                </button>
               </div>
+              {selectedRun?.id === run.id && payslip && (
+                <div className="sm-payslip">
+                  <div className="sm-payslip-line"><span>Salary</span><span>{formatRupees(payslip.salary)}</span></div>
+                  {payslip.increment > 0 && <div className="sm-payslip-line"><span>Increment</span><span>{formatRupees(payslip.increment)}</span></div>}
+                  {payslip.bonus > 0 && <div className="sm-payslip-line"><span>Bonus</span><span>{formatRupees(payslip.bonus)}</span></div>}
+                  {payslip.tax > 0 && <div className="sm-payslip-line minus"><span>Employment tax</span><span>− {formatRupees(payslip.tax)}</span></div>}
+                  {payslip.pf > 0 && <div className="sm-payslip-line minus"><span>PF</span><span>− {formatRupees(payslip.pf)}</span></div>}
+                  {payslip.insurance > 0 && <div className="sm-payslip-line minus"><span>Insurance</span><span>− {formatRupees(payslip.insurance)}</span></div>}
+                  {(payslip.extraDeductions || []).map((d, i) => (
+                    <div className="sm-payslip-line minus" key={i}><span>{d.reason}</span><span>− {formatRupees(d.amount)}</span></div>
+                  ))}
+                  <div className="sm-payslip-line total"><span>Net pay</span><span>{formatRupees(payslip.netPay)}</span></div>
+                  <div className="sm-hint">{payslip.paymentStatus === "paid" ? `Paid · ref ${payslip.paymentReference}` : "Payment pending"}</div>
+                  <button className="sm-btn sm-btn-ghost sm-btn-xs" onClick={() => printPayslip(payslip, run.id)}>Download / print payslip</button>
+                </div>
+              )}
             </div>
           ))
         )}

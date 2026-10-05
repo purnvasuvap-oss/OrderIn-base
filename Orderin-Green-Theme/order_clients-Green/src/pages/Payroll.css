@@ -127,3 +127,67 @@
   .payroll-page { padding: 16px 14px 40px; }
   .payroll-summary-grid { grid-template-columns: repeat(2, 1fr); }
 }
+
+.payroll-head-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.payroll-admin-chip {
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  background: rgba(212, 175, 55, 0.16);
+  color: var(--sm-gold);
+}
+
+/* ---- monthly salary payroll ---- */
+.payroll-page .sm-tabs { margin-bottom: 16px; }
+.payroll-preset-row input[type="month"] {
+  background: var(--sm-bg);
+  border: 1px solid var(--sm-line);
+  border-radius: 8px;
+  color: var(--sm-text);
+  padding: 6px 8px;
+}
+.payroll-status-pill.status-finalized { background: var(--sm-evening-t); color: var(--sm-evening); }
+.payroll-status-pill.status-not-started { background: var(--sm-off-t); color: var(--sm-off); }
+.payroll-muted { font-size: 12px; color: var(--sm-text-3); }
+.payroll-strong { font-weight: 700; color: var(--sm-text); }
+.payroll-emp-name { font-weight: 600; color: var(--sm-text); }
+.payroll-error-text { font-size: 11.5px; color: var(--sm-danger); white-space: normal; }
+.payroll-row-invalid td { background: var(--sm-danger-t); }
+.payroll-table td { vertical-align: top; }
+.payroll-table select,
+.payroll-sub-item input:not([type="number"]),
+.payroll-paid-form input,
+.payroll-role-create input {
+  background: var(--sm-bg);
+  border: 1px solid var(--sm-line);
+  border-radius: 6px;
+  color: var(--sm-text);
+  padding: 4px 6px;
+}
+.payroll-sub-row td { background: rgba(0, 0, 0, 0.12); white-space: normal; }
+.payroll-sub-editor { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; max-width: 560px; }
+.payroll-sub-item { display: flex; gap: 6px; align-items: center; }
+.payroll-sub-item input:not([type="number"]) { flex: 1; min-width: 0; }
+.payroll-sub-list { margin: 6px 0 0; padding-left: 18px; font-size: 12.5px; }
+.payroll-paid-form { display: inline-flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.payroll-paid-form input { width: 150px; }
+.payroll-role-create { display: flex; gap: 8px; margin: 8px 0 12px; flex-wrap: wrap; }
+.payroll-role-create input { min-width: 220px; }
+.payroll-role-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.payroll-role-list li { display: flex; align-items: center; gap: 12px; padding: 6px 10px; border: 1px solid var(--sm-line); border-radius: 8px; }
+.payroll-role-list li span:first-child { flex: 1; font-weight: 600; }
+.payroll-settings { max-width: 480px; }
+.payroll-settings input[type="number"] {
+  width: 100%;
+  background: var(--sm-bg);
+  border: 1px solid var(--sm-line);
+  border-radius: 8px;
+  color: var(--sm-text);
+  padding: 8px 10px;
+}

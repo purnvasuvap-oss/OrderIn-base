@@ -2,6 +2,7 @@
 const admin = require('firebase-admin');
 const crypto = require('crypto');
 const axios = require('axios');
+const bcrypt = require('bcryptjs');
 
 // BILLING GUARD:
 // Keep Cloud Functions limited to Razorpay/payment work only.
@@ -12,27 +13,8 @@ if (!admin.apps.length) {
   admin.initializeApp();
 }
 
-const FALLBACK_RAZORPAY_KEY_ID = 'rzp_live_Sj1ZPsCyB5iu3t';
-const FALLBACK_RAZORPAY_KEY_SECRET = 'dN2uwxFr0hIZkcV57RXdRXmt';
-const REMOVED_RAZORPAY_VALUE_HASHES = new Set([
-  '0931028ec556aa2d2e65c4c604da9200517b5718df04eedc1cb5b735422b7b44',
-  '44f9000b54b1b661e4c2f7fa84aba1cd840827fe6731a99c17fb9a06ce00487b',
-]);
-const isRemovedRazorpayValue = (value) =>
-  REMOVED_RAZORPAY_VALUE_HASHES.has(crypto.createHash('sha256').update(value).digest('hex'));
-const resolveRazorpayCredential = (...values) =>
-  values.find((value) => value && !isRemovedRazorpayValue(value));
-
-const RAZORPAY_KEY_ID = resolveRazorpayCredential(
-  functions.config().razorpay?.key_id,
-  process.env.RAZORPAY_KEY_ID,
-  FALLBACK_RAZORPAY_KEY_ID
-);
-const RAZORPAY_KEY_SECRET = resolveRazorpayCredential(
-  functions.config().razorpay?.key_secret,
-  process.env.RAZORPAY_KEY_SECRET,
-  FALLBACK_RAZORPAY_KEY_SECRET
-);
+const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID || functions.config().razorpay?.key_id || '';
+const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || functions.config().razorpay?.key_secret || '';
 
 const ROUTE_LINKED_ACCOUNTS = {
   orderin_restuarant_6: {
@@ -998,3 +980,200 @@ exports.scheduledRazorpaySettlementSync = functions
   .schedule('30 23 * * *')
   .timeZone('Asia/Kolkata')
   .onRun(handleScheduledSettlementReconciliation);
+
+const GREEN_RESTAURANT_ID = 'orderin_restuarant_6';
+const loginAttemptRef = (ip, purpose) => {
+  const key = crypto.createHash('sha256').update(`${purpose}:${ip || 'unknown'}`).digest('hex');
+  return admin.firestore()
+    .collection('Restaurant')
+    .doc(GREEN_RESTAURANT_ID)
+    .collection('payrollConfig')
+    .doc('_loginAttempts')
+    .collection('byIp')
+    .doc(key);
+};
+
+const enforceLoginRateLimit = async (ref) => {
+  const now = Date.now();
+  const snap = await ref.get();
+  if (Number(snap.data()?.blockedUntil || 0) > now) {
+    throw new functions.https.HttpsError('resource-exhausted', 'Too many attempts. Try again later.');
+  }
+};
+
+const recordFailedLogin = async (ref) => {
+  const now = Date.now();
+  await admin.firestore().runTransaction(async (tx) => {
+    const snap = await tx.get(ref);
+    const existing = snap.exists ? snap.data() : {};
+    const withinWindow = now - Number(existing.windowStart || 0) < 15 * 60 * 1000;
+    const attempts = withinWindow ? Number(existing.attempts || 0) + 1 : 1;
+    tx.set(ref, {
+      attempts,
+      windowStart: withinWindow ? existing.windowStart : now,
+      blockedUntil: attempts >= 5 ? now + 15 * 60 * 1000 : 0,
+    });
+  });
+};
+
+const verifyStoredPin = async (pin, staff) => {
+  if (staff.pinHash) return bcrypt.compare(pin, staff.pinHash);
+  return typeof staff.pin === 'string' && staff.pin === pin;
+};
+
+exports.payrollSignIn = functions.https.onCall(async (data, context) => {
+  const purpose = data?.purpose === 'staff' ? 'staff' : 'admin';
+  const pin = typeof data?.pin === 'string' ? data.pin.trim() : '';
+  const ip = context.rawRequest?.ip || context.rawRequest?.headers?.['x-forwarded-for'] || 'unknown';
+  const attemptRef = loginAttemptRef(String(ip).split(',')[0].trim(), purpose);
+  await enforceLoginRateLimit(attemptRef);
+
+  let matchedStaff = null;
+  if (pin.length >= 4 && pin.length <= 64) {
+    const snapshot = await admin.firestore()
+      .collection('Restaurant')
+      .doc(GREEN_RESTAURANT_ID)
+      .collection('staff')
+      .get();
+    for (const item of snapshot.docs) {
+      const staff = item.data();
+      const active = !['inactive', 'archived', 'paused', 'on-leave', 'terminated'].includes(String(staff.status || 'active').toLowerCase());
+      if (!active || (purpose === 'admin' && String(staff.role || '').toLowerCase() !== 'admin')) continue;
+      if (await verifyStoredPin(pin, staff)) {
+        matchedStaff = { id: item.id, ...staff };
+        if (!staff.pinHash) {
+          await item.ref.update({
+            pinHash: await bcrypt.hash(pin, 10),
+            pin: admin.firestore.FieldValue.delete(),
+            pinLast4: pin.slice(-4),
+          });
+        }
+        break;
+      }
+    }
+  }
+
+  let isAdmin = purpose === 'admin' && Boolean(matchedStaff);
+  if (!matchedStaff && purpose === 'admin' && pin.length >= 4 && pin.length <= 64) {
+    const passcodes = await admin.firestore()
+      .collection('Restaurant')
+      .doc(GREEN_RESTAURANT_ID)
+      .collection('accessControl')
+      .doc('roles')
+      .collection('PayrollAccess')
+      .get();
+    for (const passcode of passcodes.docs) {
+      const saved = String(passcode.data().passcodeHash || '');
+      const valid = saved.startsWith('$2')
+        ? await bcrypt.compare(pin, saved)
+        : saved.length === pin.length && crypto.timingSafeEqual(Buffer.from(saved), Buffer.from(pin));
+      if (valid) {
+        isAdmin = true;
+        break;
+      }
+    }
+  }
+
+  if (!matchedStaff && !isAdmin) {
+    await recordFailedLogin(attemptRef);
+    throw new functions.https.HttpsError('unauthenticated', 'PIN or payroll passcode was not accepted.');
+  }
+
+  await attemptRef.delete();
+  const staffId = matchedStaff?.id || 'payroll-owner';
+  const role = purpose === 'staff' ? 'staff' : 'admin';
+  const customToken = await admin.auth().createCustomToken(`payroll_${staffId}`, {
+    payrollAccess: true,
+    payrollRole: role,
+    staffId,
+    restaurantId: GREEN_RESTAURANT_ID,
+  });
+  return {
+    customToken,
+    staffId,
+    name: matchedStaff?.name || 'Admin',
+    role: matchedStaff?.role || 'Admin',
+  };
+});
+
+exports.migratePayrollData = functions.https.onCall(async (_data, context) => {
+  const claims = context.auth?.token || {};
+  if (claims.payrollAccess !== true || claims.payrollRole !== 'admin' || claims.restaurantId !== GREEN_RESTAURANT_ID) {
+    throw new functions.https.HttpsError('permission-denied', 'Admin payroll access is required.');
+  }
+
+  const restaurant = admin.firestore().collection('Restaurant').doc(GREEN_RESTAURANT_ID);
+  const markerRef = restaurant.collection('payrollConfig').doc('_migration');
+  const marker = await markerRef.get();
+  if (marker.data()?.complete === true) return { migratedProfiles: 0, migratedSalaryHistory: 0, alreadyMigrated: true };
+  const staffSnapshot = await restaurant.collection('staff').get();
+  let movedProfiles = 0;
+  let movedHistory = 0;
+
+  for (const staffDoc of staffSnapshot.docs) {
+    const staff = staffDoc.data();
+    const legacyProfile = staff.payrollProfile || {};
+    const compensation = staff.compensation || {};
+    const frequency = ['monthly', 'weekly', 'daily', 'contract'].includes(legacyProfile.frequency)
+      ? legacyProfile.frequency
+      : 'monthly';
+    const legacyAmount = frequency === 'monthly'
+      ? (compensation.monthlySalary ?? legacyProfile.periodAmount ?? compensation.amount ?? compensation.rate ?? 0)
+      : (legacyProfile.periodAmount ?? 0);
+    const profileRef = restaurant.collection('staffPayrollProfiles').doc(staffDoc.id);
+    const existingProfile = await profileRef.get();
+    if (!existingProfile.exists) {
+      await profileRef.set({
+        frequency,
+        periodAmount: Number.isFinite(Number(legacyAmount)) ? Number(legacyAmount) : 0,
+        pfEnabled: Boolean(legacyProfile.pfEnabled),
+        insurance: Number(legacyProfile.insurance) || 0,
+        upiId: legacyProfile.upiId || null,
+        migratedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+    }
+    movedProfiles += 1;
+
+    const history = await staffDoc.ref.collection('salaryHistory').get();
+    for (let offset = 0; offset < history.docs.length; offset += 200) {
+      const batch = admin.firestore().batch();
+      history.docs.slice(offset, offset + 200).forEach((entry) => {
+        batch.set(profileRef.collection('salaryHistory').doc(entry.id), entry.data(), { merge: true });
+        batch.delete(entry.ref);
+      });
+      await batch.commit();
+      movedHistory += Math.min(200, history.docs.length - offset);
+    }
+
+    if (staff.compensation || staff.payrollProfile) {
+      await staffDoc.ref.update({
+        compensation: admin.firestore.FieldValue.delete(),
+        payrollProfile: admin.firestore.FieldValue.delete(),
+      });
+    }
+  }
+
+  const runs = await restaurant.collection('payrollRuns').get();
+  for (const runDoc of runs.docs) {
+    const run = runDoc.data();
+    if (!['finalized', 'paid'].includes(run.status) || !Array.isArray(run.staffIds)) continue;
+    for (let offset = 0; offset < run.staffIds.length; offset += 400) {
+      const batch = admin.firestore().batch();
+      run.staffIds.slice(offset, offset + 400).forEach((staffId) => batch.set(
+        restaurant.collection('staffPayrollProfiles').doc(staffId).collection('runs').doc(runDoc.id),
+        {
+          runId: runDoc.id,
+          frequency: ['monthly', 'weekly', 'daily', 'contract'].includes(run.frequency) ? run.frequency : 'monthly',
+          periodKey: run.periodKey || runDoc.id,
+          periodLabel: run.periodLabel || runDoc.id,
+          status: run.status,
+        },
+        { merge: true }
+      ));
+      await batch.commit();
+    }
+  }
+
+  await markerRef.set({ complete: true, completedAt: admin.firestore.FieldValue.serverTimestamp() });
+  return { migratedProfiles: movedProfiles, migratedSalaryHistory: movedHistory };
+});

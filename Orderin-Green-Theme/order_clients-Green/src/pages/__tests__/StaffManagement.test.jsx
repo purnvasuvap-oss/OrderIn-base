@@ -53,6 +53,10 @@ vi.mock('../../services/staffService', () => {
   };
 });
 
+vi.mock('../../services/payrollService', () => ({
+  subscribeJobRoles: (cb) => { cb([{ id: 'j1', name: 'Head Chef' }]); return () => {}; },
+}));
+
 vi.mock('../../services/attendanceService', async (importOriginal) => {
   const actual = await importOriginal();
   const sub = (value) => (cb) => {
@@ -111,6 +115,22 @@ describe('StaffManagement', () => {
     expect(screen.getByLabelText(/Hire date/)).toBeInTheDocument();
     expect(screen.getByLabelText(/Emergency contact/)).toBeInTheDocument();
     expect(screen.getByText('Regular availability')).toBeInTheDocument();
+  });
+
+  it('only lets the Admin assign manager access levels', async () => {
+    const user = userEvent.setup();
+    sessionStorage.setItem('staffRole', 'General Manager');
+    try {
+      renderPage();
+      await user.click(screen.getByRole('button', { name: /Add Staff/ }));
+      const accessLevel = screen.getByText('Access Level').parentElement.querySelector('select');
+      expect(Array.from(accessLevel.options).map((o) => o.value)).toEqual(['Kitchen', 'Floor']);
+      expect(screen.getByText(/Only the Admin can change access levels/)).toBeInTheDocument();
+      expect(screen.queryByLabelText(/compensation rate/i)).not.toBeInTheDocument();
+      expect(document.querySelector('#staff-job-roles option[value="Head Chef"]')).not.toBeNull();
+    } finally {
+      sessionStorage.removeItem('staffRole');
+    }
   });
 
   it('hides staff mutations when an authenticated staff role is not managerial', () => {
