@@ -1,0 +1,156 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+    function role() {
+      return signedIn() ? request.auth.token.role : '';
+    }
+    function isPlatform() {
+      return role() == 'platformAdmin';
+    }
+    function owns(rid) {
+      return signedIn() && (
+        request.auth.token.restaurantId == rid
+        || (request.auth.token.restaurantIds is list && rid in request.auth.token.restaurantIds)
+      );
+    }
+    function isStaffRole() {
+      return role() in ['owner', 'manager', 'captain', 'cashier', 'kitchen'];
+    }
+    function staffOf(rid) {
+      return (isStaffRole() && owns(rid)) || isPlatform();
+    }
+    function managerOf(rid) {
+      return staffOf(rid) && (role() in ['owner', 'manager'] || isPlatform());
+    }
+    function floorOf(rid) {
+      return staffOf(rid) && role() in ['owner', 'manager', 'captain', 'cashier', 'platformAdmin'];
+    }
+    function dinerOf(rid) {
+      return role() == 'diner' && request.auth.token.restaurantId == rid;
+    }
+
+    // Everything is closed unless a rule below allows it.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    match /Restaurant/{rid} {
+      allow read: if staffOf(rid);
+      allow create, update: if managerOf(rid);
+      allow delete: if false;
+
+      match /profile/{docId} {
+        allow read: if docId == 'public' || staffOf(rid);
+        allow write: if docId == 'public' && managerOf(rid);
+      }
+
+      match /menu/{itemId} {
+        allow read: if true;
+        allow write: if managerOf(rid);
+      }
+
+      match /tables/{tableId} {
+        allow read: if true;
+        allow write: if floorOf(rid);
+      }
+
+      match /orders/{orderId} {
+        allow read: if staffOf(rid)
+          || (dinerOf(rid) && resource.data.sessionId == request.auth.token.sessionId);
+        allow write: if false;
+      }
+
+      match /sessions/{sessionId} {
+        allow get: if dinerOf(rid) && request.auth.token.sessionId == sessionId;
+        allow list: if staffOf(rid);
+        allow write: if false;
+      }
+
+      match /serviceRequests/{requestId} {
+        allow read: if staffOf(rid)
+          || (dinerOf(rid) && resource.data.sessionId == request.auth.token.sessionId);
+        allow create: if dinerOf(rid)
+          && request.resource.data.sessionId == request.auth.token.sessionId
+          && request.resource.data.tableId == request.auth.token.tableId
+          && request.resource.data.type in ['call_waiter', 'water', 'bill']
+          && request.resource.data.status == 'open';
+        allow update: if floorOf(rid);
+        allow delete: if false;
+      }
+
+      match /customers/{customerId} {
+        allow read: if managerOf(rid);
+        allow write: if false;
+      }
+
+      match /staff/{staffId} {
+        allow read: if staffOf(rid) && (managerOf(rid) || request.auth.uid == staffId);
+        allow write: if false;
+      }
+
+      match /counterCodes/{orderId} {
+        allow read, write: if false;
+      }
+
+      match /private/{docId} {
+        allow read, write: if false;
+      }
+
+      match /paymentIntents/{intentId} {
+        allow read, write: if false;
+      }
+
+      match /feedback/{feedbackId} {
+        allow read: if managerOf(rid);
+        allow write: if false;
+      }
+
+      match /reservations/{reservationId} {
+        allow read: if floorOf(rid);
+        allow write: if false;
+      }
+
+      match /inventory/{itemId} {
+        allow read: if staffOf(rid) && (role() in ['owner', 'manager', 'kitchen'] || isPlatform());
+        allow write: if false;
+      }
+
+      match /recipes/{recipeId} {
+        allow read: if staffOf(rid);
+        allow write: if managerOf(rid);
+      }
+
+      match /attendance/{attendanceId} {
+        allow read: if managerOf(rid) || (staffOf(rid) && resource.data.uid == request.auth.uid);
+        allow write: if false;
+      }
+
+      match /payrollRuns/{runId} {
+        allow read: if managerOf(rid);
+        allow write: if false;
+      }
+
+      match /dayCloses/{dayId} {
+        allow read: if staffOf(rid) && (role() in ['owner', 'manager', 'cashier'] || isPlatform());
+        allow write: if false;
+      }
+
+      match /audit/{auditId} {
+        allow read: if managerOf(rid);
+        allow write: if false;
+      }
+
+      match /coupons/{couponId} {
+        allow read: if staffOf(rid);
+        allow write: if managerOf(rid);
+      }
+
+      match /counters/{counterId} {
+        allow read, write: if false;
+      }
+    }
+  }
+}
