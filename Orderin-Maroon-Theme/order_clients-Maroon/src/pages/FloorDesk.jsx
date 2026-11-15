@@ -181,7 +181,7 @@ export default function FloorDesk({ db, restaurantId }) {
 
   return (
     <div style={wrap}>
-      <h1 style={{ fontSize: 22 }}>Floor</h1>
+      <h1 style={{ fontSize: 22 }}>Floor</h1><p><a href="/kitchen">Kitchen</a> · <a href="/table-management">Tables</a> · <a href="/onboarding">Setup</a> · <a href="/staff-pay">Staff pay</a></p>
       <p style={{ opacity: 0.75 }}>Calls, tables, kitchen stations, and today’s close. Invoice preview {nextInvoice}.</p>
       {message ? <p>{message}</p> : null}
 

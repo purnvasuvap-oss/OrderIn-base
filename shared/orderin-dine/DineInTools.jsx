@@ -1,15 +1,19 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
-import { addDoc, collection, doc, onSnapshot, serverTimestamp } from 'firebase/firestore';
+import { addDoc, arrayUnion, collection, doc, onSnapshot, serverTimestamp, setDoc } from 'firebase/firestore';
 import {
   allergenList,
   billMessage,
   dietLabel,
   dietMark,
   gstSplit,
+  invoiceNumber,
   itemStatusLabel,
+  loyaltyStamp,
   smsLink,
   spiceLevel,
+  splitByItem,
+  splitByPerson,
   splitEqual,
   tableSessionId,
   whatsAppLink,
@@ -66,6 +70,12 @@ export function DineInTools({ db, restaurantId }) {
   const [profile, setProfile] = useState(null);
   const [parts, setParts] = useState(2);
   const [paidHere, setPaidHere] = useState('');
+  const [splitMode, setSplitMode] = useState('equal');
+  const [people, setPeople] = useState(['Guest 1', 'Guest 2']);
+  const [itemPerson, setItemPerson] = useState({});
+  const [feedback, setFeedback] = useState('');
+  const [stars, setStars] = useState(0);
+  const [feedbackSaved, setFeedbackSaved] = useState(false);
 
   useEffect(() => {
     const update = () => setOnline(navigator.onLine);
@@ -114,7 +124,15 @@ export function DineInTools({ db, restaurantId }) {
   }, [location.pathname]);
 
   const subtotal = cart.reduce((sum, item) => sum + (Number(item.effectivePrice ?? item.price) || 0) * (Number(item.quantity) || 1), 0);
-  const shares = splitEqual(gstSplit(subtotal).total, parts);
+  const shares = splitMode === 'item'
+    ? splitByItem(cart, people.map((label) => ({
+      label,
+      itemIndexes: cart.map((_, index) => index).filter((index) => (itemPerson[index] || people[0]) === label),
+    })))
+    : splitMode === 'person'
+      ? splitByPerson(cart.map((item, index) => ({ ...item, person: itemPerson[index] || 'Table' })))
+      : splitEqual(gstSplit(subtotal).total, parts);
+  const counterDue = Math.max(0, Math.round(((gstSplit(subtotal).total - (Number(paidHere) || 0)) + Number.EPSILON) * 100) / 100);
   useEffect(() => {
     if (paidHere) localStorage.setItem('orderin_split_online', String(paidHere));
   }, [paidHere]);
@@ -145,10 +163,25 @@ export function DineInTools({ db, restaurantId }) {
       {location.pathname === '/cart' || location.pathname === '/payments' ? (
         <div style={{ flexBasis: '100%', fontSize: 12 }}>
           <div>Split this bill</div>
-          <label>
-            People{' '}
-            <input value={parts} onChange={(event) => setParts(event.target.value)} style={{ width: 48 }} />
-          </label>
+          {['equal', 'item', 'person'].map((mode) => (
+            <button key={mode} type="button" style={buttonStyle} onClick={() => setSplitMode(mode)}>{mode}</button>
+          ))}
+          {splitMode === 'equal' ? (
+            <label>
+              People{' '}
+              <input value={parts} onChange={(event) => setParts(event.target.value)} style={{ width: 48 }} />
+            </label>
+          ) : null}
+          {cart.map((item, index) => (
+            <label key={`${item.name}-${index}`} style={{ display: 'block' }}>
+              {item.name}{' '}
+              <input
+                value={itemPerson[index] || ''}
+                placeholder="Person"
+                onChange={(event) => setItemPerson((prev) => ({ ...prev, [index]: event.target.value }))}
+              />
+            </label>
+          ))}
           {shares.map((share) => (
             <div key={share.label}>{share.label}: ₹{share.amount}</div>
           ))}
@@ -156,14 +189,46 @@ export function DineInTools({ db, restaurantId }) {
             Pay online now ₹{' '}
             <input value={paidHere} onChange={(event) => setPaidHere(event.target.value)} style={{ width: 72 }} />
           </label>
-          <span> The rest can be paid at the counter.</span>
+          <span> Counter still due ₹{counterDue}.</span>
         </div>
       ) : null}
-      {location.pathname === '/payment-success' ? (
-        <div style={{ flexBasis: '100%', display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          <a style={{ ...buttonStyle, textDecoration: 'none' }} href={whatsAppLink(profile?.phone, billText)}>WhatsApp bill</a>
-          <a style={{ ...buttonStyle, textDecoration: 'none' }} href={smsLink(profile?.phone, billText)}>SMS bill</a>
-          {reviewUrl ? <a style={{ ...buttonStyle, textDecoration: 'none' }} href={reviewUrl} target="_blank" rel="noreferrer">Google review</a> : null}
+      {location.pathname === '/payment-success' || location.pathname === '/bill' ? (
+        <div style={{ flexBasis: '100%', fontSize: 12 }}>
+          <div>Invoice {invoiceNumber((profile?.invoiceSequence || 0) + 1)}</div>
+          <div>GSTIN {profile?.gstin || 'not set'} · FSSAI {profile?.fssai || 'not set'} · SAC {profile?.sac || '996331'}</div>
+          <div>CGST ₹{gstSplit(subtotal || session?.subtotal || 0).cgst} · SGST ₹{gstSplit(subtotal || session?.subtotal || 0).sgst}</div>
+          {!feedbackSaved ? (
+            <div>
+              <div>How was the meal?</div>
+              {[1, 2, 3, 4, 5].map((n) => (
+                <button key={n} type="button" style={buttonStyle} onClick={() => setStars(n)}>{n}</button>
+              ))}
+              <input value={feedback} placeholder="A note for the restaurant" onChange={(event) => setFeedback(event.target.value)} />
+              <button
+                type="button"
+                style={buttonStyle}
+                onClick={async () => {
+                  const user = JSON.parse(localStorage.getItem('user') || '{}');
+                  if (user.phone) {
+                    await setDoc(doc(db, 'Restaurant', restaurantId, 'customers', user.phone), {
+                      feedback: arrayUnion({ stars, note: feedback, at: new Date().toISOString() }),
+                      loyaltyLastVisitStamps: loyaltyStamp(session?.total || subtotal, 0).points,
+                    }, { merge: true });
+                  }
+                  setFeedbackSaved(true);
+                }}
+              >
+                Save feedback
+              </button>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <div>Stamp card: {'●'.repeat(Math.min(8, loyaltyStamp(session?.total || subtotal, 0).points))}{'○'.repeat(Math.max(0, 8 - loyaltyStamp(session?.total || subtotal, 0).points))}</div>
+              <a style={{ ...buttonStyle, textDecoration: 'none' }} href={whatsAppLink(profile?.phone, billText)}>WhatsApp bill</a>
+              <a style={{ ...buttonStyle, textDecoration: 'none' }} href={smsLink(profile?.phone, billText)}>SMS bill</a>
+              {reviewUrl ? <a style={{ ...buttonStyle, textDecoration: 'none' }} href={reviewUrl} target="_blank" rel="noreferrer">Google review</a> : <span>Add a Google review link in onboarding.</span>}
+            </div>
+          )}
         </div>
       ) : null}
     </div>

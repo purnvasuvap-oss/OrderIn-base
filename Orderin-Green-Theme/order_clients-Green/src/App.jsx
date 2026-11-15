@@ -8,6 +8,8 @@ import SectionProtectedRoute from "./components/SectionProtectedRoute.jsx";
 import Login from "./pages/Login.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
 import Orders from "./pages/Orders.jsx";
+import Onboarding from "./pages/Onboarding.jsx";
+import StaffPay from "./pages/StaffPay.jsx";
 import { FloorPage } from "./pages/FloorDesk.jsx";
 import MenuLogin from "./pages/MenuLogin.jsx";
 import MenuPage from "./pages/MenuPage.jsx";
@@ -74,6 +76,9 @@ function App() {
             </ProtectedRoute>
           }
         />
+
+        <Route path="/onboarding" element={<ProtectedRoute><><Header /><Onboarding /></></ProtectedRoute>} />
+        <Route path="/staff-pay" element={<ProtectedRoute><><Header /><StaffPay /></></ProtectedRoute>} />
         {/* Menu Routes */}
         <Route
           path={routes.menuLogin}
