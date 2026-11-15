@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { featureOn, quoteCart, themeToCssVars } from '@orderin/core';
+import { billText, featureOn, quoteCart, smsLink, themeToCssVars, whatsappLink } from '@orderin/core';
 import type { CartLine, Gateway, MenuItem, Profile } from './types';
 
 function dietLabel(diet?: string) {
@@ -211,6 +211,20 @@ export function CustomerApp({ gateway }: { gateway: Gateway }) {
           </div>
           <textarea aria-label="Feedback" value={comment} onChange={(event) => setComment(event.target.value)} placeholder="Tell the restaurant" />
           <button type="button" onClick={async () => setReview(await gateway.feedback(rating, comment))}>Send feedback</button>
+          {phone && order && (() => {
+            try {
+              const text = billText({ restaurant: profile, order });
+              return (
+                <p>
+                  <a href={whatsappLink(phone, text)}>Send the bill on WhatsApp</a>
+                  {' · '}
+                  <a href={smsLink(phone, text)}>Send the bill by SMS</a>
+                </p>
+              );
+            } catch {
+              return null;
+            }
+          })()}
           {review?.show && review.url && <a href={review.url}>Leave a Google review</a>}
           {review && !review.show && <p>Thanks. We kept this with the restaurant.</p>}
         </section>
