@@ -500,13 +500,3 @@ exports[`Dashboard > matches the snapshot once loaded 1`] = `
   </div>
 </DocumentFragment>
 `;
-
-exports[`Dashboard > matches the snapshot with no data 1`] = `
-<DocumentFragment>
-  <div
-    class="page"
-  >
-    Loading dashboard…
-  </div>
-</DocumentFragment>
-`;

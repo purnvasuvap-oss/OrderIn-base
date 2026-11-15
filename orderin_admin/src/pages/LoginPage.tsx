@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
 import { Mail, Lock, Eye, EyeOff, ArrowRight, Sparkles } from 'lucide-react';
+import { auth } from '../config/firebase';
 
 export const LoginPage = () => {
   const navigate = useNavigate();
@@ -10,30 +12,25 @@ export const LoginPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // Set VITE_ADMIN_PASSCODE in the deployment environment. There is no
-  // built-in passcode: a missing value refuses every login.
-  const ADMIN_PASSCODE = import.meta.env.VITE_ADMIN_PASSCODE as string | undefined;
-
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-
-    if (!ADMIN_PASSCODE) {
-      setError('Admin login is not configured. Set VITE_ADMIN_PASSCODE.');
-      return;
-    }
-
-    if (password !== ADMIN_PASSCODE) {
-      setError('Invalid password. Please enter the correct password.');
-      return;
-    }
-
     setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
-      sessionStorage.setItem('orderin_admin_auth', 'true');
+    try {
+      const cred = await signInWithEmailAndPassword(auth, email.trim(), password);
+      const token = await cred.user.getIdTokenResult(true);
+      const role = String(token.claims.role || '');
+      if (role !== 'platformAdmin' && role !== 'owner') {
+        await signOut(auth);
+        setError('This login is not an OrderIn admin.');
+        return;
+      }
       navigate('/dashboard', { replace: true });
-    }, 600);
+    } catch {
+      setError('Invalid password. Please enter the correct password.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (

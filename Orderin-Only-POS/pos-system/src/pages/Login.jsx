@@ -40,8 +40,8 @@ export default function Login() {
         </div>
 
         <form onSubmit={submit} className="login-form">
-          <label className="login-label">Username</label>
-          <input className="input" value={username} onChange={(e) => setUsername(e.target.value)} placeholder="e.g. cashier" autoFocus />
+          <label className="login-label">Email</label>
+          <input className="input" type="email" value={username} onChange={(e) => setUsername(e.target.value)} placeholder="you@restaurant.com" autoFocus />
 
           <label className="login-label">Password</label>
           <input className="input" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />

@@ -129,7 +129,7 @@ export const PaymentStatusPage = () => {
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ fontSize: '0.875rem', color: '#cbd5e1', fontWeight: '500' }}>Time:</span>
-                <span style={{ fontSize: '0.875rem', color: '#f1f5f9', fontWeight: '500' }}>{new Date().toLocaleString()}</span>
+                <span style={{ fontSize: '0.875rem', color: '#f1f5f9', fontWeight: '500' }}>{new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Kolkata', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }).format(new Date())}</span>
               </div>
             </div>
 

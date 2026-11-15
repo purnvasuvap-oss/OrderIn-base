@@ -134,7 +134,7 @@ async function resolveConflict(item, remote) {
 }
 
 export async function flushSyncQueue() {
-  if (!firebaseEnabled || !isOnline() || syncing) return;
+  if (!firebaseEnabled || !RESTAURANT_ID || !isOnline() || syncing) return;
   syncing = true;
   try {
     const now = Date.now();
@@ -163,6 +163,10 @@ export async function flushSyncQueue() {
         await setDoc(ref, payloadToWrite, { merge: true });
         await removeOne(STORES.syncQueue, item.id);
       } catch (err) {
+        const message = String(err?.message || err);
+        if (/offline|unavailable|network|Failed to fetch/i.test(message)) {
+          emit(EVENTS.SYNC_STATUS_CHANGED, { online: false });
+        }
         const attempts = item.attempts + 1;
         const failed = attempts >= MAX_ATTEMPTS;
         await putOne(STORES.syncQueue, {

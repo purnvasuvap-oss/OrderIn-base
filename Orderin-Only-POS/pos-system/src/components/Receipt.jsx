@@ -20,6 +20,7 @@ export default function Receipt({ order }) {
         <div className="receipt-sub">{restaurant?.address}</div>
         {restaurant?.phone && <div className="receipt-sub">{restaurant.phone}</div>}
         {restaurant?.gstin && <div className="receipt-sub">GSTIN: {restaurant.gstin}</div>}
+        {restaurant?.fssai && <div className="receipt-sub">FSSAI: {restaurant.fssai}</div>}
       </div>
       <div className="receipt-divider" />
       <div className="receipt-row"><span>Invoice</span><span>{order.invoiceNo}</span></div>
@@ -40,7 +41,9 @@ export default function Receipt({ order }) {
       <div className="receipt-divider" />
       <div className="receipt-row"><span>Subtotal</span><span>₹{order.subtotal.toFixed(2)}</span></div>
       <div className="receipt-row"><span>Discount</span><span>-₹{order.discount.toFixed(2)}</span></div>
-      <div className="receipt-row"><span>Tax</span><span>₹{order.tax.toFixed(2)}</span></div>
+      <div className="receipt-row"><span>CGST</span><span>₹{(order.cgst ?? order.tax / 2).toFixed(2)}</span></div>
+      <div className="receipt-row"><span>SGST</span><span>₹{(order.sgst ?? (order.tax - order.tax / 2)).toFixed(2)}</span></div>
+      <div className="receipt-row"><span>SAC</span><span>{order.sac || restaurant?.sac || "996331"}</span></div>
       <div className="receipt-divider" />
       <div className="receipt-row receipt-total"><span>TOTAL</span><span>₹{order.total.toFixed(2)}</span></div>
       <div className="receipt-row"><span>Payment</span><span>{order.payments?.map((p) => p.method).join(" + ") || "—"}</span></div>

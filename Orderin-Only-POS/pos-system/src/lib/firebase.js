@@ -1,5 +1,6 @@
 import { initializeApp, getApps } from "firebase/app";
-import { getFirestore, doc, getDoc, setDoc } from "firebase/firestore";
+import { getAuth } from "firebase/auth";
+import { getFirestore } from "firebase/firestore";
 import { getMessaging, isSupported as isMessagingSupported } from "firebase/messaging";
 
 // Same Firebase project used by the other Orderin apps (order_clients-Maroon,
@@ -38,37 +39,17 @@ export const firebaseEnabled = Boolean(cfg.apiKey && cfg.projectId);
 // overridable per deployment since each restaurant needs its own POS
 // credentials (Restaurant/{RESTAURANT_ID}/accessControl/...) to line up with
 // what orderin_admin saves for that restaurant.
-export const RESTAURANT_ID = import.meta.env.VITE_RESTAURANT_ID || "orderin_restaurant_pos";
+// Set VITE_RESTAURANT_ID for this terminal, or rely on the signed-in user's
+// restaurant claim. There is no built-in demo restaurant.
+export const RESTAURANT_ID = import.meta.env.VITE_RESTAURANT_ID || "";
 
 const app = getApps().length ? getApps()[0] : initializeApp(cfg);
 const db = getFirestore(app);
+export const auth = getAuth(app);
 
-// Self-registers this restaurant in the shared top-level "Restaurant"
-// collection that orderin_admin's loadPrimaryRestaurants reads from, so it
-// shows up in the admin dashboard without a manual Firestore write. Only
-// fills in the doc if it doesn't already exist — never overwrites fields an
-// admin has since edited (name, owner, bank details, status...). `status` is
-// deliberately omitted: orderin_admin already treats a missing status as
-// "Off", so a brand-new restaurant stays inactive until an admin turns it on.
+// Restaurants are created from the staff setup screen, not by opening the POS.
 export async function ensureRestaurantDoc() {
-  if (!firebaseEnabled) return;
-  try {
-    const ref = doc(db, "Restaurant", RESTAURANT_ID);
-    const snap = await getDoc(ref);
-    if (snap.exists()) return;
-    await setDoc(ref, {
-      Restaurant_name: "Orderin POS",
-      city: "",
-      Owner: "",
-      Owner_Contact: "",
-      email: "",
-      address: "",
-      account: "",
-      IFSC: "",
-    });
-  } catch (err) {
-    console.warn("ensureRestaurantDoc failed:", err?.message || err);
-  }
+  return;
 }
 
 // VAPID "Web Push certificate" key from Firebase Console → Project Settings →

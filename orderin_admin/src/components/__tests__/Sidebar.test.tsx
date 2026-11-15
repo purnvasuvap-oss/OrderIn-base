@@ -3,6 +3,9 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { Sidebar } from '../Sidebar';
 
+vi.mock('firebase/auth', () => ({ signOut: vi.fn(() => Promise.resolve()) }));
+vi.mock('../../config/firebase', () => ({ auth: {} }));
+
 // --- Mock react-router navigation ----------------------------------------
 const mockNavigate = vi.fn();
 vi.mock('react-router-dom', async (importOriginal) => {

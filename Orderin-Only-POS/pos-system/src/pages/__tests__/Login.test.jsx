@@ -28,7 +28,7 @@ describe('Login', () => {
   it('renders the brand, username / password fields and the sign-in button', () => {
     renderLogin();
     expect(screen.getByText('Orderin POS')).toBeInTheDocument();
-    expect(screen.getByPlaceholderText('e.g. cashier')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('you@restaurant.com')).toBeInTheDocument();
     expect(screen.getByPlaceholderText('••••••••')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Sign in' })).toBeInTheDocument();
   });
@@ -38,7 +38,7 @@ describe('Login', () => {
     mockLogin.mockResolvedValue({ ok: true, home: '/pos' });
     renderLogin();
 
-    await user.type(screen.getByPlaceholderText('e.g. cashier'), 'cashier');
+    await user.type(screen.getByPlaceholderText('you@restaurant.com'), 'cashier@restaurant.com');
     await user.type(screen.getByPlaceholderText('••••••••'), 'pw');
     await user.click(screen.getByRole('button', { name: 'Sign in' }));
 
@@ -50,7 +50,7 @@ describe('Login', () => {
     mockLogin.mockResolvedValue({ ok: false, error: 'Incorrect password.' });
     renderLogin();
 
-    await user.type(screen.getByPlaceholderText('e.g. cashier'), 'cashier');
+    await user.type(screen.getByPlaceholderText('you@restaurant.com'), 'cashier@restaurant.com');
     await user.type(screen.getByPlaceholderText('••••••••'), 'bad');
     await user.click(screen.getByRole('button', { name: 'Sign in' }));
 

@@ -9,7 +9,6 @@ import { ROLE_HOME } from "./lib/auth";
 import { tryAutoReconnectSerial } from "./lib/printer";
 import { startRealtimeSync } from "./lib/realtime";
 import { flushSyncQueue } from "./lib/sync";
-import { ensureRestaurantDoc } from "./lib/firebase";
 
 import AppLayout from "./components/AppLayout";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -87,7 +86,6 @@ export default function App() {
       setBooted(true);
       startRealtimeSync();
       flushSyncQueue();
-      ensureRestaurantDoc();
     });
     tryAutoReconnectSerial();
   }, []);
