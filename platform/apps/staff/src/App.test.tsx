@@ -41,6 +41,7 @@ function gateway(user: StaffUser, overrides: Partial<StaffGateway> = {}): StaffG
     voidOrder: async () => {},
     closeDay: async () => ({ variance: 0 }),
     issueCode: async () => '1234',
+    split: async () => {},
     reserve: async () => {},
     payroll: async () => ({}),
     clock: async () => {},

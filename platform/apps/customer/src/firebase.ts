@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInAnonymously } from 'firebase/auth';
-import { collection, doc, getDoc, getDocs, getFirestore } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, getFirestore, onSnapshot } from 'firebase/firestore';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { resolveRestaurantRef } from '@orderin/core';
 import type { Gateway, MenuItem, Profile } from './types';
@@ -88,6 +88,12 @@ export function createGateway(): Gateway {
       const claims = await sessionClaims();
       const call = httpsCallable(functions, 'serviceRequest');
       await call({ restaurantId, tableId, sessionId: claims.sessionId, type });
+    },
+    watchOrder(id, onOrder) {
+      const orderRef = doc(db, 'Restaurant', restaurantId, 'orders', id);
+      return onSnapshot(orderRef, (snap) => {
+        if (snap.exists()) onOrder({ id: snap.id, ...snap.data() });
+      });
     },
     async payOnline(amountPaise) {
       const token = await auth.currentUser?.getIdToken();

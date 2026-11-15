@@ -226,6 +226,7 @@ function Counter({ role, floor, restaurantId, gateway, onChange }: { role: strin
           {order.invoiceNumber && <div>Invoice {order.invoiceNumber}</div>}
           <div>CGST ₹{order.cgst} · SGST ₹{order.sgst}</div>
           <button type="button" onClick={() => gateway.issueCode(restaurantId, order.id).then((code) => onChange(`Counter code ${code}`))}>Show counter code</button>
+          <button type="button" onClick={() => gateway.split(restaurantId, order.id, 2).then(() => onChange('Split into 2 equal shares'))}>Split in 2</button>
           <button type="button" onClick={() => gateway.printOrder(order, floor.profile).then(onChange)}>Print KOT</button>
           {can(role, 'discount.approve') && (
             <button type="button" onClick={() => gateway.discount(restaurantId, order.id, 10, 'Manager comp').then(() => onChange('Discount sent for approval'))}>₹10 manager discount</button>

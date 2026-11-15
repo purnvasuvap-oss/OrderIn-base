@@ -128,6 +128,9 @@ export function createGateway(): StaffGateway {
       const result = await call<{ code: string }>('issueCounterCode', { restaurantId, orderId });
       return result.code;
     },
+    async split(restaurantId, orderId, parts) {
+      await call('splitBill', { restaurantId, orderId, split: { mode: 'equal', parts } });
+    },
     async reserve(input) {
       await call('saveReservation', input);
     },

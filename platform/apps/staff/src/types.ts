@@ -32,6 +32,7 @@ export type StaffGateway = {
   voidOrder: (restaurantId: string, orderId: string, reason: string) => Promise<void>;
   closeDay: (restaurantId: string, businessDate: string, cashCounted: number) => Promise<any>;
   issueCode: (restaurantId: string, orderId: string) => Promise<string>;
+  split: (restaurantId: string, orderId: string, parts: number) => Promise<void>;
   reserve: (input: { restaurantId: string; tableId: string; startAt: string; endAt: string; name: string; phone: string }) => Promise<void>;
   payroll: (restaurantId: string, rows: any[], allowNegative: boolean) => Promise<any>;
   clock: (restaurantId: string, punch: 'in' | 'out') => Promise<void>;

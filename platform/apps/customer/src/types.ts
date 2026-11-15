@@ -39,5 +39,6 @@ export type Gateway = {
   place: (input: { lines: CartLine[]; name?: string; phone?: string; loyaltyOptIn?: boolean }) => Promise<any>;
   request: (type: 'call_waiter' | 'water' | 'bill') => Promise<void>;
   payOnline: (amountPaise?: number) => Promise<void>;
+  watchOrder?: (orderId: string, onOrder: (order: any) => void) => () => void;
   feedback: (rating: number, comment: string) => Promise<{ show: boolean; url?: string }>;
 };

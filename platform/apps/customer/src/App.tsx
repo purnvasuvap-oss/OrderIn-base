@@ -26,6 +26,7 @@ export function CustomerApp({ gateway }: { gateway: Gateway }) {
   const [comment, setComment] = useState('');
   const [review, setReview] = useState<{ show: boolean; url?: string } | null>(null);
   const [filter, setFilter] = useState('all');
+  const [splitParts, setSplitParts] = useState(2);
 
   useEffect(() => {
     let cancelled = false;
@@ -51,6 +52,11 @@ export function CustomerApp({ gateway }: { gateway: Gateway }) {
       cancelled = true;
     };
   }, [gateway, ref.restaurantId, ref.subdomain]);
+
+  useEffect(() => {
+    if (!order?.id || !gateway.watchOrder) return undefined;
+    return gateway.watchOrder(order.id, setOrder);
+  }, [gateway, order?.id]);
 
   useEffect(() => {
     if (!profile) return;
@@ -186,6 +192,10 @@ export function CustomerApp({ gateway }: { gateway: Gateway }) {
           </ul>
           <p>Total ₹{order.total}</p>
           <p>Pay part online and the rest at the counter, or pay it all here.</p>
+          <label>Split the bill into equal shares
+            <input aria-label="Split shares" type="number" min={2} max={20} value={splitParts} onChange={(event) => setSplitParts(Number(event.target.value) || 2)} />
+          </label>
+          <button type="button" onClick={() => gateway.payOnline(Math.max(100, Math.round((order.total * 100) / splitParts))).then(() => setView('done'))}>Pay my share online</button>
           <button type="button" onClick={() => gateway.payOnline().then(() => setView('done'))}>Pay online</button>
           <button type="button" onClick={() => setView('done')}>Pay at the counter</button>
           <button type="button" onClick={() => setView('menu')}>Add more items</button>
