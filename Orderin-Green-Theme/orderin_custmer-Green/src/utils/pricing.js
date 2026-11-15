@@ -69,14 +69,26 @@ export const buildCartKey = (name, selectedOptions = []) => {
 };
 
 // Shared total formula used by both the on-screen cart summary and the persisted Firestore order.
+export const portionSurcharge = (basePrice, selectedOptions = []) => {
+  const base = parsePriceValue(basePrice);
+  let extra = 0;
+  for (const opt of selectedOptions) {
+    const label = String(opt?.label || opt?.name || '').toLowerCase();
+    if (Number(opt?.price) > 0) continue;
+    if (label === 'extra large') extra += base;
+    else if (label === 'large') extra += base * 0.5;
+  }
+  return Math.round((extra + Number.EPSILON) * 100) / 100;
+};
+
+// Dine-in only: no packing fee and no made-up savings. GST is 5%.
 export const calculateOrderTotals = (
   subtotal,
-  { taxRate = 0.05, packingFee = 30, discountRate = 0.08, discountCap = 60 } = {},
+  { taxRate = 0.05 } = {},
 ) => {
-  const gst = subtotal * taxRate;
-  const packing = subtotal > 0 ? packingFee : 0;
-  const discount = subtotal > 0 ? Math.min(discountCap, Math.round(subtotal * discountRate)) : 0;
-  return { subtotal, gst, packing, discount, total: subtotal + gst + packing - discount };
+  const gst = Math.round((subtotal * taxRate + Number.EPSILON) * 100) / 100;
+  const total = Math.round((subtotal + gst + Number.EPSILON) * 100) / 100;
+  return { subtotal, gst, packing: 0, discount: 0, total };
 };
 
 // The ONE function both order creation (Cart.jsx, before a payment method is

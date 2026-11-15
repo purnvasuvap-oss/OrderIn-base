@@ -10,9 +10,11 @@ This project should stay on the low-cost Firebase stack:
 
 Allowed deployed functions:
 
-- `createRazorpayOrder`
-- `verifyRazorpayPayment`
-- `syncRazorpayPayment` and `razorpayWebhook` are optional reconciliation helpers. Keep them deleted unless exact Razorpay settlement reconciliation is explicitly needed and the billing impact is accepted.
+- `createRazorpayOrder` — prices the order from the menu. Do not trust the browser amount.
+- `verifyRazorpayPayment` — checks the signature, the captured status, and that the paid amount matches the menu total, then marks the order paid.
+- `razorpayWebhook` — same paid check when Razorpay calls us. Set `RAZORPAY_WEBHOOK_SECRET` and the webhook URL in the Razorpay dashboard.
+- `issueCounterCode` and `confirmCounterPayment` — the 4-digit counter code is created here and checked here. The diner's phone never receives the code.
+- `syncRazorpayPayment` and `scheduledRazorpaySettlementSync` are optional reconciliation helpers. Keep them deleted unless exact Razorpay settlement reconciliation is explicitly needed and the billing impact is accepted. `syncRazorpayPayment` now refuses to mark an order paid when the Razorpay amount does not match the menu total.
 
 Do not add or deploy these without an explicit billing review:
 

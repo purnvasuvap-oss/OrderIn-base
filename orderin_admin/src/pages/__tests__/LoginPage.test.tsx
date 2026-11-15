@@ -14,6 +14,14 @@ const fillForm = async (user: ReturnType<typeof userEvent.setup>, password: stri
 };
 
 describe('LoginPage', () => {
+  beforeEach(() => {
+    vi.stubEnv('VITE_ADMIN_PASSCODE', 'test-passcode');
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
   it('matches the snapshot', () => {
     const { asFragment } = render(<LoginPage />);
     expect(asFragment()).toMatchSnapshot();
@@ -87,7 +95,7 @@ describe('LoginPage', () => {
     const submitButton = screen.getByRole('button', { name: /Sign In/ });
 
     // Act
-    await fillForm(user, '123456789');
+    await fillForm(user, 'test-passcode');
     await user.click(submitButton);
 
     // Assert - button enters the disabled/loading state

@@ -66,8 +66,6 @@ function OnlinePayment() {
       params.append('useProvidedTax', foundPaymentData.useProvidedTax ? 'true' : 'false'); // Don't recalculate tax
       params.append('restaurantId', foundPaymentData.restaurantId || '');
       params.append('restaurantName', foundPaymentData.restaurantName || '');
-      params.append('ifscCode', foundPaymentData.ifscCode || '');
-      params.append('accountNumber', foundPaymentData.accountNumber || '');
       params.append('customerPhone', foundPaymentData.customerPhone || '');
       
       const urlWithParams = `https://orderin-admin.web.app/pay?${params.toString()}`;

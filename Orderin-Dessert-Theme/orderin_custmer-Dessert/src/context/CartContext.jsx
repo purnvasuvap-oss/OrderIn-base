@@ -163,7 +163,7 @@ const updateCartItemsWithMenu = (cartItems) => {
       const match = findProductInWindow(ci.name || ci.productName || ci.itemName || '');
       if (match) {
         const resolvedImage = match.image || match.imageUrl || match.imageURL || match.image_url || match.img || ci.image || PLACEHOLDER_IMAGE;
-        return { ...match, quantity: ci.quantity || 1, instructions: ci.instructions || '', image: (resolvedImage || PLACEHOLDER_IMAGE) };
+        return { ...match, ...ci, quantity: ci.quantity || 1, instructions: ci.instructions || '', image: (resolvedImage || ci.image || PLACEHOLDER_IMAGE), name: ci.name || match.name };
       }
       // no match; ensure image exists
       return { ...ci, image: ci.image || PLACEHOLDER_IMAGE };
@@ -266,11 +266,12 @@ export const CartProvider = ({ children, tableNo = '1' }) => {
   }, [orderHistory]);
 
   const addToCart = (item, quantity, instructions) => {
-    const existingItem = cartItems.find(cartItem => cartItem.name === item.name);
+    const sameLine = (cartItem) => cartItem.name === item.name && (cartItem.portion || '') === (item.portion || '');
+    const existingItem = cartItems.find(sameLine);
     if (existingItem) {
       setCartItems(cartItems.map(cartItem =>
-        cartItem.name === item.name
-          ? { ...cartItem, quantity: cartItem.quantity + quantity, instructions: instructions || cartItem.instructions }
+        sameLine(cartItem)
+          ? { ...cartItem, quantity: cartItem.quantity + quantity, instructions: instructions || cartItem.instructions, price: item.price ?? cartItem.price, portion: item.portion || '' }
           : cartItem
       ));
     } else {
@@ -288,16 +289,18 @@ export const CartProvider = ({ children, tableNo = '1' }) => {
         if (img && String(img).startsWith('gs://')) {
           const resolved = await resolveImageUrl(img);
           if (resolved) {
-            setCartItems(prev => prev.map(ci => (ci.name === item.name ? { ...ci, image: resolved } : ci)));
+            setCartItems(prev => prev.map(ci => (ci.name === item.name && (ci.portion || '') === (item.portion || '') ? { ...ci, image: resolved } : ci)));
           }
         }
       } catch (e) { /* ignore */ }
     })();
   };
 
-  const updateQuantity = (name, quantity) => {
+  const updateQuantity = (name, quantity, portion = '') => {
     setCartItems(prev => prev.map(item =>
-      item.name === name ? { ...item, quantity: Math.max(1, quantity) } : item
+      item.name === name && (item.portion || '') === (portion || '')
+        ? { ...item, quantity: Math.max(1, quantity) }
+        : item
     ));
   };
 
@@ -307,15 +310,15 @@ export const CartProvider = ({ children, tableNo = '1' }) => {
     ));
   };
 
-  const removeFromCart = (name) => {
-    const updatedItems = cartItems.filter(item => item.name !== name);
+  const removeFromCart = (name, portion = '') => {
+    const updatedItems = cartItems.filter(item => !(item.name === name && (item.portion || '') === (portion || '')));
     setCartItems(updatedItems);
     
     // Also update the temporary order state if it exists
     // This ensures removed items don't reappear on page refresh
     const tempState = loadOrderTempState();
     if (tempState) {
-      const updatedCart = tempState.orderin_cart.filter(item => item.name !== name);
+      const updatedCart = tempState.orderin_cart.filter(item => !(item.name === name && (item.portion || '') === (portion || '')));
       saveOrderTempState(
         tempState.orderin_orderId,
         updatedCart,

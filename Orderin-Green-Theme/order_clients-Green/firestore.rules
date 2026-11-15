@@ -3,10 +3,14 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     // The Firebase project (orderin-7f8bc) is shared by every OrderIn app, so
-    // this file governs all of them when deployed. Most paths remain open as
-    // before, with Green attendance-specific restrictions below.
-    // Deploy rules from this app only — the other apps' firestore.rules files
-    // are still allow-all and would remove these protections.
+    // whichever copy of this file is deployed becomes the rules for everyone.
+    // Keep the copies identical. Do not put `allow read, write: if true` back.
+    //
+    // Task 2 is only partly done here: paymentIntents and counterCodes are
+    // server-only, and nothing outside Restaurant/{id} is client-accessible.
+    // Diners and staff still share the restaurant tree because the apps do not
+    // use Firebase Auth yet. Per-restaurant staff roles need that auth work
+    // before these rules can tell a diner from a cashier.
 
     function isLockedAttendance(rid, coll) {
       return rid == 'orderin_restuarant_6'
@@ -21,14 +25,18 @@ service cloud.firestore {
         && coll in ['payrollRuns', 'payrollConfig', 'staffPayrollProfiles'];
     }
 
-    match /{top}/{rest=**} {
-      allow read, write: if top != 'Restaurant';
+    // Written only by Cloud Functions (the Admin SDK bypasses these rules).
+    function isServerOnlyCollection(coll) {
+      return coll in ['paymentIntents', 'counterCodes'];
     }
+
     match /Restaurant/{rid} {
       allow read, write: if true;
     }
     match /Restaurant/{rid}/{coll}/{rest=**} {
-      allow read, write: if !isLockedAttendance(rid, coll) && !isPrivatePayrollCollection(rid, coll);
+      allow read, write: if !isLockedAttendance(rid, coll)
+        && !isPrivatePayrollCollection(rid, coll)
+        && !isServerOnlyCollection(coll);
     }
 
     // Browser-only PIN sessions cannot be verified by Firestore rules, so
