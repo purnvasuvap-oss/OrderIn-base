@@ -5,11 +5,66 @@ const theme = require('./theme');
 const print = require('./print');
 const reports = require('./reports');
 
-module.exports = {
-  ...billing,
-  ...orders,
-  ...ops,
-  ...theme,
-  ...print,
-  ...reports,
-};
+module.exports.DEFAULT_TAX = billing.DEFAULT_TAX;
+module.exports.roundRupees = billing.roundRupees;
+module.exports.parseRupees = billing.parseRupees;
+module.exports.portionOf = billing.portionOf;
+module.exports.unitPrice = billing.unitPrice;
+module.exports.lineKey = billing.lineKey;
+module.exports.normalizeDiet = billing.normalizeDiet;
+module.exports.quoteCart = billing.quoteCart;
+module.exports.applyDiscount = billing.applyDiscount;
+module.exports.applyCoupon = billing.applyCoupon;
+module.exports.splitBill = billing.splitBill;
+
+module.exports.ITEM_STATUSES = orders.ITEM_STATUSES;
+module.exports.ORDER_STATUSES = orders.ORDER_STATUSES;
+module.exports.canTransitionItem = orders.canTransitionItem;
+module.exports.financialYear = orders.financialYear;
+module.exports.formatInvoiceNumber = orders.formatInvoiceNumber;
+module.exports.businessDate = orders.businessDate;
+module.exports.mergeLines = orders.mergeLines;
+module.exports.buildRunningBill = orders.buildRunningBill;
+module.exports.legacyOrdersFromCustomer = orders.legacyOrdersFromCustomer;
+module.exports.voidOrder = orders.voidOrder;
+module.exports.auditEntry = orders.auditEntry;
+
+module.exports.ROLES = ops.ROLES;
+module.exports.ACTIONS = ops.ACTIONS;
+module.exports.can = ops.can;
+module.exports.managerMayCreate = ops.managerMayCreate;
+module.exports.awardPoints = ops.awardPoints;
+module.exports.addStamps = ops.addStamps;
+module.exports.bumpProfile = ops.bumpProfile;
+module.exports.deductStock = ops.deductStock;
+module.exports.netPay = ops.netPay;
+module.exports.dayClose = ops.dayClose;
+module.exports.reservationOverlaps = ops.reservationOverlaps;
+module.exports.TABLE_STATUSES = ops.TABLE_STATUSES;
+module.exports.tableStatusFromOrder = ops.tableStatusFromOrder;
+module.exports.mergeRecords = ops.mergeRecords;
+
+module.exports.PRESETS = theme.PRESETS;
+module.exports.presetTheme = theme.presetTheme;
+module.exports.themeToCssVars = theme.themeToCssVars;
+module.exports.resolveRestaurantRef = theme.resolveRestaurantRef;
+module.exports.tableQrUrl = theme.tableQrUrl;
+module.exports.featureOn = theme.featureOn;
+module.exports.billText = theme.billText;
+module.exports.whatsappLink = theme.whatsappLink;
+module.exports.smsLink = theme.smsLink;
+module.exports.reviewPrompt = theme.reviewPrompt;
+module.exports.parseMenuCsv = theme.parseMenuCsv;
+module.exports.loggingEnabled = theme.loggingEnabled;
+
+module.exports.kotBytes = print.kotBytes;
+module.exports.billBytes = print.billBytes;
+module.exports.bytesToBase64 = print.bytesToBase64;
+module.exports.kotByStation = print.kotByStation;
+
+module.exports.salesSummary = reports.salesSummary;
+module.exports.itemWise = reports.itemWise;
+module.exports.gstReport = reports.gstReport;
+module.exports.toCsv = reports.toCsv;
+module.exports.tallyVoucherRows = reports.tallyVoucherRows;
+module.exports.staffPerformance = reports.staffPerformance;

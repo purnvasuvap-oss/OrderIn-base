@@ -37,6 +37,16 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // Public lookup so a subdomain can find its restaurant without listing every restaurant.
+    match /restaurantIndex/{subdomain} {
+      allow read: if true;
+      allow create, update: if signedIn()
+        && request.resource.data.restaurantId is string
+        && managerOf(request.resource.data.restaurantId)
+        && request.resource.data.keys().hasOnly(['restaurantId', 'name']);
+      allow delete: if false;
+    }
+
     match /Restaurant/{rid} {
       allow read: if staffOf(rid);
       allow create, update: if managerOf(rid);
