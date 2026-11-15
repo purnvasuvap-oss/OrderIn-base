@@ -15,9 +15,9 @@ import storageService from "../services/storageService";
 import { getInventoryItemOptions } from "../services/menuInventoryService";
 import { useNotification } from "../hooks/useNotification";
 import AvailableDishesIcon from "./landingpage/Available_dishes.svg";
-import CategoryIcon from "./landingpage/Category.svg";
+import CategoryIcon from "./landingpage/category.svg";
 import PromotionsIcon from "./landingpage/Promotions.svg";
-import TotalDishesIcon from "./landingpage/Total_dishes.svg";
+import TotalDishesIcon from "./landingpage/Total_Dishes.svg";
 const RESTAURANT_NUMBER = import.meta.env.VITE_RESTAURANT_NUMBER || "0";
 
 import "./MenuPage.css";
