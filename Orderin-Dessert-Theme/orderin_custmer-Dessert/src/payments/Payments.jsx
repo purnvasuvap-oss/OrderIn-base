@@ -1,3 +1,4 @@
+import { mergeIntoOpenTableOrder } from '../../../../shared/orderin-dine/logic.js';
 ﻿// Payments.js
 import React, { useState, useEffect } from "react";
 import { Minus, Plus, Trash2, CreditCard, Wallet, Banknote } from "lucide-react";
@@ -230,7 +231,26 @@ function Payments({ onBackClick }) {
 
       // Save to Firestore immediately with 'unpaid' status
       // It will be deleted if user goes back, or updated to 'paid' after verification
-      pastOrders.push(orderForFirestore);
+      const mergedOrder = mergeIntoOpenTableOrder(pastOrders, orderForFirestore);
+      pastOrders = mergedOrder.pastOrders;
+      if (mergedOrder.merged) orderId = mergedOrder.orderId;
+      try {
+        await setDoc(doc(db, 'Restaurant', 'orderin_restuarant_5', 'tableSessions', String(mergedOrder.order.tableNo || '1')), {
+          table: String(mergedOrder.order.tableNo || '1'),
+          items: mergedOrder.order.items || [],
+          total: mergedOrder.order.total || 0,
+          status: 'ordered',
+          updatedAt: new Date().toISOString(),
+        }, { merge: true });
+              if (mergedOrder.orderId) {
+          await setDoc(doc(db, 'Restaurant', 'orderin_restuarant_5', 'orders', String(mergedOrder.orderId)), {
+            ...mergedOrder.order,
+            customerPhone: typeof phoneNumber !== 'undefined' ? phoneNumber : null,
+          }, { merge: true });
+        }
+} catch (sessionErr) {
+        console.warn('table session', sessionErr);
+      }
       console.log('Past orders array before Firestore save:', pastOrders);
       await setDoc(customerRef, { pastOrders, lastOrderAt: serverTimestamp() }, { merge: true });
       if ((selectedPayment === 'Cash' || selectedPayment === 'Card') && orderId) {
@@ -402,7 +422,7 @@ function Payments({ onBackClick }) {
             <span>₹{displayedBilling.subtotal.toFixed(2)}</span>
           </div>
           <div className="billing-row">
-            <span>Additional Charges :</span>
+            <span>GST (CGST + SGST) :</span>
             <span>₹{displayedBilling.taxes.toFixed(2)}</span>
           </div>
           <div className="billing-total">

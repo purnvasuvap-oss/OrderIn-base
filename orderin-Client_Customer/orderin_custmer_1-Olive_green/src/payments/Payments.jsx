@@ -322,7 +322,7 @@ function Payments({ onBackClick }) {
             <span>₹{displayedBilling.subtotal.toFixed(2)}</span>
           </div>
           <div className="billing-row">
-            <span>Additional Charges :</span>
+            <span>GST (CGST + SGST) :</span>
             <span>₹{displayedBilling.taxes.toFixed(2)}</span>
           </div>
           <div className="billing-total">

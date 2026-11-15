@@ -22,7 +22,7 @@ exports[`Menu > matches the snapshot 1`] = `
         <h1
           class="hero-title"
         >
-          Our Restaurant
+          Restaurant
         </h1>
       </div>
       <div

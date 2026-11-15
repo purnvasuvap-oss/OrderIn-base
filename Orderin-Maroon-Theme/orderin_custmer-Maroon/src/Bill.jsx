@@ -298,7 +298,7 @@ function Bill() {
 
           <div className="summary">
             <div className="row"><span>Sub Total</span><span>₹{safeSubtotal.toFixed(2)}</span></div>
-            <div className="row"><span>Additional Charges</span><span>₹{safeTaxes.toFixed(2)}</span></div>
+            <div className="row"><span>GST (CGST + SGST)</span><span>₹{safeTaxes.toFixed(2)}</span></div>
             <div className="total"><span>TOTAL</span><span>₹{safeTotal.toFixed(2)}</span></div>
           </div>
 

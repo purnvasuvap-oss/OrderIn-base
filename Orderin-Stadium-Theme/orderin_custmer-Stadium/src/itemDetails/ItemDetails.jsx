@@ -166,7 +166,7 @@ function ItemDetails() {
     if (!item) return;
     const groups = item.customizations && Array.isArray(item.customizations) && item.customizations.length
       ? item.customizations
-      : DEFAULT_CUSTOMIZATIONS;
+      : [];
     setCustomSelections((prev) => {
       const next = { ...prev };
       groups.forEach((g) => {
@@ -226,7 +226,7 @@ function ItemDetails() {
   const buildInstructionsWithCustomizations = (baseText) => {
     const groups = item.customizations && Array.isArray(item.customizations) && item.customizations.length
       ? item.customizations
-      : DEFAULT_CUSTOMIZATIONS;
+      : [];
     const customLine = groups
       .map((g) => (customSelections[g.id] ? `${g.label}: ${customSelections[g.id]}` : null))
       .filter(Boolean)
@@ -332,9 +332,9 @@ function ItemDetails() {
     : (parseFloat(String(item.price || '').replace(/[^0-9.\-]/g, '')) || 0);
   const totalPrice = (unitForDisplay * quantity).toFixed(2);
 
-  const rating = item.rating || 4.6;
+  const rating = (typeof item.rating === 'number' ? item.rating : null);
   const reviewCount = item.reviewCount || item.ratingsCount || null;
-  const prepTime = item.prepTime || item.preparationTime || '15–20 min';
+  const prepTime = item.prepTime || item.preparationTime || '';
   const isBestseller = Boolean(item.bestseller || item.isBestseller);
   const isVeg = item.isVeg === true || (typeof item.dietType === 'string' && item.dietType.toLowerCase() === 'veg');
   const isNonVeg = item.isVeg === false || (typeof item.dietType === 'string' && item.dietType.toLowerCase() === 'non-veg');
@@ -352,7 +352,7 @@ function ItemDetails() {
 
   const customizationGroups = item.customizations && Array.isArray(item.customizations) && item.customizations.length
     ? item.customizations
-    : DEFAULT_CUSTOMIZATIONS;
+    : [];
 
   return (
     <div
@@ -403,17 +403,23 @@ function ItemDetails() {
 
         {linkCopied && <div className="link-toast"><Link2 size={13} /> Link copied</div>}
 
+        {(rating || prepTime) && (
         <div className="hero-info-row">
+          {rating ? (
           <span className="hero-pill">
             <Star size={13} className="pill-star" />
-            {rating.toFixed ? rating.toFixed(1) : rating}
+            {Number(rating).toFixed(1)}
             {reviewCount ? <span className="pill-muted"> ({reviewCount})</span> : null}
           </span>
+          ) : null}
+          {prepTime ? (
           <span className="hero-pill">
             <Clock size={13} />
             {prepTime}
           </span>
+          ) : null}
         </div>
+        )}
       </div>
 
       {/* CONTENT CARD */}

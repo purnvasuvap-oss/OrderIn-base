@@ -260,7 +260,7 @@ function Cart({ onBackClick }) {
                 const itemPrice = parsePrice(item.price);
                 const quantity = Number(item.quantity) || 0;
                 const itemTotal = itemPrice * quantity;
-                const rating = item.rating || 4.7;
+                const rating = (typeof item.rating === 'number' ? item.rating : null);
 
                 return (
                   <article key={item.id || item.name || index} className="cart-item">
@@ -281,7 +281,7 @@ function Cart({ onBackClick }) {
                         <div className="cart-item-copy">
                           <div className="item-title-row">
                             <h3 className="cart-item-name">{item.name}{item.portion === 'Large' ? ' (Large)' : ''}</h3>
-                            <span className="rating-pill">⭐ {rating.toFixed(1)}</span>
+                            {rating ? <span className="rating-pill">⭐ {Number(rating).toFixed(1)}</span> : null}
                           </div>
                           <div className="price-row">
                             <p className="cart-item-price">{formatPrice(itemPrice)}</p>

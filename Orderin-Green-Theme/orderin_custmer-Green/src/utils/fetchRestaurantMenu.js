@@ -14,7 +14,7 @@ export const withTimeout = (promise, ms) => {
 
 // Shared by both the authenticated Menu page and the pre-login public
 // flipbook menu so the Firestore path/logic lives in one place.
-export const fetchMenuItems = async (restaurantId, { timeoutMs = 8000 } = {}) => {
+export const fetchMenuItems = async (restaurantId, { timeoutMs = 20000 } = {}) => {
   const snap = await withTimeout(getDocs(collection(db, "Restaurant", restaurantId, "menu")), timeoutMs);
   return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
 };

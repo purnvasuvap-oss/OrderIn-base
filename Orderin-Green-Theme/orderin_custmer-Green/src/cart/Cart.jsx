@@ -1,4 +1,5 @@
-﻿import React, { useState, useEffect, useRef } from "react";
+﻿import { mergeIntoOpenTableOrder } from '../../../../shared/orderin-dine/logic.js';
+import React, { useState, useEffect, useRef } from "react";
 import { ChevronLeft, Minus, Plus, Edit3, Trash2 } from "lucide-react";
 import Footer from "../Footer/Footer";
 import { useCart } from "../context/CartContext";
@@ -351,7 +352,26 @@ function Cart({ onBackClick }) {
       console.log("Sending order to restaurant for confirmation:", orderForFirestore);
 
       // Save to Firestore
-      pastOrders.push(orderForFirestore);
+      const mergedOrder = mergeIntoOpenTableOrder(pastOrders, orderForFirestore);
+      pastOrders = mergedOrder.pastOrders;
+      if (mergedOrder.merged) orderId = mergedOrder.orderId;
+      try {
+        await setDoc(doc(db, 'Restaurant', 'orderin_restuarant_6', 'tableSessions', String(mergedOrder.order.tableNo || '1')), {
+          table: String(mergedOrder.order.tableNo || '1'),
+          items: mergedOrder.order.items || [],
+          total: mergedOrder.order.total || 0,
+          status: 'ordered',
+          updatedAt: new Date().toISOString(),
+        }, { merge: true });
+              if (mergedOrder.orderId) {
+          await setDoc(doc(db, 'Restaurant', 'orderin_restuarant_6', 'orders', String(mergedOrder.orderId)), {
+            ...mergedOrder.order,
+            customerPhone: typeof phoneNumber !== 'undefined' ? phoneNumber : null,
+          }, { merge: true });
+        }
+} catch (sessionErr) {
+        console.warn('table session', sessionErr);
+      }
       await setDoc(customerRef, { pastOrders, lastOrderAt: serverTimestamp() }, { merge: true });
       console.log("Order saved to Firestore — awaiting restaurant confirmation");
 

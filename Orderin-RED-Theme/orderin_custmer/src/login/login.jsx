@@ -511,9 +511,13 @@ const Login = () => {
               type="tel"
               className="phone-input"
               placeholder="Enter phone number"
+              aria-describedby="phone-consent"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
             />
+            <p id="phone-consent" style={{ fontSize: 12, opacity: 0.75, margin: '8px 0 0' }}>
+              Your phone is only used for this table's bill. It is not shared with other restaurants.
+            </p>
           </div>
 
           {errorMessage && (

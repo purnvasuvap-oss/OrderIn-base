@@ -1,0 +1,17 @@
+name: Dine-in checks
+
+on:
+  pull_request:
+  push:
+    branches: [WIP, themed-apps-key-config]
+
+jobs:
+  logic:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Shared dine-in tests
+        run: node shared/orderin-dine/logic.test.mjs

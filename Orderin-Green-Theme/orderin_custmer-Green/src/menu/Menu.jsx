@@ -1,3 +1,4 @@
+import { DishMeta } from "../dinein/DineInTools";
 ﻿import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { collection, getDocs, doc, getDoc } from "firebase/firestore";
@@ -129,7 +130,7 @@ function Menu({ setIsLoading }) {
   const [adImageSrc, setAdImageSrc] = useState("");
   const adObjectUrlRef = useRef(null);
   const [fetchedProducts, setFetchedProducts] = useState([]);
-  const [restaurantName, setRestaurantName] = useState("Our Restaurant");
+  const [restaurantName, setRestaurantName] = useState("Restaurant");
   const [activeOrder, setActiveOrder] = useState(null);
   const [isListening, setIsListening] = useState(false);
   const [pulseId, setPulseId] = useState(null);
@@ -154,8 +155,10 @@ function Menu({ setIsLoading }) {
     (async () => {
       try {
         const snap = await getDoc(doc(db, "Restaurant", "orderin_restuarant_6"));
-        if (alive && snap.exists() && snap.data().name) {
-          setRestaurantName(snap.data().name);
+        if (alive && snap.exists()) {
+          const data = snap.data() || {};
+          const label = data.Restaurant_name || data.name || data.restaurantName;
+          if (label) setRestaurantName(label);
         }
       } catch (e) {
         /* keep default name */
@@ -181,7 +184,7 @@ function Menu({ setIsLoading }) {
     const fetchMenu = async () => {
       try {
         setIsLoading(true);
-        const snap = await withTimeout(getDocs(collection(db, "Restaurant", "orderin_restuarant_6", "menu")), 8000);
+        const snap = await withTimeout(getDocs(collection(db, "Restaurant", "orderin_restuarant_6", "menu")), 20000);
         const data = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
         if (!alive) return;
         setFetchedProducts(data);
@@ -592,6 +595,7 @@ function Menu({ setIsLoading }) {
                               </span>
                             )}
                           </h3>
+                          <DishMeta item={item} />
                           <div className="price-row">
                             <span className="price-current">
                               {symbol}

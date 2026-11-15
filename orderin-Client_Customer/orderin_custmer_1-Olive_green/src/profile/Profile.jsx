@@ -437,7 +437,7 @@ function Profile({ onBackClick, onCartClick }) {
   const totalOrders = orderHistory.length;
   const favoriteCount = likedItems.length;
   const savingsEstimate = Math.max(0, totalOrders * 38);
-  const memberSince = user.createdAt ? new Date(user.createdAt).toLocaleDateString([], { month: "short", year: "numeric" }) : "since 2024";
+  const memberSince = user.createdAt ? new Date(user.createdAt).toLocaleDateString([], { month: "short", year: "numeric" }) : "";
   // Fix #21: Payment methods should be dynamic from user data.
   // For now, use actual payment methods from past orders if available.
   const paymentMethods = (() => {

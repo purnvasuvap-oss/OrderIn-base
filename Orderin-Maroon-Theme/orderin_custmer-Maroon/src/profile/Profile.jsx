@@ -432,7 +432,7 @@ function Profile({ onBackClick, onCartClick }) {
   const totalOrders = orderHistory.length;
   const favoriteCount = likedItems.length;
   const savingsEstimate = Math.max(0, totalOrders * 38);
-  const memberSince = user.createdAt ? new Date(user.createdAt).toLocaleDateString([], { month: "short", year: "numeric" }) : "since 2024";
+  const memberSince = user.createdAt ? new Date(user.createdAt).toLocaleDateString([], { month: "short", year: "numeric" }) : "";
   const paymentMethods = [
     { label: "Visa • 4242", detail: "Primary card" },
     { label: "Cash on delivery", detail: "Default at checkout" },
