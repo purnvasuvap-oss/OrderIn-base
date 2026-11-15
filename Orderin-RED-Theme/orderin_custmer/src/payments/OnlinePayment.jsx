@@ -66,8 +66,6 @@ function OnlinePayment() {
       params.append('useProvidedTax', foundPaymentData.useProvidedTax ? 'true' : 'false');
       params.append('restaurantId', foundPaymentData.restaurantId || '');
       params.append('restaurantName', foundPaymentData.restaurantName || '');
-      params.append('ifscCode', foundPaymentData.ifscCode || '');
-      params.append('accountNumber', foundPaymentData.accountNumber || '');
       params.append('customerPhone', foundPaymentData.customerPhone || '');
       
       const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';

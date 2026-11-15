@@ -257,7 +257,7 @@ function Cart({ onBackClick }) {
                   <div className="cart-item-details">
                     <div className="cart-item-main">
                       <div className="cart-item-copy">
-                        <h3 className="cart-item-name">{item.name}</h3>
+                        <h3 className="cart-item-name">{item.name}{item.portion === 'Large' ? ' (Large)' : ''}</h3>
                         <p className="cart-item-price">
                           {formatPrice(itemPrice)}
                           <span> each</span>
@@ -275,7 +275,7 @@ function Cart({ onBackClick }) {
                         <button
                           className="qty-btn"
                           aria-label={`Decrease ${item.name} quantity`}
-                          onClick={() => updateQuantity(item.name, item.quantity - 1)}
+                          onClick={() => (item.portion ? updateQuantity(item.name, item.quantity - 1, item.portion) : updateQuantity(item.name, item.quantity - 1))}
                         >
                           <Minus size={16} />
                         </button>
@@ -283,7 +283,7 @@ function Cart({ onBackClick }) {
                         <button
                           className="qty-btn"
                           aria-label={`Increase ${item.name} quantity`}
-                          onClick={() => updateQuantity(item.name, item.quantity + 1)}
+                          onClick={() => (item.portion ? updateQuantity(item.name, item.quantity + 1, item.portion) : updateQuantity(item.name, item.quantity + 1))}
                         >
                           <Plus size={16} />
                         </button>
@@ -292,7 +292,7 @@ function Cart({ onBackClick }) {
                       <button
                         className="remove-btn"
                         aria-label={`Remove ${item.name}`}
-                        onClick={() => removeFromCart(item.name)}
+                        onClick={() => (item.portion ? removeFromCart(item.name, item.portion) : removeFromCart(item.name))}
                       >
                         <Trash2 size={16} />
                         <span>Remove</span>

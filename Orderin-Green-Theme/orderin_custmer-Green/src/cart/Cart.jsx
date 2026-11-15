@@ -488,7 +488,7 @@ function Cart({ onBackClick }) {
                       <div className="cart-item-main">
                         <div className="cart-item-copy">
                           <div className="item-title-row">
-                            <h3 className="cart-item-name">{item.name}</h3>
+                            <h3 className="cart-item-name">{item.name}{item.portion === 'Large' ? ' (Large)' : ''}</h3>
                           </div>
                           <div className="price-row">
                             <p className="cart-item-price">{formatPrice(itemPrice)}</p>
@@ -637,14 +637,6 @@ function Cart({ onBackClick }) {
                 <div className="summary-row">
                   <span>GST</span>
                   <strong>{formatPrice(gst)}</strong>
-                </div>
-                <div className="summary-row">
-                  <span>Packing</span>
-                  <strong>{formatPrice(packing)}</strong>
-                </div>
-                <div className="summary-row savings-row">
-                  <span>Savings</span>
-                  <strong>-{formatPrice(discount)}</strong>
                 </div>
                 <div className="summary-divider" />
                 <div className="summary-row grand-total">

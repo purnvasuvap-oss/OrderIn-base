@@ -15,6 +15,7 @@ import { createOrderTimestamp } from "../utils/orderDateTime";
 import { TAX_RATE } from "../utils/billing";
 import { calculateFinalBilling } from "../utils/pricing";
 import { safeGetUser } from "../utils/userStorage";
+import { issueCounterCode } from "./counterCodeApi";
 import "./Payments.css";
 
 function Payments({ onBackClick }) {
@@ -166,15 +167,12 @@ function Payments({ onBackClick }) {
       // Generate verification code for cash/card orders (4 random digits)
       let verificationCode = null;
       if (selectedPayment === 'Cash' || selectedPayment === 'Card') {
-        verificationCode = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+        verificationCode = null; // the server generates this and shows it only on the staff screen
       }
 
       // Persist verification code locally so the UI/verification page can use the same code
       try {
         if (verificationCode) {
-          sessionStorage.setItem('pendingVerificationCode', verificationCode);
-          localStorage.setItem('pendingVerificationCode', verificationCode);
-          console.log('Payments: generated verificationCode saved to sessionStorage/localStorage=', verificationCode);
         } else {
           sessionStorage.removeItem('pendingVerificationCode');
           localStorage.removeItem('pendingVerificationCode');
@@ -234,6 +232,14 @@ function Payments({ onBackClick }) {
         }
 
         await setDoc(customerRef, { pastOrders: updatedOrders }, { merge: true });
+      if ((selectedPayment === 'Cash' || selectedPayment === 'Card') && confirmedOrderId) {
+        await issueCounterCode({
+          restaurantId: 'orderin_restuarant_6',
+          customerPhone: phoneNumber,
+          orderId: confirmedOrderId,
+        });
+      }
+
         console.log('Payments: updated existing confirmed order in place (no duplicate created):', matchedOrder);
 
         order = matchedOrder;
@@ -356,6 +362,11 @@ function Payments({ onBackClick }) {
       return;
     }
 
+    if (orderSaveError && (selectedPayment === 'Cash' || selectedPayment === 'Card')) {
+      alert('Could not prepare counter payment. Please try again.');
+      return;
+    }
+
     if (!order) {
       // If order wasn't created (e.g., save failed), stop further actions
       return;
@@ -383,8 +394,6 @@ function Payments({ onBackClick }) {
               useProvidedTax: true, // Tell embedded page: don't recalculate, use this tax value
               restaurantId: 'orderin_restuarant_6',
               restaurantName: restaurantData.Restaurant_name || 'Restaurant',
-              ifscCode: restaurantData.IFSC || '',
-              accountNumber: restaurantData.account || '',
               paymentMethod: selectedPayment,
               customerPhone: phoneNumber,
               timestamp: new Date().toISOString()

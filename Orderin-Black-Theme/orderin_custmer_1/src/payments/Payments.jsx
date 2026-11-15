@@ -13,6 +13,7 @@ import { getPlaceholder } from "../utils/placeholder";
 import resolveImageUrl from "../utils/storageResolver";
 import { createOrderTimestamp } from "../utils/orderDateTime";
 import { calculateBilling, TAX_RATE } from "../utils/billing";
+import { issueCounterCode } from "./counterCodeApi";
 import "./Payments.css";
 
 function Payments({ onBackClick }) {
@@ -172,15 +173,12 @@ function Payments({ onBackClick }) {
       // Generate verification code for cash/card orders (4 random digits)
       let verificationCode = null;
       if (selectedPayment === 'Cash' || selectedPayment === 'Card') {
-        verificationCode = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+        verificationCode = null; // the server generates this and shows it only on the staff screen
       }
 
       // Persist verification code locally so the UI/verification page can use the same code
       try {
         if (verificationCode) {
-          sessionStorage.setItem('pendingVerificationCode', verificationCode);
-          localStorage.setItem('pendingVerificationCode', verificationCode);
-          console.log('Payments: generated verificationCode saved to sessionStorage/localStorage=', verificationCode);
         } else {
           sessionStorage.removeItem('pendingVerificationCode');
           localStorage.removeItem('pendingVerificationCode');
@@ -194,11 +192,15 @@ function Payments({ onBackClick }) {
       // Prepare order object for Firestore (no images/media)
       const orderForFirestore = {
         id: orderId,
-        items: order.items.map(({ name, price, quantity, instructions, specifications }) => ({
+        items: order.items.map(({ id, name, price, quantity, instructions, portion, selectedOptions, customizations }) => ({
+          id: id || null,
           name,
           price,
           quantity,
+          portion: portion || "",
           instructions: instructions || "",
+          selectedOptions: selectedOptions || [],
+          customizations: customizations || [],
         })),
         subtotal: order.subtotal,
         taxes: order.taxes,
@@ -230,6 +232,14 @@ function Payments({ onBackClick }) {
       pastOrders.push(orderForFirestore);
       console.log('Past orders array before Firestore save:', pastOrders);
       await setDoc(customerRef, { pastOrders, lastOrderAt: serverTimestamp() }, { merge: true });
+      if ((selectedPayment === 'Cash' || selectedPayment === 'Card') && orderId) {
+        await issueCounterCode({
+          restaurantId: 'orderin_restaurant_2',
+          customerPhone: phoneNumber,
+          orderId: orderId,
+        });
+      }
+
       console.log('Order saved to Firestore successfully');
       
       // Save temporary order state to localStorage for refresh recovery
@@ -254,6 +264,11 @@ function Payments({ onBackClick }) {
     if (orderSaveError && (!order || !order.id)) {
       console.warn("Order save failed - showing error to user:", orderSaveError.message);
       alert("Error saving order to backend: " + orderSaveError.message);
+      return;
+    }
+
+    if (orderSaveError && (selectedPayment === 'Cash' || selectedPayment === 'Card')) {
+      alert('Could not prepare counter payment. Please try again.');
       return;
     }
 
@@ -284,8 +299,6 @@ function Payments({ onBackClick }) {
               useProvidedTax: true, // Tell embedded page: don't recalculate, use this tax value
               restaurantId: 'orderin_restaurant_2',
               restaurantName: restaurantData.Restaurant_name || 'Restaurant',
-              ifscCode: restaurantData.IFSC || '',
-              accountNumber: restaurantData.account || '',
               paymentMethod: selectedPayment,
               customerPhone: phoneNumber,
               timestamp: new Date().toISOString()
