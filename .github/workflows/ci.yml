@@ -1,0 +1,76 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [WIP, main]
+
+jobs:
+  core:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm test
+        working-directory: platform/packages/core
+      - run: npm test
+        working-directory: platform/functions
+      - run: node --test platform/scripts/migrate-orders.test.js
+
+  customer:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm ci
+        working-directory: platform/apps/customer
+      - run: npm test
+        working-directory: platform/apps/customer
+      - run: npm run build
+        working-directory: platform/apps/customer
+
+  staff:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm ci
+        working-directory: platform/apps/staff
+      - run: npm test
+        working-directory: platform/apps/staff
+      - run: npm run build
+        working-directory: platform/apps/staff
+
+  admin:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm ci
+        working-directory: orderin_admin
+      - run: npm run test:run
+        working-directory: orderin_admin
+      - run: npm run build
+        working-directory: orderin_admin
+
+  pos:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm ci
+        working-directory: Orderin-Only-POS/pos-system
+      - run: npm run test:run
+        working-directory: Orderin-Only-POS/pos-system
+      - run: npm run build
+        working-directory: Orderin-Only-POS/pos-system

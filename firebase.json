@@ -1,0 +1,48 @@
+{
+  "firestore": {
+    "rules": "platform/firestore.rules",
+    "indexes": "platform/firestore.indexes.json"
+  },
+  "storage": {
+    "rules": "platform/storage.rules"
+  },
+  "functions": [
+    {
+      "source": "platform/functions",
+      "codebase": "default",
+      "ignore": [
+        "node_modules",
+        ".git",
+        "*.test.js",
+        "firebase-debug.log",
+        "firebase-debug.*.log"
+      ]
+    }
+  ],
+  "hosting": [
+    {
+      "target": "admin",
+      "public": "orderin_admin/dist",
+      "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+      "rewrites": [{ "source": "**", "destination": "/index.html" }]
+    },
+    {
+      "target": "customer",
+      "public": "platform/apps/customer/dist",
+      "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+      "rewrites": [{ "source": "**", "destination": "/index.html" }]
+    },
+    {
+      "target": "pos",
+      "public": "Orderin-Only-POS/pos-system/dist",
+      "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+      "rewrites": [{ "source": "**", "destination": "/index.html" }]
+    },
+    {
+      "target": "staff",
+      "public": "platform/apps/staff/dist",
+      "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+      "rewrites": [{ "source": "**", "destination": "/index.html" }]
+    }
+  ]
+}

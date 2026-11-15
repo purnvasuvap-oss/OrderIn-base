@@ -9,6 +9,12 @@ and each outlet can run an offline-capable POS terminal.
 This repository holds **all of the frontends** for that platform. The backend
 (Firebase — Firestore, Auth, Storage, Cloud Functions) is **not** in this repo.
 
+The apps you should run now are `platform/apps/customer` (diner), `platform/apps/staff`
+(captain, kitchen, owner), `orderin_admin` (OrderIn company console) and
+`Orderin-Only-POS/pos-system` (counter). Theme colours come from the restaurant
+profile. The old per-restaurant copies are in `archive/` and are not deployed.
+Read `platform/docs/MANUAL.md` before you deploy.
+
 > **New here?** Jump to [Getting started](#5-getting-started) for setup, or
 > [Docs folder](#11-docs-folder) for the guided reading path by role
 > (engineer / QA / onboarding a restaurant).
