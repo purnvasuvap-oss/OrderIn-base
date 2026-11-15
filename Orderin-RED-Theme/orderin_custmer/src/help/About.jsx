@@ -76,7 +76,7 @@ export default function About() {
       <section className="about-hero" aria-labelledby="restaurant-title">
         <div className="about-hero-content">
           <p className="about-eyebrow">Restaurant Profile</p>
-          <h1 id="restaurant-title">Foodie's Paradise</h1>
+          <h1 id="restaurant-title">Restaurant</h1>
           <p className="about-hero-copy">
             Fresh food, steady service, and a simple table-ordering experience for every visit.
           </p>
@@ -114,7 +114,7 @@ export default function About() {
             <h2>Built around fresh meals and smoother ordering.</h2>
           </div>
           <p className="about-story-copy">
-            Foodie's Paradise focuses on everyday comfort food made with consistent quality.
+            Restaurant focuses on everyday comfort food made with consistent quality.
             The restaurant keeps service simple: browse the live menu, place your table order,
             and let the kitchen prepare it with clear item notes and instructions.
           </p>
@@ -190,7 +190,7 @@ export default function About() {
       </main>
 
       <footer className="about-footer">
-        <p>© 2025 Foodie's Paradise. All rights reserved.</p>
+        <p>© 2025 Restaurant. All rights reserved.</p>
       </footer>
     </div>
   );

@@ -1,3 +1,6 @@
+import { db } from './firebaseConfig';
+import { DEFAULT_RESTAURANT_ID } from './config/restaurant';
+import { DineInTools, TableHome } from './dinein/DineInTools';
 import React, { Suspense, lazy } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Login from './login/login';
@@ -54,6 +57,7 @@ function AppContent({ isLoading, setIsLoading }) {
 
   return (
     <div className="App">
+      <DineInTools db={db} restaurantId={DEFAULT_RESTAURANT_ID} />
       <Loading isLoading={isLoading} />
       <Routes>
         {/* ===== PUBLIC ROUTES ===== */}
@@ -68,15 +72,15 @@ function AppContent({ isLoading, setIsLoading }) {
         <Route path="/login" element={<Login setIsLoading={setIsLoading} />} />
 
         {/* ===== PROTECTED ROUTES ===== */}
-        <Route path="/menu" element={<ProtectedRoute><Menu setIsLoading={setIsLoading} /></ProtectedRoute>} />
+        <Route path="/menu" element={<ProtectedRoute allowGuest><Menu setIsLoading={setIsLoading} /></ProtectedRoute>} />
         <Route path="/help" element={<ProtectedRoute><Help setIsLoading={setIsLoading} /></ProtectedRoute>} />
         <Route path="/about" element={<ProtectedRoute><About setIsLoading={setIsLoading} /></ProtectedRoute>} />
         <Route path="/about-orderin" element={<ProtectedRoute><OrderInAbout setIsLoading={setIsLoading} /></ProtectedRoute>} />
-        <Route path="/item/:slug" element={<ProtectedRoute><ItemDetails setIsLoading={setIsLoading} /></ProtectedRoute>} />
+        <Route path="/item/:slug" element={<ProtectedRoute allowGuest><ItemDetails setIsLoading={setIsLoading} /></ProtectedRoute>} />
         <Route path="/profile" element={<ProtectedRoute><Profile setIsLoading={setIsLoading} /></ProtectedRoute>} />
 
         {/* ===== PAYMENT FLOW ROUTES ===== */}
-        <Route path="/cart" element={<ProtectedRoute><Cart setIsLoading={setIsLoading} /></ProtectedRoute>} />
+        <Route path="/cart" element={<ProtectedRoute allowGuest><Cart setIsLoading={setIsLoading} /></ProtectedRoute>} />
         <Route path="/bill" element={<ProtectedRoute><Bill setIsLoading={setIsLoading} /></ProtectedRoute>} />
         <Route path="/payments" element={<ProtectedRoute><Payments setIsLoading={setIsLoading} /></ProtectedRoute>} />
         <Route path="/payment-success" element={<ProtectedRoute><PaymentSuccess setIsLoading={setIsLoading} /></ProtectedRoute>} />

@@ -45,3 +45,11 @@ export const calculateBilling = (subtotalValue, paymentMethod) => {
     roundedCollection: false,
   };
 };
+
+export const largeUnitPrice = (item) => {
+  const regular = parseFloat(String(item?.basePrice ?? item?.price ?? '').replace(/[^0-9.\-]/g, '')) || 0;
+  const explicitRaw = item?.priceLarge ?? item?.largePrice ?? item?.prices?.Large ?? item?.prices?.large;
+  const explicit = parseFloat(String(explicitRaw ?? '').replace(/[^0-9.\-]/g, '')) || 0;
+  if (explicit > regular) return explicit;
+  return Math.round((regular * 1.5 + Number.EPSILON) * 100) / 100;
+};

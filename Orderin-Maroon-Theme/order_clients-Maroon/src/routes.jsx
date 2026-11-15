@@ -14,6 +14,9 @@ const routes = {
   tableManagement: "/table-management",
   staffLogin: "/staff-login",
   staffManagement: "/staff-management",
+  kitchen: "/kitchen",
+  onboarding: "/onboarding",
+  staffPay: "/staff-pay",
 };
 
 export default routes;

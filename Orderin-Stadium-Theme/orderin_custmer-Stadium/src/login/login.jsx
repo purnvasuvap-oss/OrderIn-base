@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { resolveTableFromSearch } from "../hooks/useTableNumber";
 import { doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
 import { db, auth } from "../firebaseConfig";
 import { onAuthStateChanged } from "firebase/auth";
@@ -214,9 +215,14 @@ const Login = () => {
       if (result.success) {
         const user = { username, phone: fullPhone };
         localStorage.setItem("user", JSON.stringify(user));
-        localStorage.setItem("tableNumber", window.tableNumber || '1');
+        const tableForOrder = resolveTableFromSearch(
+          window.location.search,
+          localStorage.getItem('tableNumber'),
+          window.tableNumber
+        );
+        localStorage.setItem('tableNumber', tableForOrder);
         alert(`Welcome ${username}!`);
-        navigate(`/menu?table=${window.tableNumber || '1'}`);
+        navigate(`/menu?table=${encodeURIComponent(tableForOrder)}`);
       } else {
         setErrorMessage(`Error saving user: ${result.error}`);
       }
@@ -517,9 +523,13 @@ const Login = () => {
               type="tel"
               className="phone-input"
               placeholder="Enter phone number"
+              aria-describedby="phone-consent"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
             />
+            <p id="phone-consent" style={{ fontSize: 12, opacity: 0.75, margin: '8px 0 0' }}>
+              Your phone is only used for this table's bill. It is not shared with other restaurants.
+            </p>
           </div>
 
           {errorMessage && (

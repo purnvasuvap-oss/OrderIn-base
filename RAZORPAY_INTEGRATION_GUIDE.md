@@ -1,3 +1,5 @@
+> The live Razorpay key used to be written in this file. Rotating it in the Razorpay dashboard is recommended, not required. Keep the real key in environment variables or Firebase secrets, not in this document.
+
 # Razorpay Payment Integration Guide
 
 This guide walks you through the complete setup and configuration of Razorpay payment processing in your Order IN application.
@@ -22,8 +24,8 @@ The Razorpay integration has been implemented with the following components:
 ### Step 1: Configure Razorpay API Keys
 
 Your Razorpay credentials have been provided:
-- **Key ID**: `rzp_live_Sj1ZPsCyB5iu3t`
-- **Key Secret**: `dN2uwxFr0hIZkcV57RXdRXmt`
+- **Key ID**: `YOUR_ROTATED_RAZORPAY_KEY_ID`
+- **Key Secret**: `YOUR_ROTATED_RAZORPAY_KEY_SECRET`
 
 **⚠️ SECURITY WARNING:**
 - These keys should be stored in **environment variables**, not hardcoded
@@ -32,26 +34,15 @@ Your Razorpay credentials have been provided:
 
 ### Step 2: Set Up Firebase Environment Variables
 
-1. **Update Firebase Functions Configuration:**
+1. **Set Firebase secrets** from the client app folder that owns the functions (for example `Orderin-Black-Theme/order_client_11`). Do not put the real values in git.
 
 ```bash
-# Navigate to functions directory
-cd order_client_1/functions
-
-# Install dependencies
-npm install
-
-# Set Razorpay environment variables (from Firebase Console)
-firebase functions:config:set razorpay.key_id="rzp_live_Sj1ZPsCyB5iu3t"
-firebase functions:config:set razorpay.key_secret="dN2uwxFr0hIZkcV57RXdRXmt"
+firebase functions:secrets:set RAZORPAY_KEY_ID
+firebase functions:secrets:set RAZORPAY_KEY_SECRET
+firebase functions:secrets:set RAZORPAY_WEBHOOK_SECRET
 ```
 
-2. **Update functions/index.js** to use environment variables:
-
-```javascript
-const RAZORPAY_KEY_ID = functions.config().razorpay?.key_id || process.env.RAZORPAY_KEY_ID;
-const RAZORPAY_KEY_SECRET = functions.config().razorpay?.key_secret || process.env.RAZORPAY_KEY_SECRET;
-```
+2. The functions read those names from the environment. The browser only gets the public key id, from `VITE_RAZORPAY_KEY_ID` in that app's `.env`, through `src/config/razorpay.js` (admin uses `src/config/razorpay.ts`).
 
 ### Step 3: Deploy Firebase Cloud Functions
 
@@ -184,7 +175,7 @@ Test Payment Amount: ₹1 (minimum)
 
 **Possible Causes:**
 1. Razorpay script not loaded - check console logs
-2. Invalid Key ID - verify `rzp_live_Sj1ZPsCyB5iu3t` is correct
+2. Invalid Key ID - verify `YOUR_ROTATED_RAZORPAY_KEY_ID` is correct
 3. Backend order creation failed - check function logs:
    ```bash
    firebase functions:log

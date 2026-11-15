@@ -1,3 +1,5 @@
+> The live Razorpay key used to be written in this file. Rotating it in the Razorpay dashboard is recommended, not required. Keep the real key in environment variables or Firebase secrets, not in this document.
+
 # Razorpay Integration - Quick Setup Guide
 
 ## What Was Implemented
@@ -113,8 +115,8 @@ const verifyResponse = await fetch('https://us-central1-YOUR_PROJECT_ID.cloudfun
 ## Razorpay API Keys
 
 Your Razorpay credentials (already in rzp-key.csv):
-- **Key ID**: `rzp_live_Sj1ZPsCyB5iu3t`
-- **Key Secret**: `dN2uwxFr0hIZkcV57RXdRXmt`
+- **Key ID**: `YOUR_ROTATED_RAZORPAY_KEY_ID`
+- **Key Secret**: `YOUR_ROTATED_RAZORPAY_KEY_SECRET`
 
 ⚠️ Store these as Firebase environment variables, not in code!
 

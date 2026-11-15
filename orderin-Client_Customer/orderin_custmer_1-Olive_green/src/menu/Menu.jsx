@@ -1,3 +1,4 @@
+import { DishMeta } from "../dinein/DineInTools";
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { doc, getDoc } from "firebase/firestore";
@@ -93,7 +94,7 @@ function Menu({ setIsLoading }) {
   const [adImageSrc, setAdImageSrc] = useState("");
   const adObjectUrlRef = useRef(null);
   const [fetchedProducts, setFetchedProducts] = useState([]);
-  const [restaurantName, setRestaurantName] = useState("Our Restaurant");
+  const [restaurantName, setRestaurantName] = useState("Restaurant");
   const [activeOrder, setActiveOrder] = useState(null);
 
   const tableNumber = tableNumberFromHook || null;
@@ -104,8 +105,10 @@ function Menu({ setIsLoading }) {
     (async () => {
       try {
         const snap = await getDoc(doc(db, "Restaurant", DEFAULT_RESTAURANT_ID));
-        if (alive && snap.exists() && snap.data().name) {
-          setRestaurantName(snap.data().name);
+        if (alive && snap.exists()) {
+          const data = snap.data() || {};
+          const label = data.Restaurant_name || data.name || data.restaurantName;
+          if (label) setRestaurantName(label);
         }
       } catch (e) {
         /* keep default name */
@@ -439,6 +442,7 @@ function Menu({ setIsLoading }) {
                               </span>
                             )}
                           </h3>
+                          <DishMeta item={item} />
                           <div className="price-row">
                             <span className="price-current">
                               {symbol}

@@ -1,4 +1,5 @@
 ﻿// Payments.js
+import { mergeIntoOpenTableOrder } from '../../../../shared/orderin-dine/logic.js';
 import React, { useState, useEffect } from "react";
 import { Minus, Plus, Trash2, X, CreditCard, Wallet, Banknote } from "lucide-react";
 import { useCart } from "../context/CartContext";
@@ -15,6 +16,7 @@ import { createOrderTimestamp } from "../utils/orderDateTime";
 import { TAX_RATE } from "../utils/billing";
 import { calculateFinalBilling } from "../utils/pricing";
 import { safeGetUser } from "../utils/userStorage";
+import { issueCounterCode } from "./counterCodeApi";
 import "./Payments.css";
 
 function Payments({ onBackClick }) {
@@ -166,15 +168,12 @@ function Payments({ onBackClick }) {
       // Generate verification code for cash/card orders (4 random digits)
       let verificationCode = null;
       if (selectedPayment === 'Cash' || selectedPayment === 'Card') {
-        verificationCode = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+        verificationCode = null; // the server generates this and shows it only on the staff screen
       }
 
       // Persist verification code locally so the UI/verification page can use the same code
       try {
         if (verificationCode) {
-          sessionStorage.setItem('pendingVerificationCode', verificationCode);
-          localStorage.setItem('pendingVerificationCode', verificationCode);
-          console.log('Payments: generated verificationCode saved to sessionStorage/localStorage=', verificationCode);
         } else {
           sessionStorage.removeItem('pendingVerificationCode');
           localStorage.removeItem('pendingVerificationCode');
@@ -234,6 +233,14 @@ function Payments({ onBackClick }) {
         }
 
         await setDoc(customerRef, { pastOrders: updatedOrders }, { merge: true });
+      if ((selectedPayment === 'Cash' || selectedPayment === 'Card') && confirmedOrderId) {
+        await issueCounterCode({
+          restaurantId: 'orderin_restuarant_6',
+          customerPhone: phoneNumber,
+          orderId: confirmedOrderId,
+        });
+      }
+
         console.log('Payments: updated existing confirmed order in place (no duplicate created):', matchedOrder);
 
         order = matchedOrder;
@@ -322,7 +329,26 @@ function Payments({ onBackClick }) {
 
         // Save to Firestore immediately with 'unpaid' status
         // It will be deleted if user goes back, or updated to 'paid' after verification
-        pastOrders.push(orderForFirestore);
+        const mergedOrder = mergeIntoOpenTableOrder(pastOrders, orderForFirestore);
+      pastOrders = mergedOrder.pastOrders;
+      if (mergedOrder.merged) orderId = mergedOrder.orderId;
+      try {
+        await setDoc(doc(db, 'Restaurant', 'orderin_restuarant_6', 'tableSessions', String(mergedOrder.order.tableNo || '1')), {
+          table: String(mergedOrder.order.tableNo || '1'),
+          items: mergedOrder.order.items || [],
+          total: mergedOrder.order.total || 0,
+          status: 'ordered',
+          updatedAt: new Date().toISOString(),
+        }, { merge: true });
+              if (mergedOrder.orderId) {
+          await setDoc(doc(db, 'Restaurant', 'orderin_restuarant_6', 'orders', String(mergedOrder.orderId)), {
+            ...mergedOrder.order,
+            customerPhone: typeof phoneNumber !== 'undefined' ? phoneNumber : null,
+          }, { merge: true });
+        }
+} catch (sessionErr) {
+        console.warn('table session', sessionErr);
+      }
         console.log('Past orders array before Firestore save:', pastOrders);
         await setDoc(customerRef, { pastOrders, lastOrderAt: serverTimestamp() }, { merge: true });
         console.log('Order saved to Firestore successfully');
@@ -356,6 +382,11 @@ function Payments({ onBackClick }) {
       return;
     }
 
+    if (orderSaveError && (selectedPayment === 'Cash' || selectedPayment === 'Card')) {
+      alert('Could not prepare counter payment. Please try again.');
+      return;
+    }
+
     if (!order) {
       // If order wasn't created (e.g., save failed), stop further actions
       return;
@@ -383,8 +414,6 @@ function Payments({ onBackClick }) {
               useProvidedTax: true, // Tell embedded page: don't recalculate, use this tax value
               restaurantId: 'orderin_restuarant_6',
               restaurantName: restaurantData.Restaurant_name || 'Restaurant',
-              ifscCode: restaurantData.IFSC || '',
-              accountNumber: restaurantData.account || '',
               paymentMethod: selectedPayment,
               customerPhone: phoneNumber,
               timestamp: new Date().toISOString()
@@ -488,7 +517,7 @@ function Payments({ onBackClick }) {
             <span>₹{displayedBilling.subtotal.toFixed(2)}</span>
           </div>
           <div className="billing-row">
-            <span>Additional Charges :</span>
+            <span>GST (CGST + SGST) :</span>
             <span>₹{displayedBilling.taxes.toFixed(2)}</span>
           </div>
           <div className="billing-total">

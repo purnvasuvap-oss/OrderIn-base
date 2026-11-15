@@ -11,6 +11,7 @@ import { safeDeleteUnpaidOrders } from "../utils/orderCleanupUtils";
 import { getPlaceholder } from "../utils/placeholder";
 import resolveImageUrl from "../utils/storageResolver";
 import { calculateBilling, TAX_RATE } from "../utils/billing";
+import { issueCounterCode } from "./counterCodeApi";
 import { parsePriceValue } from "../utils/pricing";
 import "./Payments.css";
 
@@ -163,13 +164,11 @@ function Payments({ onBackClick }) {
       // Generate verification code for Cash/Card payments
       let verificationCode = null;
       if (selectedPayment === 'Cash' || selectedPayment === 'Card') {
-        verificationCode = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+        verificationCode = null; // the server generates this and shows it only on the staff screen
       }
 
       try {
         if (verificationCode) {
-          sessionStorage.setItem('pendingVerificationCode', verificationCode);
-          localStorage.setItem('pendingVerificationCode', verificationCode);
         } else {
           sessionStorage.removeItem('pendingVerificationCode');
           localStorage.removeItem('pendingVerificationCode');
@@ -206,6 +205,14 @@ function Payments({ onBackClick }) {
         });
         
         await setDoc(customerRef, { pastOrders: updatedOrders }, { merge: true });
+      if ((selectedPayment === 'Cash' || selectedPayment === 'Card') && confirmedOrderId) {
+        await issueCounterCode({
+          restaurantId: 'orderin_restaurant_3',
+          customerPhone: phoneNumber,
+          orderId: confirmedOrderId,
+        });
+      }
+
         console.log("Payments: Updated confirmed order with payment method:", selectedPayment);
       }
 
@@ -315,7 +322,7 @@ function Payments({ onBackClick }) {
             <span>₹{displayedBilling.subtotal.toFixed(2)}</span>
           </div>
           <div className="billing-row">
-            <span>Additional Charges :</span>
+            <span>GST (CGST + SGST) :</span>
             <span>₹{displayedBilling.taxes.toFixed(2)}</span>
           </div>
           <div className="billing-total">

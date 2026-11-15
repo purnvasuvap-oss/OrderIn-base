@@ -5,11 +5,10 @@ import { db, auth } from "../firebaseConfig";
 import { onAuthStateChanged } from "firebase/auth";
 import "./login.css";
 import { FiUser } from "react-icons/fi";
-import { useTableNumber } from "../hooks/useTableNumber";
+import { resolveTableFromSearch } from "../hooks/useTableNumber";
 
 const Login = () => {
   const navigate = useNavigate();
-  const { tableNumber, getPathWithTable } = useTableNumber();
   const [username, setUsername] = useState("");
   const [phone, setPhone] = useState("");
   const [countryCode, setCountryCode] = useState("+91");
@@ -218,9 +217,14 @@ const Login = () => {
       if (result.success) {
         const user = { username, phone: fullPhone };
         localStorage.setItem("user", JSON.stringify(user));
-        localStorage.setItem("tableNumber", tableNumber || '1');
+        const tableForOrder = resolveTableFromSearch(
+          window.location.search,
+          localStorage.getItem('tableNumber'),
+          window.tableNumber
+        );
+        localStorage.setItem('tableNumber', tableForOrder);
         alert(`Welcome ${username}!`);
-        navigate(getPathWithTable('/menu'));
+        navigate(`/menu?table=${encodeURIComponent(tableForOrder)}`);
       } else {
         setErrorMessage(`Error saving user: ${result.error}`);
       }
@@ -516,9 +520,13 @@ const Login = () => {
               type="tel"
               className="phone-input"
               placeholder="Enter phone number"
+              aria-describedby="phone-consent"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
             />
+            <p id="phone-consent" style={{ fontSize: 12, opacity: 0.75, margin: '8px 0 0' }}>
+              Your phone is only used for this table's bill. It is not shared with other restaurants.
+            </p>
           </div>
 
           {errorMessage && (

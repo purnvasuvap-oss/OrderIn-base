@@ -1,5 +1,4 @@
-import { STORES, putMany, putOne, countAll } from "./db";
-import { hashPassword, ROLES } from "./auth";
+import { STORES, putMany, countAll } from "./db";
 import { enqueueSync } from "./sync";
 
 // Memoized so concurrent calls (React StrictMode double-invokes effects in
@@ -14,27 +13,10 @@ export function seedIfEmpty() {
 }
 
 async function doSeed() {
-  const userCount = await countAll(STORES.users);
-  if (userCount > 0) return;
-
-  // Fixed ids (not genId) so that if two devices each seed locally before
-  // ever syncing, they converge on the same Firestore docs instead of
-  // creating duplicate accounts with divergent passwords.
-  const users = await Promise.all([
-    { username: "admin", name: "Owner Admin", role: ROLES.ADMIN, password: "admin123" },
-    { username: "manager", name: "Priya Manager", role: ROLES.MANAGER, password: "manager123" },
-    { username: "cashier", name: "Arun Cashier", role: ROLES.CASHIER, password: "cashier123" },
-    { username: "kitchen", name: "Kitchen Staff", role: ROLES.KITCHEN, password: "kitchen123" },
-  ].map(async (u) => {
-    const createdAt = Date.now();
-    return { id: `usr_${u.username}`, ...u, passwordHash: await hashPassword(u.password), status: "active", createdAt, updatedAt: createdAt };
-  }));
-  await putMany(STORES.users, users);
-  // Push the default logins to Firestore immediately so a second device
-  // pulls these same accounts instead of independently reseeding its own —
-  // every other seeded store only reaches Firestore once a user edits it
-  // through the UI, but login accounts have no such natural first-edit step.
-  users.forEach((u) => enqueueSync(STORES.users, "put", u));
+  // Catalog seed only. Do not create a default staff login here.
+  // People sign in with the restaurant staff accounts, not a password baked into the app.
+  const categoryCount = await countAll(STORES.categories);
+  if (categoryCount > 0) return;
 
   const categories = [
     { id: "cat_starters", name: "Starters", sortOrder: 1 },
@@ -51,7 +33,7 @@ async function doSeed() {
   // edited, but the seed data itself bypasses that path (putMany writes
   // local-only), so without this push the demo menu would stay invisible to
   // Firestore/other devices until someone manually re-saved every item.
-  categories.forEach((c) => enqueueSync(STORES.categories, "put", c));
+  // categories.forEach((c) => enqueueSync(STORES.categories, "put", c));
 
   const inventory = [
     { id: "inv_bun", name: "Burger Bun", sku: "ING-BUN", category: "Bakery", unit: "pc", stock: 120, minStock: 40, maxStock: 300, purchasePrice: 8, supplierId: null, expiryDate: null, location: "Dry Store" },
@@ -67,7 +49,7 @@ async function doSeed() {
     { id: "inv_packaging", name: "Takeaway Box", sku: "PKG-BOX", category: "Packaging", unit: "pc", stock: 250, minStock: 100, maxStock: 800, purchasePrice: 4, supplierId: null, expiryDate: null, location: "Store" },
   ];
   await putMany(STORES.inventory, inventory);
-  inventory.forEach((i) => enqueueSync(STORES.inventory, "put", i));
+  // inventory.forEach((i) => enqueueSync(STORES.inventory, "put", i));
 
   const products = [
     // Starters
@@ -206,7 +188,7 @@ async function doSeed() {
     },
   ];
   await putMany(STORES.products, products);
-  products.forEach((p) => enqueueSync(STORES.products, "put", p));
+  // products.forEach((p) => enqueueSync(STORES.products, "put", p));
 
   const settingsDocs = [
     {
@@ -221,7 +203,7 @@ async function doSeed() {
     { id: "order", orderTypes: ["dine-in", "takeaway", "delivery", "counter"], avgPrepTimeAlertMin: 15 },
   ];
   for (const s of settingsDocs) await putOne(STORES.settings, s);
-  settingsDocs.forEach((s) => enqueueSync(STORES.settings, "put", s));
+  // settingsDocs.forEach((s) => enqueueSync(STORES.settings, "put", s));
 
   // Fixed ids (not genId), same reasoning as the users fix above — lets two
   // devices seeding before ever syncing converge on the same Firestore docs.
@@ -230,12 +212,12 @@ async function doSeed() {
     { id: "sup_metromeat", name: "MetroMeat Suppliers", contact: "Sana Sheikh", phone: "9876500000", email: "sana@metromeat.example", address: "Industrial Area, Bengaluru", gst: "29BBBBB1111B1Z2", products: "Chicken, Meat" },
   ];
   await putMany(STORES.suppliers, suppliers);
-  suppliers.forEach((s) => enqueueSync(STORES.suppliers, "put", s));
+  // suppliers.forEach((s) => enqueueSync(STORES.suppliers, "put", s));
 
   const employees = users.map((u, i) => ({
     id: `emp_${u.username}`, userId: u.id, empId: `EMP-${100 + i}`, name: u.name, role: u.role,
     phone: `98765000${i}0`, email: `${u.username}@orderin.example`, status: "active", joiningDate: "2025-01-15",
   }));
   await putMany(STORES.employees, employees);
-  employees.forEach((e) => enqueueSync(STORES.employees, "put", e));
+  // employees.forEach((e) => enqueueSync(STORES.employees, "put", e));
 }

@@ -5,6 +5,7 @@ import { collection, getDocs } from "firebase/firestore";
 import { db } from "../firebase";
 import routes from "../routes";
 import "./TableManagement.css";
+import LiveTableBar from "./LiveTableBar";
 import ManualOrderModal from "../components/ManualOrderModal";
 import { subscribeRecentOrders, formatTime } from "../services/orderService";
 import {
@@ -815,6 +816,7 @@ function TableManagement() {
           <ChevronLeft size={16} /> Back to Dashboard
         </button>
       </div>
+      <LiveTableBar />
 
       <div className="tm-stats">
         {statCards.map((s) => (

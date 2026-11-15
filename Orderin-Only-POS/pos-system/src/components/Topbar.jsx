@@ -12,7 +12,8 @@ import "./Topbar.css";
 export default function Topbar({ onMenuClick, title }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const { online, pending } = useOnlineStatus();
+  const { online, pending, firebaseEnabled } = useOnlineStatus();
+  const connected = online && firebaseEnabled;
   const printerConnection = usePrinterStatus();
   const [unread, setUnread] = useState(unreadCount());
 
@@ -36,9 +37,9 @@ export default function Topbar({ onMenuClick, title }) {
         {title && <h1 className="topbar-title">{title}</h1>}
       </div>
       <div className="topbar-right">
-        <div className={`status-pill ${online ? "status-online" : "status-offline"}`}>
-          {online ? <Wifi size={14} /> : <WifiOff size={14} />}
-          <span>{online ? "Online" : "Offline"}</span>
+        <div className={`status-pill ${connected ? "status-online" : "status-offline"}`}>
+          {connected ? <Wifi size={14} /> : <WifiOff size={14} />}
+          <span>{connected ? "Online" : online ? "No connection" : "Offline"}</span>
           {pending > 0 && (
             <span className="status-pending"><CloudUpload size={12} /> {pending}</span>
           )}

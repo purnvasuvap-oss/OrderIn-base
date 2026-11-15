@@ -11,6 +11,10 @@ const routes = {
   inventoryLogin: "/inventory-login",
   inventory: "/inventory",
   notification: "/notification",
+  kitchen: "/kitchen",
+  tableManagement: "/table-management",
+  onboarding: "/onboarding",
+  staffPay: "/staff-pay",
 };
 
 export default routes;

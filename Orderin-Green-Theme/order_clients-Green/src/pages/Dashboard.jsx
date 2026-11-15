@@ -295,7 +295,7 @@ const Dashboard = () => {
           <div>
             <p>Orders Today</p>
             <h2>{todayOrders}</h2>
-            <span>Total orders recored today</span>
+            <span>Total orders recorded today</span>
           </div>
         </div>
 

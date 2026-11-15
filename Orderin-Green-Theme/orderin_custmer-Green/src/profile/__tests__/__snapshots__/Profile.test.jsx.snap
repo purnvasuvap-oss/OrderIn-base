@@ -99,7 +99,7 @@ exports[`Profile > matches the snapshot 1`] = `
           <p
             class="profile-meta"
           >
-            Member since 2024
+            Member
           </p>
           <div
             class="profile-stats"

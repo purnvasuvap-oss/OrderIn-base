@@ -71,6 +71,7 @@ function KitchenDisplay() {
   const [updatingOrderId, setUpdatingOrderId] = useState(null);
   const [rejectingOrderId, setRejectingOrderId] = useState(null);
   const [now, setNow] = useState(() => Date.now());
+  const [station, setStation] = useState("All");
 
   const menuItemsByName = useMemo(() => {
     const map = {};
@@ -167,6 +168,22 @@ function KitchenDisplay() {
     }
   };
 
+  const stationOfItem = (it) =>
+    menuItemsByName[it.name]?.station ||
+    menuItemsByName[it.name]?.kitchenStation ||
+    it.station ||
+    "Kitchen";
+
+  const stations = useMemo(() => {
+    const names = new Set(["All"]);
+    menuItems.forEach((item) => {
+      const name = item.station || item.kitchenStation;
+      if (name) names.add(name);
+    });
+    orders.forEach((order) => (order.items || []).forEach((item) => names.add(stationOfItem(item))));
+    return [...names];
+  }, [menuItems, orders, menuItemsByName]);
+
   const visibleOrders = orders.filter((o) => {
     if (!isOrderDelivered(o)) return true;
     const orderedAt = parseOrderTimestamp(o);
@@ -183,6 +200,19 @@ function KitchenDisplay() {
         <h1>Kitchen Display</h1>
         <span className="kds-live"><span className="kds-live-dot" />Live</span>
       </div>
+      <div className="kds-header" style={{ gap: 8, flexWrap: "wrap" }}>
+        {stations.map((name) => (
+          <button
+            key={name}
+            type="button"
+            className="kds-back"
+            onClick={() => setStation(name)}
+            style={{ fontWeight: station === name ? 800 : 500 }}
+          >
+            {name}
+          </button>
+        ))}
+      </div>
 
       <div className="kds-board">
         {BOARD_LANES.map((lane) => {
@@ -198,6 +228,8 @@ function KitchenDisplay() {
                   <div className="kds-lane-empty">Nothing here</div>
                 ) : (
                   cards.map((o) => {
+                    const stationItems = (o.items || []).filter((it) => station === "All" || stationOfItem(it) === station);
+                    if (!stationItems.length) return null;
                     const accepted = isOrderAccepted(o);
                     const delivered = isOrderDelivered(o);
                     const active = isOrderActive(o);
@@ -219,7 +251,7 @@ function KitchenDisplay() {
                           <button
                             type="button"
                             className="kds-print-btn"
-                            onClick={() => printKitchenTicket(o)}
+                            onClick={() => printKitchenTicket({ ...o, items: stationItems })}
                             aria-label="Print kitchen ticket"
                             title="Print ticket"
                           >
@@ -234,8 +266,7 @@ function KitchenDisplay() {
                         </div>
 
                         <div className="kds-ticket-items">
-                          {Array.isArray(o.items) &&
-                            o.items.map((it, i) => (
+                          {stationItems.map((it, i) => (
                               <div className="kds-ticket-item" key={i}>
                                 <span className="kds-ticket-qty">{it.quantity || 1}×</span>
                                 <span className="kds-ticket-name">{it.name}</span>

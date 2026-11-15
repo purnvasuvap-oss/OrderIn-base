@@ -2,6 +2,16 @@ const functions = require('firebase-functions');
 const admin = require('firebase-admin');
 const crypto = require('crypto');
 const axios = require('axios');
+const {
+  loadRazorpayCredentials,
+  resolveCheckoutAmount,
+  amountsMatchPaise,
+  signaturesMatch,
+  applyCors,
+  issueCounterCode,
+  confirmCounterPayment,
+  firstAllowedCredential,
+} = require('./paymentGuard');
 
 // BILLING GUARD:
 // Keep Cloud Functions limited to Razorpay/payment work only.
@@ -12,42 +22,31 @@ if (!admin.apps.length) {
   admin.initializeApp();
 }
 
-// NOTE: this file previously shipped a hardcoded LIVE Razorpay key/secret as a
-// fallback here. That secret was committed to git history and must be treated
-// as compromised - rotate it in the Razorpay dashboard regardless of this fix.
-// Credentials must now come from functions config / env vars only; there is no
-// source fallback, so a missing credential fails loudly instead of silently
-// using a value baked into source control.
-const REMOVED_RAZORPAY_VALUE_HASHES = new Set([
-  '0931028ec556aa2d2e65c4c604da9200517b5718df04eedc1cb5b735422b7b44',
-  '44f9000b54b1b661e4c2f7fa84aba1cd840827fe6731a99c17fb9a06ce00487b',
-  // sha256 of the leaked live key id/secret that used to be hardcoded below,
-  // so they can never be reintroduced via config/env by accident.
-  crypto.createHash('sha256').update('rzp_live_Sj1ZPsCyB5iu3t').digest('hex'),
-  crypto.createHash('sha256').update('dN2uwxFr0hIZkcV57RXdRXmt').digest('hex'),
-]);
-const isRemovedRazorpayValue = (value) =>
-  REMOVED_RAZORPAY_VALUE_HASHES.has(crypto.createHash('sha256').update(value).digest('hex'));
-const resolveRazorpayCredential = (name, ...values) => {
-  const resolved = values.find((value) => value && !isRemovedRazorpayValue(value));
-  if (!resolved) {
-    throw new Error(
-      `${name} is not configured. Set it via "firebase functions:config:set razorpay.key_id=... razorpay.key_secret=..." or the RAZORPAY_KEY_ID/RAZORPAY_KEY_SECRET env vars.`
-    );
-  }
-  return resolved;
-};
+const { defineSecret } = require('firebase-functions/params');
 
-const RAZORPAY_KEY_ID = resolveRazorpayCredential(
-  'RAZORPAY_KEY_ID',
-  functions.config().razorpay?.key_id,
-  process.env.RAZORPAY_KEY_ID
-);
-const RAZORPAY_KEY_SECRET = resolveRazorpayCredential(
-  'RAZORPAY_KEY_SECRET',
-  functions.config().razorpay?.key_secret,
+// Firebase mounts these when the function is deployed with { secrets }.
+// Set them with: firebase functions:secrets:set RAZORPAY_KEY_ID
+// (and the same command for RAZORPAY_KEY_SECRET and RAZORPAY_WEBHOOK_SECRET).
+const razorpayKeyIdParam = defineSecret('RAZORPAY_KEY_ID');
+const razorpayKeySecretParam = defineSecret('RAZORPAY_KEY_SECRET');
+const razorpayWebhookSecretParam = defineSecret('RAZORPAY_WEBHOOK_SECRET');
+const RAZORPAY_SECRETS = [razorpayKeyIdParam, razorpayKeySecretParam, razorpayWebhookSecretParam];
+
+const readBoundRazorpayCredentials = () => loadRazorpayCredentials(
+  process.env.RAZORPAY_KEY_ID,
   process.env.RAZORPAY_KEY_SECRET
 );
+
+let {
+  keyId: RAZORPAY_KEY_ID,
+  secret: RAZORPAY_KEY_SECRET,
+} = readBoundRazorpayCredentials();
+
+const refreshRazorpayCredentials = () => {
+  const next = readBoundRazorpayCredentials();
+  RAZORPAY_KEY_ID = next.keyId;
+  RAZORPAY_KEY_SECRET = next.secret;
+};
 
 const ROUTE_LINKED_ACCOUNTS = {
   orderin_restaurant_1: {
@@ -70,14 +69,10 @@ const ALLOWED_ORIGINS = (
   .map((origin) => origin.trim())
   .filter(Boolean);
 
-const setCorsHeaders = (req, res) => {
-  const origin = req.get('Origin');
-  if (origin && ALLOWED_ORIGINS.includes(origin)) {
-    res.set('Access-Control-Allow-Origin', origin);
-  }
-  res.set('Vary', 'Origin');
-  res.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+const setCorsHeaders = (reqOrRes, maybeRes) => {
+  const req = maybeRes ? reqOrRes : { get: () => '' };
+  const res = maybeRes || reqOrRes;
+  applyCors(req, res);
 };
 
 const parseAmount = (value) => {
@@ -429,6 +424,19 @@ const writeReconciliationToFirestore = async ({ restaurantId, customerPhone, ord
     return { updated: false, reason: 'missing_order_context' };
   }
 
+  if (!Number.isFinite(Number(reconciliation.expectedPaise))) {
+    try {
+      const priced = await resolveCheckoutAmount(admin.firestore(), {
+        restaurantId,
+        customerPhone,
+        orderId,
+      });
+      reconciliation.expectedPaise = priced.paise;
+    } catch (priceError) {
+      console.error('[Razorpay] Not marking paid; menu total could not be checked:', priceError.message);
+    }
+  }
+
   let customerRef = null;
   let customerSnap = null;
 
@@ -468,7 +476,7 @@ const writeReconciliationToFirestore = async ({ restaurantId, customerPhone, ord
 
     return removeUndefined({
       ...order,
-      paymentStatus: reconciliation.razorpayStatus === 'captured' ? 'paid' : order.paymentStatus || 'pending',
+      paymentStatus: (reconciliation.razorpayStatus === 'captured' && amountsMatchPaise(Math.round(Number(reconciliation.razorpayAmount) * 100), reconciliation.expectedPaise)) ? 'paid' : (order.paymentStatus || 'pending'),
       razorpayOrderId: valueOrExisting(reconciliation.razorpayOrderId, order.razorpayOrderId),
       razorpayPaymentId: valueOrExisting(reconciliation.razorpayPaymentId, order.razorpayPaymentId),
       razorpayMethod: valueOrExisting(reconciliation.razorpayMethod, order.razorpayMethod),
@@ -578,18 +586,37 @@ const handleCreateRazorpayOrder = async (req, res) => {
       restaurantAmountPaise,
     } = req.body || {};
 
-    const finalAmount = parseAmount(amount);
+    if (!RAZORPAY_KEY_ID || !RAZORPAY_KEY_SECRET) {
+      return res.status(500).json({
+        error: 'Razorpay is not configured. Set RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET to the rotated keys.',
+      });
+    }
+    let priced;
+    try {
+      priced = await resolveCheckoutAmount(admin.firestore(), {
+        restaurantId,
+        customerPhone,
+        orderId,
+        items: req.body && req.body.items,
+      });
+    } catch (priceError) {
+      return res.status(400).json({
+        error: 'Could not price this order from the menu',
+        message: priceError.message,
+      });
+    }
+    const finalAmount = priced.paise;
     const routeSplit = buildRouteSplit({
       amount: finalAmount,
       currency,
       restaurantId,
       customerPhone,
       orderId,
-      subtotal,
-      subtotalAmount,
-      subtotalAmountPaise,
-      restaurantAmount,
-      restaurantAmountPaise,
+      subtotal: priced.subtotal,
+      subtotalAmount: priced.subtotal,
+      subtotalAmountPaise: Math.round(priced.subtotal * 100),
+      restaurantAmount: priced.subtotal,
+      restaurantAmountPaise: Math.round(priced.subtotal * 100),
     });
 
     if (!finalAmount || finalAmount <= 0) {
@@ -705,7 +732,7 @@ const handleVerifyRazorpayPayment = async (req, res) => {
       .update(signatureString)
       .digest('hex');
 
-    if (expectedSignature !== razorpay_signature) {
+    if (!signaturesMatch(expectedSignature, razorpay_signature)) {
       return res.status(400).json({
         error: 'Signature verification failed',
         message: 'Payment signature mismatch',
@@ -728,6 +755,47 @@ const handleVerifyRazorpayPayment = async (req, res) => {
         customerPhone: req.body?.customerPhone || getOrderContext(paymentData).customerPhone,
         orderId: req.body?.orderId || getOrderContext(paymentData).orderId,
       };
+      let priced;
+      try {
+        priced = await resolveCheckoutAmount(admin.firestore(), {
+          restaurantId: context.restaurantId,
+          customerPhone: context.customerPhone,
+          orderId: context.orderId,
+        });
+      } catch (priceError) {
+        return res.status(400).json({
+          success: false,
+          error: 'Could not price this order from the menu',
+          message: priceError.message,
+        });
+      }
+      if (!amountsMatchPaise(paymentData.amount, priced.paise)) {
+        return res.status(400).json({
+          success: false,
+          error: 'Paid amount does not match the menu total for this order',
+          expected_amount: priced.paise,
+          paid_amount: paymentData.amount,
+        });
+      }
+      if (paymentData.order_id && paymentData.order_id !== razorpay_order_id) {
+        return res.status(400).json({
+          success: false,
+          error: 'Payment does not belong to this Razorpay order',
+        });
+      }
+      if (!['captured', 'authorized'].includes(String(paymentData.status || '').toLowerCase())) {
+        return res.status(400).json({
+          success: false,
+          error: 'Payment is not captured',
+          payment_status: paymentData.status,
+        });
+      }
+      const reconciliation = await buildRazorpayReconciliation(paymentData, null, 'verify', null);
+      reconciliation.expectedPaise = priced.paise;
+      const firestoreResult = await writeReconciliationToFirestore({
+        ...context,
+        reconciliation,
+      });
       const queueResult = await queueSettlementCheck({ paymentData, context });
 
       return res.status(200).json({
@@ -740,14 +808,13 @@ const handleVerifyRazorpayPayment = async (req, res) => {
         method: paymentData.method,
         payment_status: paymentData.status,
         settlement_queue: queueResult,
+        firestore: firestoreResult,
       });
     } catch (apiError) {
       console.warn('[verifyRazorpayPayment] Could not fetch payment details from API:', apiError.message);
-      return res.status(200).json({
-        success: true,
-        status: 'verified',
-        payment_id: razorpay_payment_id,
-        order_id: razorpay_order_id,
+      return res.status(502).json({
+        success: false,
+        error: 'Could not confirm this payment with Razorpay',
       });
     }
   } catch (error) {
@@ -809,9 +876,7 @@ const handleSyncRazorpayPayment = async (req, res) => {
 
 const handleRazorpayWebhook = async (req, res) => {
   try {
-    const webhookSecret =
-      functions.config().razorpay?.webhook_secret ||
-      process.env.RAZORPAY_WEBHOOK_SECRET;
+    const webhookSecret = firstAllowedCredential(process.env.RAZORPAY_WEBHOOK_SECRET);
 
     if (!webhookSecret) {
       return res.status(500).json({
@@ -832,7 +897,7 @@ const handleRazorpayWebhook = async (req, res) => {
       .update(req.rawBody)
       .digest('hex');
 
-    if (expectedSignature !== signature) {
+    if (!signaturesMatch(expectedSignature, signature)) {
       return res.status(400).json({
         error: 'Invalid webhook signature',
       });
@@ -978,6 +1043,7 @@ const processDueQueueDocs = async (queueDocs, concurrency) => {
 };
 
 const handleScheduledSettlementReconciliation = async () => {
+  refreshRazorpayCredentials();
   const concurrency = Number(process.env.SETTLEMENT_SYNC_CONCURRENCY || 5);
   const now = admin.firestore.Timestamp.now();
   const dueSnap = await admin.firestore()
@@ -1000,6 +1066,7 @@ const handleScheduledSettlementReconciliation = async () => {
 };
 
 const onRequest = (handler) => async (req, res) => {
+  refreshRazorpayCredentials();
   setCorsHeaders(req, res);
 
   if (req.method === 'OPTIONS') {
@@ -1015,12 +1082,34 @@ const onRequest = (handler) => async (req, res) => {
   await handler(req, res);
 };
 
-exports.createRazorpayOrder = functions.https.onRequest(onRequest(handleCreateRazorpayOrder));
-exports.verifyRazorpayPayment = functions.https.onRequest(onRequest(handleVerifyRazorpayPayment));
-exports.syncRazorpayPayment = functions.https.onRequest(onRequest(handleSyncRazorpayPayment));
+exports.createRazorpayOrder = functions.runWith({ secrets: RAZORPAY_SECRETS }).https.onRequest(onRequest(handleCreateRazorpayOrder));
+exports.verifyRazorpayPayment = functions.runWith({ secrets: RAZORPAY_SECRETS }).https.onRequest(onRequest(handleVerifyRazorpayPayment));
+exports.syncRazorpayPayment = functions.runWith({ secrets: RAZORPAY_SECRETS }).https.onRequest(onRequest(handleSyncRazorpayPayment));
 exports.scheduledRazorpaySettlementSync = functions
-  .runWith({ timeoutSeconds: 540, memory: '256MB' })
+  .runWith({ timeoutSeconds: 540, memory: '256MB', secrets: RAZORPAY_SECRETS })
   .pubsub
   .schedule('30 23 * * *')
   .timeZone('Asia/Kolkata')
   .onRun(handleScheduledSettlementReconciliation);
+
+exports.issueCounterCode = functions.https.onRequest(onRequest(async (req, res) => {
+  try {
+    const result = await issueCounterCode(admin.firestore(), req.body || {});
+    res.status(200).json(result);
+  } catch (error) {
+    console.error('[issueCounterCode]', error.message || error);
+    res.status(400).json({ ok: false, error: error.message || 'Could not issue counter code' });
+  }
+}));
+
+exports.confirmCounterPayment = functions.https.onRequest(onRequest(async (req, res) => {
+  try {
+    const result = await confirmCounterPayment(admin.firestore(), req.body || {});
+    res.status(result.ok ? 200 : 400).json(result);
+  } catch (error) {
+    console.error('[confirmCounterPayment]', error.message || error);
+    res.status(400).json({ ok: false, error: error.message || 'Could not confirm counter code' });
+  }
+}));
+
+exports.razorpayWebhook = functions.runWith({ secrets: RAZORPAY_SECRETS }).https.onRequest(onRequest(handleRazorpayWebhook));

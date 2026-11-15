@@ -25,7 +25,7 @@ describe('About (restaurant)', () => {
 
   it('renders the restaurant name heading', () => {
     renderCmp(About);
-    expect(screen.getByRole('heading', { name: "Foodie's Paradise" })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: "Restaurant" })).toBeInTheDocument();
   });
 
   it('navigates back to the menu from the back control', async () => {

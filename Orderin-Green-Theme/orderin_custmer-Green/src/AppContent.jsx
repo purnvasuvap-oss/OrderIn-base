@@ -1,4 +1,7 @@
 import React, { Suspense, lazy, useEffect, useState } from 'react';
+import { db } from './firebaseConfig';
+import { DEFAULT_RESTAURANT_ID } from './config/restaurant';
+import { DineInTools, TableHome } from './dinein/DineInTools';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Login from './login/login';
 const PublicMenu = lazy(() => import('./publicMenu/PublicMenu'));
@@ -80,6 +83,7 @@ function AppContent({ isLoading, setIsLoading }) {
 
   return (
     <div className="App">
+      <DineInTools db={db} restaurantId={DEFAULT_RESTAURANT_ID} />
       <Loading isLoading={isLoading} />
       {showAcceptingOrdersModal && (
         <AcceptingOrdersModal onClose={() => setAcceptingOrdersDismissed(true)} />
@@ -106,7 +110,7 @@ function AppContent({ isLoading, setIsLoading }) {
         <Route
           path="/menu"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute allowGuest>
               <Menu setIsLoading={setIsLoading} />
             </ProtectedRoute>
           }
@@ -142,7 +146,7 @@ function AppContent({ isLoading, setIsLoading }) {
         <Route
           path="/item/:slug"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute allowGuest>
               <ItemDetails setIsLoading={setIsLoading} />
             </ProtectedRoute>
           }
@@ -163,7 +167,7 @@ function AppContent({ isLoading, setIsLoading }) {
         <Route
           path="/cart"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute allowGuest>
               <Cart setIsLoading={setIsLoading} />
             </ProtectedRoute>
           }

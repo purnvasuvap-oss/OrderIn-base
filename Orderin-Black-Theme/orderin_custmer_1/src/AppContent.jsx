@@ -1,3 +1,6 @@
+import { db } from './firebaseConfig';
+import { DEFAULT_RESTAURANT_ID } from './config/restaurant';
+import { DineInTools, TableHome } from './dinein/DineInTools';
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Login from './login/login';
@@ -51,12 +54,13 @@ function AppContent({ isLoading, setIsLoading }) {
 
   return (
     <div className="App">
+      <DineInTools db={db} restaurantId={DEFAULT_RESTAURANT_ID} />
       <Loading isLoading={isLoading} />
       <Routes>
         {/* ===== PUBLIC ROUTES (No Auth Required) ===== */}
         
         {/* Login - Gateway to app */}
-        <Route path="/" element={<Login setIsLoading={setIsLoading} />} />
+        <Route path="/" element={<TableHome><Login setIsLoading={setIsLoading} /></TableHome>} />
 
         {/* ===== PROTECTED ROUTES (Auth Required) ===== */}
         
@@ -64,7 +68,7 @@ function AppContent({ isLoading, setIsLoading }) {
         <Route
           path="/menu"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute allowGuest>
               <Menu setIsLoading={setIsLoading} />
             </ProtectedRoute>
           }
@@ -100,7 +104,7 @@ function AppContent({ isLoading, setIsLoading }) {
         <Route
           path="/item/:slug"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute allowGuest>
               <ItemDetails setIsLoading={setIsLoading} />
             </ProtectedRoute>
           }
@@ -121,7 +125,7 @@ function AppContent({ isLoading, setIsLoading }) {
         <Route
           path="/cart"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute allowGuest>
               <Cart setIsLoading={setIsLoading} />
             </ProtectedRoute>
           }

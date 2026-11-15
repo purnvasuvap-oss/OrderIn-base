@@ -1,3 +1,4 @@
+import { DishMeta } from "../dinein/DineInTools";
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { collection, getDocs } from "firebase/firestore";
@@ -108,7 +109,7 @@ function Menu({ setIsLoading }) {
     const fetchMenu = async () => {
       try {
         setIsLoading(true);
-        const snap = await withTimeout(getDocs(collection(db, "Restaurant", "orderin_restaurant_1", "menu")), 8000);
+        const snap = await withTimeout(getDocs(collection(db, "Restaurant", "orderin_restaurant_1", "menu")), 20000);
         const data = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
         if (!alive) return;
         setFetchedProducts(data);
@@ -460,6 +461,7 @@ function Menu({ setIsLoading }) {
                       />
                       <div className="card-body">
                         <h3 className="card-title">{item.name}</h3>
+                        <DishMeta item={item} />
                         <p className="card-price">
                           {isOnPromotion(item) ? (() => {
                             const { value, symbol } = parsePrice(item.price);

@@ -21,6 +21,8 @@ const routes = {
   attendanceDisplay: "/staff-management/attendance-display",
   staffSelfService: "/staff-self-service",
   kitchen: "/kitchen",
+  onboarding: "/onboarding",
+  staffPay: "/staff-pay",
 };
 
 export default routes;

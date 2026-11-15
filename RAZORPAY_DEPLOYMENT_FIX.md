@@ -1,3 +1,5 @@
+> The live Razorpay key used to be written in this file. Rotating it in the Razorpay dashboard is recommended, not required. Keep the real key in environment variables or Firebase secrets, not in this document.
+
 # Razorpay Integration - Deployment Fix Report
 
 **Date**: March 21, 2026  
@@ -247,7 +249,7 @@ See these files for more information:
 
 ### Payment Modal Not Opening?
 1. Check browser console for Razorpay script loading errors
-2. Verify Razorpay Key ID is correct: `rzp_live_Sj1ZPsCyB5iu3t`
+2. Verify Razorpay Key ID is correct: `YOUR_ROTATED_RAZORPAY_KEY_ID`
 3. Check Cloud Function logs for order creation errors
 4. Ensure internet connectivity
 

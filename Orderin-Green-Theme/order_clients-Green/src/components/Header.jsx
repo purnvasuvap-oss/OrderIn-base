@@ -50,7 +50,7 @@ export default function Header() {
         </div>
 
         <div className="header-center">
-          <h1 className="restaurant-name">XYZ Restaurant</h1>
+          <h1 className="restaurant-name">Restaurant</h1>
         </div>
 
         <div className="header-right">

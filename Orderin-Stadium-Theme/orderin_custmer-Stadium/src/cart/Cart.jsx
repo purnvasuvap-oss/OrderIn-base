@@ -7,6 +7,7 @@ import { useTableNumber } from "../hooks/useTableNumber";
 import { doc, onSnapshot } from "firebase/firestore";
 import { db } from "../firebaseConfig";
 import "./Cart.css";
+import { calculateBilling } from "../utils/billing";
 import { getPlaceholder } from "../utils/placeholder";
 import resolveImageUrl from "../utils/storageResolver";
 import { parseOrderTimestamp } from "../utils/orderDateTime";
@@ -205,10 +206,7 @@ function Cart({ onBackClick }) {
   };
 
   const subtotal = cartItems.reduce((sum, item) => sum + parsePrice(item.price) * (Number(item.quantity) || 0), 0);
-  const gst = subtotal * 0.05;
-  const packing = subtotal > 0 ? 30 : 0;
-  const discount = subtotal > 0 ? Math.min(60, Math.round(subtotal * 0.08)) : 0;
-  const grandTotal = subtotal + gst + packing - discount;
+  const { taxes: gst, total: grandTotal } = calculateBilling(subtotal, null);
 
   return (
     <div className="cart-container st-backdrop">
@@ -257,21 +255,12 @@ function Cart({ onBackClick }) {
 </div>
         ) : (
           <div className="cart-content">
-            <section className="status-banner">
-              <div>
-                <p className="status-label">Delivery status</p>
-                <h2>Preparing now</h2>
-                <p>Estimated time: 15–20 min • Freshly cooked and packed</p>
-              </div>
-              <div className="status-pill">⭐ 4.8 Rated</div>
-            </section>
-
             <div className="cart-list">
               {cartItems.map((item, index) => {
                 const itemPrice = parsePrice(item.price);
                 const quantity = Number(item.quantity) || 0;
                 const itemTotal = itemPrice * quantity;
-                const rating = item.rating || 4.7;
+                const rating = (typeof item.rating === 'number' ? item.rating : null);
 
                 return (
                   <article key={item.id || item.name || index} className="cart-item">
@@ -291,8 +280,8 @@ function Cart({ onBackClick }) {
                       <div className="cart-item-main">
                         <div className="cart-item-copy">
                           <div className="item-title-row">
-                            <h3 className="cart-item-name">{item.name}</h3>
-                            <span className="rating-pill">⭐ {rating.toFixed(1)}</span>
+                            <h3 className="cart-item-name">{item.name}{item.portion === 'Large' ? ' (Large)' : ''}</h3>
+                            {rating ? <span className="rating-pill">⭐ {Number(rating).toFixed(1)}</span> : null}
                           </div>
                           <div className="price-row">
                             <p className="cart-item-price">{formatPrice(itemPrice)}</p>
@@ -307,11 +296,11 @@ function Cart({ onBackClick }) {
 
                       <div className="cart-item-actions">
                         <div className="quantity-controls" aria-label={`${item.name} quantity`}>
-                          <button className="qty-btn" aria-label={`Decrease ${item.name} quantity`} onClick={() => updateQuantity(item.name, item.quantity - 1)}>
+                          <button className="qty-btn" aria-label={`Decrease ${item.name} quantity`} onClick={() => (item.portion ? updateQuantity(item.name, item.quantity - 1, item.portion) : updateQuantity(item.name, item.quantity - 1))}>
                             <Minus size={16} />
                           </button>
                           <span className="qty-value">{quantity}</span>
-                          <button className="qty-btn" aria-label={`Increase ${item.name} quantity`} onClick={() => updateQuantity(item.name, item.quantity + 1)}>
+                          <button className="qty-btn" aria-label={`Increase ${item.name} quantity`} onClick={() => (item.portion ? updateQuantity(item.name, item.quantity + 1, item.portion) : updateQuantity(item.name, item.quantity + 1))}>
                             <Plus size={16} />
                           </button>
                         </div>
@@ -321,7 +310,7 @@ function Cart({ onBackClick }) {
                             <Edit3 size={14} />
                             <span>{item.instructions ? "Edit notes" : "Add notes"}</span>
                           </button>
-                          <button className="remove-btn" aria-label={`Remove ${item.name}`} onClick={() => removeFromCart(item.name)}>
+                          <button className="remove-btn" aria-label={`Remove ${item.name}`} onClick={() => (item.portion ? removeFromCart(item.name, item.portion) : removeFromCart(item.name))}>
                             <Trash2 size={16} />
                             <span>Remove</span>
                           </button>
@@ -371,14 +360,6 @@ function Cart({ onBackClick }) {
                 <div className="summary-row">
                   <span>GST</span>
                   <strong>{formatPrice(gst)}</strong>
-                </div>
-                <div className="summary-row">
-                  <span>Packing</span>
-                  <strong>{formatPrice(packing)}</strong>
-                </div>
-                <div className="summary-row savings-row">
-                  <span>Savings</span>
-                  <strong>-{formatPrice(discount)}</strong>
                 </div>
                 <div className="summary-divider" />
                 <div className="summary-row grand-total">

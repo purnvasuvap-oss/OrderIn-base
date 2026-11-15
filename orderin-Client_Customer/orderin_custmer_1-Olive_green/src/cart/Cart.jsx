@@ -1,3 +1,4 @@
+import { mergeIntoOpenTableOrder } from '../../../../shared/orderin-dine/logic.js';
 import React, { useState, useEffect, useRef } from "react";
 import { ChevronLeft, Minus, Plus, Edit3, Trash2 } from "lucide-react";
 import Footer from "../Footer/Footer";
@@ -292,7 +293,26 @@ function Cart({ onBackClick }) {
       console.log("Sending order to restaurant for confirmation:", orderForFirestore);
 
       // Save to Firestore
-      pastOrders.push(orderForFirestore);
+      const mergedOrder = mergeIntoOpenTableOrder(pastOrders, orderForFirestore);
+      pastOrders = mergedOrder.pastOrders;
+      if (mergedOrder.merged) orderId = mergedOrder.orderId;
+      try {
+        await setDoc(doc(db, 'Restaurant', 'orderin_restaurant_3', 'tableSessions', String(mergedOrder.order.tableNo || '1')), {
+          table: String(mergedOrder.order.tableNo || '1'),
+          items: mergedOrder.order.items || [],
+          total: mergedOrder.order.total || 0,
+          status: 'ordered',
+          updatedAt: new Date().toISOString(),
+        }, { merge: true });
+              if (mergedOrder.orderId) {
+          await setDoc(doc(db, 'Restaurant', 'orderin_restaurant_3', 'orders', String(mergedOrder.orderId)), {
+            ...mergedOrder.order,
+            customerPhone: typeof phoneNumber !== 'undefined' ? phoneNumber : null,
+          }, { merge: true });
+        }
+} catch (sessionErr) {
+        console.warn('table session', sessionErr);
+      }
       await setDoc(customerRef, { pastOrders, lastOrderAt: serverTimestamp() }, { merge: true });
       console.log("Order saved to Firestore — awaiting restaurant confirmation");
 
@@ -425,7 +445,7 @@ function Cart({ onBackClick }) {
                       <div className="cart-item-main">
                         <div className="cart-item-copy">
                           <div className="item-title-row">
-                            <h3 className="cart-item-name">{item.name}</h3>
+                            <h3 className="cart-item-name">{item.name}{item.portion === 'Large' ? ' (Large)' : ''}</h3>
                           </div>
                           <div className="price-row">
                             <p className="cart-item-price">{formatPrice(itemPrice)}</p>
@@ -569,14 +589,6 @@ function Cart({ onBackClick }) {
                 <div className="summary-row">
                   <span>GST</span>
                   <strong>{formatPrice(gst)}</strong>
-                </div>
-                <div className="summary-row">
-                  <span>Packing</span>
-                  <strong>{formatPrice(packing)}</strong>
-                </div>
-                <div className="summary-row savings-row">
-                  <span>Savings</span>
-                  <strong>-{formatPrice(discount)}</strong>
                 </div>
                 <div className="summary-divider" />
                 <div className="summary-row grand-total">

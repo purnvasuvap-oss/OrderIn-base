@@ -51,7 +51,7 @@ exports[`About (restaurant) > matches the snapshot 1`] = `
         <h1
           id="restaurant-title"
         >
-          Foodie's Paradise
+          Restaurant
         </h1>
         <p
           class="about-hero-copy"
@@ -196,7 +196,7 @@ exports[`About (restaurant) > matches the snapshot 1`] = `
         <p
           class="about-story-copy"
         >
-          Foodie's Paradise focuses on everyday comfort food made with consistent quality. The restaurant keeps service simple: browse the live menu, place your table order, and let the kitchen prepare it with clear item notes and instructions.
+          Restaurant focuses on everyday comfort food made with consistent quality. The restaurant keeps service simple: browse the live menu, place your table order, and let the kitchen prepare it with clear item notes and instructions.
         </p>
       </section>
       <section
@@ -817,7 +817,7 @@ exports[`About (restaurant) > matches the snapshot 1`] = `
       class="about-footer"
     >
       <p>
-        © 2025 Foodie's Paradise. All rights reserved.
+        © 2025 Restaurant. All rights reserved.
       </p>
     </footer>
   </div>

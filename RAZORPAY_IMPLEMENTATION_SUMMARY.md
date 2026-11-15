@@ -385,9 +385,11 @@ pastOrders[order].timestamp = "ISO string"
    - Replace `/api/create-razorpay-order` with Cloud Function URL
    - Replace `/api/verify-razorpay-payment` with Cloud Function URL
 
-2. **Set Environment Variables** (Firebase Console)
-   - `razorpay.key_id`: Your Razorpay Key ID
-   - `razorpay.key_secret`: Your Razorpay Key Secret
+2. **Set Firebase secrets** (not in source)
+   - `RAZORPAY_KEY_ID`
+   - `RAZORPAY_KEY_SECRET`
+   - `RAZORPAY_WEBHOOK_SECRET`
+   - Command: `firebase functions:secrets:set RAZORPAY_KEY_ID` (repeat for the other two names)
 
 3. **Deploy Functions** (Terminal)
    ```bash

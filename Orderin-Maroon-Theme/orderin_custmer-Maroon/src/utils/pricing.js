@@ -14,35 +14,8 @@ export const normalizeGroupOptions = (options) =>
 
 // Default customization groups derived dynamically based on item category.
 // Purely preferential (no price impact) — folded into the saved instructions.
-export const getDefaultsForCategory = (category) => {
-  if (!category) return [{ id: "portion", label: "Portion", options: ["Regular", "Large"] }];
-  const cat = String(category).toLowerCase();
-  // Beverage / Drink items
-  if (/drink|beverage|juice|shake|mocktail|smoothie|soda|cola|tea|coffee|water|soft drink|cold drink|milkshake/.test(cat)) {
-    return [
-      { id: "size", label: "Size", options: ["Regular", "Large", "Extra Large"] },
-      { id: "ice", label: "Ice Level", options: ["No Ice", "Less Ice", "Regular Ice", "Extra Ice"] },
-      { id: "sweetness", label: "Sweetness", options: ["No Sugar", "Less Sweet", "Regular", "Extra Sweet"] },
-    ];
-  }
-  // Food items
-  if (/food|starter|appetizer|main|main course|entree|curry|rice|bread|roti|naan|biryani|fried rice|noodles|pasta|pizza|burger|sandwich|wrap|roll|taco|burrito|dosa|idli|vada|pongal|upma|chowmein/.test(cat)) {
-    return [
-      { id: "spice", label: "Spice Level", options: ["Mild", "Medium", "Hot"] },
-      { id: "portion", label: "Portion", options: ["Regular", "Large"] },
-    ];
-  }
-  // Desserts
-  if (/dessert|ice cream|cake|pastry|sweet|halwa|kheer|pudding|mousse|brownie|cookie/.test(cat)) {
-    return [
-      { id: "portion", label: "Portion", options: ["Regular", "Large"] },
-    ];
-  }
-  // Default fallback
-  return [{ id: "portion", label: "Portion", options: ["Regular", "Large"] }];
-};
+export const getDefaultsForCategory = () => [];
 
-// item.customizations if present/non-empty, else the category-based fallback groups (always price 0).
 export const getCustomizationGroups = (item, getDefaultsForCategory) =>
   item?.customizations && Array.isArray(item.customizations) && item.customizations.length
     ? item.customizations
@@ -69,14 +42,26 @@ export const buildCartKey = (name, selectedOptions = []) => {
 };
 
 // Shared total formula used by both the on-screen cart summary and the persisted Firestore order.
+export const portionSurcharge = (basePrice, selectedOptions = []) => {
+  const base = parsePriceValue(basePrice);
+  let extra = 0;
+  for (const opt of selectedOptions) {
+    const label = String(opt?.label || opt?.name || '').toLowerCase();
+    if (Number(opt?.price) > 0) continue;
+    if (label === 'extra large') extra += base;
+    else if (label === 'large') extra += base * 0.5;
+  }
+  return Math.round((extra + Number.EPSILON) * 100) / 100;
+};
+
+// Dine-in only: no packing fee and no made-up savings. GST is 5%.
 export const calculateOrderTotals = (
   subtotal,
-  { taxRate = 0.05, packingFee = 30, discountRate = 0.08, discountCap = 60 } = {},
+  { taxRate = 0.05 } = {},
 ) => {
-  const gst = subtotal * taxRate;
-  const packing = subtotal > 0 ? packingFee : 0;
-  const discount = subtotal > 0 ? Math.min(discountCap, Math.round(subtotal * discountRate)) : 0;
-  return { subtotal, gst, packing, discount, total: subtotal + gst + packing - discount };
+  const gst = Math.round((subtotal * taxRate + Number.EPSILON) * 100) / 100;
+  const total = Math.round((subtotal + gst + Number.EPSILON) * 100) / 100;
+  return { subtotal, gst, packing: 0, discount: 0, total };
 };
 
 // The ONE function both order creation (Cart.jsx, before a payment method is

@@ -1,0 +1,281 @@
+/* Kitchen Display System — kiosk screen, read from a few feet away.
+   Dark background + large type + high-contrast status colors, matching this
+   theme's maroon/gold brand palette used on Login/Dashboard. */
+
+.kds-wrapper {
+  min-height: 100vh;
+  background: #132019;
+  color: #F4F6F4;
+  padding: 16px 20px 28px;
+  box-sizing: border-box;
+  font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+.kds-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.kds-header h1 {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  flex: 1;
+  text-align: center;
+}
+
+.kds-back {
+  background: #043927;
+  border: 1px solid #A3B899;
+  color: #D4AF37;
+  border-radius: 10px;
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.kds-back:hover { background: #A3B899; color: #043927; }
+
+.kds-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #3FA34D;
+}
+.kds-live-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #3FA34D;
+  box-shadow: 0 0 0 4px rgba(63, 163, 77, 0.25);
+}
+
+.kds-board {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 14px;
+  align-items: start;
+}
+
+.kds-lane {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(244, 246, 244, 0.15);
+  border-radius: 16px;
+  padding: 12px;
+  min-height: 200px;
+}
+
+.kds-lane-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 6px 12px;
+  border-bottom: 1px solid rgba(244, 246, 244, 0.15);
+  margin-bottom: 10px;
+}
+
+.kds-lane-title {
+  font-size: 16px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.kds-lane-count {
+  background: #D4AF37;
+  color: #132019;
+  font-weight: 800;
+  font-size: 13px;
+  border-radius: 999px;
+  min-width: 26px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 8px;
+}
+
+.kds-lane--queued .kds-lane-title { color: #5B9BD5; }
+.kds-lane--pending .kds-lane-title { color: #A3B899; }
+.kds-lane--preparing .kds-lane-title { color: #D2691E; }
+.kds-lane--ready .kds-lane-title { color: #3FA34D; }
+.kds-lane--delivered .kds-lane-title { color: #5B9BD5; }
+
+.kds-lane-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.kds-lane-empty {
+  color: rgba(244, 246, 244, 0.4);
+  font-size: 13px;
+  text-align: center;
+  padding: 24px 0;
+}
+
+.kds-ticket {
+  background: #0d281d;
+  border: 1px solid rgba(244, 246, 244, 0.2);
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.kds-ticket--overdue {
+  border-color: #E14B4B;
+  box-shadow: 0 0 0 2px rgba(225, 75, 75, 0.35);
+}
+
+.kds-ticket-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.kds-ticket-id {
+  font-size: 13px;
+  font-weight: 700;
+  color: rgba(244, 246, 244, 0.7);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.kds-ticket-timer {
+  font-size: 16px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.kds-ticket-timer--overdue { color: #E14B4B; }
+
+.kds-print-btn {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  border: 1px solid rgba(244, 246, 244, 0.25);
+  background: rgba(244, 246, 244, 0.06);
+  color: #F4F6F4;
+  cursor: pointer;
+}
+.kds-print-btn:hover { background: rgba(244, 246, 244, 0.16); }
+
+.kds-overdue-label {
+  font-size: 10px;
+  font-weight: 800;
+  background: #E14B4B;
+  color: #fff;
+  border-radius: 999px;
+  padding: 2px 8px;
+  letter-spacing: 0.5px;
+}
+
+.kds-ticket-meta {
+  font-size: 13px;
+  font-weight: 700;
+  color: #D4AF37;
+  margin-top: 6px;
+}
+
+.kds-ticket-items {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.kds-ticket-item {
+  font-size: 15px;
+  line-height: 1.35;
+}
+
+.kds-ticket-qty {
+  font-weight: 800;
+  color: #D4AF37;
+  margin-right: 6px;
+}
+
+.kds-ticket-name {
+  font-weight: 600;
+}
+
+.kds-ticket-instructions {
+  font-size: 12.5px;
+  font-style: italic;
+  color: rgba(244, 246, 244, 0.65);
+  margin-left: 22px;
+}
+
+.kds-ticket-action {
+  margin-top: 12px;
+}
+
+.kds-btn {
+  width: 100%;
+  border: none;
+  border-radius: 10px;
+  padding: 12px;
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+.kds-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.kds-accept-row {
+  display: flex;
+  gap: 8px;
+}
+.kds-accept-row .kds-btn { flex: 1; }
+
+.kds-btn--accept { background: #3FA34D; color: #fff; }
+.kds-btn--accept:hover:not(:disabled) { background: #368f42; }
+
+.kds-btn--reject { background: #4a1418; color: #F4F6F4; border: 1px solid #E14B4B; }
+.kds-btn--reject:hover:not(:disabled) { background: #E14B4B; color: #fff; }
+
+.kds-btn--advance { background: #D4AF37; color: #132019; }
+.kds-btn--advance:hover:not(:disabled) { background: #BB9A30; }
+
+.kds-done {
+  display: block;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: #3FA34D;
+}
+
+.kds-await {
+  display: block;
+  text-align: center;
+  font-size: 12.5px;
+  color: rgba(244, 246, 244, 0.5);
+}
+
+/* Tablet/large-display responsiveness — fewer columns instead of squeezing
+   ticket cards unreadably narrow. */
+@media (max-width: 1280px) {
+  .kds-board { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+@media (max-width: 860px) {
+  .kds-board { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .kds-header h1 { font-size: 22px; }
+}
+
+@media (max-width: 560px) {
+  .kds-board { grid-template-columns: 1fr; }
+}

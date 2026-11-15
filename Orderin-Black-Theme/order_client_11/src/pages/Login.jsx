@@ -91,8 +91,8 @@ export default function Login() {
       {/* Right content */}
       <main className="login-right">
         <header className="login-header">
-          <h2 className="restaurant-name">XYZ Restaurant</h2>
-          <p className="welcome-text">Welcome XYZ Restaurant</p>
+          <h2 className="restaurant-name">Restaurant</h2>
+          <p className="welcome-text">Welcome Restaurant</p>
         </header>
 
         <section className="login-card" aria-label="login form">

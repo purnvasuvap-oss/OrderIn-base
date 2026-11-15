@@ -366,7 +366,7 @@ lead for the real values — they are not in the repo.
 | Variable | Used by | Purpose |
 |---|---|---|
 | `VITE_FIREBASE_*` (apiKey, authDomain, projectId, …) | all | Firebase project config |
-| `VITE_ADMIN_PASSCODE` | `orderin_admin` | Admin login passcode (falls back to a default if unset — set it for production) |
+| `VITE_ADMIN_PASSCODE` | `orderin_admin` | Admin login passcode. Required. Login stays closed if it is unset. |
 | `VITE_RAZORPAY_KEY_ID` | apps that take payment | Razorpay public key |
 | `VITE_IMGBB_KEY` | client apps | image upload (imgbb) fallback |
 

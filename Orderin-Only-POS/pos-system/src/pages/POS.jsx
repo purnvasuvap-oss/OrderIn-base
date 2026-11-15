@@ -216,7 +216,7 @@ function PaymentModal({ open, onClose, total, onConfirm }) {
 
   const paid = splits.reduce((s, p) => s + (Number(p.amount) || 0), 0);
   const balance = +(total - paid).toFixed(2);
-  const phoneMissing = !customerPhone.trim();
+  const phoneMissing = false;
 
   const updateSplit = (i, patch) => setSplits((s) => s.map((x, idx) => (idx === i ? { ...x, ...patch } : x)));
   const addSplit = () => setSplits((s) => [...s, { method: "Cash", amount: 0 }]);
@@ -239,10 +239,10 @@ function PaymentModal({ open, onClose, total, onConfirm }) {
       <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 14, paddingBottom: 14, borderBottom: "1px solid var(--border)" }}>
         <label style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)" }}>Customer name</label>
         <input className="input" placeholder="e.g. Rahul" value={customerName} onChange={(e) => setCustomerName(e.target.value)} />
-        <label style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)" }}>Customer phone <span style={{ color: "var(--danger)" }}>*</span></label>
+        <label style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)" }}>Customer phone (optional)</label>
         <input className="input" placeholder="Required to complete the order" type="tel" value={customerPhone}
           onChange={(e) => setCustomerPhone(e.target.value)} onBlur={() => setTouched(true)} />
-        {touched && phoneMissing && <div style={{ fontSize: 12, color: "var(--danger)" }}>Phone number is required before payment can be confirmed.</div>}
+        
       </div>
 
       {splits.map((s, i) => (

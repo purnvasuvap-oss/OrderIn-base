@@ -40,7 +40,7 @@ describe('Menu', () => {
 
   it('renders the hero title and the search box', () => {
     renderMenu();
-    expect(screen.getByRole('heading', { name: 'Our Restaurant' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Restaurant' })).toBeInTheDocument();
     expect(screen.getByPlaceholderText('Search for dishes, cuisines...')).toBeInTheDocument();
   });
 

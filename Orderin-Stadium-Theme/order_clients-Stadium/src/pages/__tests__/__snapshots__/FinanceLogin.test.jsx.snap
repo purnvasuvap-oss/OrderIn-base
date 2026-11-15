@@ -86,7 +86,7 @@ exports[`FinanceLogin > matches the snapshot 1`] = `
           <h2
             class="sub-restaurant-name"
           >
-            XYZ Restaurant
+            Restaurant
           </h2>
           <p
             class="sub-welcome-text"

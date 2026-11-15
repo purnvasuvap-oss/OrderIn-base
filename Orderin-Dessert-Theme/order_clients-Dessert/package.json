@@ -10,12 +10,14 @@
     "firebase": "^12.6.0",
     "i": "^0.3.7",
     "lucide-react": "^0.546.0",
+    "qrcode.react": "^4.2.0",
     "react": "^19.2.0",
     "react-datepicker": "^8.8.0",
     "react-dom": "^19.2.0",
     "react-icons": "^5.7.0",
     "react-router-dom": "^7.9.4",
-    "web-vitals": "^2.1.4"
+    "web-vitals": "^2.1.4",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@testing-library/user-event": "^14.6.7",
@@ -32,7 +34,8 @@
     "preview": "vite preview",
     "test": "vitest",
     "test:run": "vitest run",
-    "coverage": "vitest run --coverage"
+    "coverage": "vitest run --coverage",
+    "deploy:razorpay-functions": "firebase deploy --only functions:createRazorpayOrder,functions:verifyRazorpayPayment,functions:razorpayWebhook,functions:issueCounterCode,functions:confirmCounterPayment"
   },
   "eslintConfig": {
     "extends": [

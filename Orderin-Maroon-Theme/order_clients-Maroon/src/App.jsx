@@ -8,6 +8,11 @@ import SectionProtectedRoute from "./components/SectionProtectedRoute.jsx";
 import Login from "./pages/Login.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
 import Orders from "./pages/Orders.jsx";
+import KitchenDisplay from "./pages/KitchenDisplay.jsx";
+import TableManagement from "./pages/TableManagement.jsx";
+import Onboarding from "./pages/Onboarding.jsx";
+import StaffPay from "./pages/StaffPay.jsx";
+import { FloorPage } from "./pages/FloorDesk.jsx";
 import MenuLogin from "./pages/MenuLogin.jsx";
 import MenuPage from "./pages/MenuPage.jsx";
 import Promotions from "./pages/Promotions.jsx";
@@ -17,7 +22,6 @@ import InventoryLogin from "./pages/InventoryLogin.jsx";
 import Inventory from "./pages/Inventory.jsx";
 import Finance from "./pages/Finance.jsx";
 import NotificationPage from "./pages/NotificationPage.jsx";
-import TableManagement from "./pages/TableManagement.jsx";
 import StaffLogin from "./pages/StaffLogin.jsx";
 import StaffManagement from "./pages/StaffManagement.jsx";
 import { NotificationProvider } from "./contexts/NotificationContext.jsx";
@@ -55,6 +59,24 @@ function App() {
           }
         />
 
+
+        <Route
+          path="/floor"
+          element={
+            <ProtectedRoute>
+              <>
+                <Header />
+                <FloorPage />
+              </>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route path="/onboarding" element={<ProtectedRoute><><Header /><Onboarding /></></ProtectedRoute>} />
+        <Route path="/staff-pay" element={<ProtectedRoute><><Header /><StaffPay /></></ProtectedRoute>} />
+
+        <Route path="/kitchen" element={<ProtectedRoute><KitchenDisplay /></ProtectedRoute>} />
+        <Route path="/table-management" element={<ProtectedRoute><><Header /><TableManagement /></></ProtectedRoute>} />
         {/* Menu Routes */}
         <Route
           path={routes.menuLogin}
