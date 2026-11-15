@@ -13,3 +13,10 @@ rzp-key.csv
 
 # test coverage
 coverage/
+
+# Private keys and service accounts. Never commit these.
+*firebase-adminsdk*.json
+serviceAccount*.json
+service-account*.json
+*.pem
+*.p12

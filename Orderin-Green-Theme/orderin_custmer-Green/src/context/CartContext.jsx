@@ -173,7 +173,7 @@ const updateCartItemsWithMenu = (cartItems) => {
       const match = findProductInWindow(ci.name || ci.productName || ci.itemName || '');
       if (match) {
         const resolvedImage = match.image || match.imageUrl || match.imageURL || match.image_url || match.img || ci.image || PLACEHOLDER_IMAGE;
-        return { ...match, quantity: ci.quantity || 1, instructions: ci.instructions || '', image: (resolvedImage || PLACEHOLDER_IMAGE) };
+        return { ...match, ...ci, quantity: ci.quantity || 1, instructions: ci.instructions || '', image: (resolvedImage || ci.image || PLACEHOLDER_IMAGE), name: ci.name || match.name };
       }
       // no match; ensure image exists
       return { ...ci, image: ci.image || PLACEHOLDER_IMAGE };
@@ -278,7 +278,7 @@ export const CartProvider = ({ children, tableNo = '1' }) => {
 
   const addToCart = (item, quantity, instructions, selectedOptions = []) => {
     const cartKey = buildCartKey(item.name, selectedOptions);
-    const effectivePrice = parsePriceValue(item.price) + sumOptionPrices(selectedOptions);
+    const effectivePrice = parsePriceValue(item.price) + sumOptionPrices(selectedOptions) + portionSurcharge(item.price, selectedOptions);
     const existingItem = cartItems.find(cartItem => cartItem.cartKey === cartKey);
     if (existingItem) {
       setCartItems(cartItems.map(cartItem =>
@@ -329,7 +329,7 @@ export const CartProvider = ({ children, tableNo = '1' }) => {
       if (!target) return prev;
 
       const newCartKey = buildCartKey(target.name, newSelectedOptions);
-      const newEffectivePrice = parsePriceValue(target.price) + sumOptionPrices(newSelectedOptions);
+      const newEffectivePrice = parsePriceValue(target.price) + sumOptionPrices(newSelectedOptions) + portionSurcharge(target.price, newSelectedOptions);
 
       if (newCartKey === cartKey) {
         return prev.map(ci =>

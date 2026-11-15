@@ -1,12 +1,19 @@
 rules_version = '2';
-
-// This app (end customer) only ever reads images uploaded by the
-// restaurant back-office app - it never uploads or deletes files.
 service firebase.storage {
   match /b/{bucket}/o {
     match /{allPaths=**} {
       allow read: if true;
-      allow write: if false;
+    }
+    // Menu and promotion images only. Anything else (and non-images) is denied.
+    match /menu/{allPaths=**} {
+      allow write: if request.resource == null
+        || (request.resource.size < 10 * 1024 * 1024
+            && request.resource.contentType.matches('image/.*'));
+    }
+    match /promotions/{allPaths=**} {
+      allow write: if request.resource == null
+        || (request.resource.size < 10 * 1024 * 1024
+            && request.resource.contentType.matches('image/.*'));
     }
   }
 }

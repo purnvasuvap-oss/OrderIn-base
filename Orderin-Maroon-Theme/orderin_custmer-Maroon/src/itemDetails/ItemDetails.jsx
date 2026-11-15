@@ -25,6 +25,7 @@ import {
   getDefaultsForCategory,
   buildSelectedOptions,
   sumOptionPrices,
+  portionSurcharge,
 } from "../utils/pricing";
 
 function ItemDetails() {
@@ -298,7 +299,7 @@ function ItemDetails() {
     }
   };
 
-  const effectiveUnitPrice = parsePriceValue(item.price) + sumOptionPrices(liveSelectedOptions);
+  const effectiveUnitPrice = parsePriceValue(item.price) + sumOptionPrices(liveSelectedOptions) + portionSurcharge(item.price, liveSelectedOptions);
   const totalPrice = (effectiveUnitPrice * quantity).toFixed(2);
 
   const isBestseller = Boolean(item.bestseller || item.isBestseller);

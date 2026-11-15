@@ -17,6 +17,7 @@ import {
 import { collection, getDocs, doc, getDoc, setDoc } from "firebase/firestore";
 import { db } from "../firebaseConfig";
 import { useCart } from "../context/CartContext";
+import { largeUnitPrice } from "../utils/billing";
 import { useTableNumber } from "../hooks/useTableNumber";
 import Footer from "../Footer/Footer";
 import "./ItemDetails.css";
@@ -239,13 +240,19 @@ function ItemDetails() {
     const cleanedInstructions = shouldSaveInstructions
       ? buildInstructionsWithCustomizations(instructionText)
       : "";
-    if (cartItemForCurrentItem) {
-      updateQuantity(cartItemForCurrentItem.name, quantity);
-      if (shouldSaveInstructions) {
-        updateInstructions(cartItemForCurrentItem.name, cleanedInstructions);
+    const portion = customSelections.portion === 'Large' ? 'Large' : '';
+    const pricedItem = portion === 'Large'
+      ? { ...item, portion, basePrice: item.price, price: largeUnitPrice(item) }
+      : item;
+    const portionNote = portion === 'Large' ? 'Portion: Large' : '';
+    const instructionsForCart = shouldSaveInstructions ? cleanedInstructions : portionNote;
+    if (cartItemForCurrentItem && (cartItemForCurrentItem.portion || '') === portion) {
+      updateQuantity(cartItemForCurrentItem.name, quantity, portion || undefined);
+      if (instructionsForCart) {
+        updateInstructions(cartItemForCurrentItem.name, instructionsForCart);
       }
     } else {
-      addToCart(item, quantity, shouldSaveInstructions ? cleanedInstructions : "");
+      addToCart(pricedItem, quantity, instructionsForCart);
     }
     setIsModalOpen(false);
     setInstructions(shouldSaveInstructions ? instructionText.trim() : (cartItemForCurrentItem?.instructions || ""));
@@ -320,7 +327,10 @@ function ItemDetails() {
     }
   };
 
-  const totalPrice = (parseFloat(String(item.price || '').replace(/[^0-9.\-]/g, '')) * quantity).toFixed(2);
+  const unitForDisplay = customSelections.portion === 'Large'
+    ? largeUnitPrice(item)
+    : (parseFloat(String(item.price || '').replace(/[^0-9.\-]/g, '')) || 0);
+  const totalPrice = (unitForDisplay * quantity).toFixed(2);
 
   const rating = item.rating || 4.6;
   const reviewCount = item.reviewCount || item.ratingsCount || null;

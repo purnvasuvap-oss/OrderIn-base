@@ -1,12 +1,19 @@
 rules_version = '2';
-
-// Craft rules based on data in your Firestore database
-// allow write: if firestore.get(
-//    /databases/(default)/documents/users/$(request.auth.uid)).data.isAdmin;
 service firebase.storage {
   match /b/{bucket}/o {
     match /{allPaths=**} {
-      allow read, write: if true;
+      allow read: if true;
+    }
+    // Menu and promotion images only. Anything else (and non-images) is denied.
+    match /menu/{allPaths=**} {
+      allow write: if request.resource == null
+        || (request.resource.size < 10 * 1024 * 1024
+            && request.resource.contentType.matches('image/.*'));
+    }
+    match /promotions/{allPaths=**} {
+      allow write: if request.resource == null
+        || (request.resource.size < 10 * 1024 * 1024
+            && request.resource.contentType.matches('image/.*'));
     }
   }
 }

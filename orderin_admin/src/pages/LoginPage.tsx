@@ -10,14 +10,18 @@ export const LoginPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // The passcode is read from a build-time env var, not hardcoded in source.
-  // Set VITE_ADMIN_PASSCODE in the deployment environment. (Falls back to the
-  // legacy value only when the env var is absent, to avoid a hard lock-out.)
-  const ADMIN_PASSCODE = (import.meta.env.VITE_ADMIN_PASSCODE as string) || '123456789';
+  // Set VITE_ADMIN_PASSCODE in the deployment environment. There is no
+  // built-in passcode: a missing value refuses every login.
+  const ADMIN_PASSCODE = import.meta.env.VITE_ADMIN_PASSCODE as string | undefined;
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    if (!ADMIN_PASSCODE) {
+      setError('Admin login is not configured. Set VITE_ADMIN_PASSCODE.');
+      return;
+    }
 
     if (password !== ADMIN_PASSCODE) {
       setError('Invalid password. Please enter the correct password.');

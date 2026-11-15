@@ -17,9 +17,11 @@ async function doSeed() {
   const userCount = await countAll(STORES.users);
   if (userCount > 0) return;
 
-  // Fixed ids (not genId) so that if two devices each seed locally before
-  // ever syncing, they converge on the same Firestore docs instead of
-  // creating duplicate accounts with divergent passwords.
+  // Fixed ids (not genId) so two devices that both seed before any sync
+  // still use the same local account ids.
+  // Local demo accounts only. The password is hashed and then dropped, and
+  // these records are NOT synced to Firestore. admin/admin123 (and the other
+  // demo passwords) must never be written to the shared database.
   const users = await Promise.all([
     { username: "admin", name: "Owner Admin", role: ROLES.ADMIN, password: "admin123" },
     { username: "manager", name: "Priya Manager", role: ROLES.MANAGER, password: "manager123" },
@@ -27,14 +29,10 @@ async function doSeed() {
     { username: "kitchen", name: "Kitchen Staff", role: ROLES.KITCHEN, password: "kitchen123" },
   ].map(async (u) => {
     const createdAt = Date.now();
-    return { id: `usr_${u.username}`, ...u, passwordHash: await hashPassword(u.password), status: "active", createdAt, updatedAt: createdAt };
+    const { password, ...withoutPassword } = u;
+    return { id: `usr_${u.username}`, ...withoutPassword, passwordHash: await hashPassword(password), status: "active", createdAt, updatedAt: createdAt };
   }));
   await putMany(STORES.users, users);
-  // Push the default logins to Firestore immediately so a second device
-  // pulls these same accounts instead of independently reseeding its own —
-  // every other seeded store only reaches Firestore once a user edits it
-  // through the UI, but login accounts have no such natural first-edit step.
-  users.forEach((u) => enqueueSync(STORES.users, "put", u));
 
   const categories = [
     { id: "cat_starters", name: "Starters", sortOrder: 1 },

@@ -7,6 +7,7 @@ import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db } from "../firebaseConfig";
 import { safeDeleteUnpaidOrders } from "../utils/orderCleanupUtils";
 import "./CounterCode.css";
+import { confirmCounterPayment } from "./counterCodeApi";
 
 const idsMatch = (left, right) => String(left) === String(right);
 
@@ -186,7 +187,6 @@ function CounterCode({ onBackClick }) {
       const pendingFromSession = sessionStorage.getItem('pendingVerificationCode');
       const pendingFromLocal = localStorage.getItem('pendingVerificationCode');
       if (pendingFromSession || pendingFromLocal) {
-        console.log('CounterCode: pending verification code available (session/local):', pendingFromSession, pendingFromLocal);
       }
 
       const storedCode = extractVerificationCode(firestoreOrder).toString();
@@ -194,15 +194,19 @@ function CounterCode({ onBackClick }) {
       const enteredNorm = normalize(fullCode);
       const storedNorm = normalize(storedCode);
 
-      console.log('CounterCode: entered=', fullCode, 'normalized=', enteredNorm, 'stored=', storedCode, 'normalized=', storedNorm, 'orderId=', orderIdToCheck);
 
       // If we have a pending verification code in sessionStorage, prefer that as the expected value
       const pendingExpected = (pendingFromSession || pendingFromLocal || '').toString().trim().replace(/\D/g, '');
       if (pendingExpected) {
-        console.log('CounterCode: using pendingExpected from storage=', pendingExpected);
       }
 
-      const expectedToCompare = pendingExpected || storedNorm;
+      const confirmResult = await confirmCounterPayment({
+        restaurantId: 'orderin_restaurant_2',
+        customerPhone: phoneNumber,
+        orderId: orderIdToCheck,
+        code: fullCode,
+      });
+      const expectedToCompare = confirmResult.ok ? enteredNorm : '';
 
       if (enteredNorm === expectedToCompare && enteredNorm.length === 4) {
         // Payment verified! Update order status from 'unpaid' to 'paid'
@@ -241,8 +245,8 @@ function CounterCode({ onBackClick }) {
         markPaymentSuccessful(orderIdToCheck);
         navigate(getPathWithTable('/payment-success'));
       } else {
-        console.warn('CounterCode mismatch: entered', enteredNorm, 'expected (pending/db)', pendingExpected || storedNorm, 'stored(db)=', storedNorm);
-        alert(`Invalid counter code. Please try again. (entered: ${fullCode}, expected (pending/db): ${pendingExpected || storedCode})`);
+        console.warn('CounterCode mismatch for order', orderIdToCheck);
+        alert('That code is not right. Ask the counter and try again.');
         setCounterCode(["", "", "", ""]);
       }
     } catch (err) {

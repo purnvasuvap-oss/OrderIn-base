@@ -31,6 +31,7 @@ interface RazorpayPaymentData {
 }
 
 interface VerifyPaymentData {
+  success?: boolean;
   method?: string;
   payment_status?: string;
   settlement_id?: string | null;
@@ -319,12 +320,20 @@ export const PaymentHubPage = () => {
       const paymentMethodUpper = selectedPaymentMethod.toUpperCase();
 
       // Use localStorage data, then URL params, then defaults for testing
-      const finalRestaurantId = storedPaymentData?.restaurantId || restaurantId || 'TEST_RESTAURANT';
-      const finalCustomerPhone = storedPaymentData?.customerPhone || customerPhone || '9999999999';
-      const finalOrderId = storedPaymentData?.orderId || orderId || 'TEST_ORDER_' + Date.now();
-      const finalAmount = storedPaymentData?.amount || (amount && parseFloat(amount) > 0 ? amount : '100');
+      const finalRestaurantId = storedPaymentData?.restaurantId || restaurantId;
+      const finalCustomerPhone = storedPaymentData?.customerPhone || customerPhone;
+      const finalOrderId = storedPaymentData?.orderId || orderId;
+      const finalAmount = storedPaymentData?.amount || (amount && parseFloat(amount) > 0 ? amount : '');
       const finalSubtotal = storedPaymentData?.subtotal || subtotal || '0';
       const finalTaxes = storedPaymentData?.taxes || taxAmount || '0';
+
+      if (!finalRestaurantId || !finalCustomerPhone || !finalOrderId) {
+        throw new Error('This payment is missing the order. Go back and place the order again.');
+      }
+      const razorpayKey = import.meta.env.VITE_RAZORPAY_KEY_ID;
+      if (!razorpayKey) {
+        throw new Error('Razorpay is not configured. Set VITE_RAZORPAY_KEY_ID to the new public key.');
+      }
 
       addDebugLog(`Payment Method: ${paymentMethodUpper}`);
       addDebugLog(`Restaurant ID: ${finalRestaurantId} ${storedPaymentData?.restaurantId ? '(from localStorage)' : restaurantId ? '' : '(DEFAULT)'}`);
@@ -337,6 +346,7 @@ export const PaymentHubPage = () => {
       addDebugLog('Creating Razorpay order on backend...');
       
       let razorpayOrderId = null;
+      let chargePaise = 0;
       try {
         const orderPayload = {
           amount: parseFloat(finalAmount as string) * 100,
@@ -354,6 +364,11 @@ export const PaymentHubPage = () => {
         const { response, url } = await postToFunction(CREATE_ORDER_ENDPOINTS, orderPayload, 'Create order');
         const orderData = await response.json();
         razorpayOrderId = orderData.order_id;
+        const serverPaise = Number(orderData.amount);
+        if (!razorpayOrderId || !Number.isFinite(serverPaise) || serverPaise <= 0) {
+          throw new Error(orderData.message || orderData.error || 'The server did not return a priced order. Payment stopped.');
+        }
+        chargePaise = serverPaise;
         addDebugLog(`✓ Razorpay Order Created: ${razorpayOrderId}`);
         if (orderData.routeSplit) {
           addDebugLog(`✓ Route split enabled: ₹${orderData.routeSplit.restaurantAmount} to ${orderData.routeSplit.accountName}`);
@@ -374,8 +389,8 @@ export const PaymentHubPage = () => {
 
       // Pass order_id ONLY if it was successfully generated
       const optionsConfig: any = {
-        key: 'rzp_live_Sj1ZPsCyB5iu3t',
-        amount: parseFloat(finalAmount as string) * 100, // Amount in paise
+        key: razorpayKey,
+        amount: chargePaise,
         currency: 'INR',
         name: restaurantName,
         description: `Order #${finalOrderId}`,
@@ -394,34 +409,30 @@ export const PaymentHubPage = () => {
             if (response.razorpay_order_id) addDebugLog(`Order ID: ${response.razorpay_order_id}`);
 
             let verifyData: VerifyPaymentData | null = null;
-            
-            if (response.razorpay_signature && response.razorpay_order_id) {
-               addDebugLog('Verifying payment signature...');
-               // Step 3: Verify Payment Signature on Backend if we used order_id
-               try {
-                 const verifyPayload = {
-                   razorpay_payment_id: response.razorpay_payment_id,
-                   razorpay_order_id: response.razorpay_order_id,
-                   razorpay_signature: response.razorpay_signature,
-                   restaurantId: finalRestaurantId,
-                   customerPhone: finalCustomerPhone,
-                   orderId: finalOrderId,
-                 };
-                 const { response: verifyResponse, url } = await postToFunction(VERIFY_PAYMENT_ENDPOINTS, verifyPayload, 'Verify payment');
 
-                 if (verifyResponse.ok) {
-                   verifyData = await verifyResponse.json();
-                   addDebugLog(`✓ Payment Signature Verified`);
-                   addDebugLog(`✓ Verification endpoint: ${url}`);
-                 } else {
-                   addDebugLog(`⚠️ Signature verification failed on backend. Assuming success for test mode.`);
-                 }
-               } catch (e) {
-                 addDebugLog(`⚠️ Verification API unreachable. Proceeding with frontend success update.`);
-               }
-            } else {
-               addDebugLog('No signature/order_id returned (Frontend mock mode). Assuming successful payment capture.');
+            if (!response.razorpay_signature || !response.razorpay_order_id) {
+              throw new Error('Razorpay did not return a signature. The order was not marked paid.');
             }
+            addDebugLog('Verifying payment signature...');
+            const verifyPayload = {
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_signature: response.razorpay_signature,
+              restaurantId: finalRestaurantId,
+              customerPhone: finalCustomerPhone,
+              orderId: finalOrderId,
+            };
+            const { response: verifyResponse, url } = await postToFunction(VERIFY_PAYMENT_ENDPOINTS, verifyPayload, 'Verify payment');
+            if (!verifyResponse.ok) {
+              throw new Error('Payment could not be verified. The order was not marked paid.');
+            }
+            verifyData = await verifyResponse.json();
+            const verifiedStatus = String(verifyData?.payment_status || '').toLowerCase();
+            if (!verifyData?.success || !['captured', 'authorized'].includes(verifiedStatus)) {
+              throw new Error('Payment was not captured. The order was not marked paid.');
+            }
+            addDebugLog('✓ Payment signature verified');
+            addDebugLog(`✓ Verification endpoint: ${url}`);
 
             // Map Razorpay payment method to user-friendly names once, then use
             // the same values for both the admin write and the parent fallback.
