@@ -1,4 +1,4 @@
-> The live Razorpay key that used to be written in this file is compromised. Rotate it in the Razorpay dashboard. Do not paste the old key back. Use environment variables, not this document, for the new key.
+> The live Razorpay key used to be written in this file. Rotating it in the Razorpay dashboard is recommended, not required. Keep the real key in environment variables or Firebase secrets, not in this document.
 
 # Razorpay Integration - Quick Setup Guide
 

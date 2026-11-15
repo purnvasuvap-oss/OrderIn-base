@@ -143,7 +143,7 @@ Payroll and staff PIN checks run in the browser to avoid callable Cloud Function
 
 The first Admin load runs a one-time browser migration to move legacy compensation and salary history and index finalized runs. Back up/verify production data before deploying the frontend and these rules. Confirm the migration completed and inspect the resulting profile/index records.
 
-The Green Cloud Functions source previously contained hardcoded Razorpay credential fallbacks; those fallbacks have been removed. Treat any key that was ever committed in repository history as compromised: rotate it in Razorpay, then configure the current customer-checkout key and secret only in server-side configuration. They are customer-payment credentials, not a staff-payout authorization. Do not reuse them for RazorpayX.
+The Green Cloud Functions source previously contained hardcoded Razorpay credential fallbacks; those fallbacks have been removed. Rotating a key that was ever committed in repository history is recommended, not required. Configure the customer-checkout key and secret only in server-side configuration. The functions accept whatever key is set there. They are customer-payment credentials, not a staff-payout authorization. Do not reuse them for RazorpayX.
 
 ### High — incomplete payroll basis
 

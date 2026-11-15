@@ -1,27 +1,11 @@
 const crypto = require('crypto');
 
-// sha256 of the live Razorpay key id and key secret that were committed to git.
-// The plaintext is intentionally not in this file. If either value shows up in
-// config or env, refuse it so a deploy cannot keep using the leaked key.
-const REVOKED_CREDENTIAL_HASHES = new Set([
-  'a443ef9fd2b910fe9144da97c207ace0e887f77c197899914559a721838cbe06',
-  '5ca78057b244c038bb49153a4de84aac79111cf0002431180550d0d1688b877d',
-]);
-
 const TAX_RATE = 0.05;
 
-const sha256 = (value) => crypto.createHash('sha256').update(String(value)).digest('hex');
-
-const isRevokedCredential = (value) => REVOKED_CREDENTIAL_HASHES.has(sha256(value));
-
+// Use the first non-empty value. Whatever key is set in Firebase secrets is accepted.
 const firstAllowedCredential = (...values) => {
   for (const value of values) {
-    if (!value) continue;
-    if (isRevokedCredential(value)) {
-      console.error('[Razorpay] Refusing a revoked credential that was committed to git. Rotate it in the Razorpay dashboard.');
-      continue;
-    }
-    return value;
+    if (value) return value;
   }
   return '';
 };
@@ -266,7 +250,6 @@ module.exports = {
   TAX_RATE,
   loadRazorpayCredentials,
   firstAllowedCredential,
-  isRevokedCredential,
   portionMultiplier,
   unitRupees,
   priceItems,

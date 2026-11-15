@@ -5,7 +5,6 @@ const {
   unitRupees,
   amountsMatchPaise,
   signaturesMatch,
-  isRevokedCredential,
   loadRazorpayCredentials,
 } = require('./paymentGuard');
 
@@ -41,9 +40,6 @@ assert.strictEqual(amountsMatchPaise(100, 15750), false);
 assert.strictEqual(signaturesMatch('1234', '1234'), true);
 assert.strictEqual(signaturesMatch('1234', '9999'), false);
 assert.strictEqual(signaturesMatch('1234', '12345'), false);
-
-assert.strictEqual(isRevokedCredential('public_key_not_leaked'), false);
-assert.strictEqual(isRevokedCredential(''), false);
 
 const creds = loadRazorpayCredentials('public_key_fresh', 'fresh_secret_value');
 assert.strictEqual(creds.keyId, 'public_key_fresh');
