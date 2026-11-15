@@ -1,0 +1,33 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    function signedIn() {
+      return request.auth != null;
+    }
+    function role() {
+      return signedIn() ? request.auth.token.role : '';
+    }
+    function owns(rid) {
+      return request.auth.token.restaurantId == rid
+        || (request.auth.token.restaurantIds is list && rid in request.auth.token.restaurantIds);
+    }
+    function canUpload(rid) {
+      return signedIn()
+        && (role() == 'platformAdmin' || (role() in ['owner', 'manager'] && owns(rid)))
+        && request.resource.size < 10 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*');
+    }
+
+    match /restaurants/{rid}/menu/{fileName} {
+      allow read: if true;
+      allow write: if canUpload(rid);
+    }
+    match /restaurants/{rid}/brand/{fileName} {
+      allow read: if true;
+      allow write: if canUpload(rid);
+    }
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

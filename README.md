@@ -9,6 +9,12 @@ and each outlet can run an offline-capable POS terminal.
 This repository holds **all of the frontends** for that platform. The backend
 (Firebase — Firestore, Auth, Storage, Cloud Functions) is **not** in this repo.
 
+The apps you should run now are `platform/apps/customer` (diner), `platform/apps/staff`
+(captain, kitchen, owner), `orderin_admin` (OrderIn company console) and
+`Orderin-Only-POS/pos-system` (counter). Theme colours come from the restaurant
+profile. The old per-restaurant copies are in `archive/` and are not deployed.
+Read `platform/docs/MANUAL.md` before you deploy.
+
 > **New here?** Jump to [Getting started](#5-getting-started) for setup, or
 > [Docs folder](#11-docs-folder) for the guided reading path by role
 > (engineer / QA / onboarding a restaurant).
@@ -366,7 +372,7 @@ lead for the real values — they are not in the repo.
 | Variable | Used by | Purpose |
 |---|---|---|
 | `VITE_FIREBASE_*` (apiKey, authDomain, projectId, …) | all | Firebase project config |
-| `VITE_ADMIN_PASSCODE` | `orderin_admin` | Admin login passcode (falls back to a default if unset — set it for production) |
+| `VITE_ADMIN_PASSCODE` | `orderin_admin` | Admin login passcode. Required. Login stays closed if it is unset. |
 | `VITE_RAZORPAY_KEY_ID` | apps that take payment | Razorpay public key |
 | `VITE_IMGBB_KEY` | client apps | image upload (imgbb) fallback |
 

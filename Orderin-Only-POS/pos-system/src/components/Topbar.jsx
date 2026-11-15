@@ -12,7 +12,7 @@ import "./Topbar.css";
 export default function Topbar({ onMenuClick, title }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const { online, pending } = useOnlineStatus();
+  const { online, pending, conflicts } = useOnlineStatus();
   const printerConnection = usePrinterStatus();
   const [unread, setUnread] = useState(unreadCount());
 
@@ -38,7 +38,7 @@ export default function Topbar({ onMenuClick, title }) {
       <div className="topbar-right">
         <div className={`status-pill ${online ? "status-online" : "status-offline"}`}>
           {online ? <Wifi size={14} /> : <WifiOff size={14} />}
-          <span>{online ? "Online" : "Offline"}</span>
+          <span>{online ? "Online" : "Offline"}{conflicts > 0 ? ` · ${conflicts} sync conflict${conflicts === 1 ? "" : "s"}` : ""}</span>
           {pending > 0 && (
             <span className="status-pending"><CloudUpload size={12} /> {pending}</span>
           )}

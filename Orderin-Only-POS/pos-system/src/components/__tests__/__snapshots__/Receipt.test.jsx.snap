@@ -48,7 +48,7 @@ exports[`Receipt > matches the snapshot 1`] = `
         Date
       </span>
       <span>
-        01/02/2026, 15:30:00
+        2/1/2026, 10:00:00 AM
       </span>
     </div>
     <div
@@ -134,10 +134,30 @@ exports[`Receipt > matches the snapshot 1`] = `
       class="receipt-row"
     >
       <span>
-        Tax
+        CGST
       </span>
       <span>
-        ₹8.00
+        ₹4.00
+      </span>
+    </div>
+    <div
+      class="receipt-row"
+    >
+      <span>
+        SGST
+      </span>
+      <span>
+        ₹4.00
+      </span>
+    </div>
+    <div
+      class="receipt-row"
+    >
+      <span>
+        SAC
+      </span>
+      <span>
+        996331
       </span>
     </div>
     <div

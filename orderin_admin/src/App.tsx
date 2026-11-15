@@ -1,17 +1,20 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
-import { useEffect, type ReactElement } from 'react';
+import { useEffect, useState, type ReactElement } from 'react';
+import { onAuthStateChanged } from 'firebase/auth';
 import { useAppStore } from './store';
+import { auth } from './config/firebase';
 import { LoginPage } from './pages/LoginPage';
 
-// Client-side gate: LoginPage sets `orderin_admin_auth` in sessionStorage on a
-// correct passcode. Anyone hitting a protected URL directly (or refreshing
-// after the session ends) is bounced to /login. Not a substitute for a real
-// server-side auth check, but it stops the console rendering for un-authed URLs.
 function RequireAuth({ children }: { children: ReactElement }) {
   const location = useLocation();
-  if (sessionStorage.getItem('orderin_admin_auth') !== 'true') {
-    return <Navigate to="/login" replace state={{ from: location }} />;
-  }
+  const [ready, setReady] = useState(false);
+  const [signedIn, setSignedIn] = useState(false);
+  useEffect(() => onAuthStateChanged(auth, (user) => {
+    setSignedIn(Boolean(user));
+    setReady(true);
+  }), []);
+  if (!ready) return null;
+  if (!signedIn) return <Navigate to="/login" replace state={{ from: location }} />;
   return children;
 }
 import { DashboardPage } from './pages/DashboardPage';

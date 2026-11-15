@@ -193,7 +193,9 @@ export function computeOrderTotals(items, orderDiscount = 0) {
     return s + (lineTaxable * (it.tax || 0)) / 100;
   }, 0);
   const total = +(taxable + tax).toFixed(2);
-  return { subtotal: +subtotal.toFixed(2), discount: +discount.toFixed(2), tax: +tax.toFixed(2), total };
+  const cgst = +(tax / 2).toFixed(2);
+  const sgst = +(tax - cgst).toFixed(2);
+  return { subtotal: +subtotal.toFixed(2), discount: +discount.toFixed(2), tax: +tax.toFixed(2), cgst, sgst, sac: "996331", total };
 }
 
 export async function listOrders() {
@@ -201,13 +203,8 @@ export async function listOrders() {
 }
 
 export async function createOrder({ items, orderType, tableNo, discount = 0, payments, cashier, priority = "normal", notes = "", customerName, customerPhone }) {
-  // Required so every order can be traced to a customer record — the
-  // Customers page (acquisition order, regulars, per-customer order
-  // history) only has data to show because this is enforced here, not just
-  // in the POS UI, so no code path can create an order without it.
-  if (!customerPhone || !customerPhone.trim()) {
-    throw new Error("Customer phone number is required to complete an order.");
-  }
+  // Phone is optional. A diner at the counter does not have to give one.
+  const phone = customerPhone?.trim() || "";
   const totals = computeOrderTotals(items, discount);
   const { invoiceNo, orderNo } = await nextInvoiceNumber();
   const order = {
@@ -226,8 +223,8 @@ export async function createOrder({ items, orderType, tableNo, discount = 0, pay
     paymentStatus: payments?.length ? "paid" : "pending",
     cashierId: cashier?.id || null,
     cashierName: cashier?.name || "Unknown",
+    customerPhone: phone,
     customerName: customerName?.trim() || "Guest",
-    customerPhone: customerPhone.trim(),
     createdAt: Date.now(),
     updatedAt: Date.now(),
     readyAt: null,

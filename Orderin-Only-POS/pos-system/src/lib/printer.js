@@ -37,6 +37,7 @@ export function buildReceiptBytes(order, { restaurant, billing, paperWidth = "80
   if (restaurant?.address) b.line(restaurant.address);
   if (restaurant?.phone) b.line(restaurant.phone);
   if (restaurant?.gstin) b.line(`GSTIN: ${restaurant.gstin}`);
+  if (restaurant?.fssai) b.line(`FSSAI: ${restaurant.fssai}`);
   b.align("left").divider();
   b.row("Invoice", order.invoiceNo);
   b.row("Order", order.orderNo);
@@ -51,7 +52,9 @@ export function buildReceiptBytes(order, { restaurant, billing, paperWidth = "80
   b.divider();
   b.row("Subtotal", `Rs${order.subtotal.toFixed(2)}`);
   b.row("Discount", `-Rs${order.discount.toFixed(2)}`);
-  b.row("Tax", `Rs${order.tax.toFixed(2)}`);
+  b.row("CGST", `Rs${Number(order.cgst ?? order.tax / 2).toFixed(2)}`);
+  b.row("SGST", `Rs${Number(order.sgst ?? order.tax / 2).toFixed(2)}`);
+  b.row("SAC", order.sac || restaurant?.sac || "996331");
   b.divider();
   b.bold(true).big(true).row("TOTAL", `Rs${order.total.toFixed(2)}`).big(false).bold(false);
   b.row("Payment", (order.payments || []).map((p) => p.method).join(" + ") || "-");
@@ -64,7 +67,8 @@ export function buildReceiptBytes(order, { restaurant, billing, paperWidth = "80
 export function buildKitchenTicketBytes(order, { paperWidth = "80mm" } = {}) {
   const w = paperWidthCols(paperWidth);
   const b = new EscPosBuilder(w);
-  b.align("center").bold(true).big(true).line(order.orderNo).big(false).bold(false);
+  b.align("center").bold(true).big(true).line(order.station || "KOT").big(false).bold(false);
+  b.line(order.orderNo || "");
   b.line(`${order.orderType}${order.tableNo ? ` · Table ${order.tableNo}` : ""}`);
   b.align("left").divider();
   b.bold(true);
@@ -211,6 +215,11 @@ export async function printJob(kind, order, opts) {
   const target = order.orderNo || order.invoiceNo || order.id;
   try {
     const bytes = kind === "kitchen" ? buildKitchenTicketBytes(order, opts) : buildReceiptBytes(order, opts);
+    const bridged = await sendToPrintBridge(bytes, opts?.station || order.station || kind);
+    if (bridged) {
+      await recordJob({ kind, target, method: "bridge", status: "success" });
+      return { ok: true, method: "bridge" };
+    }
     const wroteToHardware = await writeBytes(bytes);
     if (wroteToHardware) {
       await recordJob({ kind, target, method: connectionInfo.type, status: "success" });
@@ -235,7 +244,37 @@ export async function printReceiptForOrder(order) {
   return printJob("receipt", order, { restaurant, billing, paperWidth: printer?.paperWidth });
 }
 
+async function sendToPrintBridge(bytes, station) {
+  const url = import.meta.env.VITE_PRINT_BRIDGE_URL || "http://127.0.0.1:9101/print";
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 800);
+  try {
+    let binary = "";
+    bytes.forEach((value) => { binary += String.fromCharCode(value); });
+    const response = await fetch(url, {
+      method: "POST",
+      signal: controller.signal,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ station: station || "receipt", contentType: "application/escpos", data: btoa(binary) }),
+    });
+    return response.ok;
+  } catch {
+    return false;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 export async function printKitchenTicketForOrder(order) {
   const printer = await getOne(STORES.settings, "printer");
-  return printJob("kitchen", order, { paperWidth: printer?.paperWidth });
+  const groups = new Map();
+  (order.items || []).forEach((item) => {
+    const station = item.station || "kitchen";
+    groups.set(station, [...(groups.get(station) || []), item]);
+  });
+  let last = null;
+  for (const [station, items] of groups) {
+    last = await printJob("kitchen", { ...order, items, station }, { paperWidth: printer?.paperWidth, station });
+  }
+  return last || { ok: false, error: "Nothing to print" };
 }

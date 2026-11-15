@@ -1,0 +1,15 @@
+{
+  "projects": {
+    "default": "orderin-7f8bc"
+  },
+  "targets": {
+    "orderin-7f8bc": {
+      "hosting": {
+        "admin": ["orderin-admin"],
+        "customer": ["orderin-customer"],
+        "pos": ["orderin-pos"],
+        "staff": ["orderin-staff"]
+      }
+    }
+  }
+}

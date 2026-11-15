@@ -1,0 +1,10 @@
+{
+  "name": "@orderin/core",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Shared dine-in pricing, tax, orders, roles, and reports for OrderIn. No restaurant is hard-coded here.",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "node --test test/*.js"
+  }
+}

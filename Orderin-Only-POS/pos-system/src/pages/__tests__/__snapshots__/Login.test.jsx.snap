@@ -54,11 +54,12 @@ exports[`Login > matches the snapshot 1`] = `
         <label
           class="login-label"
         >
-          Username
+          Email
         </label>
         <input
           class="input"
-          placeholder="e.g. cashier"
+          placeholder="you@restaurant.com"
+          type="email"
           value=""
         />
         <label

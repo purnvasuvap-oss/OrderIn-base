@@ -1,6 +1,8 @@
 import { LayoutDashboard, Building2, FileText, DollarSign, CreditCard, Settings, LogOut, ChevronRight } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { signOut } from 'firebase/auth';
 import { useAppStore } from '../store';
+import { auth } from '../config/firebase';
 
 export const Sidebar = () => {
   const location = useLocation();
@@ -72,7 +74,7 @@ export const Sidebar = () => {
       <div style={{ borderTop: '1px solid rgba(6, 182, 212, 0.1)', padding: '1rem', background: 'linear-gradient(180deg, transparent 0%, rgba(6, 182, 212, 0.05) 100%)' }}>
         <button 
           onClick={() => {
-            sessionStorage.removeItem('orderin_admin_auth');
+            signOut(auth).catch(() => {});
             logout();
             navigate('/login', { replace: true });
           }}
