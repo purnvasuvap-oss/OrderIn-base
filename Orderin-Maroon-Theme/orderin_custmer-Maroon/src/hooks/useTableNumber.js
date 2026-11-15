@@ -1,6 +1,13 @@
 import { useSearchParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 
+export const resolveTableFromSearch = (search = '', stored = '', legacy = '') => {
+  const fromQuery = new URLSearchParams(String(search || '')).get('table');
+  const table = String(fromQuery || stored || legacy || '').trim();
+  return table || '1';
+};
+
+
 /**
  * Custom hook to manage table number parameter across the app.
  * Returns the table number and a function to create navigation URLs with the table param.
@@ -10,16 +17,15 @@ export const useTableNumber = () => {
   const [tableNumber, setTableNumber] = useState(null);
 
   useEffect(() => {
-    // Get table from URL params
-    const table = searchParams.get('table');
-    if (table) {
-      setTableNumber(table);
+    const table = resolveTableFromSearch(
+      searchParams.toString(),
+      localStorage.getItem('tableNumber'),
+      ''
+    );
+    if (searchParams.get('table')) {
       localStorage.setItem('tableNumber', table);
-    } else {
-      // Fallback to localStorage if not in URL
-      const stored = localStorage.getItem('tableNumber') || '1';
-      setTableNumber(stored);
     }
+    setTableNumber(table);
   }, [searchParams]);
 
   /**

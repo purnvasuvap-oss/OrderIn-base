@@ -1,4 +1,5 @@
 import { useSearchParams, useNavigate } from 'react-router-dom';
+import { requireRazorpayKeyId } from '../config/razorpay';
 import { CreditCard, Package, ArrowLeft, AlertCircle, RotateCcw } from 'lucide-react';
 import { useAppStore } from '../store';
 import { db } from '../config/firebase';
@@ -330,10 +331,7 @@ export const PaymentHubPage = () => {
       if (!finalRestaurantId || !finalCustomerPhone || !finalOrderId) {
         throw new Error('This payment is missing the order. Go back and place the order again.');
       }
-      const razorpayKey = import.meta.env.VITE_RAZORPAY_KEY_ID;
-      if (!razorpayKey) {
-        throw new Error('Razorpay is not configured. Set VITE_RAZORPAY_KEY_ID to the new public key.');
-      }
+      const razorpayKey = requireRazorpayKeyId();
 
       addDebugLog(`Payment Method: ${paymentMethodUpper}`);
       addDebugLog(`Restaurant ID: ${finalRestaurantId} ${storedPaymentData?.restaurantId ? '(from localStorage)' : restaurantId ? '' : '(DEFAULT)'}`);

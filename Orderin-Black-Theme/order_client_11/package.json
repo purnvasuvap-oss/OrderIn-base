@@ -32,7 +32,7 @@
     "preview": "vite preview",
     "test": "vitest",
     "deploy:hosting": "firebase deploy --only hosting",
-    "deploy:razorpay-functions": "firebase deploy --only functions:createRazorpayOrder,functions:verifyRazorpayPayment,functions:scheduledRazorpaySettlementSync",
+    "deploy:razorpay-functions": "firebase deploy --only functions:createRazorpayOrder,functions:verifyRazorpayPayment,functions:razorpayWebhook,functions:issueCounterCode,functions:confirmCounterPayment,functions:scheduledRazorpaySettlementSync",
     "deploy:rules": "firebase deploy --only firestore:rules,storage",
     "test:run": "vitest run",
     "coverage": "vitest run --coverage"

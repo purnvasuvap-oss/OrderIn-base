@@ -45,7 +45,7 @@ Avoid plain `firebase deploy` because it deploys every configured product in `fi
 
 To stop existing billing sources in Google Cloud Console:
 
-1. Cloud Run Functions: keep only `createRazorpayOrder` and `verifyRazorpayPayment`. Delete `syncRazorpayPayment`, `razorpayWebhook`, `api`, `getSignedPromotionUploadUrl`, and `onPromotionDelete` if they exist and automatic reconciliation is not explicitly needed.
+1. Cloud Run Functions: keep `createRazorpayOrder`, `verifyRazorpayPayment`, `razorpayWebhook`, `issueCounterCode`, and `confirmCounterPayment`. Those have to be deployed before the new customer apps take payment. `syncRazorpayPayment` and `scheduledRazorpaySettlementSync` stay optional. Delete `api`, `getSignedPromotionUploadUrl`, and `onPromotionDelete` if they exist and are not needed.
 2. App Engine: open App Engine > Versions. Stop or delete any running versions after confirming they are not serving a live URL.
 3. Cloud SQL: open SQL. If any instance exists and Data Connect is not used, export/backup it, then stop or delete it.
 4. Billing: set budget alerts at low thresholds before deploying new backend services.

@@ -1,5 +1,4 @@
-import { STORES, putMany, putOne, countAll } from "./db";
-import { hashPassword, ROLES } from "./auth";
+import { STORES, putMany, countAll } from "./db";
 import { enqueueSync } from "./sync";
 
 // Memoized so concurrent calls (React StrictMode double-invokes effects in
@@ -14,25 +13,10 @@ export function seedIfEmpty() {
 }
 
 async function doSeed() {
-  const userCount = await countAll(STORES.users);
-  if (userCount > 0) return;
-
-  // Fixed ids (not genId) so two devices that both seed before any sync
-  // still use the same local account ids.
-  // Local demo accounts only. The password is hashed and then dropped, and
-  // these records are NOT synced to Firestore. admin/admin123 (and the other
-  // demo passwords) must never be written to the shared database.
-  const users = await Promise.all([
-    { username: "admin", name: "Owner Admin", role: ROLES.ADMIN, password: "admin123" },
-    { username: "manager", name: "Priya Manager", role: ROLES.MANAGER, password: "manager123" },
-    { username: "cashier", name: "Arun Cashier", role: ROLES.CASHIER, password: "cashier123" },
-    { username: "kitchen", name: "Kitchen Staff", role: ROLES.KITCHEN, password: "kitchen123" },
-  ].map(async (u) => {
-    const createdAt = Date.now();
-    const { password, ...withoutPassword } = u;
-    return { id: `usr_${u.username}`, ...withoutPassword, passwordHash: await hashPassword(password), status: "active", createdAt, updatedAt: createdAt };
-  }));
-  await putMany(STORES.users, users);
+  // Catalog seed only. Do not create a default staff login here.
+  // People sign in with the restaurant staff accounts, not a password baked into the app.
+  const categoryCount = await countAll(STORES.categories);
+  if (categoryCount > 0) return;
 
   const categories = [
     { id: "cat_starters", name: "Starters", sortOrder: 1 },

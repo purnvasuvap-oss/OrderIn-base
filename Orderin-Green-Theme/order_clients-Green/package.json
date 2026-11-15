@@ -39,7 +39,8 @@
     "test": "vitest",
     "test:run": "vitest run",
     "test:rules": "firebase emulators:exec --only firestore --project demo-orderin \"vitest run --config vitest.rules.config.js\"",
-    "coverage": "vitest run --coverage"
+    "coverage": "vitest run --coverage",
+    "deploy:razorpay-functions": "firebase deploy --only functions:createRazorpayOrder,functions:verifyRazorpayPayment,functions:razorpayWebhook,functions:issueCounterCode,functions:confirmCounterPayment,functions:scheduledRazorpaySettlementSync"
   },
   "eslintConfig": {
     "extends": [

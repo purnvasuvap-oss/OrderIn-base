@@ -1,5 +1,6 @@
 ﻿import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { resolveTableFromSearch } from "../hooks/useTableNumber";
 import { doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
 import { db, auth } from "../firebaseConfig";
 import { onAuthStateChanged } from "firebase/auth";
@@ -212,9 +213,14 @@ const Login = () => {
       if (result.success) {
         const user = { username, phone: fullPhone };
         localStorage.setItem("user", JSON.stringify(user));
-        localStorage.setItem("tableNumber", window.tableNumber || '1');
+        const tableForOrder = resolveTableFromSearch(
+          window.location.search,
+          localStorage.getItem('tableNumber'),
+          window.tableNumber
+        );
+        localStorage.setItem('tableNumber', tableForOrder);
         alert(`Welcome ${username}!`);
-        navigate(`/menu?table=${window.tableNumber || '1'}`);
+        navigate(`/menu?table=${encodeURIComponent(tableForOrder)}`);
       } else {
         setErrorMessage(`Error saving user: ${result.error}`);
       }

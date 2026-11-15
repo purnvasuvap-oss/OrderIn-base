@@ -10,6 +10,7 @@ const {
   applyCors,
   issueCounterCode,
   confirmCounterPayment,
+  firstAllowedCredential,
 } = require('./paymentGuard');
 
 // BILLING GUARD:
@@ -21,24 +22,31 @@ if (!admin.apps.length) {
   admin.initializeApp();
 }
 
-function readRazorpayConfig() {
-  try {
-    return functions.config().razorpay || {};
-  } catch (error) {
-    return {};
-  }
-}
+const { defineSecret } = require('firebase-functions/params');
 
-const razorpayConfig = readRazorpayConfig();
-const {
-  keyId: RAZORPAY_KEY_ID,
-  keySecret: RAZORPAY_KEY_SECRET,
-} = loadRazorpayCredentials(
-  razorpayConfig.key_id,
+// Firebase mounts these when the function is deployed with { secrets }.
+// Set them with: firebase functions:secrets:set RAZORPAY_KEY_ID
+// (and the same command for RAZORPAY_KEY_SECRET and RAZORPAY_WEBHOOK_SECRET).
+const razorpayKeyIdParam = defineSecret('RAZORPAY_KEY_ID');
+const razorpayKeySecretParam = defineSecret('RAZORPAY_KEY_SECRET');
+const razorpayWebhookSecretParam = defineSecret('RAZORPAY_WEBHOOK_SECRET');
+const RAZORPAY_SECRETS = [razorpayKeyIdParam, razorpayKeySecretParam, razorpayWebhookSecretParam];
+
+const readBoundRazorpayCredentials = () => loadRazorpayCredentials(
   process.env.RAZORPAY_KEY_ID,
-  razorpayConfig.key_secret,
   process.env.RAZORPAY_KEY_SECRET
 );
+
+let {
+  keyId: RAZORPAY_KEY_ID,
+  secret: RAZORPAY_KEY_SECRET,
+} = readBoundRazorpayCredentials();
+
+const refreshRazorpayCredentials = () => {
+  const next = readBoundRazorpayCredentials();
+  RAZORPAY_KEY_ID = next.keyId;
+  RAZORPAY_KEY_SECRET = next.secret;
+};
 
 const ROUTE_LINKED_ACCOUNTS = {
   orderin_restaurant_1: {
@@ -858,9 +866,7 @@ const handleSyncRazorpayPayment = async (req, res) => {
 
 const handleRazorpayWebhook = async (req, res) => {
   try {
-    const webhookSecret =
-      functions.config().razorpay?.webhook_secret ||
-      process.env.RAZORPAY_WEBHOOK_SECRET;
+    const webhookSecret = firstAllowedCredential(process.env.RAZORPAY_WEBHOOK_SECRET);
 
     if (!webhookSecret) {
       return res.status(500).json({
@@ -1027,6 +1033,7 @@ const processDueQueueDocs = async (queueDocs, concurrency) => {
 };
 
 const handleScheduledSettlementReconciliation = async () => {
+  refreshRazorpayCredentials();
   const concurrency = Number(process.env.SETTLEMENT_SYNC_CONCURRENCY || 5);
   const now = admin.firestore.Timestamp.now();
   const dueSnap = await admin.firestore()
@@ -1049,7 +1056,8 @@ const handleScheduledSettlementReconciliation = async () => {
 };
 
 const onRequest = (handler) => async (req, res) => {
-  setCorsHeaders(res);
+  refreshRazorpayCredentials();
+  setCorsHeaders(req, res);
 
   if (req.method === 'OPTIONS') {
     res.status(204).send('');
@@ -1064,11 +1072,11 @@ const onRequest = (handler) => async (req, res) => {
   await handler(req, res);
 };
 
-exports.createRazorpayOrder = functions.https.onRequest(onRequest(handleCreateRazorpayOrder));
-exports.verifyRazorpayPayment = functions.https.onRequest(onRequest(handleVerifyRazorpayPayment));
-exports.syncRazorpayPayment = functions.https.onRequest(onRequest(handleSyncRazorpayPayment));
+exports.createRazorpayOrder = functions.runWith({ secrets: RAZORPAY_SECRETS }).https.onRequest(onRequest(handleCreateRazorpayOrder));
+exports.verifyRazorpayPayment = functions.runWith({ secrets: RAZORPAY_SECRETS }).https.onRequest(onRequest(handleVerifyRazorpayPayment));
+exports.syncRazorpayPayment = functions.runWith({ secrets: RAZORPAY_SECRETS }).https.onRequest(onRequest(handleSyncRazorpayPayment));
 exports.scheduledRazorpaySettlementSync = functions
-  .runWith({ timeoutSeconds: 540, memory: '256MB' })
+  .runWith({ timeoutSeconds: 540, memory: '256MB', secrets: RAZORPAY_SECRETS })
   .pubsub
   .schedule('30 23 * * *')
   .timeZone('Asia/Kolkata')
@@ -1094,4 +1102,4 @@ exports.confirmCounterPayment = functions.https.onRequest(onRequest(async (req, 
   }
 }));
 
-exports.razorpayWebhook = functions.https.onRequest(onRequest(handleRazorpayWebhook));
+exports.razorpayWebhook = functions.runWith({ secrets: RAZORPAY_SECRETS }).https.onRequest(onRequest(handleRazorpayWebhook));

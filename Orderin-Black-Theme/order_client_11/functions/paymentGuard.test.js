@@ -42,16 +42,16 @@ assert.strictEqual(signaturesMatch('1234', '1234'), true);
 assert.strictEqual(signaturesMatch('1234', '9999'), false);
 assert.strictEqual(signaturesMatch('1234', '12345'), false);
 
-assert.strictEqual(isRevokedCredential('rzp_test_not_leaked'), false);
+assert.strictEqual(isRevokedCredential('public_key_not_leaked'), false);
 assert.strictEqual(isRevokedCredential(''), false);
 
-const creds = loadRazorpayCredentials('', 'rzp_test_fresh', '', 'fresh_secret');
-assert.strictEqual(creds.keyId, 'rzp_test_fresh');
-assert.strictEqual(creds.keySecret, 'fresh_secret');
+const creds = loadRazorpayCredentials('public_key_fresh', 'fresh_secret_value');
+assert.strictEqual(creds.keyId, 'public_key_fresh');
+assert.strictEqual(creds.secret, 'fresh_secret_value');
 
-const missing = loadRazorpayCredentials('', '', '', '');
+const missing = loadRazorpayCredentials('', '');
 assert.strictEqual(missing.keyId, '');
-assert.strictEqual(missing.keySecret, '');
+assert.strictEqual(missing.secret, '');
 
 assert.throws(() => priceItems(menu, [{ name: 'Not on the menu', quantity: 1 }]), /Menu item not found/);
 assert.throws(() => priceItems(menu, []), /no items/);

@@ -26,9 +26,10 @@ const firstAllowedCredential = (...values) => {
   return '';
 };
 
-const loadRazorpayCredentials = (keyIdFromConfig, keyIdFromEnv, secretFromConfig, secretFromEnv) => ({
-  keyId: firstAllowedCredential(keyIdFromEnv, keyIdFromConfig),
-  keySecret: firstAllowedCredential(secretFromEnv, secretFromConfig),
+// key id and secret are read from the environment only (Firebase secrets).
+const loadRazorpayCredentials = (keyIdFromEnv, secretFromEnv) => ({
+  keyId: firstAllowedCredential(keyIdFromEnv),
+  secret: firstAllowedCredential(secretFromEnv),
 });
 
 const roundRupees = (value) => Math.round((Number(value) + Number.EPSILON) * 100) / 100;
@@ -264,6 +265,7 @@ const confirmCounterPayment = async (db, { restaurantId, customerPhone, orderId,
 module.exports = {
   TAX_RATE,
   loadRazorpayCredentials,
+  firstAllowedCredential,
   isRevokedCredential,
   portionMultiplier,
   unitRupees,
