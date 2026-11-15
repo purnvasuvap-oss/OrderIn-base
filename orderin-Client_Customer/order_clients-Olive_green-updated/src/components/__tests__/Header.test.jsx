@@ -39,7 +39,7 @@ describe('Header', () => {
 
   it('renders the restaurant name and the notification / logout buttons', () => {
     renderHeader();
-    expect(screen.getByRole('heading', { name: 'XYZ Restaurant' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Restaurant' })).toBeInTheDocument();
     expect(screen.getByAltText('notifications')).toBeInTheDocument();
     expect(screen.getByAltText('logout')).toBeInTheDocument();
   });

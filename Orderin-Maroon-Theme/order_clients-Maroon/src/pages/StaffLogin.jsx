@@ -62,7 +62,7 @@ export default function StaffLogin() {
         <div className="login-auth-panel">
           <header className="sub-login-header">
             <p className="login-eyebrow">Restaurant Portal</p>
-            <h2 className="sub-restaurant-name">XYZ Restaurant</h2>
+            <h2 className="sub-restaurant-name">Restaurant</h2>
             <p className="sub-welcome-text">Welcome back</p>
           </header>
 

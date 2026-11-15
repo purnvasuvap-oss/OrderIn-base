@@ -70,12 +70,12 @@ exports[`InventoryLogin > matches the snapshot 1`] = `
         <h2
           class="sub-restaurant-name"
         >
-          XYZ Restaurant
+          Restaurant
         </h2>
         <p
           class="sub-welcome-text"
         >
-          Welcome XYZ Restaurant
+          Welcome Restaurant
         </p>
       </header>
       <section

@@ -63,8 +63,8 @@ export default function MenuLogin() {
       {/* Right content */}
       <main className="sub-login-right">
         <header className="sub-login-header">
-          <h2 className="sub-restaurant-name">XYZ Restaurant</h2>
-          <p className="sub-welcome-text">Welcome XYZ Restaurant</p>
+          <h2 className="sub-restaurant-name">Restaurant</h2>
+          <p className="sub-welcome-text">Welcome Restaurant</p>
         </header>
 
         <section className="sub-login-card" aria-label="login form">

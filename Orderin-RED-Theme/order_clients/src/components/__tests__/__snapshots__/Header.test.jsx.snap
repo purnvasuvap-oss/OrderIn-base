@@ -20,7 +20,7 @@ exports[`Header > matches the snapshot 1`] = `
       <h1
         class="restaurant-name"
       >
-        XYZ Restaurant
+        Restaurant
       </h1>
     </div>
     <div

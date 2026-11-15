@@ -8,6 +8,7 @@ import SectionProtectedRoute from "./components/SectionProtectedRoute.jsx";
 import Login from "./pages/Login.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
 import Orders from "./pages/Orders.jsx";
+import { FloorPage } from "./pages/FloorDesk.jsx";
 import MenuLogin from "./pages/MenuLogin.jsx";
 import MenuPage from "./pages/MenuPage.jsx";
 import Promotions from "./pages/Promotions.jsx";
@@ -52,6 +53,18 @@ function App() {
           }
         />
 
+
+        <Route
+          path="/floor"
+          element={
+            <ProtectedRoute>
+              <>
+                <Header />
+                <FloorPage />
+              </>
+            </ProtectedRoute>
+          }
+        />
         {/* Menu Routes */}
         <Route
           path={routes.menuLogin}

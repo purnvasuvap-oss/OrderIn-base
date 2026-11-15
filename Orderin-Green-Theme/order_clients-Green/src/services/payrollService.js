@@ -241,7 +241,8 @@ export const computeRow = (row) => {
   const extra = (row.extraDeductions || []).reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
   const additions = round2(Number(row.salary) + Number(row.increment) + Number(row.bonus));
   const deductions = round2(Number(row.tax) + Number(row.pf) + Number(row.insurance) + extra);
-  return { ...row, otherDeductions: round2(extra), additions, deductions, netPay: round2(additions - deductions) };
+  const uncappedNet = round2(additions - deductions);
+  return { ...row, otherDeductions: round2(extra), additions, deductions, uncappedNet, netPay: round2(Math.max(0, uncappedNet)) };
 };
 
 /** A fresh row for an employee for a month that hasn't been drafted yet. */
@@ -340,7 +341,7 @@ export const rowProblems = (row) => {
     if (!(Number(item.amount) > 0)) problems.push(`Subtraction ${i + 1}: enter an amount above 0.`);
     if (String(item.reason || "").trim().length < 3) problems.push(`Subtraction ${i + 1}: give a reason.`);
   });
-  if (computeRow(row).netPay < 0) problems.push("Deductions are more than the pay.");
+  if (computeRow(row).uncappedNet < 0) problems.push("Deductions are more than the pay.");
   return problems;
 };
 

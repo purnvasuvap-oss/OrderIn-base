@@ -36,7 +36,7 @@ describe('Header', () => {
 
   it('renders the restaurant name and two icon buttons', () => {
     renderHeader();
-    expect(screen.getByRole('heading', { name: 'XYZ Restaurant' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Restaurant' })).toBeInTheDocument();
     expect(screen.getAllByRole('button')).toHaveLength(2);
   });
 

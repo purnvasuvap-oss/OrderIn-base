@@ -133,7 +133,7 @@ exports[`Dashboard > matches the snapshot 1`] = `
             7
           </h2>
           <span>
-            Total orders recored today
+            Total orders recorded today
           </span>
         </div>
       </div>
