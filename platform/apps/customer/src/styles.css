@@ -1,0 +1,37 @@
+:root {
+  --oi-primary: #3f4f3a;
+  --oi-accent: #d7e2c4;
+  --oi-bg: #f4f6ef;
+  --oi-surface: #ffffff;
+  --oi-text: #1d2418;
+  --oi-font: Palatino, "Palatino Linotype", serif;
+  color: var(--oi-text);
+  background: var(--oi-bg);
+  font-family: var(--oi-font);
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; }
+button, input, textarea { font: inherit; }
+button {
+  background: var(--oi-primary);
+  color: white;
+  border: 0;
+  border-radius: 999px;
+  padding: 0.55rem 0.9rem;
+  cursor: pointer;
+}
+.screen { max-width: 720px; margin: 0 auto; padding: 1rem 1rem 4rem; }
+.top, .card-head, .requests, .filters { display: flex; gap: 0.5rem; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+.menu { list-style: none; padding: 0; display: grid; gap: 0.75rem; }
+.card { background: var(--oi-surface); border-radius: 16px; padding: 0.9rem 1rem; }
+.diet { border: 1px solid currentColor; border-radius: 999px; padding: 0.1rem 0.45rem; font-size: 0.75rem; }
+.diet-veg { color: #0f6b45; }
+.diet-nonveg { color: #a32020; }
+.diet-egg { color: #a16207; }
+.diet-unknown { color: #666; }
+.price { font-weight: 700; }
+.meta, .notice { color: #444; }
+label { display: block; margin: 0.6rem 0; }
+input, textarea { width: 100%; padding: 0.5rem; border-radius: 8px; border: 1px solid #ccc; }
+.requests button, .filters button { background: var(--oi-accent); color: var(--oi-text); }
