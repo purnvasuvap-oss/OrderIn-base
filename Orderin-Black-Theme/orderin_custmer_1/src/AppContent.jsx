@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Login from './login/login';
+const PublicMenu = lazy(() => import('./publicMenu/PublicMenu'));
 import Menu from './menu/Menu';
 import Help from './help/Help';
 import About from './help/About';
@@ -11,6 +12,7 @@ import Cart from './cart/Cart';
 import Bill from './Bill';
 import Payments from './payments/Payments';
 import PaymentSuccess from './payments/PaymentSuccess';
+import ReviewPage from './review/ReviewPage';
 import CounterCode from './payments/CounterCode';
 import OnlinePayment from './payments/OnlinePayment';
 import Loading from './Loading';
@@ -23,10 +25,11 @@ import { useGlobalBackButton } from './hooks/useGlobalBackButton';
  * ROUTING STRUCTURE & BACK-BUTTON BEHAVIOR:
  * 
  * PUBLIC ROUTES (No auth required):
- * - / (Login) → Back button: PREVENT
+ * - / (public pre-login flipbook menu) → Back button: PREVENT
+ * - /login → Back button: PREVENT
  * 
  * PROTECTED ROUTES (Auth required):
- * - /menu → Back button: Go to Login
+ * - /menu → Back button: Go to the public flipbook menu (/)
  * - /help, /about, /about-orderin → Back button: Go to Menu
  * - /item/:slug → Back button: Go to Menu
  * - /profile → Back button: Go to Menu
@@ -55,8 +58,18 @@ function AppContent({ isLoading, setIsLoading }) {
       <Routes>
         {/* ===== PUBLIC ROUTES (No Auth Required) ===== */}
         
-        {/* Login - Gateway to app */}
-        <Route path="/" element={<Login setIsLoading={setIsLoading} />} />
+        {/* Public pre-login flipbook menu - the QR landing page */}
+        <Route
+          path="/"
+          element={
+            <Suspense fallback={<Loading isLoading={true} />}>
+              <PublicMenu setIsLoading={setIsLoading} />
+            </Suspense>
+          }
+        />
+
+        {/* Login */}
+        <Route path="/login" element={<Login setIsLoading={setIsLoading} />} />
 
         {/* ===== PROTECTED ROUTES (Auth Required) ===== */}
         
@@ -141,6 +154,16 @@ function AppContent({ isLoading, setIsLoading }) {
           element={
             <ProtectedRoute>
               <Payments setIsLoading={setIsLoading} />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Review (once per customer, ever) between payment and the bill */}
+        <Route
+          path="/review"
+          element={
+            <ProtectedRoute>
+              <ReviewPage setIsLoading={setIsLoading} />
             </ProtectedRoute>
           }
         />

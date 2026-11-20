@@ -8,69 +8,120 @@ exports[`Menu > matches the snapshot 1`] = `
     <div
       data-testid="header"
     />
-    <div
-      class="hero-bar"
+    <section
+      class="mx-hero"
     >
       <div
-        class="hero-greeting"
+        class="hero-bar"
       >
-        <p
-          class="hero-eyebrow"
+        <div
+          class="hero-greeting"
         >
-          Good morning
-        </p>
-        <h1
-          class="hero-title"
+          <p
+            class="hero-eyebrow"
+          >
+            Good morning
+          </p>
+          <h1
+            class="hero-title"
+          >
+            Our Restaurant
+          </h1>
+        </div>
+        <div
+          class="hero-meta"
         >
-          Our Restaurant
-        </h1>
+          <span
+            class="table-chip"
+          >
+            Table 4
+          </span>
+        </div>
       </div>
       <div
-        class="hero-meta"
+        class="search-row"
       >
-        <span
-          class="table-chip"
+        <div
+          class="search-bar"
         >
-          Table 4
-        </span>
-      </div>
-    </div>
-    <div
-      class="search-row"
-    >
-      <div
-        class="search-bar"
-      >
-        <svg
-          aria-hidden="true"
-          class="lucide lucide-search search-icon"
-          fill="none"
-          height="18"
-          stroke="currentColor"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          viewBox="0 0 24 24"
-          width="18"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            d="m21 21-4.34-4.34"
+          <svg
+            aria-hidden="true"
+            class="lucide lucide-search search-icon"
+            fill="none"
+            height="18"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            width="18"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="m21 21-4.34-4.34"
+            />
+            <circle
+              cx="11"
+              cy="11"
+              r="8"
+            />
+          </svg>
+          <input
+            class="search-input"
+            placeholder="Search for dishes, cuisines..."
+            type="text"
+            value=""
           />
-          <circle
-            cx="11"
-            cy="11"
-            r="8"
-          />
-        </svg>
-        <input
-          class="search-input"
-          placeholder="Search for dishes, cuisines..."
-          type="text"
-          value=""
-        />
+          <button
+            aria-label="Filters"
+            class="search-filter-btn"
+            type="button"
+          >
+            <svg
+              aria-hidden="true"
+              class="lucide lucide-sliders-horizontal"
+              fill="none"
+              height="18"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="18"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M10 5H3"
+              />
+              <path
+                d="M12 19H3"
+              />
+              <path
+                d="M14 3v4"
+              />
+              <path
+                d="M16 17v4"
+              />
+              <path
+                d="M21 12h-9"
+              />
+              <path
+                d="M21 19h-5"
+              />
+              <path
+                d="M21 5h-7"
+              />
+              <path
+                d="M8 10v4"
+              />
+              <path
+                d="M8 12H3"
+              />
+            </svg>
+          </button>
+        </div>
       </div>
-    </div>
+    </section>
     <div
       aria-label="Menu categories"
       class="selection-row"
@@ -81,7 +132,58 @@ exports[`Menu > matches the snapshot 1`] = `
         class="selection active"
         role="tab"
       >
-        All
+        <span
+          aria-hidden="true"
+          class="cat-icon"
+        >
+          <svg
+            aria-hidden="true"
+            class="lucide lucide-layout-grid"
+            fill="none"
+            height="22"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            width="22"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <rect
+              height="7"
+              rx="1"
+              width="7"
+              x="3"
+              y="3"
+            />
+            <rect
+              height="7"
+              rx="1"
+              width="7"
+              x="14"
+              y="3"
+            />
+            <rect
+              height="7"
+              rx="1"
+              width="7"
+              x="14"
+              y="14"
+            />
+            <rect
+              height="7"
+              rx="1"
+              width="7"
+              x="3"
+              y="14"
+            />
+          </svg>
+        </span>
+        <span
+          class="cat-label"
+        >
+          All
+        </span>
       </button>
     </div>
     <div
@@ -95,54 +197,6 @@ exports[`Menu > matches the snapshot 1`] = `
         </p>
       </div>
     </div>
-    <button
-      class="filter-fab"
-    >
-      <svg
-        aria-hidden="true"
-        class="lucide lucide-sliders-horizontal"
-        fill="none"
-        height="25"
-        stroke="currentColor"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        stroke-width="2"
-        viewBox="0 0 24 24"
-        width="25"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <path
-          d="M10 5H3"
-        />
-        <path
-          d="M12 19H3"
-        />
-        <path
-          d="M14 3v4"
-        />
-        <path
-          d="M16 17v4"
-        />
-        <path
-          d="M21 12h-9"
-        />
-        <path
-          d="M21 19h-5"
-        />
-        <path
-          d="M21 5h-7"
-        />
-        <path
-          d="M8 10v4"
-        />
-        <path
-          d="M8 12H3"
-        />
-      </svg>
-      <span>
-        Filter
-      </span>
-    </button>
     <div
       data-testid="footer"
     />

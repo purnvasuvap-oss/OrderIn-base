@@ -6,7 +6,7 @@
   padding: 16px;
 }
 .Illusion-modal-box {
-  background: #261013;
+  background: var(--mx-tile);
   border: 2px solid #B5823F;
   border-radius: 12px;
   width: 100%;
@@ -17,12 +17,12 @@
 .Illusion-modal-header {
   display: flex; justify-content: space-between; align-items: center;
   padding: 16px 20px;
-  border-bottom: 1px solid rgba(245, 223, 187, 0.18);
+  border-bottom: 1px solid rgba(63, 11, 17, 0.18);
 }
 .Illusion-modal-header h3 {
-  margin: 0; display: flex; align-items: center; gap: 8px; color: #F5DFBB; font-size: 17px;
+  margin: 0; display: flex; align-items: center; gap: 8px; color: var(--mx-ink); font-size: 17px;
 }
-.Illusion-modal-header button { background: none; border: none; cursor: pointer; color: #F5DFBB; }
+.Illusion-modal-header button { background: none; border: none; cursor: pointer; color: var(--mx-ink); }
 .Illusion-modal-body { padding: 18px 20px; }
 
 .Illusion-intro {
@@ -31,7 +31,7 @@
   padding: 10px 12px;
   border-radius: 8px;
   font-size: 13px;
-  color: #F5DFBB;
+  color: var(--mx-ink);
   margin: 0 0 14px 0;
 }
 
@@ -39,7 +39,7 @@
   display: block;
   font-size: 12px;
   font-weight: 600;
-  color: rgba(245, 223, 187, 0.75);
+  color: rgba(38, 16, 19, 0.75);
   margin: 10px 0 4px;
 }
 
@@ -51,8 +51,8 @@
   border-radius: 7px;
   font-size: 14px;
   box-sizing: border-box;
-  background: #3F0B11;
-  color: #F5DFBB;
+  background: var(--mx-paper);
+  color: var(--mx-ink);
 }
 
 .Illusion-menu-list {
@@ -67,15 +67,15 @@
   align-items: center;
   gap: 8px;
   padding: 8px 10px;
-  border-bottom: 1px solid rgba(245, 223, 187, 0.12);
+  border-bottom: 1px solid rgba(63, 11, 17, 0.12);
   cursor: pointer;
   font-size: 13px;
 }
 .Illusion-menu-row:last-child { border-bottom: none; }
 .Illusion-menu-row.is-selected { background: rgba(242, 187, 70, 0.12); }
-.Illusion-menu-name { font-weight: 600; flex: 1 1 auto; color: #F5DFBB; }
-.Illusion-menu-cat { color: rgba(245, 223, 187, 0.55); }
-.Illusion-menu-price { color: #F2BB46; }
+.Illusion-menu-name { font-weight: 600; flex: 1 1 auto; color: var(--mx-ink); }
+.Illusion-menu-cat { color: rgba(38, 16, 19, 0.55); }
+.Illusion-menu-price { color: var(--mx-maroon); }
 
 .Illusion-fields-row {
   display: flex;
@@ -87,7 +87,7 @@
 .Illusion-preview {
   margin-top: 12px;
   font-size: 13px;
-  color: #F5DFBB;
+  color: var(--mx-ink);
   background: rgba(181, 130, 63, 0.15);
   padding: 8px 10px;
   border-radius: 8px;
@@ -97,7 +97,7 @@
   width: 100%;
   margin-top: 16px;
   background: #A13D3D;
-  color: #F5DFBB;
+  color: var(--mx-ink);
   border: none;
   border-radius: 8px;
   padding: 12px;
@@ -107,7 +107,7 @@
 .Illusion-activate-btn:hover { background: #8a3333; }
 .Illusion-activate-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
-.Illusion-empty { font-size: 13px; color: rgba(245, 223, 187, 0.55); padding: 8px; }
+.Illusion-empty { font-size: 13px; color: rgba(38, 16, 19, 0.55); padding: 8px; }
 
 @media (max-width: 480px) {
   .Illusion-fields-row { flex-direction: column; }

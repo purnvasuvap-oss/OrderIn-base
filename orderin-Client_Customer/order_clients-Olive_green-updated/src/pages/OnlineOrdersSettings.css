@@ -1,0 +1,115 @@
+/* Online orders settings — theme tokens only, so it matches every staff app. */
+.online-settings .os-card {
+  --agg-swiggy: #fc8019;
+  --agg-zomato: #e23744;
+  --agg-ok: #2e9d57;
+  --agg-danger: #d93a3a;
+  border: 1px solid var(--op-line, rgba(127, 127, 127, 0.25));
+  background: var(--op-surface, transparent);
+  color: var(--ink, var(--text, inherit));
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.online-settings h2 {
+  margin: 0 0 8px;
+  font-size: 17px;
+}
+
+.online-settings h3 {
+  margin: 16px 0 6px;
+  font-size: 15px;
+}
+
+.online-settings .os-muted {
+  color: var(--ink-2, inherit);
+  font-size: 13px;
+  line-height: 1.5;
+  margin: 0 0 10px;
+}
+
+.online-settings .os-list {
+  list-style: none;
+  margin: 0 0 10px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 14px;
+}
+
+.online-settings .os-list li {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.online-settings code {
+  font-family: var(--mono, ui-monospace, monospace);
+  overflow-wrap: anywhere;
+}
+
+.online-settings .os-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.online-settings .os-row input,
+.online-settings .os-row select,
+.online-settings .os-field select {
+  min-height: 40px;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 14px;
+  min-width: 0;
+}
+
+/* Side by side in a row: share the width. */
+.online-settings .os-row input,
+.online-settings .os-row select {
+  flex: 1 1 180px;
+}
+
+/* Stacked in a field (a column): natural height, not a 180px flex-basis. */
+.online-settings .os-field select {
+  flex: none;
+  height: 42px;
+}
+
+.online-settings .os-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 14px;
+  max-width: 360px;
+}
+
+.online-settings .os-link {
+  background: none;
+  border: none;
+  color: var(--accent, inherit);
+  cursor: pointer;
+  font-size: 13px;
+  text-decoration: underline;
+  margin-left: auto;
+}
+
+.online-settings .os-status {
+  padding: 10px 12px;
+  border-radius: 10px;
+  margin-bottom: 14px;
+  font-size: 14px;
+  border: 1px solid var(--op-line, rgba(127, 127, 127, 0.3));
+}
+
+.online-settings .os-status.error {
+  border-color: #d93a3a;
+}
+
+.online-settings .os-status.ok {
+  border-color: #2e9d57;
+}

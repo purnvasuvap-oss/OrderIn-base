@@ -216,7 +216,7 @@ const Dashboard = () => {
 
         <div className="banner-right">
           <div className="date-card">
-            <Calendar size={38} color="white" strokeWidth={2.2} />
+            <Calendar size={30} color="currentColor" strokeWidth={2.2} aria-hidden="true" />
 
             <div>
               <p>{currentDate}</p>
@@ -294,7 +294,7 @@ const Dashboard = () => {
           <div>
             <p>Orders Today</p>
             <h2>{todayOrders}</h2>
-            <span>Total orders recored today</span>
+            <span>Total orders recorded today</span>
           </div>
         </div>
 

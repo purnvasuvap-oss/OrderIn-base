@@ -2,10 +2,9 @@
    Dashboard Layout
 =========================== */
 .dashboard-banner{
-  background:
-  linear-gradient(
-    rgba(39, 0, 0, 0.85),
-    rgba(84, 0, 0, 0.85)
+  background: linear-gradient(
+    rgba(63, 11, 17, 0.12),
+    rgba(63, 11, 17, 0.12)
   ),
   url("https://images.unsplash.com/photo-1517248135467-4c7edcad34c4");
 
@@ -23,7 +22,7 @@
   margin-bottom:10px;
 }
 .dashboard-banner p{
-  color: #F2BB46;
+  color: var(--mx-maroon);
   font:bold 18px "Poppins",sans-serif;
 }
 
@@ -39,7 +38,7 @@
 .accepting-toggle{
   display:flex;
   align-items:center;
-  gap:10px;
+  gap:35px;
   border:none;
   border-radius:999px;
   padding:8px 10px 8px 16px;
@@ -124,17 +123,17 @@
   padding:16px;
 }
 .dash-confirm-modal{
-  background:#261013;
+  background: var(--mx-tile);
   border:1px solid rgba(242,187,70,0.24);
   border-radius:16px;
   width:100%;
   max-width:400px;
   padding:22px;
-  box-shadow:0 20px 60px rgba(0,0,0,0.5);
+  box-shadow: 0 20px 60px rgba(63, 11, 17, 0.16);
 }
 .dash-confirm-modal h3{
   margin:0 0 10px;
-  color:#F5DFBB;
+  color: var(--mx-ink);
   font-size:18px;
   font-weight:700;
 }
@@ -160,7 +159,7 @@
 .dash-confirm-btn-ghost{
   background:transparent;
   border-color:rgba(242,187,70,0.3);
-  color:#F5DFBB;
+  color: var(--mx-ink);
 }
 .dash-confirm-btn-ghost:hover{
   background:rgba(242,187,70,0.1);
@@ -186,7 +185,7 @@
   align-items:center;
   gap:10px;
   margin:0 0 14px;
-  color:#F2BB46;
+  color: var(--mx-maroon);
   font-size:15px;
   font-weight:700;
 }
@@ -201,7 +200,7 @@
 }
 .dashboard-wrapper{
   min-height:90vh;
-  background:#3F0B11;
+  background: var(--mx-paper);
   padding:20px;
   background-image: url("./landingpage/Vector.svg");
 
@@ -235,7 +234,7 @@
   gap: 14px;
   min-width: 160px;
   height: auto; /* ✅ important */
-  box-shadow: 0 2px 8px rgba(0,0,0,.05);
+  box-shadow: 0 2px 8px rgba(63, 11, 17, 0.017);
   flex-wrap: wrap; /* ✅ allows wrapping */
 }
 .date-card p{
@@ -263,13 +262,13 @@
 }
 
 .stat-card {
-  background:#261013;
+  background: var(--mx-tile);
   border-radius: 12px;
   padding: 14px 18px;
   display: flex;
   align-items: center;
   gap: 14px;
-  box-shadow: 0 2px 10px rgba(0,0,0,.08);
+  box-shadow: 0 2px 10px rgba(63, 11, 17, 0.028);
   transition: 0.3s;
   position: relative;
 }
@@ -314,7 +313,7 @@
 }
 
 .revenue h2 {
-  color: #F2BB46;
+  color: var(--mx-maroon);
 }
 
 .orders {
@@ -322,7 +321,7 @@
 }
 
 .orders h2 {
-  color: #FBC02D;
+  color: var(--mx-maroon);
 }
 
 .customers {
@@ -330,7 +329,7 @@
 }
 
 .customers h2 {
-  color: #FBC02D;
+  color: var(--mx-maroon);
 }
 
 .tables {
@@ -338,7 +337,7 @@
 }
 
 .tables h2 {
-  color: #FBC02D;
+  color: var(--mx-maroon);
 }
 
 /* ===================================
@@ -363,7 +362,7 @@
   padding:5px 10px;
   border-radius:999px;
   background:rgba(242, 187, 70, 0.14);
-  color:#F2BB46;
+  color: var(--mx-maroon);
   font-size:11px;
   font-weight:600;
   white-space:nowrap;
@@ -374,13 +373,13 @@
   position:relative;
   overflow:hidden;
 
-  background:#261013;
+  background: var(--mx-tile);
   border-radius:16px;
   padding:24px;
 
   min-height:220px;
 
-  box-shadow:0 3px 10px rgba(0,0,0,.05);
+  box-shadow: 0 3px 10px rgba(63, 11, 17, 0.017);
   cursor:pointer;
 }
 
@@ -431,7 +430,7 @@
 
 .module-top p{
   margin-top:10px;
-  color: #F2BB46;
+  color: var(--mx-maroon);
   line-height:1.7;
   font-size:14px;
 }
@@ -450,7 +449,7 @@
 }
 
 .yellow-text{
-  color:#fbc02d;
+  color: var(--mx-maroon);
 }
 
 .blue-text{
@@ -505,7 +504,7 @@
 =================================== */
 
 .dashboard-footer{
-  background:#261013;
+  background: var(--mx-tile);
 
   border-radius:10px;
 
@@ -518,7 +517,7 @@
   color:#B5823F;
   font-size:14px;
 
-  box-shadow:0 2px 8px rgba(0,0,0,.04);
+  box-shadow: 0 2px 8px rgba(63, 11, 17, 0.014);
 }
 
 .footer-divider{

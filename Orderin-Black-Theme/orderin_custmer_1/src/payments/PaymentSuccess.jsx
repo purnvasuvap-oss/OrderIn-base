@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 import { useTableNumber } from "../hooks/useTableNumber";
-import { doc, getDoc, setDoc, updateDoc, arrayUnion, serverTimestamp } from "firebase/firestore";
+import { doc, getDoc } from "firebase/firestore";
 import { db } from "../firebaseConfig";
 import "./PaymentSuccess.css";
 import "../Bill.css";
@@ -14,11 +14,6 @@ function PaymentSuccess() {
   const { getPathWithTable } = useTableNumber();
   const [displayOrderId, setDisplayOrderId] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [showFeedback, setShowFeedback] = useState(false);
-  const [rating, setRating] = useState(0);
-  const [feedback, setFeedback] = useState('');
-  const [savingFeedback, setSavingFeedback] = useState(false);
-  const [feedbackError, setFeedbackError] = useState('');
 
 
   // On mount, fetch the latest paid order from Firestore backend
@@ -129,103 +124,14 @@ function PaymentSuccess() {
           <p className="order-id order-id-warning">Order details unavailable. Please ask the counter for help.</p>
         )}
 
-        <button className="view-bill-btn" disabled={!displayOrderId} onClick={() => navigate(getPathWithTable('/bill'))}>
+        <button className="view-bill-btn" disabled={!displayOrderId} onClick={() => navigate(getPathWithTable('/review'))}>
           View Bill
         </button>
 
-        <button className="back-home-btn" onClick={() => setShowFeedback(true)}>
+        <button className="back-home-btn" onClick={() => navigate(getPathWithTable('/menu'))}>
           Back to Home
         </button>
       </div>
-      {showFeedback && (
-        <div className="feedback-modal">
-          <div className="feedback-card">
-            <h3>Rate Your Experience</h3>
-            <div className="stars">
-              {[1, 2, 3, 4, 5].map((star) => (
-                <svg
-                  key={star}
-                  onClick={() => setRating(star)}
-                  style={{ cursor: 'pointer', width: 32, height: 32, marginRight: 6 }}
-                  viewBox="0 0 24 24"
-                >
-                  <path d="M12 .587l3.668 7.431 8.2 1.192-5.934 5.787 1.4 8.168L12 18.896l-7.334 3.87 1.4-8.168L.132 9.21l8.2-1.192z" fill={rating >= star ? '#00a693' : 'none'} stroke="#00a693" />
-                </svg>
-              ))}
-            </div>
-            <textarea
-              placeholder="Tell us what you think..."
-              value={feedback}
-              onChange={(e) => setFeedback(e.target.value)}
-              rows={4}
-            />
-            <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
-              <button className="submit-feedback-btn" onClick={async () => {
-                setFeedbackError('');
-                setSavingFeedback(true);
-                let errorOccurred = false;
-                try {
-                  const user = JSON.parse(localStorage.getItem('user'));
-                  console.log('PaymentSuccess submitFeedback: user from localStorage=', user);
-                  if (!user || !user.phone) {
-                    const msg = 'No logged-in user (missing phone). Please log in to save feedback.';
-                    console.warn('PaymentSuccess submitFeedback:', msg);
-                    setFeedbackError(msg);
-                    errorOccurred = true;
-                  } else {
-                    const phone = user.phone;
-                    const customerRef = doc(db, 'Restaurant', 'orderin_restaurant_2', 'customers', phone);
-                    console.log('Attempting to save feedback to', customerRef.path);
-                    const entry = { stars: rating, text: feedback || '', createdAt: new Date().toISOString() };
-
-                    // Try to update existing doc with arrayUnion; if doc doesn't exist, create it
-                    try {
-                      const snap = await getDoc(customerRef);
-                      if (snap.exists()) {
-                        try {
-                          await updateDoc(customerRef, { feedback: arrayUnion(entry), updatedAt: serverTimestamp() });
-                          console.log('PaymentSuccess feedback updated for', phone, entry);
-                        } catch (uErr) {
-                          console.warn('updateDoc failed, falling back to setDoc merge', uErr);
-                          await setDoc(customerRef, { feedback: arrayUnion(entry), updatedAt: serverTimestamp() }, { merge: true });
-                          console.log('PaymentSuccess feedback saved with setDoc merge for', phone);
-                        }
-                      } else {
-                        // Create customer doc with feedback
-                        await setDoc(customerRef, { feedback: [entry], createdAt: serverTimestamp(), updatedAt: serverTimestamp() }, { merge: true });
-                        console.log('PaymentSuccess created customer doc and saved feedback for', phone);
-                      }
-                    } catch (dbErr) {
-                      console.error('PaymentSuccess: Firestore write failed', dbErr);
-                      setFeedbackError(String(dbErr?.message || dbErr));
-                      errorOccurred = true;
-                    }
-                    // success (no error set)
-                    if (!errorOccurred) {
-                      try { alert('Thank you — your feedback was saved.'); } catch (_) {}
-                    }
-                  }
-                } catch (err) {
-                  console.error('Error saving PaymentSuccess feedback:', err);
-                  setFeedbackError(String(err?.message || err));
-                  errorOccurred = true;
-                } finally {
-                  setSavingFeedback(false);
-                  // Only close and navigate if there was no error
-                  if (!errorOccurred) {
-                    setShowFeedback(false);
-                    navigate(getPathWithTable('/menu'));
-                  }
-                }
-              }}>Submit Feedback</button>
-              <button className="submit-feedback-btn" onClick={() => { setShowFeedback(false); navigate(getPathWithTable('/menu')); }}>Skip</button>
-            </div>
-            {savingFeedback && <div style={{ marginTop: 8 }}>Saving feedback...</div>}
-            {feedbackError && <div style={{ marginTop: 8, color: 'crimson' }}>Error saving feedback: {feedbackError}</div>}
-            
-          </div>
-        </div>
-      )}
     </div>
   );
 }

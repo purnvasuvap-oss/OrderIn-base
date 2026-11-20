@@ -39,13 +39,14 @@ export const useGlobalBackButton = () => {
     
     // Determine intended behavior based on current page
     const getBackBehavior = (path) => {
-      if (path === '/') {
-        // Login page: prevent back
-        console.log('[useGlobalBackButton] Login page - prevent back');
+      if (path === '/' || path === '/login') {
+        // Public flipbook menu (/) and Login (/login): prevent back. The
+        // flipbook has its own page navigation; Login is the auth gateway.
+        console.log('[useGlobalBackButton] Public menu / Login - prevent back');
         return { action: 'prevent', target: null, requiresCleanup: false };
       } else if (path === '/menu') {
-        // Menu page: go to login
-        console.log('[useGlobalBackButton] Menu page - go to login');
+        // Menu page: back to the public flipbook menu
+        console.log('[useGlobalBackButton] Menu page - go to public menu');
         return { action: 'redirect', target: '/', requiresCleanup: false };
       } else if (paymentFlowPages.some(page => path.startsWith(page))) {
         // Payment flow: allow normal back (do nothing)

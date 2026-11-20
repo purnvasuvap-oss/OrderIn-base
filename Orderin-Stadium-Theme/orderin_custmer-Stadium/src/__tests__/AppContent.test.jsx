@@ -3,6 +3,7 @@ import { MemoryRouter } from 'react-router-dom';
 import AppContent from '../AppContent';
 
 // Stub every route screen so this test only exercises the router wiring.
+vi.mock('../publicMenu/PublicMenu', () => ({ default: () => <div>public-menu screen</div> }));
 vi.mock('../login/login', () => ({ default: () => <div>login screen</div> }));
 vi.mock('../menu/Menu', () => ({ default: () => <div>menu screen</div> }));
 vi.mock('../help/Help', () => ({ default: () => <div>help screen</div> }));
@@ -29,8 +30,13 @@ describe('AppContent routing', () => {
   beforeEach(() => localStorage.setItem('user', JSON.stringify({ phone: '1' })));
   afterEach(() => localStorage.clear());
 
-  it('renders the login screen at "/"', () => {
+  it('renders the public flipbook menu at "/"', async () => {
     renderAt('/');
+    expect(await screen.findByText('public-menu screen')).toBeInTheDocument();
+  });
+
+  it('renders the login screen at "/login"', () => {
+    renderAt('/login');
     expect(screen.getByText('login screen')).toBeInTheDocument();
   });
 
@@ -57,7 +63,7 @@ describe('AppContent routing', () => {
     expect(screen.getByText('menu screen')).toBeInTheDocument();
   });
 
-  it('redirects protected routes to login when no user is stored', () => {
+  it('redirects protected routes to /login when no user is stored', () => {
     localStorage.clear();
     renderAt('/menu');
     expect(screen.getByText('login screen')).toBeInTheDocument();

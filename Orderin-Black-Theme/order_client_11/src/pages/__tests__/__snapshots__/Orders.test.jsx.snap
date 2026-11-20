@@ -326,6 +326,11 @@ exports[`Orders > matches the snapshot with orders loaded 1`] = `
       </button>
     </div>
     <div
+      data-testid="agg-inbox"
+    >
+      0 aggregator orders
+    </div>
+    <div
       class="toolbar"
     >
       <div
@@ -498,6 +503,11 @@ exports[`Orders > matches the snapshot with orders loaded 1`] = `
           Amount: low → high
         </option>
       </select>
+      <button
+        class="all-orders-btn"
+      >
+        Swiggy / Zomato
+      </button>
       <button
         class="all-orders-btn"
       >

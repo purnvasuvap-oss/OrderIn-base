@@ -1,0 +1,680 @@
+/* ==========================================================================
+   Maroon staff console — modern app UI (19 Nov 2026)
+   Same palette (maroon #3F0B11, deep #261013, gold #F2BB46 / #B5823F,
+   cream #F5DFBB). New roles: maroon sidebar/dock, light cream workspace,
+   white tiles, gold for actions. Loaded last (index.jsx); `body`/`#root`
+   prefixes beat the per-page stylesheets.
+   ========================================================================== */
+
+:root {
+  --mx-maroon: #3F0B11;
+  --mx-maroon-deep: #261013;
+  --mx-gold: #F2BB46;
+  --mx-gold-dark: #B5823F;
+  --mx-cream: #F5DFBB;
+  --mx-paper: color-mix(in srgb, #F5DFBB 30%, #ffffff);
+  --mx-paper-2: color-mix(in srgb, #F5DFBB 55%, #ffffff);
+  --mx-tile: #fffdf8;
+  --mx-ink: #261013;
+  --mx-ink-2: color-mix(in srgb, #261013 70%, transparent);
+  --mx-ink-3: color-mix(in srgb, #261013 48%, transparent);
+  --mx-line: color-mix(in srgb, #3F0B11 13%, transparent);
+  --mx-line-2: color-mix(in srgb, #3F0B11 22%, transparent);
+  --mx-shadow: 0 6px 18px color-mix(in srgb, #3F0B11 12%, transparent);
+  --mx-shadow-lg: 0 14px 34px color-mix(in srgb, #261013 26%, transparent);
+  --mx-radius: 18px;
+
+  /* Re-point the app's shared tokens (Orders.css :root) to the light workspace. */
+  --bg: var(--mx-paper);
+  --panel: var(--mx-tile);
+  --muted: var(--mx-ink-3);
+  --accent: var(--mx-gold);
+  --accent-dark: var(--mx-gold-dark);
+  --text: var(--mx-ink);
+  --card-shadow: var(--mx-shadow);
+}
+
+html body,
+html body #root {
+  background: var(--mx-paper);
+  color: var(--mx-ink);
+}
+
+/* Orders, Online orders, Tables, Staff … use these scoped tokens. */
+body .orders-page,
+body .online-orders,
+body .online-settings {
+  --maroon: var(--mx-maroon);
+  --maroon-dark: var(--mx-maroon-deep);
+  --maroon-tint: color-mix(in srgb, #F2BB46 22%, transparent);
+  --maroon-100: color-mix(in srgb, #F2BB46 12%, transparent);
+  --op-canvas: var(--mx-paper);
+  --op-surface: var(--mx-tile);
+  --op-surface-2: var(--mx-paper-2);
+  --op-line: var(--mx-line);
+  --op-line-2: var(--mx-line-2);
+  --ink: var(--mx-ink);
+  --ink-2: var(--mx-ink-2);
+  --ink-3: var(--mx-ink-3);
+}
+
+/* ---------- Top bar (no sidebar: pages use the full width) ---------- */
+/* Top bar: light, restaurant name on the left of the workspace */
+body .header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: color-mix(in srgb, #fffdf8 88%, transparent);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--mx-line);
+  box-shadow: none;
+  min-height: 64px;
+  height: auto;
+  padding: 10px 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+body .header .header-center {
+  align-items: flex-start;
+  padding: 0;
+  gap: 0;
+  flex: 1;
+  min-width: 0;
+}
+
+body .header .header-eyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--mx-gold-dark);
+}
+
+body .header .restaurant-name {
+  font-family: "Poppins", "Segoe UI", sans-serif;
+  font-size: clamp(18px, 2.2vw, 24px);
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--mx-maroon);
+  text-shadow: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+body .header .header-right {
+  gap: 8px;
+}
+
+body .header .icon-btn {
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  margin: 0;
+  border-radius: 12px;
+  background: var(--mx-paper-2);
+  color: var(--mx-maroon);
+  border: 1px solid var(--mx-line);
+}
+
+body .header .icon-btn:hover {
+  background: var(--mx-gold);
+}
+
+body .header .header-right .icon-btn:last-child {
+  margin-left: 0;
+}
+
+/* ---------- Pages ---------- */
+/* The gold wave image at the bottom of these pages belongs to the old look. */
+body .dashboard-wrapper,
+body .fin-app,
+body .inventory-container,
+body .menu-management-container,
+body .orders-page {
+  background-image: none;
+  background-color: transparent;
+}
+
+/* ---------- Readability fixes (measured contrast) ---------- */
+:root {
+  /* Darker shades of the palette's gold / status hues for text on light. */
+  --mx-gold-text: color-mix(in srgb, #B5823F 62%, #261013);
+  --mx-blue-text: #2f5f9e;
+  --mx-green-text: #1f7a45;
+  --mx-red-text: #b0362a;
+}
+
+/* Gold text that was meant for a dark background */
+body .dashboard-wrapper .stat-card span,
+body .dashboard-wrapper .stat-card p,
+body .menu-management-container .stat-card p,
+body .menu-management-container .stat-card span,
+body .menu-management-container [class*="stat"] p,
+body .menu-management-container [class*="stat"] span,
+body .table-mgmt-page .tm-statc-n,
+body .sm-tab.on,
+body .promotions-back-btn {
+  color: var(--mx-gold-text);
+}
+
+body .sm-tab.on {
+  border-color: var(--mx-gold);
+}
+
+/* Role / status badges: darker text, same tinted backgrounds */
+body .sm-rolebadge-admin,
+body .sm-tag-jobrole {
+  color: var(--mx-gold-text);
+}
+
+body .sm-rolebadge-gm,
+body .sm-tag-zone,
+body .sm-tag-zone .sm-tag-label {
+  color: var(--mx-blue-text);
+}
+
+body .sm-rolebadge-floor,
+body .sm-tag-team,
+body .table-mgmt-page .tm-pill-available {
+  color: var(--mx-green-text);
+}
+
+body .sm-rolebadge-kitchen {
+  color: var(--mx-red-text);
+}
+
+/* Text on gold buttons: deep maroon */
+body .btn-primary,
+body .promotions-submit-btn,
+body .sub-primary-cta {
+  color: var(--mx-maroon-deep);
+}
+
+/* Orders: active view toggle and Manual Order sit on maroon */
+body .orders-page .viewtoggle .on,
+body .orders-page .manual-order-btn {
+  color: var(--mx-cream);
+}
+
+body .login-status-pill.is-active {
+  color: #1b5e20;
+  background: color-mix(in srgb, #2e7d32 16%, transparent);
+}
+
+/* Inventory: the red "very low stock" card takes light text */
+body .Inventory-card-verylow,
+body .Inventory-card-verylow h4,
+body .Inventory-card-verylow p {
+  color: #fffdf8;
+}
+
+/* Finance empty state */
+body .fin-app div[class*="empty"],
+body .fin-app .no-data {
+  color: var(--mx-ink-2);
+}
+
+/* Dashboard banner sits on a photo: keep its text light */
+body .dashboard-banner,
+body .dashboard-banner h1,
+body .dashboard-banner h2,
+body .dashboard-banner h3,
+body .dashboard-banner p {
+  color: #fffdf8;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.45);
+}
+
+/* ---------- Login screens (main + section PIN logins) ---------- */
+html body .sub-login.login-redesign {
+  background: var(--mx-paper) !important;
+}
+
+/* Brand panel: maroon, like the sidebar */
+html body .sub-login.login-redesign .login-brand-panel {
+  background: var(--mx-maroon) !important;
+  color: var(--mx-cream) !important;
+  border: none !important;
+  box-shadow: var(--mx-shadow-lg) !important;
+  border-radius: 26px;
+}
+
+html body .sub-login.login-redesign .login-brand-panel::before {
+  display: none;
+}
+
+html body .sub-login.login-redesign .login-brand-panel .sub-by-text,
+html body .sub-login.login-redesign .login-brand-panel .sub-company-name-text,
+html body .sub-login.login-redesign .login-brand-panel .sub-tagline,
+html body .sub-login.login-redesign .login-brand-panel .login-brand-caption,
+html body .sub-login.login-redesign .login-brand-panel .login-brand-caption * {
+  color: var(--mx-cream) !important;
+}
+
+html body .sub-login.login-redesign .login-brand-panel .login-brand-caption {
+  background: color-mix(in srgb, #F5DFBB 10%, transparent) !important;
+  border: 1px solid color-mix(in srgb, #F2BB46 30%, transparent) !important;
+}
+
+html body .sub-login.login-redesign .sub-circle-outer {
+  background: color-mix(in srgb, #F5DFBB 12%, transparent) !important;
+  border-color: color-mix(in srgb, #F2BB46 35%, transparent) !important;
+}
+
+/* Form card */
+html body .sub-login.login-redesign .sub-login-card,
+html body .sub-login.login-redesign .login-support-card {
+  background: var(--mx-tile) !important;
+  border: 1px solid var(--mx-line) !important;
+  box-shadow: var(--mx-shadow) !important;
+  border-radius: 20px;
+}
+
+html body .sub-login.login-redesign .sub-restaurant-name {
+  color: var(--mx-maroon) !important;
+}
+
+html body .sub-login.login-redesign .login-eyebrow,
+html body .sub-login.login-redesign .sub-welcome-text {
+  color: var(--mx-gold-text) !important;
+}
+
+html body .sub-login.login-redesign input {
+  background: var(--mx-paper) !important;
+  color: var(--mx-ink) !important;
+  border: 1px solid var(--mx-line-2) !important;
+}
+
+html body .sub-login.login-redesign .sub-primary-cta {
+  background: var(--mx-maroon) !important;
+  color: var(--mx-gold) !important;
+}
+
+html body .sub-login.login-redesign .sub-primary-cta:hover {
+  background: var(--mx-maroon-deep) !important;
+}
+
+html body .sub-login.login-redesign .login-status-pill.is-active {
+  color: #1b5e20 !important;
+  background: color-mix(in srgb, #2e7d32 16%, transparent) !important;
+}
+
+/* The decorative curve belongs to the old look */
+html body .sub-login.login-redesign .sub-red-blob {
+  display: none;
+}
+
+/* ==========================================================================
+   Dashboard (no sidebar here: its module cards are the navigation)
+   ========================================================================== */
+body .header.header--no-nav .header-left {
+  display: flex;
+}
+
+body .header.header--no-nav .orderin-logo {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+  border-radius: 12px;
+  background: var(--mx-maroon);
+  padding: 4px;
+}
+
+body .dashboard-wrapper {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 24px 24px 40px;
+}
+
+/* Hero: maroon card like the customer menu's hero (no photo) */
+body .dashboard-wrapper .dashboard-banner {
+  background:
+    radial-gradient(circle at 92% 0%, color-mix(in srgb, #F2BB46 22%, transparent) 0%, transparent 42%),
+    linear-gradient(120deg, var(--mx-maroon-deep) 0%, var(--mx-maroon) 70%);
+  border-radius: 24px;
+  padding: 28px;
+  box-shadow: var(--mx-shadow-lg);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+  min-height: 0;
+}
+
+body .dashboard-wrapper .dashboard-banner h1 {
+  color: var(--mx-cream);
+  font-family: "Poppins", "Segoe UI", sans-serif;
+  font-size: clamp(22px, 2.6vw, 30px);
+  line-height: 1.2;
+  margin: 0 0 6px;
+  text-shadow: none;
+}
+
+body .dashboard-wrapper .dashboard-banner > div:first-child p {
+  color: var(--mx-gold);
+  font: 600 15px "Inter", "Segoe UI", sans-serif;
+  margin: 0;
+  text-shadow: none;
+}
+
+body .dashboard-wrapper .banner-right {
+  display: flex;
+  align-items: stretch;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* Date and time: soft cream card on the maroon hero */
+body .dashboard-wrapper .date-card {
+  background: color-mix(in srgb, #F5DFBB 12%, transparent);
+  border: 1px solid color-mix(in srgb, #F2BB46 35%, transparent);
+  border-radius: 16px;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--mx-gold);
+  box-shadow: none;
+}
+
+body .dashboard-wrapper .date-card p {
+  color: color-mix(in srgb, #F5DFBB 85%, transparent);
+  font: 600 13px "Inter", "Segoe UI", sans-serif;
+  margin: 0;
+  text-shadow: none;
+}
+
+body .dashboard-wrapper .date-card h4 {
+  color: var(--mx-cream);
+  font: 700 20px "Poppins", "Segoe UI", sans-serif;
+  margin: 2px 0 0;
+  text-shadow: none;
+}
+
+/* Section headings */
+body .dashboard-wrapper .section-label {
+  color: var(--mx-maroon);
+  font: 700 17px "Poppins", "Segoe UI", sans-serif;
+  margin: 28px 0 12px;
+  padding-left: 12px;
+  border-left: 4px solid var(--mx-gold);
+}
+
+/* Today's numbers: white tiles */
+body .dashboard-wrapper .stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+  gap: 14px;
+}
+
+body .dashboard-wrapper .stat-card {
+  background: var(--mx-tile);
+  border: 1px solid var(--mx-line);
+  border-radius: var(--mx-radius);
+  box-shadow: var(--mx-shadow);
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 0;
+}
+
+body .dashboard-wrapper .stat-card img {
+  width: 52px;
+  height: 52px;
+  padding: 10px;
+  border-radius: 16px;
+  background: color-mix(in srgb, #F2BB46 22%, transparent);
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+body .dashboard-wrapper .stat-card p {
+  color: var(--mx-ink-2);
+  font: 600 13px "Inter", "Segoe UI", sans-serif;
+  margin: 0;
+}
+
+body .dashboard-wrapper .stat-card h2 {
+  color: var(--mx-maroon);
+  font: 800 26px "Poppins", "Segoe UI", sans-serif;
+  margin: 2px 0;
+}
+
+body .dashboard-wrapper .stat-card span {
+  color: var(--mx-ink-3);
+  font: 500 12px "Inter", "Segoe UI", sans-serif;
+}
+
+/* Manage your restaurant: white module tiles */
+body .dashboard-wrapper .modules-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
+  gap: 14px;
+}
+
+body .dashboard-wrapper .module-card {
+  background: var(--mx-tile);
+  border: 1px solid var(--mx-line);
+  border-radius: var(--mx-radius);
+  box-shadow: var(--mx-shadow);
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-height: 0;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+body .dashboard-wrapper .module-card::before,
+body .dashboard-wrapper .module-card::after {
+  display: none;
+}
+
+body .dashboard-wrapper .module-card:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, #F2BB46 60%, transparent);
+  box-shadow: var(--mx-shadow-lg);
+}
+
+body .dashboard-wrapper .module-top {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+body .dashboard-wrapper .module-top img {
+  width: 56px;
+  height: 56px;
+  padding: 11px;
+  border-radius: 16px;
+  background: color-mix(in srgb, #F2BB46 22%, transparent);
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+body .dashboard-wrapper .module-top h3 {
+  color: var(--mx-maroon);
+  font: 700 18px "Poppins", "Segoe UI", sans-serif;
+  margin: 0 0 4px;
+}
+
+body .dashboard-wrapper .module-top p {
+  color: var(--mx-ink-2);
+  font: 500 13px/1.45 "Inter", "Segoe UI", sans-serif;
+  margin: 0;
+}
+
+body .dashboard-wrapper .module-badge {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--mx-paper-2);
+  color: var(--mx-maroon);
+  border: none;
+  border-radius: 999px;
+  padding: 3px 9px;
+  font: 700 11px "Inter", "Segoe UI", sans-serif;
+}
+
+body .dashboard-wrapper .module-bottom,
+body .dashboard-wrapper .module-bottom.yellow-text,
+body .dashboard-wrapper .module-bottom.blue-text,
+body .dashboard-wrapper .module-bottom.green-text {
+  color: var(--mx-maroon);
+  font: 700 14px "Inter", "Segoe UI", sans-serif;
+  margin-top: auto;
+  padding-top: 12px;
+  border-top: 1px solid var(--mx-line);
+}
+
+/* Use the full screen width with a small even margin (no narrow centred column). */
+body .dashboard-wrapper {
+  max-width: none;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 20px clamp(14px, 2vw, 28px) 32px;
+}
+
+body .dashboard-wrapper .stats-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+/* 6 module tiles: 3 x 2 on laptops/desktops, 2 on tablets, 1 on phones */
+body .dashboard-wrapper .modules-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+@media (max-width: 1100px) {
+  body .dashboard-wrapper .stats-grid,
+  body .dashboard-wrapper .modules-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  body .dashboard-wrapper .stats-grid,
+  body .dashboard-wrapper .modules-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ---------- Full-width pages (no sidebar) ---------- */
+/* Promotions was a narrow centred 1200px card. */
+body .promotions-page-content {
+  max-width: none;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 20px clamp(14px, 2vw, 28px) 32px;
+}
+
+/* Inventory: the four summary cards share the row instead of fixed 280px cards. */
+body .Inventory-stats-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  justify-content: stretch;
+}
+
+/* Line the cards up with the table edges below them. */
+body .Inventory-dashboard-wrapper {
+  padding-left: 0;
+  padding-right: 0;
+}
+
+body .Inventory-dashboard-wrapper .Inventory-stats-row {
+  width: 100%;
+  box-sizing: border-box;
+  margin-left: 0;
+  margin-right: 0;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+body .Inventory-stats-row .Inventory-card-stat {
+  width: auto;
+  min-height: 120px;
+  height: auto;
+  border-radius: var(--mx-radius);
+}
+
+@media (max-width: 1100px) {
+  body .Inventory-stats-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  body .Inventory-stats-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* The hero grows with its content (the old banner had a fixed height, so the
+   date and "Accepting orders" cards spilled out on phones). */
+body .dashboard-wrapper .dashboard-banner {
+  height: auto;
+  max-height: none;
+  overflow: visible;
+}
+
+/* Fixes from the first look: keep everything in normal flow so nothing overlaps */
+body .dashboard-wrapper .module-bottom {
+  position: static;
+}
+
+body .dashboard-wrapper .module-badge {
+  position: static;
+  align-self: flex-start;
+}
+
+body .dashboard-wrapper .module-top > div {
+  min-width: 0;
+}
+
+/* Gold glyphs read better on maroon tiles */
+body .dashboard-wrapper .stat-card img,
+body .dashboard-wrapper .module-top img {
+  background: var(--mx-maroon);
+}
+
+/* One gold bar per heading (the page already draws one) */
+body .dashboard-wrapper .section-label::before,
+body .dashboard-wrapper .section-label::after {
+  display: none;
+}
+
+/* Logo: same square brand tile as the sidebar */
+body .header.header--no-nav .orderin-logo {
+  width: 44px;
+  height: 44px;
+  background: var(--mx-cream);
+  padding: 4px;
+}
+
+@media (max-width: 640px) {
+  body .dashboard-wrapper {
+    padding: 16px 14px 32px;
+  }
+
+  body .dashboard-wrapper .dashboard-banner {
+    padding: 20px;
+  }
+
+  body .dashboard-wrapper .banner-right,
+  body .dashboard-wrapper .date-card {
+    width: 100%;
+  }
+}

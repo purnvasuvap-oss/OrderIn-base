@@ -14,6 +14,10 @@ Allowed deployed functions:
 - `verifyRazorpayPayment`
 - `syncRazorpayPayment` and `razorpayWebhook` are optional reconciliation helpers. Keep them deleted unless exact Razorpay settlement reconciliation is explicitly needed and the billing impact is accepted.
 
+Pending billing review (written and tested, **not allowed to deploy yet**):
+
+- `aggregatorWebhook` and `aggregatorStatusPush` in `/aggregator-functions` (Swiggy / Zomato orders). Each runs only when an order arrives or changes, with no schedules or polling, and is capped at 5 instances. The folder is not referenced by any `firebase.json`, so it can't be deployed by accident. After approval, move them to the allowed list above and deploy with `firebase deploy --only functions:aggregator` (see `aggregator-functions/README.md`).
+
 Do not add or deploy these without an explicit billing review:
 
 - App Engine services or versions.

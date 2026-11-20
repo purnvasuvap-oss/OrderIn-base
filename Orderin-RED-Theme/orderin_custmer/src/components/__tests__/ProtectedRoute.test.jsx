@@ -6,7 +6,7 @@ const renderAt = (initial) =>
   render(
     <MemoryRouter initialEntries={[initial]}>
       <Routes>
-        <Route path="/" element={<div>login page</div>} />
+        <Route path="/login" element={<div>login page</div>} />
         <Route
           path="/menu"
           element={
@@ -22,7 +22,7 @@ const renderAt = (initial) =>
 describe('ProtectedRoute', () => {
   afterEach(() => localStorage.clear());
 
-  it('redirects to "/" when there is no stored user', () => {
+  it('redirects to /login when there is no stored user', () => {
     renderAt('/menu');
     expect(screen.getByText('login page')).toBeInTheDocument();
     expect(screen.queryByText('menu page')).not.toBeInTheDocument();

@@ -1,0 +1,94 @@
+/* Review step between "Payment successful" and the bill. Layout and button
+   colours come from PaymentSuccess.css (themed per app); only the stars,
+   text box and messages are styled here. */
+
+.review-card {
+  text-align: center;
+}
+
+.review-sub {
+  margin: 4px 0 16px;
+  font-size: 14px;
+  opacity: 0.8;
+}
+
+.review-stars {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+}
+
+.review-star {
+  width: 48px;
+  height: 48px;
+  padding: 6px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: #f5a623;
+  border-radius: 10px;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.review-star svg {
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  transition: transform 0.15s ease;
+}
+
+.review-star.on svg {
+  fill: currentColor;
+}
+
+.review-star:active svg {
+  transform: scale(0.9);
+}
+
+.review-star:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+.review-label {
+  min-height: 20px;
+  margin: 6px 0 12px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.review-text {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  text-align: left;
+  font-size: 13px;
+  margin-bottom: 14px;
+}
+
+.review-text textarea {
+  width: 100%;
+  box-sizing: border-box;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font: inherit;
+  font-size: 14px;
+  resize: vertical;
+  border: 1px solid color-mix(in srgb, currentColor 30%, transparent);
+  background: transparent;
+  color: inherit;
+}
+
+.review-error {
+  color: #d93a3a;
+  font-size: 13px;
+  margin: 0 0 10px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .review-star svg {
+    transition: none;
+  }
+}

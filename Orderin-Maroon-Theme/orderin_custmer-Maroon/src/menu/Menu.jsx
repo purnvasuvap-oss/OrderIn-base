@@ -5,6 +5,8 @@ import { db, subscribeAcceptingOrders } from "../firebaseConfig";
 import { useTableNumber } from "../hooks/useTableNumber";
 import { menuStore } from "./menuStore";
 import "./Menu.css";
+import "./MenuModern.css";
+import CartBar from "./CartBar";
 import {
   Search,
   Mic,
@@ -15,6 +17,7 @@ import {
   Plus,
   Leaf,
   Bike,
+  LayoutGrid,
 } from "lucide-react";
 import Header from "../header/header";
 import Footer from "../Footer/Footer";
@@ -415,6 +418,17 @@ function Menu({ setIsLoading }) {
     return list;
   }, [fetchedProducts]);
 
+  // Round category icons use the first dish photo found in each category.
+  const categoryImage = React.useMemo(() => {
+    const map = {};
+    fetchedProducts.forEach((it) => {
+      const key = (it.category || "").toLowerCase();
+      const img = it.image || it.imageURL || it.image_url;
+      if (key && img && !map[key]) map[key] = img;
+    });
+    return map;
+  }, [fetchedProducts]);
+
   const filteredProducts = fetchedProducts.filter((item) => {
     const name = (item.name || "").toLowerCase();
     const term = (searchTerm || "").toLowerCase();
@@ -443,6 +457,7 @@ function Menu({ setIsLoading }) {
         </div>
       )}
 
+      <section className="mx-hero">
       <div className="hero-bar">
         <div className="hero-greeting">
           <p className="hero-eyebrow">{getGreeting()}</p>
@@ -474,22 +489,17 @@ function Menu({ setIsLoading }) {
               <X size={16} />
             </button>
           )}
+          <button
+            type="button"
+            className="search-filter-btn"
+            aria-label="Filters"
+            onClick={() => setIsFilterSheetOpen(true)}
+          >
+            <SlidersHorizontal size={18} />
+          </button>
         </div>
       </div>
-
-      <div className="selection-row" role="tablist" aria-label="Menu categories">
-        {categories.map((category) => (
-          <button
-            key={category}
-            role="tab"
-            aria-selected={selectedCategory === category}
-            className={`selection ${selectedCategory === category ? "active" : ""}`}
-            onClick={() => handleCategorySelect(category)}
-          >
-            {category === "all" ? "All" : category.charAt(0).toUpperCase() + category.slice(1)}
-          </button>
-        ))}
-      </div>
+      </section>
 
       {adPromotion && (
         <div className="promotion-banner">
@@ -517,6 +527,32 @@ function Menu({ setIsLoading }) {
           </div>
         </div>
       )}
+
+      <div className="selection-row" role="tablist" aria-label="Menu categories">
+        {categories.map((category) => (
+          <button
+            key={category}
+            role="tab"
+            aria-selected={selectedCategory === category}
+            className={`selection ${selectedCategory === category ? "active" : ""}`}
+            onClick={() => handleCategorySelect(category)}
+          >
+            <span className="cat-icon" aria-hidden="true">
+              {category === "all" ? (
+                <LayoutGrid size={22} />
+              ) : categoryImage[category.toLowerCase()] ? (
+                <img src={categoryImage[category.toLowerCase()]} alt="" loading="lazy" />
+              ) : (
+                <span className="cat-initial">{category.charAt(0).toUpperCase()}</span>
+              )}
+            </span>
+            <span className="cat-label">
+              {category === "all" ? "All" : category.charAt(0).toUpperCase() + category.slice(1)}
+            </span>
+          </button>
+        ))}
+      </div>
+
 
       <div className="menu-grid-section">
         {filteredProducts.length > 0 ? (
@@ -574,6 +610,24 @@ function Menu({ setIsLoading }) {
                             }}
                           />
                           <div className="media-gradient" aria-hidden="true" />
+                          {diet && (
+                            <span
+                              className={`tile-diet tile-diet-${diet}`}
+                              aria-label={diet === "veg" ? "Vegetarian" : "Non-vegetarian"}
+                            />
+                          )}
+                          <button
+                            type="button"
+                            className="tile-add"
+                            aria-label={`Add ${item.name}`}
+                            disabled={isUnavailable}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (!isUnavailable) handleCardClick(item);
+                            }}
+                          >
+                            <Plus size={18} />
+                          </button>
                           {bestseller && (
                             <span className="badge-bestseller">
                               <Flame size={11} /> Bestseller
@@ -619,10 +673,7 @@ function Menu({ setIsLoading }) {
         )}
       </div>
 
-      <button className="filter-fab" onClick={() => setIsFilterSheetOpen(true)}>
-        <SlidersHorizontal size={25} />
-        <span>Filter</span>
-      </button>
+      <CartBar onOpen={() => navigate(getPathWithTable("/cart"))} />
 
       {isFilterSheetOpen && (
         <div className="filter-sheet-backdrop" onClick={() => setIsFilterSheetOpen(false)}>

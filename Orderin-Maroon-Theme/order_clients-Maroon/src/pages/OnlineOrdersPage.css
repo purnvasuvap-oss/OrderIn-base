@@ -1,0 +1,190 @@
+/* Online orders page: Swiggy and Zomato side by side. Theme tokens only, so
+   the same file matches every staff app. Card styles come from
+   AggregatorInbox.css. */
+
+.online-orders .oo-head-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.online-orders .oo-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.online-orders .oo-sum {
+  --agg-swiggy: #fc8019;
+  --agg-zomato: #e23744;
+  border: 1px solid var(--op-line, rgba(127, 127, 127, 0.25));
+  border-top: 4px solid var(--agg-edge, var(--accent));
+  background: var(--op-surface, transparent);
+  color: var(--ink, var(--text, inherit));
+  border-radius: 14px;
+  padding: 12px 14px;
+}
+
+.online-orders .oo-sum.agg-swiggy { --agg-edge: var(--agg-swiggy); }
+.online-orders .oo-sum.agg-zomato { --agg-edge: var(--agg-zomato); }
+
+.online-orders .oo-sum dl {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+  margin: 10px 0 0;
+}
+
+.online-orders .oo-sum dt {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink-3, inherit);
+}
+
+.online-orders .oo-sum dd {
+  margin: 2px 0 0;
+  font-size: 18px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.online-orders .oo-sum dd:last-child,
+.online-orders .oo-sum div:last-child dd {
+  font-size: 15px;
+}
+
+@media (max-width: 520px) {
+  .online-orders .oo-sum dl {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* Alerts section has no chrome of its own when empty. */
+.online-orders .oo-alerts {
+  border: none;
+  background: none;
+  padding: 0;
+  margin: 0;
+}
+
+.online-orders .oo-alerts:has(> *) {
+  margin-bottom: 12px;
+}
+
+.online-orders .oo-columns {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 360px), 1fr));
+  gap: 16px;
+  align-items: start;
+}
+
+.online-orders .oo-col {
+  margin: 0;
+  border-top: 4px solid var(--agg-edge, var(--accent));
+}
+
+.online-orders .oo-col.agg-swiggy { --agg-edge: var(--agg-swiggy); }
+.online-orders .oo-col.agg-zomato { --agg-edge: var(--agg-zomato); }
+
+.online-orders .oo-col .agg-badge {
+  background: var(--agg-edge);
+  font-size: 13px;
+  padding: 4px 10px;
+}
+
+.online-orders .oo-empty {
+  margin: 4px 0;
+  font-size: 14px;
+  color: var(--ink-3, inherit);
+}
+
+.online-orders .oo-lane + .oo-lane {
+  margin-top: 16px;
+}
+
+.online-orders .oo-lane h3 {
+  margin: 0 0 8px;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink-2, inherit);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.online-orders .oo-lane-count {
+  font-size: 12px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--op-line, rgba(127, 127, 127, 0.35));
+}
+
+.online-orders .oo-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.online-orders .oo-rider {
+  margin: 0;
+  font-size: 13px;
+  color: var(--ink-2, inherit);
+}
+
+.online-orders .oo-rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.online-orders .oo-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: baseline;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--op-line, rgba(127, 127, 127, 0.2));
+  font-size: 13px;
+}
+
+.online-orders .oo-row:last-child {
+  border-bottom: none;
+}
+
+.online-orders .oo-row-items {
+  color: var(--ink-2, inherit);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.online-orders .oo-row-end {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  white-space: nowrap;
+}
+
+.online-orders .oo-closed {
+  color: var(--agg-danger, #d93a3a);
+  white-space: normal;
+}
+
+.online-orders .oo-time {
+  color: var(--ink-3, inherit);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Inside a platform's own column the card badge would just repeat the column title. */
+.online-orders .oo-col .agg-card .agg-badge {
+  display: none;
+}
+

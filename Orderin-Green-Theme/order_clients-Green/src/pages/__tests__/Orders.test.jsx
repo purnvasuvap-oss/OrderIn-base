@@ -3,6 +3,8 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import Orders from '../Orders';
 import { subscribeRecentOrders } from '../../services/orderService';
+import { subscribeAggregatorOrders, advanceAggregatorOrder } from '../../services/aggregatorService';
+import { updateOrderStatus } from '../../services/orderService';
 
 const mockNavigate = vi.fn();
 vi.mock('react-router-dom', async (importOriginal) => {
@@ -31,6 +33,15 @@ vi.mock('../../services/orderService', () => {
     isOrderWithinLast24Hours: () => true,
   };
 });
+
+vi.mock('../../services/aggregatorService', () => ({
+  subscribeAggregatorOrders: vi.fn(() => () => {}),
+  advanceAggregatorOrder: vi.fn().mockResolvedValue('ready'),
+}));
+// The inbox has its own tests; here it is a marker for what it was given.
+vi.mock('../../components/AggregatorInbox/AggregatorInbox', () => ({
+  default: ({ orders }) => <div data-testid="agg-inbox">{orders.length} aggregator orders</div>,
+}));
 
 // Heavy child modals — stub to keep the page test focused.
 vi.mock('../../components/OrderItemListModal/OrderItemListModal', () => ({ default: () => null }));
@@ -130,5 +141,64 @@ describe('Orders', () => {
     await user.click(screen.getByRole('button', { name: '← Back to Dashboard' }));
 
     expect(mockNavigate).toHaveBeenCalledWith('/dashboard');
+  });
+
+  describe('Swiggy / Zomato orders', () => {
+    const swiggy = (aggregatorStatus, status) => ({
+      id: 'swiggy_SW-1', isAggregator: true, platform: 'swiggy', platformLabel: 'Swiggy', aggregatorStatus, status,
+      username: 'Ravi', tableNumber: 'Swiggy', phoneNumber: '•••••2345', paymentStatus: 'paid', totalCost: 210,
+      items: [{ name: 'Masala Dosa', quantity: 2 }], timestamp: Date.now(),
+    });
+    const emitAggregator = (orders) =>
+      subscribeAggregatorOrders.mockImplementation((cb) => {
+        cb(orders);
+        return () => {};
+      });
+
+    beforeEach(() => {
+      subscribeAggregatorOrders.mockImplementation(() => () => {});
+      advanceAggregatorOrder.mockResolvedValue('ready');
+    });
+
+    it('lists accepted online orders with their platform, and passes all of them to the inbox', () => {
+      emitOrders(ORDERS);
+      emitAggregator([swiggy('accepted', 'Preparing'), { ...swiggy('placed', 'Pending'), id: 'swiggy_SW-2' }]);
+      renderOrders();
+      expect(screen.getByTestId('agg-inbox')).toHaveTextContent('2 aggregator orders');
+      expect(screen.getByText('swiggy_SW-1')).toBeInTheDocument();
+      expect(screen.queryByText('swiggy_SW-2')).not.toBeInTheDocument(); // still waiting in the inbox
+      expect(screen.getAllByText('Swiggy').length).toBeGreaterThan(0);
+      expect(screen.getByText(/Delivery ·/)).toBeInTheDocument();
+    });
+
+    it('sends status changes for online orders to the aggregator service', async () => {
+      const user = userEvent.setup();
+      emitOrders([]);
+      emitAggregator([swiggy('accepted', 'Preparing')]);
+      renderOrders();
+      await user.click(screen.getByRole('button', { name: 'Board' }));
+      await user.click(screen.getByRole('button', { name: 'Mark ready' }));
+      expect(advanceAggregatorOrder).toHaveBeenCalledWith('swiggy_SW-1', 'Ready');
+      expect(updateOrderStatus).not.toHaveBeenCalled();
+    });
+
+    it('shows the reason when an online order cannot be advanced', async () => {
+      const user = userEvent.setup();
+      advanceAggregatorOrder.mockRejectedValue(new Error('Swiggy cancelled this order.'));
+      emitOrders([]);
+      emitAggregator([swiggy('accepted', 'Preparing')]);
+      renderOrders();
+      await user.click(screen.getByRole('button', { name: 'Board' }));
+      await user.click(screen.getByRole('button', { name: 'Mark ready' }));
+      expect(await screen.findByText('Swiggy cancelled this order.')).toBeInTheDocument();
+    });
+
+    it('links to the Swiggy / Zomato settings', async () => {
+      const user = userEvent.setup();
+      emitOrders(ORDERS);
+      renderOrders();
+      await user.click(screen.getByRole('button', { name: 'Swiggy / Zomato' }));
+      expect(mockNavigate).toHaveBeenCalledWith('/online-orders');
+    });
   });
 });

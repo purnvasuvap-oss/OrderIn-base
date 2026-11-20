@@ -6,9 +6,8 @@ import { useTableNumber } from "./hooks/useTableNumber";
 // loaded on demand in downloadBill() below, not imported here — it was
 // previously a static import, which meant every visitor downloaded the PDF
 // library on page load even though it's only needed if they tap "Download".
-import { X, Star } from "lucide-react";
 import "./Bill.css";
-import { doc, getDoc, setDoc, updateDoc, arrayUnion, serverTimestamp } from "firebase/firestore";
+import { doc, getDoc } from "firebase/firestore";
 import { db } from "./firebaseConfig";
 import { parseOrderTimestamp } from "./utils/orderDateTime";
 import { calculateBilling } from "./utils/billing";
@@ -18,11 +17,6 @@ function Bill() {
   const navigate = useNavigate();
   const { orderHistory } = useCart();
   const { getPathWithTable } = useTableNumber();
-  const [showFeedback, setShowFeedback] = useState(false);
-  const [rating, setRating] = useState(0);
-  const [feedback, setFeedback] = useState('');
-  const [savingFeedback, setSavingFeedback] = useState(false);
-  const [feedbackError, setFeedbackError] = useState('');
   const [restaurantName, setRestaurantName] = useState("Our Restaurant");
   const [restaurantAddress, setRestaurantAddress] = useState("");
 
@@ -193,63 +187,7 @@ function Bill() {
   const transactionId = order.transactionId || getOrCreateTransactionId(id, paymentMethod);
 
   const handleBackClick = () => {
-    setShowFeedback(true);
-  };
-
-  const submitFeedback = () => {
-    // Save feedback to Firestore under customer's document
-    (async () => {
-      let errorOccurred = false;
-      try {
-        setFeedbackError('');
-        setSavingFeedback(true);
-        const user = JSON.parse(localStorage.getItem('user'));
-        if (!user || !user.phone) {
-          const msg = 'No logged-in user (missing phone). Please log in to save feedback.';
-          console.warn('submitFeedback:', msg);
-          setFeedbackError(msg);
-          errorOccurred = true;
-          return;
-        }
-
-        const phone = user.phone;
-        const customerRef = doc(db, 'Restaurant', 'orderin_restaurant_3', 'customers', phone);
-        console.log('Bill.submitFeedback: user=', user, 'saving to', customerRef.path);
-        const entry = { stars: rating, text: feedback || '', createdAt: new Date().toISOString() };
-
-        try {
-          const snap = await getDoc(customerRef);
-          if (snap.exists()) {
-            try {
-              await updateDoc(customerRef, { feedback: arrayUnion(entry), updatedAt: serverTimestamp() });
-              console.log('Bill: updated feedback for', phone, entry);
-            } catch (uErr) {
-              console.warn('Bill: updateDoc failed, falling back to setDoc merge', uErr);
-              await setDoc(customerRef, { feedback: arrayUnion(entry), updatedAt: serverTimestamp() }, { merge: true });
-              console.log('Bill: setDoc merge saved feedback for', phone);
-            }
-          } else {
-            await setDoc(customerRef, { feedback: [entry], createdAt: serverTimestamp(), updatedAt: serverTimestamp() }, { merge: true });
-            console.log('Bill: created customer doc and saved feedback for', phone);
-          }
-        } catch (errInner) {
-          console.error('Bill: error saving feedback to Firestore', errInner);
-          setFeedbackError(String(errInner?.message || errInner));
-          errorOccurred = true;
-        }
-      } catch (err) {
-        console.error('Error saving feedback:', err);
-        setFeedbackError(String(err?.message || err));
-        errorOccurred = true;
-      } finally {
-        setSavingFeedback(false);
-        if (errorOccurred) {
-          // keep modal open so user can try again
-          return;
-        }
-        navigate(getPathWithTable('/menu'));
-      }
-    })();
+    navigate(getPathWithTable('/menu'));
   };
 
   const downloadBill = async () => {
@@ -404,45 +342,6 @@ function Bill() {
         </div>
       </div>
 
-      {showFeedback && (
-        <div className="feedback-modal">
-          <div className="feedback-card">
-            <h3>Rate Your Experience</h3>
-            <div className="stars">
-              {[1, 2, 3, 4, 5].map((star) => (
-                <Star
-                  key={star}
-                  size={32}
-                  fill={rating >= star ? "#00a693" : "none"}
-                  stroke="#00a693"
-                  onClick={() => setRating(star)}
-                  style={{ cursor: 'pointer' }}
-                />
-              ))}
-            </div>
-            <textarea
-              placeholder="Tell us what you think..."
-              value={feedback}
-              onChange={(e) => setFeedback(e.target.value)}
-              rows={4}
-            />
-            {feedbackError && (
-              <p style={{ color: 'crimson', fontSize: '13px', marginTop: '8px' }}>{feedbackError}</p>
-            )}
-            <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
-              <button className="submit-feedback-btn" onClick={submitFeedback} disabled={savingFeedback}>
-                {savingFeedback ? 'Saving...' : 'Submit Feedback'}
-              </button>
-              <button
-                className="submit-feedback-btn"
-                onClick={() => { setShowFeedback(false); navigate(getPathWithTable('/menu')); }}
-              >
-                Skip
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
      
     </div>
   );

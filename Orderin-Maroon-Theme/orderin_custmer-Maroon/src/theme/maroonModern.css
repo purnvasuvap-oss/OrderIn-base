@@ -1,0 +1,122 @@
+/* ==========================================================================
+   Maroon — modern app UI (19 Nov 2026)
+   Same palette as before (maroon #3F0B11, deep #261013, gold #F2BB46 /
+   #B5823F, cream #F5DFBB). What changed is how the colours are used: maroon
+   for the header and hero, light cream "paper" for content, white tiles, and
+   gold for actions — so Maroon no longer looks like the other dark themes.
+   Loaded once for the whole app (index.jsx); `body` prefixes beat the
+   per-component stylesheets that load later.
+   ========================================================================== */
+
+:root {
+  --mx-maroon: #3F0B11;
+  --mx-maroon-deep: #261013;
+  --mx-gold: #F2BB46;
+  --mx-gold-dark: #B5823F;
+  --mx-cream: #F5DFBB;
+  /* Tints of the palette (not new colours): */
+  --mx-paper: color-mix(in srgb, #F5DFBB 30%, #ffffff);
+  --mx-paper-2: color-mix(in srgb, #F5DFBB 55%, #ffffff);
+  --mx-tile: #fffdf8;
+  --mx-ink: #261013;
+  --mx-ink-2: color-mix(in srgb, #261013 68%, transparent);
+  --mx-ink-3: color-mix(in srgb, #261013 45%, transparent);
+  --mx-line: color-mix(in srgb, #3F0B11 12%, transparent);
+  --mx-shadow: 0 6px 18px color-mix(in srgb, #3F0B11 14%, transparent);
+  --mx-shadow-lg: 0 14px 34px color-mix(in srgb, #261013 28%, transparent);
+  --mx-radius: 20px;
+  --mx-radius-sm: 14px;
+  --mx-font-display: "Poppins", "Segoe UI", sans-serif;
+  --mx-font-body: "Inter", "Segoe UI", sans-serif;
+}
+
+body {
+  background: var(--mx-paper);
+}
+
+/* ---------- Top app bar: flat maroon that flows into the hero ---------- */
+body .header-bar {
+  background: var(--mx-maroon);
+  border-bottom: none;
+  box-shadow: none;
+}
+
+body .header-bar .table-number {
+  color: var(--mx-cream);
+  font-family: var(--mx-font-display);
+  font-weight: 600;
+  font-size: 15px;
+  letter-spacing: 0.02em;
+}
+
+body .header-bar .menu-icon {
+  color: var(--mx-cream);
+  width: 40px;
+  height: 40px;
+  padding: 8px;
+  border-radius: 12px;
+  background: color-mix(in srgb, #F5DFBB 12%, transparent);
+}
+
+/* ---------- Bottom dock: floating rounded bar ---------- */
+body .footer-bar {
+  left: 16px;
+  right: 16px;
+  bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  width: auto;
+  max-width: 560px;
+  margin: 0 auto;
+  height: 64px;
+  padding: 6px;
+  border-radius: 22px;
+  background: var(--mx-maroon-deep);
+  box-shadow: var(--mx-shadow-lg);
+  border: 1px solid color-mix(in srgb, #F2BB46 22%, transparent);
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+}
+
+body .footer-bar .icon-container {
+  margin-top: 0;
+  height: 52px;
+  width: auto;
+  min-width: 64px;
+  flex: 1;
+  border-radius: 16px;
+  background: transparent;
+  box-shadow: none;
+  color: color-mix(in srgb, #F5DFBB 70%, transparent);
+  gap: 2px;
+  transform: none;
+}
+
+body .footer-bar .icon-container span {
+  font-size: 11px;
+  font-weight: 600;
+  color: inherit;
+}
+
+body .footer-bar .icon-container .footer-icon {
+  font-size: 22px;
+  color: inherit;
+}
+
+body .footer-bar .icon-container.active {
+  background: var(--mx-gold);
+  color: var(--mx-maroon-deep);
+  box-shadow: none;
+  transform: none;
+}
+
+body .footer-bar .cart-count-badge {
+  background: var(--mx-gold);
+  color: var(--mx-maroon-deep);
+  border: 2px solid var(--mx-maroon-deep);
+}
+
+body .footer-bar .icon-container.active .cart-count-badge {
+  background: var(--mx-maroon-deep);
+  color: var(--mx-gold);
+  border-color: var(--mx-gold);
+}

@@ -26,13 +26,13 @@ exports[`Dashboard > matches the snapshot 1`] = `
             aria-hidden="true"
             class="lucide lucide-calendar"
             fill="none"
-            height="38"
-            stroke="white"
+            height="30"
+            stroke="currentColor"
             stroke-linecap="round"
             stroke-linejoin="round"
             stroke-width="2.2"
             viewBox="0 0 24 24"
-            width="38"
+            width="30"
             xmlns="http://www.w3.org/2000/svg"
           >
             <path
@@ -133,7 +133,7 @@ exports[`Dashboard > matches the snapshot 1`] = `
             7
           </h2>
           <span>
-            Total orders recored today
+            Total orders recorded today
           </span>
         </div>
       </div>

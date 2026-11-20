@@ -2,7 +2,7 @@
 body {
   margin: 0;
   font-family: 'Segoe UI', sans-serif;
-  background-color: #3F0B11;
+  background-color: var(--mx-paper);
 }
 
 .header {
@@ -57,7 +57,7 @@ html, body, #root {
 }
 
 #root {
-  background: linear-gradient(180deg, #3F0B11 0%, #261013 68%, #3F0B11 100%);
+  background: linear-gradient(180deg, var(--mx-paper) 0%, var(--mx-tile) 68%, var(--mx-paper) 100%);
 }
 
 @media (max-width: 900px) {
@@ -71,14 +71,14 @@ html, body, #root {
 .sub-login-left {
   width: clamp(250px, 24vw, 380px);
   min-width: 0;
-  background-color: #261013;
-  color: #F5DFBB;
+  background-color: var(--mx-tile);
+  color: var(--mx-ink);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   align-items: center;
   padding: clamp(24px, 3.4vw, 40px);
-  box-shadow: 0 0 40px rgba(0,0,0,0.3) inset;
+  box-shadow: 0 0 40px rgba(63, 11, 17, 0.105) inset;
   margin-left: clamp(18px, 3vw, 72px);
   overflow: hidden;
   position: relative;
@@ -150,7 +150,7 @@ html, body, #root {
   display: block;
   position: relative; /* container for absolutely positioned inner circle and image */
   margin: 22px auto 18px;
-  box-shadow: 0 8px 30px rgba(0,0,0,0.08) inset;
+  box-shadow: 0 8px 30px rgba(63, 11, 17, 0.028) inset;
   overflow: hidden; /* clip children so they remain inside outer circle */
 }
 
@@ -209,13 +209,13 @@ html, body, #root {
   font-size: 44px;
   margin: 0;
 }
-.sub-welcome-text { font-size: 20px; color: rgba(245, 223, 187, 0.65); margin-top:10px; }
+.sub-welcome-text { font-size: 20px; color: rgba(38, 16, 19, 0.65); margin-top:10px; }
 
 .sub-login-card {
-  background-color: #261013;
+  background-color: var(--mx-tile);
   padding: 34px 36px;
   border-radius: 12px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 10px 30px rgba(63, 11, 17, 0.14);
   text-align: center;
   width: min(100%, 360px);
   max-width: 100%;
@@ -225,8 +225,8 @@ html, body, #root {
   border: 1px solid rgba(181, 130, 63, 0.25);
 }
 
-.sub-login-card h3 { font-size: 26px; margin: 0 0 6px 0; color: #F5DFBB; }
-.sub-login-card .sub { color: rgba(245, 223, 187, 0.6); margin-bottom:18px; }
+.sub-login-card h3 { font-size: 26px; margin: 0 0 6px 0; color: var(--mx-ink); }
+.sub-login-card .sub { color: rgba(38, 16, 19, 0.6); margin-bottom:18px; }
 
 .sub-login-form input {
   width: 100%;
@@ -236,16 +236,16 @@ html, body, #root {
   margin-bottom: 14px;
   outline: none;
   font-size: 15px;
-  color: #F5DFBB;
-  background-color: #3F0B11;
+  color: var(--mx-ink);
+  background-color: var(--mx-paper);
 }
 
-.sub-login-form input:focus { box-shadow: 0 0 0 3px rgba(242,187,70,0.18); border-color: #F2BB46; }
+.sub-login-form input:focus { box-shadow: 0 0 0 3px rgba(242, 187, 70, 0.18); border-color: #F2BB46; }
 
 .sub-primary-cta {
   width: 100%;
   background-color: #B5823F;
-  color: #F5DFBB;
+  color: var(--mx-ink);
   border: none;
   padding: 12px 0;
   font-size: 16px;

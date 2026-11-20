@@ -1,11 +1,11 @@
 /* Define the colors used in the design */
 :root {
   --primary-red: #F2BB46;      /* Accent */
-  --surface-white: #261013;    /* Surface */
-  --bg-light-neutral: #3F0B11; /* Background */
-  --text-primary: #F5DFBB;     /* Text */
-  --text-secondary: rgba(245, 223, 187, 0.72);
-  --border-light-gray: rgba(245, 223, 187, 0.18);
+  --surface-white: var(--mx-tile);    /* Surface */
+  --bg-light-neutral: var(--mx-paper); /* Background */
+  --text-primary: var(--mx-ink);     /* Text */
+  --text-secondary: rgba(38, 16, 19, 0.72);
+  --border-light-gray: rgba(63, 11, 17, 0.18);
   --accent-dark: #B5823F;
 }
 
@@ -23,7 +23,7 @@
   max-width: 1200px;
   margin: 0 auto;
   padding: 40px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 4px 12px rgba(63, 11, 17, 0.122);
   position: relative;
   overflow-y: visible;
   overflow-x: hidden;
@@ -202,7 +202,7 @@
 .promotion-card {
   background-color: var(--surface-white);
   border-radius: 12px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 4px 8px rgba(63, 11, 17, 0.122);
   overflow: hidden;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   border: 1px solid var(--border-light-gray);
@@ -210,7 +210,7 @@
 
 .promotion-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.45);
+  box-shadow: 0 8px 16px rgba(63, 11, 17, 0.158);
 }
 
 .promotion-image-container {
@@ -242,7 +242,7 @@
   font-size: 16px;
   transition: background-color 0.2s ease;
   z-index: 5;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 4px 10px rgba(63, 11, 17, 0.14);
 }
 
 .promotion-delete-btn svg {

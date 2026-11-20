@@ -8,6 +8,8 @@ import SectionProtectedRoute from "./components/SectionProtectedRoute.jsx";
 import Login from "./pages/Login.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
 import Orders from "./pages/Orders.jsx";
+import OnlineOrdersPage from "./pages/OnlineOrdersPage.jsx";
+import OnlineOrdersSettings from "./pages/OnlineOrdersSettings.jsx";
 import MenuLogin from "./pages/MenuLogin.jsx";
 import MenuPage from "./pages/MenuPage.jsx";
 import Promotions from "./pages/Promotions.jsx";
@@ -78,6 +80,34 @@ function App() {
                 <>
                   <Header />
                   <MenuPage />
+                </>
+              </SectionProtectedRoute>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Swiggy / Zomato orders, side by side (open to all staff, like Orders) */}
+        <Route
+          path={routes.onlineOrders}
+          element={
+            <ProtectedRoute>
+              <>
+                <Header />
+                <OnlineOrdersPage />
+              </>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Swiggy / Zomato settings (Menu PIN, like Menu and Promotions) */}
+        <Route
+          path={routes.onlineOrdersSettings}
+          element={
+            <ProtectedRoute>
+              <SectionProtectedRoute storageKey="menuAuth" redirectTo={routes.menuLogin}>
+                <>
+                  <Header />
+                  <OnlineOrdersSettings />
                 </>
               </SectionProtectedRoute>
             </ProtectedRoute>

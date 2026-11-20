@@ -12,6 +12,7 @@ import Cart from './cart/Cart';
 import Bill from './Bill';
 import Payments from './payments/Payments';
 import PaymentSuccess from './payments/PaymentSuccess';
+import ReviewPage from './review/ReviewPage';
 import CounterCode from './payments/CounterCode';
 import OnlinePayment from './payments/OnlinePayment';
 import AwaitingConfirmation from './payments/AwaitingConfirmation';
@@ -183,6 +184,16 @@ function AppContent({ isLoading, setIsLoading }) {
           element={
             <ProtectedRoute>
               <Payments setIsLoading={setIsLoading} />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Review (once per customer, ever) between payment and the bill */}
+        <Route
+          path="/review"
+          element={
+            <ProtectedRoute>
+              <ReviewPage setIsLoading={setIsLoading} />
             </ProtectedRoute>
           }
         />

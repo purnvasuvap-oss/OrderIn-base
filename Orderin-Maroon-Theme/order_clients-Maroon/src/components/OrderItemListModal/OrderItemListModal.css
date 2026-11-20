@@ -24,8 +24,8 @@
   max-height: 85vh;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-  border: 1px solid rgba(245, 223, 187, 0.1);
+  box-shadow: 0 20px 60px rgba(63, 11, 17, 0.16);
+  border: 1px solid rgba(63, 11, 17, 0.1);
 }
 
 .OrderItemList-header {
@@ -33,7 +33,7 @@
   justify-content: space-between;
   align-items: center;
   padding: 18px 20px;
-  border-bottom: 1px solid rgba(245, 223, 187, 0.12);
+  border-bottom: 1px solid rgba(63, 11, 17, 0.12);
   background: var(--bg);
   color: var(--accent);
 }
@@ -54,19 +54,19 @@
 .OrderItemList-subtitle {
   margin: 2px 0 0 0;
   font-size: 12px;
-  color: rgba(245, 223, 187, 0.65);
+  color: rgba(38, 16, 19, 0.65);
 }
 
 .OrderItemList-close {
   background: none;
   border: none;
   cursor: pointer;
-  color: rgba(245, 223, 187, 0.7);
+  color: rgba(38, 16, 19, 0.7);
   padding: 4px;
   border-radius: 4px;
 }
 .OrderItemList-close:hover {
-  background: rgba(245, 223, 187, 0.12);
+  background: rgba(63, 11, 17, 0.084);
 }
 
 .OrderItemList-body {
@@ -83,7 +83,7 @@
   background: var(--bg);
   border-radius: 8px;
   font-size: 13px;
-  color: rgba(245, 223, 187, 0.75);
+  color: rgba(38, 16, 19, 0.75);
 }
 
 .OrderItemList-summary strong {
@@ -97,9 +97,9 @@
   padding: 8px 6px;
   font-size: 11px;
   font-weight: 600;
-  color: rgba(245, 223, 187, 0.55);
+  color: rgba(38, 16, 19, 0.55);
   text-transform: uppercase;
-  border-bottom: 2px solid rgba(245, 223, 187, 0.12);
+  border-bottom: 2px solid rgba(63, 11, 17, 0.12);
 }
 
 .OrderItemList-items {
@@ -112,7 +112,7 @@
   grid-template-columns: 1.4fr 55px 70px 70px 1.6fr;
   gap: 10px;
   padding: 12px 6px;
-  border-bottom: 1px solid rgba(245, 223, 187, 0.08);
+  border-bottom: 1px solid rgba(63, 11, 17, 0.1);
   font-size: 13px;
   align-items: start;
 }
@@ -137,14 +137,14 @@
 
 .OrderItemList-item-price,
 .OrderItemList-item-total {
-  color: rgba(245, 223, 187, 0.75);
+  color: rgba(38, 16, 19, 0.75);
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
 
 .OrderItemList-item-instr {
   font-size: 12px;
-  color: rgba(245, 223, 187, 0.65);
+  color: rgba(38, 16, 19, 0.65);
   /* Full instruction text must always be readable in this modal — no
      truncation here (truncation is only acceptable in the table row). */
   white-space: normal;
@@ -155,7 +155,7 @@
 }
 
 .OrderItemList-no-instr {
-  color: rgba(245, 223, 187, 0.3);
+  color: rgba(38, 16, 19, 0.55);
 }
 
 .OrderItemList-note {
@@ -173,10 +173,10 @@
   justify-content: flex-end;
   gap: 20px;
   padding: 14px 20px;
-  border-top: 1px solid rgba(245, 223, 187, 0.12);
+  border-top: 1px solid rgba(63, 11, 17, 0.12);
   background: var(--bg);
   font-size: 13px;
-  color: rgba(245, 223, 187, 0.75);
+  color: rgba(38, 16, 19, 0.75);
 }
 
 .OrderItemList-total {
@@ -226,25 +226,25 @@
 
   .OrderItemList-item-qty::before {
     content: "Qty ";
-    color: rgba(245, 223, 187, 0.5);
+    color: rgba(38, 16, 19, 0.55);
     font-weight: 600;
   }
 
   .OrderItemList-item-price::before {
     content: "Price ";
-    color: rgba(245, 223, 187, 0.5);
+    color: rgba(38, 16, 19, 0.55);
     font-weight: 600;
   }
 
   .OrderItemList-item-total::before {
     content: "Total ";
-    color: rgba(245, 223, 187, 0.5);
+    color: rgba(38, 16, 19, 0.55);
     font-weight: 600;
   }
 
   .OrderItemList-item-instr::before {
     content: "Note: ";
-    color: rgba(245, 223, 187, 0.5);
+    color: rgba(38, 16, 19, 0.55);
     font-weight: 600;
   }
 

@@ -1,6 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
+import './theme/maroonModern.css';
 import App from './App';
 import { CartProvider } from './context/CartContext';
 import reportWebVitals from './reportWebVitals';

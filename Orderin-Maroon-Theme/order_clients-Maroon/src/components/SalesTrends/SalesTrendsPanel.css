@@ -2,7 +2,7 @@
   background: #fff;
   border-radius: 12px;
   padding: 20px;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 1px 4px rgba(63, 11, 17, 0.028);
 }
 
 .SalesTrends-panel h3 { margin: 0 0 4px 0; color: #3F0B11; }
@@ -41,7 +41,7 @@
 .SalesTrends-bar {
   width: 60%;
   min-width: 18px;
-  background: #3F0B11;
+  background: var(--mx-paper);
   border-radius: 6px 6px 0 0;
   transition: height 0.3s ease;
 }
@@ -86,7 +86,7 @@
   gap: 8px;
   font-size: 13px;
   padding: 8px 10px;
-  border: 1px solid #f0f0f0;
+  border: 1px solid rgba(63, 11, 17, 0.22);
   border-radius: 8px;
   margin-bottom: 8px;
   color: #333;
@@ -103,7 +103,7 @@
   align-items: center;
   padding: 8px 16px;
   border-radius: 20px;
-  border: 1.5px solid #3F0B11;
+  border: 1.5px solid var(--mx-line-2);
   background: #fff;
   color: #3F0B11;
   font-weight: 600;
@@ -113,8 +113,8 @@
   transition: 0.2s;
 }
 .SalesTrends-toggle:hover {
-  background: #3F0B11;
-  color: #F5DFBB;
+  background: var(--mx-paper);
+  color: var(--mx-ink);
 }
 
 /* === Monthly chart mode === */
@@ -132,14 +132,14 @@
   left: 50%;
   transform: translateX(-50%);
   margin-bottom: 8px;
-  background: #261013;
-  color: #F5DFBB;
+  background: var(--mx-tile);
+  color: var(--mx-ink);
   padding: 10px 12px;
   border-radius: 8px;
   font-size: 12px;
   white-space: nowrap;
   z-index: 10;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 4px 12px rgba(63, 11, 17, 0.087);
   text-align: left;
 }
 .SalesTrends-overlay strong {

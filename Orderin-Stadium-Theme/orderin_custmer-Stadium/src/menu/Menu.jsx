@@ -464,20 +464,6 @@ function Menu({ setIsLoading }) {
         </div>
       </div>
 
-      <div className="selection-row" role="tablist" aria-label="Menu categories">
-        {categories.map((category) => (
-          <button
-            key={category}
-            role="tab"
-            aria-selected={selectedCategory === category}
-            className={`selection ${selectedCategory === category ? "active" : ""}`}
-            onClick={() => handleCategorySelect(category)}
-          >
-            {category === "all" ? "All" : category.charAt(0).toUpperCase() + category.slice(1)}
-          </button>
-        ))}
-      </div>
-
       {adPromotion && (
         <div className="promotion-banner">
           <div className="promotion-content">
@@ -504,6 +490,21 @@ function Menu({ setIsLoading }) {
           </div>
         </div>
       )}
+
+      <div className="selection-row" role="tablist" aria-label="Menu categories">
+        {categories.map((category) => (
+          <button
+            key={category}
+            role="tab"
+            aria-selected={selectedCategory === category}
+            className={`selection ${selectedCategory === category ? "active" : ""}`}
+            onClick={() => handleCategorySelect(category)}
+          >
+            {category === "all" ? "All" : category.charAt(0).toUpperCase() + category.slice(1)}
+          </button>
+        ))}
+      </div>
+
 
       <div className="menu-grid-section">
         {filteredProducts.length > 0 ? (

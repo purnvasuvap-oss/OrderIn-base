@@ -3,6 +3,8 @@ const routes = {
   login: "/",
   dashboard: "/dashboard",
   orders: "/orders",
+  onlineOrders: "/online-orders",
+  onlineOrdersSettings: "/online-orders/settings",
   menuLogin: "/menu-login",
   menu: "/menu",
   promotions: "/promotions",

@@ -1,0 +1,573 @@
+/* ==========================================================================
+   Maroon menu — modern app UI. Loaded after Menu.css.
+   The content area switches to light "paper" by re-pointing Menu.css's own
+   colour tokens; the hero keeps maroon explicitly.
+   ========================================================================== */
+
+.menu-container {
+  --color-bg: var(--mx-paper);
+  --color-surface: var(--mx-tile);
+  --color-surface-elevated: var(--mx-tile);
+  --color-border: var(--mx-line);
+  --color-text: var(--mx-ink);
+  --color-text-muted: var(--mx-ink-2);
+  --color-text-faint: var(--mx-ink-3);
+  --color-accent: var(--mx-gold);
+  --color-accent-strong: var(--mx-gold-dark);
+  background: var(--mx-paper);
+  color: var(--mx-ink);
+  padding-bottom: 176px; /* room for the cart bar + dock */
+}
+
+/* ---------- Hero: maroon block with rounded bottom, search inside ---------- */
+.menu-container .mx-hero {
+  background: var(--mx-maroon);
+  color: var(--mx-cream);
+  border-radius: 0 0 28px 28px;
+  padding-bottom: 18px;
+  box-shadow: var(--mx-shadow);
+}
+
+.menu-container .mx-hero .hero-bar {
+  padding: 8px 20px 14px;
+  align-items: flex-end;
+}
+
+.menu-container .mx-hero .hero-eyebrow {
+  color: var(--mx-gold);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  margin: 0 0 4px;
+}
+
+.menu-container .mx-hero .hero-title {
+  color: var(--mx-cream);
+  font-family: var(--mx-font-display);
+  font-size: 26px;
+  line-height: 1.15;
+  margin: 0;
+}
+
+.menu-container .mx-hero .table-chip {
+  background: color-mix(in srgb, #F2BB46 18%, transparent);
+  color: var(--mx-gold);
+  border: 1px solid color-mix(in srgb, #F2BB46 45%, transparent);
+  box-shadow: none;
+  font-weight: 700;
+}
+
+.menu-container .mx-hero .order-status-pill {
+  background: var(--mx-gold);
+  color: var(--mx-maroon-deep);
+}
+
+.menu-container .mx-hero .search-row {
+  position: static;
+  background: transparent;
+  padding: 0 20px;
+}
+
+.menu-container .mx-hero .search-bar {
+  background: var(--mx-paper);
+  border: none;
+  border-radius: 16px;
+  height: 52px;
+  padding: 0 6px 0 14px;
+  box-shadow: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.menu-container .mx-hero .search-icon {
+  color: var(--mx-ink-3);
+  position: static;
+  transform: none;
+  flex-shrink: 0;
+}
+
+.menu-container .mx-hero .search-input {
+  color: var(--mx-ink);
+  background: transparent;
+  border: none;
+  padding: 0;
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  font-size: 15px;
+}
+
+.menu-container .mx-hero .search-input::placeholder {
+  color: var(--mx-ink-3);
+}
+
+.menu-container .mx-hero .clear-btn {
+  position: static;
+  transform: none;
+  color: var(--mx-ink-2);
+}
+
+.menu-container .search-filter-btn {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  border: none;
+  background: var(--mx-maroon);
+  color: var(--mx-gold);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.menu-container .search-filter-btn:active {
+  transform: scale(0.95);
+}
+
+/* ---------- Promotion card ---------- */
+.menu-container .promotion-banner {
+  margin: 18px 20px 4px;
+  border-radius: var(--mx-radius);
+  background: linear-gradient(120deg, var(--mx-maroon-deep) 0%, var(--mx-maroon) 70%);
+  color: var(--mx-cream);
+  box-shadow: var(--mx-shadow);
+  overflow: hidden;
+  border: none;
+}
+
+.menu-container .promotion-banner .promo-badge {
+  background: var(--mx-gold);
+  color: var(--mx-maroon-deep);
+}
+
+.menu-container .promotion-banner .promotion-caption {
+  color: var(--mx-cream);
+}
+
+.menu-container .promotion-banner .promotion-description {
+  color: color-mix(in srgb, #F5DFBB 80%, transparent);
+}
+
+/* ---------- Categories: round icons with labels ---------- */
+.menu-container .selection-row {
+  margin: 8px auto 0;
+  padding: 14px 20px 6px;
+  gap: 14px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.menu-container .selection-row::-webkit-scrollbar {
+  display: none;
+}
+
+.menu-container .selection {
+  flex: 0 0 auto;
+  height: auto;
+  padding: 0;
+  background: none;
+  border: none;
+  box-shadow: none;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  color: var(--mx-ink-2);
+  cursor: pointer;
+  width: 68px;
+}
+
+.menu-container .selection .cat-icon {
+  width: 62px;
+  height: 62px;
+  border-radius: 50%;
+  background: var(--mx-paper-2);
+  color: var(--mx-maroon);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border: 3px solid transparent;
+  box-shadow: 0 0 0 1px var(--mx-line);
+  transition: border-color 0.2s ease, transform 0.2s ease;
+}
+
+.menu-container .selection .cat-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.menu-container .selection .cat-initial {
+  font-family: var(--mx-font-display);
+  font-weight: 700;
+  font-size: 22px;
+}
+
+.menu-container .selection .cat-label {
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.2;
+  max-width: 68px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.menu-container .selection.active {
+  background: none;
+  box-shadow: none;
+  color: var(--mx-maroon);
+}
+
+.menu-container .selection.active .cat-icon {
+  border-color: var(--mx-gold);
+  box-shadow: 0 4px 12px color-mix(in srgb, #F2BB46 45%, transparent);
+  transform: translateY(-2px);
+}
+
+.menu-container .selection.active .cat-label {
+  font-weight: 800;
+}
+
+/* ---------- Category sections ---------- */
+.menu-container .menu-grid-section {
+  padding: 4px 20px 12px;
+}
+
+.menu-container .category-section-header {
+  background: none;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+  margin: 22px 0 12px;
+  color: var(--mx-ink);
+  font-family: var(--mx-font-display);
+  font-size: 19px;
+  font-weight: 700;
+  align-items: center;
+  gap: 10px;
+  justify-content: flex-start;
+}
+
+.menu-container .category-section-header::before,
+.menu-container .category-section-header::after {
+  display: none;
+}
+
+.menu-container .category-count {
+  background: color-mix(in srgb, #F2BB46 28%, transparent);
+  color: var(--mx-maroon);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 2px 9px;
+  border-radius: 999px;
+  min-width: 0;
+  height: auto;
+}
+
+/* ---------- Dish tiles ---------- */
+.menu-container .food-grid {
+  gap: 14px;
+}
+
+.menu-container .food-card {
+  background: var(--mx-tile);
+  border: none;
+  border-radius: var(--mx-radius);
+  box-shadow: var(--mx-shadow);
+  padding: 8px;
+  overflow: visible;
+  color: var(--mx-ink);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.menu-container .food-card:active {
+  transform: scale(0.98);
+}
+
+.menu-container .food-card-media {
+  position: relative;
+  border-radius: var(--mx-radius-sm);
+  overflow: visible;
+  aspect-ratio: 1 / 0.86;
+  height: auto;
+}
+
+.menu-container .food-card-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: var(--mx-radius-sm);
+  display: block;
+}
+
+.menu-container .media-gradient {
+  display: none;
+}
+
+.menu-container .badge-bestseller {
+  top: 8px;
+  left: auto;
+  right: 8px;
+  background: var(--mx-gold);
+  color: var(--mx-maroon-deep);
+  border-radius: 999px;
+  font-weight: 700;
+  box-shadow: none;
+}
+
+/* veg / non-veg mark (square with a dot), top-left of the photo */
+.menu-container .tile-diet {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  background: #fff;
+  border: 2px solid currentColor;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.menu-container .tile-diet::after {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.menu-container .tile-diet-veg {
+  color: #1f9d55;
+}
+
+.menu-container .tile-diet-nonveg {
+  color: #c62828;
+}
+
+/* round add button overlapping the bottom-right corner of the photo */
+.menu-container .tile-add {
+  position: absolute;
+  right: 8px;
+  bottom: -16px;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 3px solid var(--mx-tile);
+  background: var(--mx-gold);
+  color: var(--mx-maroon-deep);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 10px color-mix(in srgb, #B5823F 45%, transparent);
+  z-index: 2;
+}
+
+.menu-container .tile-add:active:not(:disabled) {
+  transform: scale(0.92);
+}
+
+.menu-container .tile-add:disabled {
+  background: var(--mx-paper-2);
+  color: var(--mx-ink-3);
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+.menu-container .food-card-body {
+  padding: 14px 4px 4px;
+  background: transparent;
+}
+
+.menu-container .food-card-title {
+  color: var(--mx-ink);
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.25;
+  margin: 0 0 6px;
+  padding-right: 6px;
+}
+
+.menu-container .spice-flames {
+  color: #c62828;
+}
+
+.menu-container .price-current {
+  color: var(--mx-maroon);
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.menu-container .price-original {
+  color: var(--mx-ink-3);
+}
+
+.menu-container .food-card.unavailable {
+  opacity: 0.55;
+  filter: grayscale(0.6);
+}
+
+.menu-container .no-results {
+  color: var(--mx-ink-2);
+}
+
+/* ---------- Floating cart bar (above the dock) ---------- */
+.mx-cart-bar {
+  position: fixed;
+  left: 16px;
+  right: 16px;
+  bottom: calc(88px + env(safe-area-inset-bottom, 0px));
+  max-width: 560px;
+  margin: 0 auto;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px 10px 10px;
+  border: none;
+  border-radius: 18px;
+  background: var(--mx-maroon);
+  color: var(--mx-cream);
+  box-shadow: var(--mx-shadow-lg);
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+  animation: mx-rise 0.25s ease-out;
+}
+
+.mx-cart-bar-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: var(--mx-gold);
+  color: var(--mx-maroon-deep);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.mx-cart-bar-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+  font-size: 13px;
+  color: color-mix(in srgb, #F5DFBB 80%, transparent);
+}
+
+.mx-cart-bar-text strong {
+  color: var(--mx-cream);
+  font-size: 15px;
+}
+
+.mx-cart-bar-cta {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-weight: 700;
+  color: var(--mx-gold);
+}
+
+@keyframes mx-rise {
+  from {
+    transform: translateY(12px);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+
+/* ---------- Filter sheet ---------- */
+.menu-container .filter-sheet {
+  background: var(--mx-paper);
+  color: var(--mx-ink);
+  border-radius: 24px 24px 0 0;
+}
+
+.menu-container .filter-sheet-title,
+.menu-container .filter-sheet-label {
+  color: var(--mx-ink);
+}
+
+.menu-container .filter-toggle-btn {
+  background: var(--mx-tile);
+  color: var(--mx-ink);
+  border: 1px solid var(--mx-line);
+}
+
+.menu-container .btn-apply {
+  background: var(--mx-maroon);
+  color: var(--mx-gold);
+}
+
+.menu-container .btn-clear {
+  color: var(--mx-maroon);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mx-cart-bar {
+    animation: none;
+  }
+}
+
+/* ---------- Fixes from the first visual check ---------- */
+/* A global `button { padding: 12px 20px }` squashed the icons to 0px wide. */
+.menu-container .tile-add,
+.menu-container .search-filter-btn,
+.menu-container .selection,
+.menu-container .clear-btn {
+  padding: 0;
+}
+
+.menu-container .tile-add svg,
+.menu-container .search-filter-btn svg,
+.menu-container .selection svg {
+  flex-shrink: 0;
+}
+
+/* Menu.css fixes the category row at 50px, which cut off labels and circles. */
+.menu-container .selection-row {
+  height: auto;
+  min-height: 0;
+  align-items: flex-start;
+  padding-top: 16px;
+  padding-bottom: 8px;
+}
+
+/* Same photo height on every tile: the photo sets its own shape. */
+.menu-container .food-card-media {
+  aspect-ratio: auto;
+  height: auto;
+}
+
+.menu-container .food-card-img {
+  height: auto;
+  aspect-ratio: 1 / 0.86;
+}
+
+/* The table number already shows in the top bar. */
+.menu-container .mx-hero .table-chip {
+  display: none;
+}
+
+/* Close the sub-pixel seam between the top bar and the hero. */
+.menu-container .mx-hero {
+  margin-top: -1px;
+  padding-top: 1px;
+}
+
+/* Tighter title/price spacing on tiles. */
+.menu-container .food-card-body .price-row {
+  margin-top: 0;
+}

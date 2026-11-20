@@ -12,27 +12,33 @@ if (!admin.apps.length) {
   admin.initializeApp();
 }
 
-const FALLBACK_RAZORPAY_KEY_ID = 'rzp_live_Sj1ZPsCyB5iu3t';
-const FALLBACK_RAZORPAY_KEY_SECRET = 'dN2uwxFr0hIZkcV57RXdRXmt';
+const { defineSecret } = require('firebase-functions/params');
+
+// Razorpay credentials (rotated on 19 Nov 2026 after the old key leaked; see
+// to_check.md P0 #1).
+// - The key SECRET lives only in Google Secret Manager. It must never be
+//   written in this file or anywhere else in the repo. Set it once with:
+//     firebase functions:secrets:set RAZORPAY_KEY_SECRET
+//   Functions that use it declare it via runWith({ secrets: [...] }), which
+//   makes it available as process.env.RAZORPAY_KEY_SECRET at runtime.
+// - The key ID is public (Razorpay shows it to every payer at checkout).
+const RAZORPAY_KEY_SECRET_PARAM = defineSecret('RAZORPAY_KEY_SECRET');
+const DEFAULT_RAZORPAY_KEY_ID = 'rzp_live_U0WlxgptPJmE9v';
+
+// SHA-256 of credentials that were rotated out. They are refused even if they
+// are still set in an old environment or config.
 const REMOVED_RAZORPAY_VALUE_HASHES = new Set([
   '0931028ec556aa2d2e65c4c604da9200517b5718df04eedc1cb5b735422b7b44',
   '44f9000b54b1b661e4c2f7fa84aba1cd840827fe6731a99c17fb9a06ce00487b',
+  '5ca78057b244c038bb49153a4de84aac79111cf0002431180550d0d1688b877d',
+  'a443ef9fd2b910fe9144da97c207ace0e887f77c197899914559a721838cbe06',
 ]);
 const isRemovedRazorpayValue = (value) =>
-  REMOVED_RAZORPAY_VALUE_HASHES.has(crypto.createHash('sha256').update(value).digest('hex'));
-const resolveRazorpayCredential = (...values) =>
-  values.find((value) => value && !isRemovedRazorpayValue(value));
-
-const RAZORPAY_KEY_ID = resolveRazorpayCredential(
-  functions.config().razorpay?.key_id,
-  process.env.RAZORPAY_KEY_ID,
-  FALLBACK_RAZORPAY_KEY_ID
-);
-const RAZORPAY_KEY_SECRET = resolveRazorpayCredential(
-  functions.config().razorpay?.key_secret,
-  process.env.RAZORPAY_KEY_SECRET,
-  FALLBACK_RAZORPAY_KEY_SECRET
-);
+  REMOVED_RAZORPAY_VALUE_HASHES.has(crypto.createHash('sha256').update(String(value)).digest('hex'));
+const firstUsableCredential = (...values) => values.find((value) => value && !isRemovedRazorpayValue(value)) || '';
+const getRazorpayKeyId = () => firstUsableCredential(process.env.RAZORPAY_KEY_ID, DEFAULT_RAZORPAY_KEY_ID);
+const getRazorpayKeySecret = () => firstUsableCredential(process.env.RAZORPAY_KEY_SECRET);
+const RAZORPAY_SECRETS = { secrets: [RAZORPAY_KEY_SECRET_PARAM] };
 
 const ROUTE_LINKED_ACCOUNTS = {
   orderin_restuarant_7: {
@@ -497,8 +503,8 @@ const fetchSettlementById = async (settlementId, accountId) => {
   try {
     const response = await axios.get(`https://api.razorpay.com/v1/settlements/${settlementId}`, {
       auth: {
-        username: RAZORPAY_KEY_ID,
-        password: RAZORPAY_KEY_SECRET,
+        username: getRazorpayKeyId(),
+        password: getRazorpayKeySecret(),
       },
       headers: accountId ? { 'X-Razorpay-Account': accountId } : undefined,
       timeout: 10000,
@@ -519,8 +525,8 @@ const fetchTransfersForPayment = async (paymentId) => {
   try {
     const response = await axios.get(`https://api.razorpay.com/v1/payments/${paymentId}/transfers`, {
       auth: {
-        username: RAZORPAY_KEY_ID,
-        password: RAZORPAY_KEY_SECRET,
+        username: getRazorpayKeyId(),
+        password: getRazorpayKeySecret(),
       },
       params: {
         'expand[]': 'items.recipient_settlement',
@@ -602,8 +608,8 @@ const handleCreateRazorpayOrder = async (req, res) => {
       }),
       {
         auth: {
-          username: RAZORPAY_KEY_ID,
-          password: RAZORPAY_KEY_SECRET,
+          username: getRazorpayKeyId(),
+          password: getRazorpayKeySecret(),
         },
         timeout: 10000,
       }
@@ -675,7 +681,7 @@ const handleVerifyRazorpayPayment = async (req, res) => {
 
     const signatureString = `${razorpay_order_id}|${razorpay_payment_id}`;
     const expectedSignature = crypto
-      .createHmac('sha256', RAZORPAY_KEY_SECRET)
+      .createHmac('sha256', getRazorpayKeySecret())
       .update(signatureString)
       .digest('hex');
 
@@ -689,8 +695,8 @@ const handleVerifyRazorpayPayment = async (req, res) => {
     try {
       const paymentResponse = await axios.get(`https://api.razorpay.com/v1/payments/${razorpay_payment_id}`, {
         auth: {
-          username: RAZORPAY_KEY_ID,
-          password: RAZORPAY_KEY_SECRET,
+          username: getRazorpayKeyId(),
+          password: getRazorpayKeySecret(),
         },
         timeout: 10000,
       });
@@ -745,8 +751,8 @@ const handleSyncRazorpayPayment = async (req, res) => {
 
     const paymentResponse = await axios.get(`https://api.razorpay.com/v1/payments/${razorpayPaymentId}`, {
       auth: {
-        username: RAZORPAY_KEY_ID,
-        password: RAZORPAY_KEY_SECRET,
+        username: getRazorpayKeyId(),
+        password: getRazorpayKeySecret(),
       },
       timeout: 10000,
     });
@@ -881,8 +887,8 @@ const reconcileQueuedSettlement = async (queueDoc) => {
 
   const paymentResponse = await axios.get(`https://api.razorpay.com/v1/payments/${paymentId}`, {
     auth: {
-      username: RAZORPAY_KEY_ID,
-      password: RAZORPAY_KEY_SECRET,
+      username: getRazorpayKeyId(),
+      password: getRazorpayKeySecret(),
     },
     timeout: 10000,
   });
@@ -986,14 +992,20 @@ const onRequest = (handler) => async (req, res) => {
     return;
   }
 
+  if (!getRazorpayKeySecret()) {
+    console.error('RAZORPAY_KEY_SECRET is not set in Secret Manager.');
+    res.status(503).json({ error: 'Online payment is not configured yet. Please pay at the counter.' });
+    return;
+  }
+
   await handler(req, res);
 };
 
-exports.createRazorpayOrder = functions.https.onRequest(onRequest(handleCreateRazorpayOrder));
-exports.verifyRazorpayPayment = functions.https.onRequest(onRequest(handleVerifyRazorpayPayment));
-exports.syncRazorpayPayment = functions.https.onRequest(onRequest(handleSyncRazorpayPayment));
+exports.createRazorpayOrder = functions.runWith(RAZORPAY_SECRETS).https.onRequest(onRequest(handleCreateRazorpayOrder));
+exports.verifyRazorpayPayment = functions.runWith(RAZORPAY_SECRETS).https.onRequest(onRequest(handleVerifyRazorpayPayment));
+exports.syncRazorpayPayment = functions.runWith(RAZORPAY_SECRETS).https.onRequest(onRequest(handleSyncRazorpayPayment));
 exports.scheduledRazorpaySettlementSync = functions
-  .runWith({ timeoutSeconds: 540, memory: '256MB' })
+  .runWith({ timeoutSeconds: 540, memory: '256MB', ...RAZORPAY_SECRETS })
   .pubsub
   .schedule('30 23 * * *')
   .timeZone('Asia/Kolkata')

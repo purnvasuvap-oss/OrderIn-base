@@ -3,6 +3,8 @@ import ReactDOM from "react-dom/client";
 import App from "./App.jsx";
 import "./App.css";
 import "./responsive.css";
+// Maroon modern UI — loaded last so it can restyle every page.
+import "./theme/maroonModern.css";
 
 const rootContainer = document.getElementById("root");
 

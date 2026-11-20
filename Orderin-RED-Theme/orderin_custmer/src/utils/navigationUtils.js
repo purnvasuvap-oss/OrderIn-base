@@ -47,7 +47,8 @@ export const useOrderInNavigate = () => {
      * Replaces history completely
      */
     navigateToLogin: () => {
-      navigate('/', { replace: true });
+      // Login is at /login — / is the public pre-login flipbook menu.
+      navigate('/login', { replace: true });
     },
 
     /**

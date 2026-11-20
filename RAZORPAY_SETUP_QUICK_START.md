@@ -113,8 +113,8 @@ const verifyResponse = await fetch('https://us-central1-YOUR_PROJECT_ID.cloudfun
 ## Razorpay API Keys
 
 Your Razorpay credentials (already in rzp-key.csv):
-- **Key ID**: `rzp_live_Sj1ZPsCyB5iu3t`
-- **Key Secret**: `dN2uwxFr0hIZkcV57RXdRXmt`
+- **Key ID**: `<Razorpay key ID — see DEFAULT_RAZORPAY_KEY_ID in functions/index.js>`
+- **Key Secret**: `<stored in Secret Manager: firebase functions:secrets:set RAZORPAY_KEY_SECRET>`
 
 ⚠️ Store these as Firebase environment variables, not in code!
 

@@ -1,14 +1,41 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-// using image icons instead of lucide icons
-import { FaRegBell,FaSignOutAlt} from 'react-icons/fa'; 
-import { FiLogOut } from 'react-icons/fi';
+import { Bell, LogOut } from "lucide-react";
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "../firebase";
 import "./Header.css";
 import Notification from "./Notification";
 
+const RESTAURANT_ID = "orderin_restaurant_4";
+
+/** Restaurant name from its Firestore profile (falls back to "Restaurant"). */
+function useRestaurantName() {
+  const [name, setName] = useState("Restaurant");
+  useEffect(() => {
+    let alive = true;
+    getDoc(doc(db, "Restaurant", RESTAURANT_ID))
+      .then((snap) => {
+        const data = snap && typeof snap.exists === "function" && snap.exists() ? snap.data() : null;
+        const value = data && (data.name || data.restaurantName);
+        if (alive && value) setName(String(value));
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, []);
+  return name;
+}
+
+/**
+ * Top bar shown on every staff page (Maroon modern UI): logo, restaurant
+ * name, notifications and log out. No sidebar — pages use the full width and
+ * navigate via the Dashboard's module cards and their own Back buttons.
+ */
 export default function Header() {
   const navigate = useNavigate();
   const [showNotification, setShowNotification] = useState(false);
+  const restaurantName = useRestaurantName();
 
   const handleLogout = () => {
     // Clear main auth
@@ -27,35 +54,28 @@ export default function Header() {
     navigate("/", { replace: true });
   };
 
-  const handleNotificationClick = () => {
-    setShowNotification(true);
-  };
-
-  const handleCloseNotification = () => {
-    setShowNotification(false);
-  };
-
   return (
     <>
-      <header className="header">
+      <header className="header header--no-nav">
         <div className="header-left">
           <img src="/images/OrderIn.png" alt="OrderIn logo" className="orderin-logo" />
         </div>
 
         <div className="header-center">
-          <h1 className="restaurant-name">XYZ Restaurant</h1>
+          <span className="header-eyebrow">Restaurant console</span>
+          <h1 className="restaurant-name">{restaurantName}</h1>
         </div>
 
         <div className="header-right">
-          <button className="icon-btn" onClick={handleNotificationClick}>
-            <FaRegBell size={24} alt="notifications" color="#F2BB46"className="icon-img"/>
+          <button className="icon-btn" onClick={() => setShowNotification(true)} aria-label="Notifications">
+            <Bell size={20} aria-hidden="true" />
           </button>
-          <button className="icon-btn" onClick={handleLogout}>
-            <FaSignOutAlt size={34} color="#F2BB46" alt="log out" classname="icon-img" />
+          <button className="icon-btn logout-btn" onClick={handleLogout} aria-label="Log out">
+            <LogOut size={20} aria-hidden="true" />
           </button>
         </div>
       </header>
-      {showNotification && <Notification onClose={handleCloseNotification} />}
+      {showNotification && <Notification onClose={() => setShowNotification(false)} />}
     </>
   );
 }

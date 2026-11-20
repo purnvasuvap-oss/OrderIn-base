@@ -22,8 +22,8 @@ The Razorpay integration has been implemented with the following components:
 ### Step 1: Configure Razorpay API Keys
 
 Your Razorpay credentials have been provided:
-- **Key ID**: `rzp_live_Sj1ZPsCyB5iu3t`
-- **Key Secret**: `dN2uwxFr0hIZkcV57RXdRXmt`
+- **Key ID**: `<Razorpay key ID — see DEFAULT_RAZORPAY_KEY_ID in functions/index.js>`
+- **Key Secret**: `<stored in Secret Manager: firebase functions:secrets:set RAZORPAY_KEY_SECRET>`
 
 **⚠️ SECURITY WARNING:**
 - These keys should be stored in **environment variables**, not hardcoded
@@ -42,8 +42,9 @@ cd order_client_1/functions
 npm install
 
 # Set Razorpay environment variables (from Firebase Console)
-firebase functions:config:set razorpay.key_id="rzp_live_Sj1ZPsCyB5iu3t"
-firebase functions:config:set razorpay.key_secret="dN2uwxFr0hIZkcV57RXdRXmt"
+# Key ID is set in code (DEFAULT_RAZORPAY_KEY_ID). Secret: firebase functions:secrets:set RAZORPAY_KEY_SECRET
+# (old) razorpay.key_id="<Razorpay key ID — see DEFAULT_RAZORPAY_KEY_ID in functions/index.js>"
+firebase functions:config:set razorpay.key_secret="<stored in Secret Manager: firebase functions:secrets:set RAZORPAY_KEY_SECRET>"
 ```
 
 2. **Update functions/index.js** to use environment variables:
@@ -184,7 +185,7 @@ Test Payment Amount: ₹1 (minimum)
 
 **Possible Causes:**
 1. Razorpay script not loaded - check console logs
-2. Invalid Key ID - verify `rzp_live_Sj1ZPsCyB5iu3t` is correct
+2. Invalid Key ID - verify `<Razorpay key ID — see DEFAULT_RAZORPAY_KEY_ID in functions/index.js>` is correct
 3. Backend order creation failed - check function logs:
    ```bash
    firebase functions:log

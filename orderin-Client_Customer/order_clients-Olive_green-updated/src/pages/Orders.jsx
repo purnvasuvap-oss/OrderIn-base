@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import routes from "../routes";
 import "./Orders.css";
@@ -34,6 +34,8 @@ import { db } from "../firebase";
 import OrderItemListModal from "../components/OrderItemListModal/OrderItemListModal";
 import AllOrdersOverlay from "../components/AllOrdersOverlay/AllOrdersOverlay";
 import RejectReasonModal from "../components/RejectReasonModal";
+import AggregatorInbox from "../components/AggregatorInbox/AggregatorInbox";
+import { subscribeAggregatorOrders, advanceAggregatorOrder } from "../services/aggregatorService";
 
 /* =========================================================================
    Manual Order Modal — carried over verbatim (functionality + validation
@@ -399,7 +401,7 @@ function StatusPill({ status, onStatusChange, onAccept, onReject, orderId, isLoa
     );
   }
 
-  const label = status === "Delivered" ? "Served" : status;
+  const label = status === "Delivered" ? (order && order.isAggregator ? "Handed over" : "Served") : status;
   return (
     <button
       type="button"
@@ -457,7 +459,19 @@ const money = (n) =>
 
 function Orders() {
   const navigate = useNavigate();
-  const [orders, setOrders] = useState([]);
+  const [customerOrders, setOrders] = useState([]);
+  // Swiggy / Zomato orders (own collection; see services/aggregatorService.js).
+  const [aggregatorOrders, setAggregatorOrders] = useState([]);
+  // Accepted aggregator orders join the normal list/board/counts; new ones wait
+  // in the Online orders inbox, and rejected/cancelled ones are left out like
+  // rejected dine-in orders.
+  const orders = useMemo(
+    () => [
+      ...customerOrders,
+      ...aggregatorOrders.filter((o) => ["accepted", "ready", "picked_up", "delivered"].includes(o.aggregatorStatus)),
+    ],
+    [customerOrders, aggregatorOrders]
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [filter, setFilter] = useState("all");
@@ -544,6 +558,14 @@ function Orders() {
     };
   }, []);
 
+  // Swiggy / Zomato orders, live.
+  useEffect(() => {
+    const unsubscribe = subscribeAggregatorOrders(setAggregatorOrders);
+    return () => {
+      if (typeof unsubscribe === "function") unsubscribe();
+    };
+  }, []);
+
   // Local prune so orders drop off exactly at their own 24h mark (unchanged)
   useEffect(() => {
     const pruneInterval = setInterval(() => {
@@ -556,11 +578,17 @@ function Orders() {
   }, []);
 
   const handleStatusChange = async (orderId, newStatus) => {
+    const order = orders.find((o) => o.id === orderId);
     try {
       setUpdatingOrderId(orderId);
-      const order = orders.find((o) => o.id === orderId);
       if (!order) {
         setError("Order not found");
+        return;
+      }
+      // Swiggy / Zomato orders have their own documents; the backend reports
+      // the change to the platform. The live subscription updates the list.
+      if (order.isAggregator) {
+        await advanceAggregatorOrder(order.id, newStatus);
         return;
       }
       await updateOrderStatus(order.phoneNumber, order.id, newStatus);
@@ -571,7 +599,7 @@ function Orders() {
       );
     } catch (err) {
       console.error("Error updating status:", err);
-      setError("Failed to update order status");
+      setError(order && order.isAggregator && err.message ? err.message : "Failed to update order status");
     } finally {
       setUpdatingOrderId(null);
     }
@@ -755,6 +783,9 @@ function Orders() {
         ))}
       </div>
 
+      {/* Swiggy / Zomato: new orders to accept, failed syncs, cancellations */}
+      <AggregatorInbox orders={aggregatorOrders} />
+
       {/* Toolbar */}
       <div className="toolbar">
         <div className="viewtoggle">
@@ -797,6 +828,7 @@ function Orders() {
           <option value="low">Amount: low → high</option>
         </select>
 
+        <button className="all-orders-btn" onClick={() => navigate(routes.onlineOrders)}>Swiggy / Zomato</button>
         <button className="all-orders-btn" onClick={() => setShowAllOrdersOverlay(true)}>All Orders</button>
         <button className="manual-order-btn" onClick={() => setShowManualOrderModal(true)}>+ Manual Order</button>
       </div>
@@ -835,13 +867,16 @@ function Orders() {
                     <div className="oid" title={o.id}>
                       {o.id}
                       {o.isManualOrder && <span className="oid-tag">Manual</span>}
+                      {o.isAggregator && <span className={`agg-source ${o.platform}`}>{o.platformLabel}</span>}
                     </div>
                   </div>
 
                   <div className="cell cust">
                     <span className="cell-label">Customer</span>
                     <div className="cust-name">{o.username}</div>
-                    <div className="cust-meta">Table <b>{o.tableNumber}</b> · {o.phoneNumber}</div>
+                    <div className="cust-meta">
+                      {o.isAggregator ? <>Delivery · <b>{o.platformLabel}</b></> : <>Table <b>{o.tableNumber}</b></>} · {o.phoneNumber}
+                    </div>
                   </div>
 
                   <div className="cell">
@@ -935,11 +970,16 @@ function Orders() {
                       return (
                         <div className="ocard" key={o.id + "-c-" + idx}>
                           <div className="ocard-top">
-                            <span className="ocard-id" title={o.id}>{o.id}</span>
+                            <span className="ocard-id" title={o.id}>
+                              {o.id}
+                              {o.isAggregator && <span className={`agg-source ${o.platform}`}>{o.platformLabel}</span>}
+                            </span>
                             <span className="ocard-time">{formatTime(o.timestamp)}</span>
                           </div>
                           <div className="ocard-name">{o.username}</div>
-                          <div className="ocard-meta">Table {o.tableNumber} · {o.phoneNumber}</div>
+                          <div className="ocard-meta">
+                            {o.isAggregator ? `Delivery · ${o.platformLabel}` : `Table ${o.tableNumber}`} · {o.phoneNumber}
+                          </div>
                           <div className="ocard-items">
                             {Array.isArray(o.items) &&
                               o.items.slice(0, 4).map((it, i) => (

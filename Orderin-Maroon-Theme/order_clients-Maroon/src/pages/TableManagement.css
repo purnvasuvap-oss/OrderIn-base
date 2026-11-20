@@ -11,14 +11,14 @@
    nothing here leaks into other pages.
    ========================================================================= */
 .table-mgmt-page {
-  --tm-bg: #3f0b11;
-  --tm-panel: #261013;
-  --tm-panel-2: #2e1418;
-  --tm-line: rgba(245, 223, 187, 0.12);
-  --tm-line-2: rgba(245, 223, 187, 0.22);
-  --tm-text: #f5dfbb;
-  --tm-text-2: rgba(245, 223, 187, 0.72);
-  --tm-text-3: rgba(245, 223, 187, 0.5);
+  --tm-bg: var(--mx-paper);
+  --tm-panel: var(--mx-tile);
+  --tm-panel-2: var(--mx-tile);
+  --tm-line: rgba(63, 11, 17, 0.12);
+  --tm-line-2: rgba(63, 11, 17, 0.22);
+  --tm-text: var(--mx-ink);
+  --tm-text-2: rgba(38, 16, 19, 0.72);
+  --tm-text-3: rgba(38, 16, 19, 0.55);
   --tm-gold: #f2bb46;
   --tm-gold-deep: #b5823f;
   --tm-danger: #e53935;
@@ -33,7 +33,7 @@
   --tm-clean: #93a3b6;
   --tm-clean-t: rgba(147, 163, 182, 0.16);
 
-  --tm-shadow: 0 2px 6px rgba(0, 0, 0, 0.28), 0 16px 40px rgba(0, 0, 0, 0.34);
+  --tm-shadow: 0 2px 6px rgba(63, 11, 17, 0.098), 0 16px 40px rgba(63, 11, 17, 0.119);
   --tm-radius: 16px;
 
   min-height: 100vh;
@@ -213,7 +213,7 @@
   border: 1px solid var(--tm-line-2);
 }
 .tm-btn-ghost:hover {
-  background: rgba(245, 223, 187, 0.08);
+  background: rgba(63, 11, 17, 0.056);
   color: var(--tm-text);
 }
 .tm-btn-danger {
@@ -429,7 +429,7 @@
   max-width: 420px;
   max-height: 90vh;
   overflow-y: auto;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 20px 60px rgba(63, 11, 17, 0.16);
 }
 .tm-modal-small {
   max-width: 360px;
@@ -460,7 +460,7 @@
   display: inline-flex;
 }
 .tm-icon-btn:hover {
-  background: rgba(245, 223, 187, 0.12);
+  background: rgba(63, 11, 17, 0.084);
   color: var(--tm-text);
 }
 .tm-icon-btn-inline {

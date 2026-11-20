@@ -13,8 +13,8 @@
 .AllOrdersOverlay-panel {
   width: min(420px, 100%);
   height: 100%;
-  background: #261013;
-  box-shadow: -12px 0 40px rgba(0, 0, 0, 0.45);
+  background: var(--mx-tile);
+  box-shadow: -12px 0 40px rgba(63, 11, 17, 0.158);
   display: flex;
   flex-direction: column;
   animation: AllOrdersOverlay-slide-in 0.25s ease-out;
@@ -34,43 +34,43 @@
   justify-content: space-between;
   align-items: flex-start;
   padding: 18px 20px;
-  border-bottom: 1px solid rgba(245, 223, 187, 0.12);
-  background: #3F0B11;
+  border-bottom: 1px solid rgba(63, 11, 17, 0.12);
+  background: var(--mx-paper);
 }
 
 .AllOrdersOverlay-header-left {
   display: flex;
   align-items: center;
   gap: 10px;
-  color: #F2BB46;
+  color: var(--mx-maroon);
 }
 
 .AllOrdersOverlay-header-left h3 {
   margin: 0;
   font-size: 16px;
   font-weight: 700;
-  color: #F5DFBB;
+  color: var(--mx-ink);
 }
 
 .AllOrdersOverlay-subtitle {
   margin: 2px 0 0 0;
   font-size: 12px;
-  color: rgba(245, 223, 187, 0.6);
+  color: rgba(38, 16, 19, 0.6);
 }
 
 .AllOrdersOverlay-close {
   background: none;
   border: none;
   cursor: pointer;
-  color: rgba(245, 223, 187, 0.7);
+  color: rgba(38, 16, 19, 0.7);
   padding: 4px;
   border-radius: 4px;
   flex-shrink: 0;
 }
 
 .AllOrdersOverlay-close:hover {
-  background: rgba(245, 223, 187, 0.12);
-  color: #F2BB46;
+  background: rgba(63, 11, 17, 0.084);
+  color: var(--mx-maroon);
 }
 
 .AllOrdersOverlay-summary {
@@ -78,14 +78,14 @@
   flex-wrap: wrap;
   gap: 6px 20px;
   padding: 12px 20px;
-  background: rgba(245, 223, 187, 0.04);
-  border-bottom: 1px solid rgba(245, 223, 187, 0.12);
+  background: rgba(63, 11, 17, 0.028);
+  border-bottom: 1px solid rgba(63, 11, 17, 0.12);
   font-size: 13px;
-  color: rgba(245, 223, 187, 0.75);
+  color: rgba(38, 16, 19, 0.75);
 }
 
 .AllOrdersOverlay-summary strong {
-  color: #F5DFBB;
+  color: var(--mx-ink);
 }
 
 .AllOrdersOverlay-body {
@@ -97,16 +97,16 @@
 .AllOrdersOverlay-empty {
   padding: 40px 10px;
   text-align: center;
-  color: rgba(245, 223, 187, 0.5);
+  color: rgba(38, 16, 19, 0.55);
   font-size: 14px;
 }
 
 .AllOrdersOverlay-row {
   padding: 12px 14px;
   border-radius: 10px;
-  border: 1px solid rgba(245, 223, 187, 0.1);
+  border: 1px solid rgba(63, 11, 17, 0.1);
   margin-bottom: 8px;
-  background: #2E1418;
+  background: var(--mx-tile);
 }
 
 .AllOrdersOverlay-row.has-instructions {
@@ -123,13 +123,13 @@
 
 .AllOrdersOverlay-item-name {
   font-weight: 700;
-  color: #F5DFBB;
+  color: var(--mx-ink);
   font-size: 14px;
 }
 
 .AllOrdersOverlay-item-qty {
   font-weight: 800;
-  color: #F2BB46;
+  color: var(--mx-maroon);
   font-size: 15px;
   flex-shrink: 0;
 }

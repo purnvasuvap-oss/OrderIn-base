@@ -13,10 +13,10 @@
   border-radius: 8px;
   max-width: 380px;
   width: 92%;
-  box-shadow: 0 6px 30px rgba(0,0,0,0.2);
+  box-shadow: 0 6px 30px rgba(63, 11, 17, 0.07);
 }
-.bill-modal .btn { margin-right: 8px; padding:8px 10px; border-radius:6px; border:1px solid #111; background:transparent; cursor:pointer }
-.bill-modal .btn-primary { background:#111; color:#fff }
+.bill-modal .btn { margin-right: 8px; padding:8px 10px; border-radius:6px; border: 1px solid var(--mx-line-2); background:transparent; cursor:pointer }
+.bill-modal .btn-primary { background: var(--mx-tile); color:#fff }
 .bill-modal-actions { display:flex; justify-content:flex-end; gap:8px; margin-top:12px }
 
 /* ===== TABLET RESPONSIVE (768px and below) ===== */

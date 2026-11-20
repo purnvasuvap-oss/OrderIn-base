@@ -1,8 +1,8 @@
 .ItemManager-wrapper {
-  background: #261013;
+  background: var(--mx-tile);
   border-radius: 12px;
   padding: 20px;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 1px 4px rgba(63, 11, 17, 0.122);
 }
 
 .ItemManager-header {
@@ -15,11 +15,11 @@
 }
 .ItemManager-header h3 {
   margin: 0 0 4px 0;
-  color: #F2BB46;
+  color: var(--mx-maroon);
 }
 .ItemManager-subtitle {
   margin: 0;
-  color: rgba(245, 223, 187, 0.65);
+  color: rgba(38, 16, 19, 0.65);
   font-size: 13px;
   max-width: 520px;
 }
@@ -35,9 +35,9 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  background: #261013;
+  background: var(--mx-tile);
   border: none;
-  color: #F5DFBB;
+  color: var(--mx-ink);
   padding: 8px 14px;
   font-weight: 600;
   font-size: 13px;
@@ -60,11 +60,11 @@
   font-size: 14px;
   box-sizing: border-box;
   margin-bottom: 14px;
-  background-color: #3F0B11;
-  color: #F5DFBB;
+  background-color: var(--mx-paper);
+  color: var(--mx-ink);
 }
 .ItemManager-search::placeholder {
-  color: rgba(245, 223, 187, 0.5);
+  color: rgba(38, 16, 19, 0.55);
 }
 
 .ItemManager-list {
@@ -95,11 +95,11 @@
   min-width: 0;
   font-size: 14px;
 }
-.ItemManager-row-icon { color: #F2BB46; opacity: 0.7; }
-.ItemManager-row-name { font-weight: 600; color: #F5DFBB; }
-.ItemManager-row-cat { color: rgba(245, 223, 187, 0.6); font-size: 13px; }
-.ItemManager-row-qty { color: rgba(245, 223, 187, 0.75); font-size: 13px; }
-.ItemManager-row-meta { color: rgba(245, 223, 187, 0.5); font-size: 12px; }
+.ItemManager-row-icon { color: var(--mx-maroon); opacity: 0.7; }
+.ItemManager-row-name { font-weight: 600; color: var(--mx-ink); }
+.ItemManager-row-cat { color: rgba(38, 16, 19, 0.6); font-size: 13px; }
+.ItemManager-row-qty { color: rgba(38, 16, 19, 0.75); font-size: 13px; }
+.ItemManager-row-meta { color: rgba(38, 16, 19, 0.55); font-size: 12px; }
 
 .ItemManager-row-actions {
   display: flex;
@@ -128,7 +128,7 @@
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
-  color: #F5DFBB;
+  color: var(--mx-ink);
   white-space: nowrap;
 }
 .ItemManager-btn:disabled { opacity: 0.4; cursor: not-allowed; }
@@ -142,13 +142,13 @@
 .ItemManager-btn-delete { background: #A13D3D; }
 .ItemManager-btn-delete:hover:not(:disabled) { background: #8a3333; }
 
-.ItemManager-btn-gray { background: rgba(245, 223, 187, 0.2); color: #F5DFBB; }
-.ItemManager-btn-gray:hover:not(:disabled) { background: rgba(245, 223, 187, 0.3); }
+.ItemManager-btn-gray { background: rgba(63, 11, 17, 0.14); color: var(--mx-ink); }
+.ItemManager-btn-gray:hover:not(:disabled) { background: rgba(63, 11, 17, 0.14); }
 
 .ItemManager-empty {
   padding: 20px;
   text-align: center;
-  color: rgba(245, 223, 187, 0.5);
+  color: rgba(38, 16, 19, 0.55);
   font-size: 13px;
 }
 
@@ -165,13 +165,13 @@
   padding: 16px;
 }
 .ItemManager-modal-box {
-  background-color: #261013;
+  background-color: var(--mx-tile);
   width: 400px;
   max-width: 100%;
   border-radius: 16px;
   padding: 20px;
   border: 2px solid #B5823F;
-  box-shadow: 0 4px 25px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 4px 25px rgba(63, 11, 17, 0.16);
 }
 .ItemManager-modal-header {
   display: flex;
@@ -181,14 +181,14 @@
 .ItemManager-modal-header h3 {
   font-size: 20px;
   font-weight: 600;
-  color: #F5DFBB;
+  color: var(--mx-ink);
   margin: 0;
 }
 .ItemManager-modal-close {
   background: none;
   border: none;
   cursor: pointer;
-  color: #F5DFBB;
+  color: var(--mx-ink);
 }
 .ItemManager-modal-body {
   margin-top: 16px;
@@ -199,7 +199,7 @@
 .ItemManager-modal-body p {
   margin: 0;
   font-size: 14px;
-  color: rgba(245, 223, 187, 0.85);
+  color: rgba(38, 16, 19, 0.85);
   line-height: 1.5;
 }
 .ItemManager-modal-footer {

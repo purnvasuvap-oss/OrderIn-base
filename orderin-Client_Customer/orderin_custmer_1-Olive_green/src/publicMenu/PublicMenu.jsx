@@ -5,6 +5,7 @@ import { useTableNumber } from "../hooks/useTableNumber";
 import { useCart } from "../context/CartContext";
 import { usePublicMenuData } from "./usePublicMenuData";
 import BookLayout, { BookPage } from "./BookLayout";
+import { useBookSize } from "./useBookSize";
 import RestaurantCover from "./components/RestaurantCover";
 import RestaurantInfo, { hasRestaurantInfoContent } from "./components/RestaurantInfo";
 import ChefMessage, { hasChefMessageContent } from "./components/ChefMessage";
@@ -16,10 +17,6 @@ import LoginRequiredModal from "./components/LoginRequiredModal";
 import PageSkeleton from "./components/PageSkeleton";
 import BookEmptyState from "./components/BookEmptyState";
 import "./publicMenu.css";
-
-// Cards per physical book page — keeps each category page readable on a
-// phone screen; categories with more items simply get multiple book pages.
-const CARDS_PER_PAGE = 4;
 
 const chunk = (items, size) => {
   const out = [];
@@ -39,6 +36,11 @@ function PublicMenu({ setIsLoading }) {
     usePublicMenuData(restaurantId);
   const [quickViewItem, setQuickViewItem] = useState(null);
   const [showLoginModal, setShowLoginModal] = useState(false);
+  // Page size is measured from the screen; cards per page follows from it so
+  // every page's cards fit without scrolling inside the page. Categories with
+  // more items simply get more book pages.
+  const bookSize = useBookSize();
+  const cardsPerPage = bookSize.cardsPerPage;
 
   useEffect(() => {
     setIsLoading?.(loading);
@@ -102,7 +104,7 @@ function PublicMenu({ setIsLoading }) {
     }
 
     categories.forEach(({ category, items }) => {
-      chunk(items, CARDS_PER_PAGE).forEach((pageItems, chunkIdx) => {
+      chunk(items, cardsPerPage).forEach((pageItems, chunkIdx) => {
         list.push(
           <BookPage key={`category-${category}-${chunkIdx}`}>
             <CategoryPage
@@ -125,7 +127,7 @@ function PublicMenu({ setIsLoading }) {
     }
 
     if (popularItems.length > 0) {
-      chunk(popularItems, CARDS_PER_PAGE).forEach((pageItems, chunkIdx) => {
+      chunk(popularItems, cardsPerPage).forEach((pageItems, chunkIdx) => {
         list.push(
           <BookPage key={`popular-${chunkIdx}`}>
             <CategoryPage
@@ -140,7 +142,7 @@ function PublicMenu({ setIsLoading }) {
     }
 
     if (todaysSpecialItems.length > 0) {
-      chunk(todaysSpecialItems, CARDS_PER_PAGE).forEach((pageItems, chunkIdx) => {
+      chunk(todaysSpecialItems, cardsPerPage).forEach((pageItems, chunkIdx) => {
         list.push(
           <BookPage key={`special-${chunkIdx}`}>
             <CategoryPage
@@ -161,7 +163,7 @@ function PublicMenu({ setIsLoading }) {
     );
 
     return list;
-  }, [restaurant, tableNumber, categories, promotions, popularItems, todaysSpecialItems, handleAddToCart, handleOrderNow]);
+  }, [restaurant, tableNumber, categories, promotions, popularItems, todaysSpecialItems, handleAddToCart, handleOrderNow, cardsPerPage]);
 
   if (loading) {
     return (
@@ -185,7 +187,7 @@ function PublicMenu({ setIsLoading }) {
 
   return (
     <div className="public-menu-root">
-      <BookLayout pages={pages} />
+      <BookLayout pages={pages} size={bookSize} />
       {quickViewItem && (
         <MenuItemQuickView
           item={quickViewItem}

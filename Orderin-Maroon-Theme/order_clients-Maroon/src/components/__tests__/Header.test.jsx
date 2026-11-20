@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import Header from '../Header';
@@ -8,6 +8,13 @@ vi.mock('react-router-dom', async (importOriginal) => {
   const actual = await importOriginal();
   return { ...actual, useNavigate: () => mockNavigate };
 });
+// Restaurant profile read by the header (name shown in the top bar).
+const mockGetDoc = vi.fn();
+vi.mock('../../firebase', () => ({ db: {} }));
+vi.mock('firebase/firestore', () => ({
+  doc: vi.fn(() => ({})),
+  getDoc: (...args) => mockGetDoc(...args),
+}));
 vi.mock('../Notification', () => ({
   default: ({ onClose }) => (
     <div data-testid="notification-panel">
@@ -16,14 +23,18 @@ vi.mock('../Notification', () => ({
   ),
 }));
 
-const renderHeader = () =>
+const renderHeader = (path = '/dashboard') =>
   render(
-    <MemoryRouter>
+    <MemoryRouter initialEntries={[path]}>
       <Header />
     </MemoryRouter>,
   );
 
 describe('Header', () => {
+  beforeEach(() => {
+    mockGetDoc.mockResolvedValue({ exists: () => false, data: () => ({}) });
+  });
+
   afterEach(() => {
     localStorage.clear();
     sessionStorage.clear();
@@ -34,9 +45,10 @@ describe('Header', () => {
     expect(asFragment()).toMatchSnapshot();
   });
 
-  it('renders the restaurant name and two icon buttons', () => {
+  it('shows the restaurant name from its profile, and two icon buttons', async () => {
+    mockGetDoc.mockResolvedValue({ exists: () => true, data: () => ({ name: 'Spice Garden' }) });
     renderHeader();
-    expect(screen.getByRole('heading', { name: 'XYZ Restaurant' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Spice Garden' })).toBeInTheDocument();
     expect(screen.getAllByRole('button')).toHaveLength(2);
   });
 
@@ -70,4 +82,19 @@ describe('Header', () => {
     expect(sessionStorage.getItem('menuAuth')).toBeNull();
     expect(mockNavigate).toHaveBeenCalledWith('/', { replace: true });
   });
+
+  it('falls back to "Restaurant" when the profile has no name', async () => {
+    renderHeader();
+    expect(await screen.findByRole('heading', { name: 'Restaurant' })).toBeInTheDocument();
+  });
+
+  it.each(['/dashboard', '/orders', '/table-management', '/finance'])(
+    'shows no sidebar on %s: pages use the full width',
+    (path) => {
+      renderHeader(path);
+      expect(screen.queryByRole('navigation')).not.toBeInTheDocument();
+      expect(document.body).not.toHaveClass('mx-shell');
+      expect(screen.getAllByRole('button')).toHaveLength(2);
+    }
+  );
 });
