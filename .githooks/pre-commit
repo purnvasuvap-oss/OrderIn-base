@@ -1,0 +1,4 @@
+#!/bin/sh
+# Blocks commits containing Razorpay / WhatsApp credentials or .env files.
+# Enable once per clone:  git config core.hooksPath .githooks
+node "$(git rev-parse --show-toplevel)/scripts/check-secrets.js" || exit 1

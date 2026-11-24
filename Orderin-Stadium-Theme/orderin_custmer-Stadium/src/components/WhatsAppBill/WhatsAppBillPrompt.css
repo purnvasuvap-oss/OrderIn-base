@@ -1,0 +1,125 @@
+/* WhatsApp bill prompt, shown under the receipt after payment.
+   A self-contained light card so it reads the same on every theme.
+   Inputs are 16px so iOS Safari doesn't zoom in on focus. */
+.wa-bill {
+  box-sizing: border-box;
+  width: min(100%, 360px);
+  margin: 12px auto 24px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: #ffffff;
+  color: #1f2937;
+  border: 1px solid #d1fae5;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+  font-family: inherit;
+  text-align: left;
+}
+.wa-bill * {
+  box-sizing: border-box;
+}
+.wa-bill-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+.wa-bill-head h3 {
+  margin: 0;
+  font-size: 17px;
+  line-height: 1.3;
+  color: #111827;
+}
+.wa-bill-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  flex: 0 0 36px;
+  border-radius: 50%;
+  background: #25d366;
+  color: #fff;
+}
+.wa-bill-text {
+  margin: 4px 0 10px;
+  font-size: 15px;
+  line-height: 1.45;
+}
+.wa-bill-note {
+  margin: 6px 0 0;
+  font-size: 13px;
+  color: #6b7280;
+}
+.wa-bill-error {
+  margin: 6px 0 0;
+  font-size: 14px;
+  color: #b91c1c;
+}
+.wa-bill-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+.wa-btn {
+  flex: 1 1 auto;
+  min-height: 44px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid #d1d5db;
+  background: #f9fafb;
+  color: #111827;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  -webkit-tap-highlight-color: transparent;
+}
+.wa-btn:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+.wa-btn-primary {
+  background: #25d366;
+  border-color: #25d366;
+  color: #fff;
+}
+.wa-btn-ghost {
+  background: transparent;
+  border-color: transparent;
+  color: #374151;
+  text-decoration: underline;
+}
+.wa-phone {
+  display: grid;
+  grid-template-columns: 84px minmax(0, 1fr);
+  gap: 8px;
+}
+.wa-phone select,
+.wa-phone input {
+  min-height: 46px;
+  padding: 8px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  background: #fff;
+  color: #111827;
+  font: inherit;
+  font-size: 16px;
+  width: 100%;
+  min-width: 0;
+}
+.wa-phone input:focus,
+.wa-phone select:focus {
+  outline: 2px solid #25d366;
+  outline-offset: 1px;
+}
+@media print {
+  .wa-bill {
+    display: none;
+  }
+}

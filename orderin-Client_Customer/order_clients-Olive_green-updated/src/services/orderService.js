@@ -1,6 +1,8 @@
 import { db } from "../firebase";
 import { collection, getDocs, doc, updateDoc, getDoc, onSnapshot } from "firebase/firestore";
 import { parseOrderTimestamp } from "../utils/orderDateTime";
+import { deductInventoryForOrder } from "./inventoryDeductionService";
+import { isConsumingStatus } from "../utils/expiryOffers";
 
 const RESTAURANT_ID = "orderin_restaurant_3";
 
@@ -979,6 +981,13 @@ export const updateOrderStatus = async (phoneNumber, orderIdOrIndex, newStatus, 
 
     // Update the status of the specific order
     if (foundIndex >= 0 && pastOrders[foundIndex]) {
+      // First time the kitchen starts this order: take its recipe ingredients
+      // out of inventory (once; the flag is saved in the same write).
+      const claimDeduction = !pastOrders[foundIndex].inventoryDeducted && isConsumingStatus(newStatus);
+      if (claimDeduction) {
+        pastOrders[foundIndex].inventoryDeducted = true;
+        pastOrders[foundIndex].inventoryDeductedAt = new Date().toISOString();
+      }
       pastOrders[foundIndex].status = newStatus;
       // Clear awaitingConfirmation flag when order is confirmed or rejected (Fix #3)
       if (newStatus === "Confirmed" || newStatus === "Rejected" || newStatus === "Cancelled") {
@@ -989,6 +998,11 @@ export const updateOrderStatus = async (phoneNumber, orderIdOrIndex, newStatus, 
       await updateDoc(customerRef, {
         pastOrders: pastOrders,
       });
+      if (claimDeduction) {
+        deductInventoryForOrder({ ...pastOrders[foundIndex] }).then((res) => {
+          if (res.missing.length) console.warn(`Order ${pastOrders[foundIndex].id}: no inventory item for ${res.missing.join(", ")}`);
+        });
+      }
     }
   } catch (error) {
     console.error("Error updating order status:", error);

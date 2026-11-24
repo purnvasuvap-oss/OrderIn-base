@@ -57,6 +57,8 @@ vi.mock('firebase/firestore', () => ({
   orderBy: vi.fn(() => ({})),
   limit: vi.fn(() => ({})),
   serverTimestamp: vi.fn(() => ({ __type: 'serverTimestamp' })),
+  arrayUnion: vi.fn((...v) => ({ __type: 'arrayUnion', v })),
+  runTransaction: vi.fn(async (_db, fn) => fn({ get: async () => ({ exists: () => false, data: () => ({}) }), set: vi.fn(), update: vi.fn() })),
   Timestamp: {
     fromDate: (d) => ({ toDate: () => d, seconds: Math.floor(d.getTime() / 1000) }),
     now: () => ({ toDate: () => new Date(), seconds: Math.floor(Date.now() / 1000) }),

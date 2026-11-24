@@ -58,6 +58,7 @@ body {
   background: linear-gradient(135deg, #0f172a 0%, #1a1f35 50%, #0f172a 100%);
   color: var(--text-primary);
   min-height: 100vh;
+  min-height: 100dvh;
 }
 
 html, body {
@@ -159,6 +160,7 @@ p { line-height: 1.6; color: var(--text-secondary); }
 
 .login-container {
   min-height: 100vh;
+  min-height: 100dvh;
   width: 100%;
   background: linear-gradient(135deg, #0f172a 0%, #2d1b69 50%, #1e1b4b 100%);
   display: flex;

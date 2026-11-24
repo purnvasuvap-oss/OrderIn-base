@@ -18,6 +18,8 @@ Pending billing review (written and tested, **not allowed to deploy yet**):
 
 - `aggregatorWebhook` and `aggregatorStatusPush` in `/aggregator-functions` (Swiggy / Zomato orders). Each runs only when an order arrives or changes, with no schedules or polling, and is capped at 5 instances. The folder is not referenced by any `firebase.json`, so it can't be deployed by accident. After approval, move them to the allowed list above and deploy with `firebase deploy --only functions:aggregator` (see `aggregator-functions/README.md`).
 
+- `sendWhatsAppBill` in `/whatsapp-functions` (sends a paid bill to the customer's WhatsApp). It runs only when a customer taps "Yes, send" on the bill, with no schedules, and is capped at 3 instances and 3 sends per order. Meta also charges for each template message. Until it is approved, the customer apps open WhatsApp on the phone with the bill typed in, which costs nothing. See `whatsapp-functions/README.md`.
+
 Do not add or deploy these without an explicit billing review:
 
 - App Engine services or versions.

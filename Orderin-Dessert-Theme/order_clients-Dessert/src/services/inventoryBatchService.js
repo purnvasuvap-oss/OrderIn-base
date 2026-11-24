@@ -1,7 +1,8 @@
 ﻿import { db } from "../firebase";
 import { collection, getDocs, doc, setDoc, updateDoc, addDoc, Timestamp, serverTimestamp, query, orderBy, limit } from "firebase/firestore";
+import { computeExpiryPlan, getBatchExpiryState, normalizeSpan, addSpan, toDate as toExpiryDate, EXPIRY_STATUS } from "../utils/expiryRules";
 
-const RESTAURANT_PATH = "Restaurant/orderin_restuarant_5";
+export const RESTAURANT_PATH = "Restaurant/orderin_restuarant_5";
 
 /**
  * Add a new batch to an inventory item
@@ -11,15 +12,27 @@ export const addInventoryBatch = async (itemName, batchData) => {
     const batchRef = collection(db, RESTAURANT_PATH, "inventory", itemName, "batches");
     const timestamp = Timestamp.now();
     
+    // batchData.expiry is the form input for computeExpiryPlan (by date or by
+    // duration, with buffer and alert-before). Older callers that pass a flat
+    // expiryDate / shelfLifeDays still work.
+    const plan = batchData.expiry ? computeExpiryPlan(batchData.expiry) : null;
+    const ts = (d) => (d ? Timestamp.fromDate(d) : null);
+
     const batch = {
       batchId: `batch-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
       itemName,
       quantity: Number(batchData.quantity) || 0,
       unit: batchData.unit || "Kgs",
-      arrivalDate: batchData.arrivalDate ? Timestamp.fromDate(new Date(batchData.arrivalDate)) : timestamp,
-      expiryDate: batchData.expiryDate ? Timestamp.fromDate(new Date(batchData.expiryDate)) : null,
-      warningPeriodDays: Number(batchData.warningPeriodDays) || 3,
-      shelfLifeDays: Number(batchData.shelfLifeDays) || 0,
+      arrivalDate: plan ? ts(plan.arrival) : batchData.arrivalDate ? Timestamp.fromDate(new Date(batchData.arrivalDate)) : timestamp,
+      expiryDate: plan ? ts(plan.expiry) : batchData.expiryDate ? Timestamp.fromDate(new Date(batchData.expiryDate)) : null,
+      warningPeriodDays: plan ? Math.max(0, Math.round((plan.useBefore - plan.alertAt) / 86400000)) : Number(batchData.warningPeriodDays) || 3,
+      shelfLifeDays: plan ? plan.shelfLifeDays : Number(batchData.shelfLifeDays) || 0,
+      expiryMode: plan ? plan.mode : batchData.expiryDate ? "date" : null,
+      duration: plan?.duration || null,
+      buffer: plan?.buffer || null,
+      useBefore: plan ? ts(plan.useBefore) : null,
+      alertBefore: plan?.alertBefore || null,
+      alertAt: plan ? ts(plan.alertAt) : null,
       locationOfStorage: batchData.locationOfStorage || "",
       addedAt: timestamp,
       updatedAt: timestamp,
@@ -52,10 +65,10 @@ export const getItemBatches = async (itemName) => {
         daysToExpiry: data.expiryDate 
           ? Math.round((data.expiryDate.toDate().getTime() - Date.now()) / (1000 * 60 * 60 * 24))
           : null,
-        // Check if warning should trigger
-        isWarningTriggered: data.expiryDate && data.warningPeriodDays
-          ? Math.round((data.expiryDate.toDate().getTime() - Date.now()) / (1000 * 60 * 60 * 24)) <= data.warningPeriodDays
-          : false,
+        // Check if warning should trigger (uses alertAt / useBefore when the
+        // batch has them, else the older expiryDate + warningPeriodDays)
+        isWarningTriggered: getBatchExpiryState(data).status === EXPIRY_STATUS.ALERT,
+        isExpired: getBatchExpiryState(data).status === EXPIRY_STATUS.EXPIRED,
       };
     });
   } catch (error) {
@@ -310,3 +323,28 @@ export const consumeFromSpecificBatches = async (itemName, batchIds, quantity) =
   }
 };
 
+
+/**
+ * Change when the expiry alert fires for every active batch of an item
+ * (used by "Set Alerts"), e.g. { value: 12, unit: "hours" }.
+ */
+export const updateItemBatchAlerts = async (itemName, alertBefore) => {
+  const span = normalizeSpan(alertBefore);
+  if (!span) return 0;
+  const batches = await getItemBatches(itemName);
+  let updated = 0;
+  for (const b of batches) {
+    if (b.status !== "active" || !(b.remainingQty > 0)) continue;
+    const useBefore = toExpiryDate(b.useBefore) || toExpiryDate(b.expiryDate);
+    if (!useBefore) continue;
+    const alertAt = addSpan(useBefore, span, -1);
+    await updateDoc(doc(db, RESTAURANT_PATH, "inventory", itemName, "batches", b.firestoreId), {
+      alertBefore: span,
+      alertAt: Timestamp.fromDate(alertAt),
+      warningPeriodDays: Math.max(0, Math.round((useBefore - alertAt) / 86400000)),
+      updatedAt: Timestamp.now(),
+    });
+    updated += 1;
+  }
+  return updated;
+};

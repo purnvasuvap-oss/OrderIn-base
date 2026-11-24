@@ -23,6 +23,8 @@ import Scoreboard from "./Scoreboard";
 import closeIcon from "../stadium-icons/icon-close.svg";
 import { getPlaceholder } from "../utils/placeholder";
 import { resolveImageUrl } from "../utils/storageResolver";
+import { getPriceDisplay, getPromotionPrices, settleMenuItems } from "../utils/offerPricing";
+import "../utils/offerPricing.css";
 
 const CART_STORAGE_KEY = "orderin_cart";
 const ACTIVE_ORDER_STORAGE_KEY = "orderin_active_order";
@@ -174,7 +176,7 @@ function Menu({ setIsLoading }) {
       try {
         setIsLoading(true);
         const snap = await withTimeout(getDocs(collection(db, "Restaurant", "orderin_restuarant_7", "menu")), 8000);
-        const data = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+        const data = settleMenuItems(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
         if (!alive) return;
         setFetchedProducts(data);
         menuStore.set(data);
@@ -471,6 +473,13 @@ function Menu({ setIsLoading }) {
             <div className="promotion-text">
               <h2 className="promotion-caption">{adPromotion?.caption}</h2>
               <p className="promotion-description">{adPromotion?.description}</p>
+              {getPromotionPrices(adPromotion) && (
+                <p className="offer-prices">
+                  <span className="offer-old">₹{getPromotionPrices(adPromotion).original}</span>
+                  <span className="offer-new">₹{getPromotionPrices(adPromotion).discounted}</span>
+                  <span className="offer-tag">{getPromotionPrices(adPromotion).percent}% off</span>
+                </p>
+              )}
             </div>
             <div className="promotion-image-wrapper">
               {!adImageLoaded && <div className="promotion-image-spinner loading-spinner" aria-hidden="true"></div>}
@@ -535,8 +544,9 @@ function Menu({ setIsLoading }) {
                     const spiceLevel = getSpiceLevel(item);
                     const rating = typeof item.rating === "number" ? item.rating : hashToRating(item.id);
                     const { value, symbol } = parsePrice(item.price);
-                    const onPromo = isOnPromotion(item);
-                    const increased = (value * 1.25).toFixed(2);
+                    const priceDisplay = getPriceDisplay(item);
+                    const onPromo = priceDisplay.original != null;
+                    const increased = onPromo ? priceDisplay.original.toFixed(2) : "";
 
                     return (
                       <div

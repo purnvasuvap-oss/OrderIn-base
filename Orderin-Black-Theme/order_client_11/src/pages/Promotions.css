@@ -13,6 +13,7 @@
   padding: 12px;
   overflow-y: auto;
   min-height: 100vh;
+  min-height: 100dvh;
   background-size: cover;
   background-position: center bottom;
   background-attachment: fixed;

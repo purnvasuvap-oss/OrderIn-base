@@ -22,7 +22,10 @@ vi.mock('../../services/inventoryBatchService', () => ({
   getItemActionHistory: vi.fn().mockResolvedValue([]),
   recordInventoryAction: vi.fn().mockResolvedValue(undefined),
   getAllBatchesWithExpiry: vi.fn().mockResolvedValue([]),
+  updateItemBatchAlerts: vi.fn().mockResolvedValue(0),
+  RESTAURANT_PATH: 'Restaurant/test',
 }));
+vi.mock('../../components/Expiry/ExpiringSoonPanel', () => ({ default: () => null }));
 vi.mock('../../components/RotIndex/RotBadge', () => ({ default: () => null }));
 vi.mock('../../components/RotIndex/IllusionPricingModal', () => ({ default: () => null }));
 vi.mock('../../components/InventoryManager/InventoryItemManager', () => ({

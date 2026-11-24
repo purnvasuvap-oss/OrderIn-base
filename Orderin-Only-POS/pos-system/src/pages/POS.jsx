@@ -8,6 +8,7 @@ import { useToast } from "../context/ToastContext";
 import { printReceiptForOrder, printKitchenTicketForOrder } from "../lib/printer";
 import Modal from "../components/Modal";
 import Receipt from "../components/Receipt";
+import WhatsAppReceipt from "../components/WhatsAppReceipt";
 import "./POS.css";
 
 const ORDER_TYPES = [
@@ -194,6 +195,7 @@ export default function POS() {
           <button className="btn btn-primary" onClick={() => setReceipt(null)}>New order</button>
         </>}>
         {receipt && <Receipt order={receipt} />}
+        {receipt && <WhatsAppReceipt key={receipt.id} order={receipt} user={user} onOrderUpdated={setReceipt} />}
       </Modal>
     </div>
   );

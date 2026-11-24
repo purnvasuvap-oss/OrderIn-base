@@ -1,0 +1,10 @@
+/* Real-phone fixes (DevTools device mode doesn't show these problems).
+   - iOS Safari zooms the whole page when a form field under 16px is tapped.
+     Touch phones get 16px fields; desktop and tablets in landscape are unchanged. */
+@media (max-width: 768px) and (pointer: coarse) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}

@@ -12,6 +12,8 @@ import {
   deleteField,
 } from "firebase/firestore";
 import storageService from "../services/storageService";
+import { isOfferActive } from "../utils/expiryOffers";
+import { revertExpiredOffers } from "../services/expiryOfferService";
 import { useNotification } from "../hooks/useNotification";
 import AvailableDishesIcon from "./landingpage/Available_dishes.svg";
 import CategoryIcon from "./landingpage/Category.svg";
@@ -114,6 +116,11 @@ const MenuPage = () => {
   const [selectedAvailability, setSelectedAvailability] = useState("All");
   const [vegOnlyFilter, setVegOnlyFilter] = useState(false);
   const [showAllVegConfirm, setShowAllVegConfirm] = useState(false);
+  // Put prices back for expiry offers whose time is up (no scheduled job).
+  useEffect(() => {
+    revertExpiredOffers().catch((e) => console.warn("Could not end expired offers:", e));
+  }, []);
+
   useEffect(() => {
     if (!menuNotice) return undefined;
 

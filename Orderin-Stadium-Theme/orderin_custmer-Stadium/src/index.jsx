@@ -5,6 +5,7 @@ import './stadium-icons/stadium-theme.css';
 import App from './App';
 import { CartProvider } from './context/CartContext';
 import reportWebVitals from './reportWebVitals';
+import './mobile-fixes.css';
 
 // One-time cleanup: the withdrawn "Movie Mode" feature could leave this
 // attribute stuck on <html>, and its CSS `filter` breaks every position:fixed

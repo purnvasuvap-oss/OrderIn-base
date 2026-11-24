@@ -314,6 +314,39 @@ async function upsertCustomerFromOrder(order) {
   emit(EVENTS.CUSTOMERS_CHANGED);
 }
 
+/**
+ * Correct the customer's phone on a completed order (e.g. a mistyped number
+ * at the till, fixed before sending the bill on WhatsApp). Moves this order's
+ * count and spend from the old customer record to the new number's record.
+ */
+export async function updateOrderCustomerPhone(orderId, newPhone, user) {
+  const phone = String(newPhone || "").trim();
+  if (!phone) throw new Error("Phone number is required.");
+  const order = await getOne(STORES.orders, orderId);
+  if (!order) throw new Error("Order not found.");
+  if (order.customerPhone === phone) return order;
+
+  const before = { ...order };
+  const all = await getAll(STORES.customers);
+  const old = all.find((c) => c.phone === order.customerPhone);
+  if (old) {
+    const orders = Math.max(0, (old.orders || 0) - 1);
+    if (orders === 0) {
+      await removeOne(STORES.customers, old.id);
+      enqueueSync(STORES.customers, "delete", { id: old.id });
+    } else {
+      await persist(STORES.customers, { ...old, orders, totalSpent: +Math.max(0, (old.totalSpent || 0) - order.total).toFixed(2) });
+    }
+  }
+
+  const updated = { ...order, customerPhone: phone, updatedAt: Date.now() };
+  await persist(STORES.orders, updated);
+  await upsertCustomerFromOrder(updated);
+  await logAudit({ user, action: "order.phone_update", entity: "order", entityId: order.id, before, after: updated });
+  emit(EVENTS.ORDERS_CHANGED, { id: order.id });
+  return updated;
+}
+
 export async function listCustomers() {
   return (await getAll(STORES.customers)).sort((a, b) => b.lastOrder - a.lastOrder);
 }

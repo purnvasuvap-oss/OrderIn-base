@@ -1,5 +1,7 @@
 import React from "react";
 import { getPlaceholder } from "../../utils/placeholder";
+import { getPromotionPrices } from "../../utils/offerPricing";
+import "../../utils/offerPricing.css";
 
 // Shows every active (non-expired) promotion from the existing `promotions`
 // collection as a grid — unlike the authenticated Menu page, which only
@@ -29,6 +31,13 @@ function OfferPage({ promotions }) {
               <div className="pm-offer-body">
                 {promo.caption && <h3 className="pm-offer-caption">{promo.caption}</h3>}
                 {promo.description && <p className="pm-offer-desc">{promo.description}</p>}
+                {getPromotionPrices(promo) && (
+                  <p className="offer-prices">
+                    <span className="offer-old">₹{getPromotionPrices(promo).original}</span>
+                    <span className="offer-new">₹{getPromotionPrices(promo).discounted}</span>
+                    <span className="offer-tag">{getPromotionPrices(promo).percent}% off</span>
+                  </p>
+                )}
               </div>
             </div>
           );

@@ -37,6 +37,7 @@
   --tm-radius: 16px;
 
   min-height: 100vh;
+  min-height: 100dvh;
   background: var(--tm-bg);
   color: var(--tm-text);
   font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;

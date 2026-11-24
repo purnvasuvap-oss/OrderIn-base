@@ -4,6 +4,7 @@
   margin: 0;
   background: #132019;
   min-height: 100vh;
+  min-height: 100dvh;
 }
 
 .page-title {
@@ -442,6 +443,7 @@
     padding: 12px;
     margin-top: 80px;
     min-height: 100vh;
+    min-height: 100dvh;
   }
 
   .page-title {

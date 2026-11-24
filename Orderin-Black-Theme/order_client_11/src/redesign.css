@@ -154,6 +154,7 @@ textarea:focus-visible {
 .login-page,
 .sub-login {
   min-height: 100vh;
+  min-height: 100dvh;
   height: auto;
   overflow: visible;
   display: grid;

@@ -1,0 +1,33 @@
+/* Old / new price on promotion banners and offer pages (expiry offers). */
+.offer-prices {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+  margin: 6px 0 0;
+}
+.offer-prices .offer-old {
+  text-decoration: line-through;
+  text-decoration-thickness: 2px;
+  opacity: 0.7;
+}
+.offer-prices .offer-new {
+  font-weight: 800;
+  font-size: 1.15em;
+}
+.offer-prices .offer-tag {
+  background: #16a34a;
+  color: #fff;
+  border-radius: 999px;
+  padding: 1px 8px;
+  font-size: 0.75em;
+  font-weight: 700;
+}
+.offer-was {
+  margin: 2px 0 0;
+  font-size: 0.85em;
+  opacity: 0.75;
+}
+.offer-was s {
+  text-decoration-thickness: 2px;
+}

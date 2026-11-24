@@ -11,6 +11,7 @@ body{
   background-repeat: no-repeat;
   background-position: bottom;
   min-height: 100vh;
+  min-height: 100dvh;
   position: relative;
   background-color: #3F0B11;
   color: #F5DFBB;
@@ -834,6 +835,7 @@ td {
   .fin-app {
     padding: 8px 10px;
     min-height: 100vh;
+    min-height: 100dvh;
   }
 
   .fin-back-btn {

@@ -22,6 +22,8 @@ import Footer from "../Footer/Footer";
 import "./ItemDetails.css";
 import { getPlaceholder } from "../utils/placeholder";
 import { resolveImageUrl } from "../utils/storageResolver";
+import { settleOfferPrice, settleMenuItems, getPriceDisplay } from "../utils/offerPricing";
+import "../utils/offerPricing.css";
 
 // Default customization groups shown when the item doesn't define its own.
 // Purely preferential (no price impact) — folded into the saved instructions.
@@ -37,7 +39,7 @@ function ItemDetails() {
   const { addToCart, cartItems, updateQuantity, updateInstructions } = useCart();
   const { getPathWithTable } = useTableNumber();
 
-  const [item, setItem] = useState(location.state?.item || null);
+  const [item, setItem] = useState(location.state?.item ? settleOfferPrice(location.state.item) : null);
   const [loading, setLoading] = useState(!item);
   const [error, setError] = useState(null);
 
@@ -143,7 +145,7 @@ function ItemDetails() {
       const fetchItem = async () => {
         try {
           const querySnapshot = await getDocs(collection(db, "Restaurant", "orderin_restuarant_7", "menu"));
-          const productsData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          const productsData = settleMenuItems(querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
           const foundItem = productsData.find(product => product.name.replace(/\s+/g, '-').toLowerCase() === id);
           if (foundItem) {
             setItem(foundItem);
@@ -513,6 +515,11 @@ function ItemDetails() {
         <div className="price-section">
           <p className="price-label">Total Price</p>
           <p className="price-value">₹{totalPrice}</p>
+          {getPriceDisplay(item).isOffer && (
+            <p className="offer-was">
+              Offer price · was <s>₹{getPriceDisplay(item).original}</s> each
+            </p>
+          )}
         </div>
         <button
           className={`add-to-cart-btn ${isCurrentSelectionAdded ? 'added' : cartItemForCurrentItem ? 'needs-update' : ''}`}

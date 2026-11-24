@@ -1,6 +1,7 @@
 import React from "react";
 import { Flame } from "lucide-react";
 import { getPlaceholder } from "../../utils/placeholder";
+import { getPriceDisplay } from "../../utils/offerPricing";
 import {
   getDietType,
   isBestseller,
@@ -19,8 +20,9 @@ function MenuCard({ item, onSelect, onAdd }) {
   const bestseller = isBestseller(item);
   const spiceLevel = getSpiceLevel(item);
   const { value, symbol } = parsePrice(item.price);
-  const onPromo = isOnPromotion(item);
-  const increased = (value * 1.25).toFixed(2);
+  const priceDisplay = getPriceDisplay(item);
+  const onPromo = priceDisplay.original != null;
+  const increased = onPromo ? priceDisplay.original.toFixed(2) : "";
 
   const handleSelect = () => {
     if (!unavailable) onSelect(item);

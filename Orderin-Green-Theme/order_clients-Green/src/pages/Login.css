@@ -3,6 +3,7 @@
   display: flex;
   position: relative;
   height: 100vh;
+  height: 100dvh;
   background-color: #132019;
   overflow: hidden;
   font-family: "Poppins", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
@@ -317,6 +318,7 @@ html, body, #root {
   width: 100%;
   height: auto;
   max-height: 100vh;
+  max-height: 100dvh;
   object-fit: cover;
   pointer-events: none;
 }
@@ -333,6 +335,7 @@ html, body, #root {
   width: clamp(760px, 76vw, 1500px);
   height: auto;
   max-height: 100vh;
+  max-height: 100dvh;
   z-index: 0;
   pointer-events: none;
   display: block;
@@ -621,6 +624,7 @@ html, body, #root {
 
   .login-page {
     height: 100vh;
+    height: 100dvh;
     overflow-y: auto;
     flex-direction: column;
     padding: 0;
@@ -751,6 +755,7 @@ html, body, #root {
 
   .login-page {
     height: 100vh;
+    height: 100dvh;
     flex-direction: column;
     padding: 0;
     padding-bottom: clamp(70px, 12vw, 90px);
@@ -1045,6 +1050,7 @@ html, body, #root {
 @media (max-width: 360px) {
   .login-page {
     height: 100vh;
+    height: 100dvh;
     padding-left: 0;
   }
 
@@ -1216,6 +1222,7 @@ html, body, #root {
   display: flex;
   position: relative;
   height: 100vh;
+  height: 100dvh;
   background-color: #132019;
   overflow: hidden;
   font-family: "Poppins", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;

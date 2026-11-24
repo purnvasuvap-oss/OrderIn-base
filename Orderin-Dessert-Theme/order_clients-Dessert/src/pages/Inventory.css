@@ -1530,3 +1530,8 @@
     row-gap: 4px;
   }
 }
+/* Expiry components (components/Expiry) use the theme accent */
+:root {
+  --xp-accent: #B5823F;
+  --xp-accent-ink: #fff;
+}

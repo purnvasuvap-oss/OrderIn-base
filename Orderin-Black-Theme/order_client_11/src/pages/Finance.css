@@ -12,6 +12,7 @@ body{
   background-position: center bottom;
   background-attachment: fixed;
   min-height: 100vh;
+  min-height: 100dvh;
   position: relative;
 }
 

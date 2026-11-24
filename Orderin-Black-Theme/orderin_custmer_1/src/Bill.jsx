@@ -10,6 +10,7 @@ import "./Bill.css";
 import { db } from "./firebaseConfig";
 import { parseOrderTimestamp } from "./utils/orderDateTime";
 import { calculateBilling } from "./utils/billing";
+import WhatsAppBillPrompt from "./components/WhatsAppBill/WhatsAppBillPrompt";
 
 function Bill() {
   const navigate = useNavigate();
@@ -260,6 +261,23 @@ function Bill() {
       </div>
 
      
+      {/* Outside #bill-content so it is not printed or put in the PDF */}
+      <WhatsAppBillPrompt
+        bill={{
+          orderId: id,
+          date: orderDate,
+          tableNo,
+          items: items.map((it) => ({
+            name: it.name,
+            qty: parseInt(it.quantity ?? it.qty ?? 1, 10) || 1,
+            unitPrice: parseFloat(String(it.price || "").replace(/[^0-9.\-]/g, "")) || 0,
+          })),
+          subtotal: safeSubtotal,
+          taxes: safeTaxes,
+          total: safeTotal,
+          paymentMethod,
+        }}
+      />
     </div>
   );
 }

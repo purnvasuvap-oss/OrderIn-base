@@ -1,6 +1,8 @@
 import { db } from "../firebase";
 import { collection, getDocs, doc, updateDoc, getDoc, onSnapshot, runTransaction } from "firebase/firestore";
 import { parseOrderTimestamp } from "../utils/orderDateTime";
+import { deductInventoryForOrder } from "./inventoryDeductionService";
+import { isConsumingStatus } from "../utils/expiryOffers";
 
 const RESTAURANT_ID = "orderin_restaurant_2";
 
@@ -892,6 +894,7 @@ const mutateOrderByIdOrIndex = async (phoneNumber, orderIdOrIndex, restaurantId,
   const customerRef = doc(db, "Restaurant", restaurantId, "customers", phoneNumber);
   const idsMatch = (a, b) => String(a) === String(b);
 
+  let mutated = null;
   await runTransaction(db, async (tx) => {
     const customerSnap = await tx.get(customerRef);
     if (!customerSnap.exists()) {
@@ -914,7 +917,31 @@ const mutateOrderByIdOrIndex = async (phoneNumber, orderIdOrIndex, restaurantId,
     }
 
     mutate(pastOrders[foundIndex]);
+    mutated = { ...pastOrders[foundIndex] };
     tx.update(customerRef, { pastOrders });
+  });
+  return mutated;
+};
+
+/**
+ * Inside the order transaction: when an order first reaches a "kitchen has
+ * started" status, claim it for inventory deduction. Returns true only for
+ * the one write that claimed it, so ingredients are deducted once.
+ */
+const claimInventoryDeduction = (order, nextStatus) => {
+  if (order.inventoryDeducted || !isConsumingStatus(nextStatus)) return false;
+  order.inventoryDeducted = true;
+  order.inventoryDeductedAt = new Date().toISOString();
+  return true;
+};
+
+const runDeductionIfClaimed = (claimed, order) => {
+  if (!claimed || !order) return;
+  // Fire and forget: a deduction problem must never block the order.
+  deductInventoryForOrder(order).then((res) => {
+    if (res.missing.length) {
+      console.warn(`Order ${order.id}: no inventory item for ${res.missing.join(", ")}`);
+    }
   });
 };
 
@@ -924,9 +951,12 @@ const mutateOrderByIdOrIndex = async (phoneNumber, orderIdOrIndex, restaurantId,
  */
 export const updateOrderStatus = async (phoneNumber, orderIdOrIndex, newStatus, restaurantId = RESTAURANT_ID) => {
   try {
-    await mutateOrderByIdOrIndex(phoneNumber, orderIdOrIndex, restaurantId, (order) => {
+    let claimed = false;
+    const order = await mutateOrderByIdOrIndex(phoneNumber, orderIdOrIndex, restaurantId, (order) => {
+      claimed = claimInventoryDeduction(order, newStatus);
       order.status = newStatus;
     });
+    runDeductionIfClaimed(claimed, order);
   } catch (error) {
     console.error("Error updating order status:", error);
     throw error;
@@ -942,9 +972,12 @@ export const updateOrderStatus = async (phoneNumber, orderIdOrIndex, newStatus, 
  */
 export const acceptOrder = async (phoneNumber, orderIdOrIndex, restaurantId = RESTAURANT_ID) => {
   try {
-    await mutateOrderByIdOrIndex(phoneNumber, orderIdOrIndex, restaurantId, (order) => {
+    let claimed = false;
+    const order = await mutateOrderByIdOrIndex(phoneNumber, orderIdOrIndex, restaurantId, (order) => {
+      claimed = claimInventoryDeduction(order, "Preparing");
       order.status = "Preparing";
     });
+    runDeductionIfClaimed(claimed, order);
   } catch (error) {
     console.error("Error accepting order:", error);
     throw error;

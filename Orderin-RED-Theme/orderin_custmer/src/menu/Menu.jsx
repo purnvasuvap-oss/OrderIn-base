@@ -10,6 +10,8 @@ import Header from "../header/header";
 import Footer from "../Footer/Footer";
 import { getPlaceholder } from "../utils/placeholder";
 import { resolveImageUrl } from "../utils/storageResolver";
+import { getPriceDisplay, getPromotionPrices, settleMenuItems } from "../utils/offerPricing";
+import "../utils/offerPricing.css";
 
 // Export a stable store object to avoid changing export shapes during HMR. The store
 // has a small subscribe API so consumers can react when products change.
@@ -109,7 +111,7 @@ function Menu({ setIsLoading }) {
       try {
         setIsLoading(true);
         const snap = await withTimeout(getDocs(collection(db, "Restaurant", "orderin_restaurant_1", "menu")), 8000);
-        const data = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+        const data = settleMenuItems(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
         if (!alive) return;
         setFetchedProducts(data);
         menuStore.set(data);
@@ -373,6 +375,13 @@ function Menu({ setIsLoading }) {
               />
               <h2 className="ad-caption">{adPromotion?.caption}</h2>
               <p className="ad-description">{adPromotion?.description}</p>
+              {getPromotionPrices(adPromotion) && (
+                <p className="offer-prices">
+                  <span className="offer-old">₹{getPromotionPrices(adPromotion).original}</span>
+                  <span className="offer-new">₹{getPromotionPrices(adPromotion).discounted}</span>
+                  <span className="offer-tag">{getPromotionPrices(adPromotion).percent}% off</span>
+                </p>
+              )}
             </div>
           </div>
         </div>
@@ -461,9 +470,9 @@ function Menu({ setIsLoading }) {
                       <div className="card-body">
                         <h3 className="card-title">{item.name}</h3>
                         <p className="card-price">
-                          {isOnPromotion(item) ? (() => {
+                          {getPriceDisplay(item).original != null ? (() => {
                             const { value, symbol } = parsePrice(item.price);
-                            const increased = (value * 1.25).toFixed(2);
+                            const increased = getPriceDisplay(item).original.toFixed(2);
                             return (
                               <>
                                 <span className="price-normal">{symbol}{Number(value).toFixed(2)}</span>

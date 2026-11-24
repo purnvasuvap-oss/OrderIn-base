@@ -57,7 +57,8 @@ body,html,#root{height:100%;margin:0}
   --mono:"Space Mono",ui-monospace,Menlo,monospace;
   --disp:"Space Grotesk","Inter",system-ui,sans-serif;
 
-  min-height:100vh; background:var(--op-canvas); color:var(--ink);
+  min-height:100vh;
+  min-height: 100dvh; background:var(--op-canvas); color:var(--ink);
   font-family:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
   font-size:14px; line-height:1.4; -webkit-font-smoothing:antialiased;
   padding:22px 28px 60px; box-sizing:border-box;

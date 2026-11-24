@@ -13,3 +13,22 @@ rzp-key.csv
 
 # test coverage
 coverage/
+
+# ---- Secrets: never commit (see razorpay-config/README.md) ----
+# Razorpay keys live only in razorpay-config/razorpay.env (+ Secret Manager)
+razorpay-config/*.env
+!razorpay-config/*.env.example
+# Written by razorpay-config/sync.js
+**/functions/.env
+**/functions/.env.*
+**/functions/.secret.local
+.secret.local
+.env.*
+!.env.example
+!**/.env.example
+rzp-key*.csv
+*.pem
+*service-account*.json
+
+# Vite cache that ended up inside the repo (POS cacheDir resolved as a relative path)
+C__/

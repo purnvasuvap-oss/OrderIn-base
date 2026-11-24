@@ -42,6 +42,7 @@
   overflow-x: hidden;
   overflow-y: auto;
   height: 100vh;
+  height: 100dvh;
   padding-bottom: 88px;
   color: var(--color-text);
   font-family: var(--font-body);

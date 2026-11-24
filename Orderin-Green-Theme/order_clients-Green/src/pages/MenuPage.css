@@ -42,7 +42,8 @@ body {
 
   flex-direction: column;
 
-  height: 100vh; /* **This sets the container height to the viewport height** */
+  height: 100vh;
+  height: 100dvh; /* **This sets the container height to the viewport height** */
 
   padding: 32px;
 

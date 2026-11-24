@@ -613,6 +613,7 @@
   align-items: center;
   justify-content: center;
   height: 100vh;
+  height: 100dvh;
   background: #F1EFD8;
   color: #6B6154;
   font-family: 'Inter', sans-serif;

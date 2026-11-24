@@ -10,6 +10,9 @@ import { withRotIndex, ROT_BANDS } from "../utils/rotIndex";
 import RotBadge from "../components/RotIndex/RotBadge";
 import IllusionPricingModal from "../components/RotIndex/IllusionPricingModal";
 import InventoryItemManager from "../components/InventoryManager/InventoryItemManager";
+import ExpiryFields, { ExpiryAlertField, emptyExpiryValue } from "../components/Expiry/ExpiryFields";
+import ExpiringSoonPanel from "../components/Expiry/ExpiringSoonPanel";
+import { computeExpiryPlan, DEFAULT_ALERT_BEFORE, normalizeSpan } from "../utils/expiryRules";
 import {
   addInventoryBatch,
   getItemBatches,
@@ -17,6 +20,7 @@ import {
   getItemActionHistory,
   recordInventoryAction,
   getAllBatchesWithExpiry,
+  updateItemBatchAlerts,
 } from "../services/inventoryBatchService";
 
 const NEW_OPTION_VALUE = "__new__";
@@ -60,10 +64,10 @@ function App() {
   const [newLocationInput, setNewLocationInput] = useState("");
   const [selectedAction, setSelectedAction] = useState(null); // "add" | "take"
 
-  // Rot Index (predictive expiry) fields for the stock-update form
-  const [arrivalDate, setArrivalDate] = useState("");
-  const [shelfLifeDays, setShelfLifeDays] = useState("");
-  const [expiryDate, setExpiryDate] = useState("");
+  // Expiry (rot index) input for the stock-update form: by date or duration,
+  // buffer, and alert-before. See utils/expiryRules.js.
+  const [expiryInput, setExpiryInput] = useState(() => emptyExpiryValue());
+  const expiryPlan = useMemo(() => computeExpiryPlan(expiryInput), [expiryInput]);
 
   // Batch tracking for the Rot Index (item name -> active batches with expiry)
   const [batchesByItem, setBatchesByItem] = useState({});
@@ -94,6 +98,7 @@ function App() {
   const [alertUnit, setAlertUnit] = useState("");
   const [alertLowThreshold, setAlertLowThreshold] = useState("");
   const [alertVeryLowThreshold, setAlertVeryLowThreshold] = useState("");
+  const [alertExpiryBefore, setAlertExpiryBefore] = useState({ ...DEFAULT_ALERT_BEFORE });
 
   // Excludes paused/deleted items from every active-inventory view; the raw `data`
   // (all items, any lifecycle status) is still passed to the Item Manager tab.
@@ -238,15 +243,6 @@ function App() {
       .finally(() => setLoadingTakeOutBatches(false));
   }, [selectedAction, selectedExistingItem]);
 
-  useEffect(() => {
-    if (!arrivalDate || !shelfLifeDays) return;
-    const days = parseFloat(shelfLifeDays);
-    if (isNaN(days) || days <= 0) return;
-    const computedExpiry = new Date(arrivalDate);
-    computedExpiry.setDate(computedExpiry.getDate() + days);
-    setExpiryDate(computedExpiry.toISOString().split("T")[0]);
-  }, [arrivalDate, shelfLifeDays]);
-
   const handleCloseModal = () => {
     setShowModal(false);
     resetStockModal();
@@ -271,9 +267,7 @@ function App() {
     setSelectedLocation("");
     setNewLocationInput("");
     setSelectedAction(null);
-    setArrivalDate("");
-    setShelfLifeDays("");
-    setExpiryDate("");
+    setExpiryInput(emptyExpiryValue());
     setTakeOutBatches([]);
     setSelectedBatchIds([]);
   };
@@ -284,6 +278,7 @@ function App() {
     setAlertUnit("");
     setAlertLowThreshold("");
     setAlertVeryLowThreshold("");
+    setAlertExpiryBefore({ ...DEFAULT_ALERT_BEFORE });
   };
 
   const logActivity = (message) => {
@@ -365,21 +360,21 @@ function App() {
 
   const writeAddBatchAndAction = async (itemNameValue, qty, unitValue, locationOfStorage) => {
     try {
-      const batchArrivalDate = arrivalDate || new Date().toISOString().split("T")[0];
       const createdBatch = await addInventoryBatch(itemNameValue, {
         quantity: qty,
         unit: unitValue,
-        arrivalDate: batchArrivalDate,
-        expiryDate: expiryDate || null,
-        shelfLifeDays: shelfLifeDays ? parseFloat(shelfLifeDays) : 0,
+        arrivalDate: expiryInput.arrivalDate || new Date(),
+        expiry: expiryPlan ? expiryInput : null,
         locationOfStorage,
       });
       await recordInventoryAction(itemNameValue, "add", {
         quantity: qty,
         unit: unitValue,
         batchId: createdBatch.batchId,
-        expiryDate: expiryDate ? Timestamp.fromDate(new Date(expiryDate)) : null,
-        arrivalDate: Timestamp.fromDate(new Date(batchArrivalDate)),
+        expiryDate: createdBatch.expiryDate || null,
+        useBefore: createdBatch.useBefore || null,
+        alertAt: createdBatch.alertAt || null,
+        arrivalDate: createdBatch.arrivalDate,
         locationOfStorage,
       });
     } catch (error) {
@@ -431,6 +426,7 @@ function App() {
       setSelectedItemId(val);
       const item = activeData.find((d) => d.id === val);
       if (item) {
+        setExpiryInput((prev) => ({ ...prev, alertBefore: normalizeSpan(item.expiryAlertBefore) || { ...DEFAULT_ALERT_BEFORE } }));
         setUnit(item.unit || "Kgs");
         setCustomUnit("");
         setLocationMode("select");
@@ -502,9 +498,9 @@ function App() {
         }
         const newStatus = updateStatusBasedOnQuantity(newQty, existingItem.thresholdLow, existingItem.thresholdVeryLow);
         const rotFields = {};
-        if (selectedAction === "add") {
-          if (arrivalDate) rotFields.arrivalDate = Timestamp.fromDate(new Date(arrivalDate));
-          if (shelfLifeDays) rotFields.shelfLifeDays = parseFloat(shelfLifeDays);
+        if (selectedAction === "add" && expiryPlan) {
+          rotFields.arrivalDate = Timestamp.fromDate(expiryPlan.arrival);
+          rotFields.shelfLifeDays = expiryPlan.shelfLifeDays;
         }
         await updateDoc(itemDocRef, {
           quantity: `${newQty} ${existingItem.unit}`,
@@ -543,8 +539,11 @@ function App() {
         }
       } else {
         const rotFields = {};
-        if (arrivalDate) rotFields.arrivalDate = Timestamp.fromDate(new Date(arrivalDate));
-        if (shelfLifeDays) rotFields.shelfLifeDays = parseFloat(shelfLifeDays);
+        if (expiryPlan) {
+          rotFields.arrivalDate = Timestamp.fromDate(expiryPlan.arrival);
+          rotFields.shelfLifeDays = expiryPlan.shelfLifeDays;
+          rotFields.expiryAlertBefore = expiryPlan.alertBefore;
+        }
 
         const newItem = {
           name: itemName,
@@ -592,6 +591,7 @@ function App() {
       setAlertUnit(item.unit || "");
       setAlertLowThreshold(String(item.thresholdLow ?? 0));
       setAlertVeryLowThreshold(String(item.thresholdVeryLow ?? 0));
+      setAlertExpiryBefore(normalizeSpan(item.expiryAlertBefore) || { ...DEFAULT_ALERT_BEFORE });
     } else {
       setAlertUnit("");
       setAlertLowThreshold("");
@@ -623,12 +623,18 @@ function App() {
     const newStatus = updateStatusBasedOnQuantity(currentQty, low, veryLow);
 
     try {
+      const expirySpan = normalizeSpan(alertExpiryBefore);
       await updateDoc(itemDocRef, {
         thresholdLow: low,
         thresholdVeryLow: veryLow,
         status: newStatus,
         updatedAt: Timestamp.now(),
+        ...(expirySpan ? { expiryAlertBefore: expirySpan } : {}),
       });
+      if (expirySpan) {
+        await updateItemBatchAlerts(item.name, expirySpan).catch((e) => console.error("Could not update batch expiry alerts:", e));
+        loadBatchesByItem();
+      }
       logActivity(`Alert updated for ${item.name}`);
       await fetchInventory();
       alert("Alerts set for the item");
@@ -737,6 +743,8 @@ function App() {
           </div>
         </div>
       )}
+
+      <ExpiringSoonPanel batchesByItem={batchesByItem} onChanged={loadBatchesByItem} />
 
       {/* ── Tabs ── */}
       <div className="Inventory-tabs">
@@ -959,28 +967,7 @@ function App() {
               )}
 
               {selectedAction === "add" && (
-                <div className="Inventory-quantity-field">
-                  <div className="Inventory-form-group" style={{ flex: 1 }}>
-                    <label htmlFor="stock-arrival-date">Arrival Date (Rot Index)</label>
-                    <input
-                      id="stock-arrival-date"
-                      type="date"
-                      value={arrivalDate}
-                      onChange={(e) => setArrivalDate(e.target.value)}
-                    />
-                  </div>
-                  <div className="Inventory-form-group" style={{ flex: 1 }}>
-                    <label htmlFor="stock-shelf-life">Shelf Life (days)</label>
-                    <input
-                      id="stock-shelf-life"
-                      type="number"
-                      min="1"
-                      placeholder="e.g. 3"
-                      value={shelfLifeDays}
-                      onChange={(e) => setShelfLifeDays(e.target.value)}
-                    />
-                  </div>
-                </div>
+                <ExpiryFields idPrefix="stock" value={expiryInput} onChange={setExpiryInput} />
               )}
 
               {!isNewItem && selectedAction === "take" && (
@@ -1099,6 +1086,8 @@ function App() {
                 />
                 <span className="Inventory-unit">{alertUnit || "unit"}</span>
               </div>
+
+              <ExpiryAlertField value={alertExpiryBefore} onChange={setAlertExpiryBefore} disabled={!alertItemId} />
 
               <button className="Inventory-btn Inventory-full Inventory-red" onClick={handleSaveAlerts}>
                 Set Alerts

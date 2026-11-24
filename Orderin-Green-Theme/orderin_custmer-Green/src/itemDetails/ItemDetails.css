@@ -607,6 +607,7 @@
   align-items: center;
   justify-content: center;
   height: 100vh;
+  height: 100dvh;
   background: #132019;
   color: #B39A76;
   font-family: 'Inter', sans-serif;

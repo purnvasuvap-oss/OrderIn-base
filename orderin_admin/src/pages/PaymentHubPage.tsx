@@ -367,6 +367,13 @@ export const PaymentHubPage = () => {
       }
 
       // Step 2: Open Razorpay Modal
+      // Key ID comes from .env.local (VITE_RAZORPAY_KEY_ID), written by
+      // `node razorpay-config/sync.js`. It is never written in source.
+      const razorpayKeyId = (import.meta.env.VITE_RAZORPAY_KEY_ID as string | undefined) || '';
+      if (!razorpayKeyId) {
+        addDebugLog('❌ VITE_RAZORPAY_KEY_ID is not set. Run node razorpay-config/sync.js and rebuild.');
+        throw new Error('Online payment is not configured yet. Please pay at the counter.');
+      }
       addDebugLog('Opening Razorpay payment modal...');
 
       // ✅ Use localStorage data for restaurant name - avoids Firebase fetch
@@ -374,7 +381,7 @@ export const PaymentHubPage = () => {
 
       // Pass order_id ONLY if it was successfully generated
       const optionsConfig: any = {
-        key: 'rzp_live_U0WlxgptPJmE9v',
+        key: razorpayKeyId,
         amount: parseFloat(finalAmount as string) * 100, // Amount in paise
         currency: 'INR',
         name: restaurantName,

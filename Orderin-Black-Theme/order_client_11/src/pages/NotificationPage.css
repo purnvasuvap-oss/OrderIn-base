@@ -4,6 +4,7 @@
   margin: 0;
   background: linear-gradient(135deg, #f5f7fa 0%, #eef2f5 100%);
   min-height: 100vh;
+  min-height: 100dvh;
   background-size: cover;
   background-position: center bottom;
   background-attachment: fixed;

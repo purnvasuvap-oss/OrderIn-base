@@ -4,6 +4,7 @@
   align-items: center;
   justify-content: center;
   min-height: 100vh;
+  min-height: 100dvh;
   background-color: #1E1E1E;
   background-image: url('https://images.unsplash.com/photo-1544025162-d76694265947?w=1920&q=80');
   background-size: cover;
@@ -343,6 +344,7 @@ button:active {
   
   .login-container {
     min-height: 100vh;
+    min-height: 100dvh;
     justify-content: center;
     padding-top: 20px;
     padding-bottom: 100px;

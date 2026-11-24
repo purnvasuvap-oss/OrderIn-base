@@ -21,9 +21,12 @@ const { defineSecret } = require('firebase-functions/params');
 //     firebase functions:secrets:set RAZORPAY_KEY_SECRET
 //   Functions that use it declare it via runWith({ secrets: [...] }), which
 //   makes it available as process.env.RAZORPAY_KEY_SECRET at runtime.
-// - The key ID is public (Razorpay shows it to every payer at checkout).
+// - The key ID is public (Razorpay shows it to every payer at checkout), but
+//   it is still kept out of the repo, in razorpay-config/razorpay.env.
 const RAZORPAY_KEY_SECRET_PARAM = defineSecret('RAZORPAY_KEY_SECRET');
-const DEFAULT_RAZORPAY_KEY_ID = 'rzp_live_U0WlxgptPJmE9v';
+// The key ID comes from functions/.env (RAZORPAY_KEY_ID), written by
+// `node razorpay-config/sync.js` from the gitignored razorpay-config/razorpay.env.
+// It is never written in source. See razorpay-config/README.md.
 
 // SHA-256 of credentials that were rotated out. They are refused even if they
 // are still set in an old environment or config.
@@ -36,7 +39,7 @@ const REMOVED_RAZORPAY_VALUE_HASHES = new Set([
 const isRemovedRazorpayValue = (value) =>
   REMOVED_RAZORPAY_VALUE_HASHES.has(crypto.createHash('sha256').update(String(value)).digest('hex'));
 const firstUsableCredential = (...values) => values.find((value) => value && !isRemovedRazorpayValue(value)) || '';
-const getRazorpayKeyId = () => firstUsableCredential(process.env.RAZORPAY_KEY_ID, DEFAULT_RAZORPAY_KEY_ID);
+const getRazorpayKeyId = () => firstUsableCredential(process.env.RAZORPAY_KEY_ID);
 const getRazorpayKeySecret = () => firstUsableCredential(process.env.RAZORPAY_KEY_SECRET);
 const RAZORPAY_SECRETS = { secrets: [RAZORPAY_KEY_SECRET_PARAM] };
 
@@ -989,6 +992,12 @@ const onRequest = (handler) => async (req, res) => {
 
   if (req.method !== 'POST') {
     res.status(405).json({ error: 'Method not allowed' });
+    return;
+  }
+
+  if (!getRazorpayKeyId()) {
+    console.error('RAZORPAY_KEY_ID is not set. Run `node razorpay-config/sync.js` before deploying functions.');
+    res.status(503).json({ error: 'Online payment is not configured yet. Please pay at the counter.' });
     return;
   }
 

@@ -1,5 +1,6 @@
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "../firebaseConfig";
+import { settleMenuItems } from "./offerPricing";
 
 // Note: this only makes the CALLER stop waiting after `ms` — the Firestore
 // SDK has no way to actually cancel an in-flight getDocs() call, so the
@@ -16,7 +17,7 @@ export const withTimeout = (promise, ms) => {
 // flipbook menu so the Firestore path/logic lives in one place.
 export const fetchMenuItems = async (restaurantId, { timeoutMs = 8000 } = {}) => {
   const snap = await withTimeout(getDocs(collection(db, "Restaurant", restaurantId, "menu")), timeoutMs);
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+  return settleMenuItems(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
 };
 
 export const fetchPromotions = async (restaurantId, { timeoutMs = 5000 } = {}) => {

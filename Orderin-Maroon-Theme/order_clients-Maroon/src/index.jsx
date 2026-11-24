@@ -5,6 +5,7 @@ import "./App.css";
 import "./responsive.css";
 // Maroon modern UI — loaded last so it can restyle every page.
 import "./theme/maroonModern.css";
+import './mobile-fixes.css';
 
 const rootContainer = document.getElementById("root");
 

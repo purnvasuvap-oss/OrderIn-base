@@ -4,6 +4,7 @@ import App from "./App.jsx";
 import "./App.css";
 import "./responsive.css";
 import "./industrial-theme.css";
+import './mobile-fixes.css';
 
 const rootContainer = document.getElementById("root");
 

@@ -358,6 +358,7 @@ table.data-table tbody tr:hover {
 .app-content {
   margin-left: var(--sidebar-w);
   min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
 }

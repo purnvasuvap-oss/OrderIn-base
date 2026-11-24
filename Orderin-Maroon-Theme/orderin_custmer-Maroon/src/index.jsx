@@ -5,6 +5,7 @@ import './theme/maroonModern.css';
 import App from './App';
 import { CartProvider } from './context/CartContext';
 import reportWebVitals from './reportWebVitals';
+import './mobile-fixes.css';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(

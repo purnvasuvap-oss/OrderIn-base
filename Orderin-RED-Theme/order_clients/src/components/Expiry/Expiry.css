@@ -1,0 +1,393 @@
+/* Expiry / rot index components. Shared by every staff theme.
+   Each theme sets --xp-accent (and optionally --xp-accent-ink) on a parent.
+   Inputs are 16px so iOS Safari does not zoom the page on focus. */
+
+.xp-fields,
+.xp-panel,
+.xp-ingredients {
+  --xp-accent-default: #2563eb;
+  --xp-line: rgba(120, 120, 120, 0.35);
+  --xp-soft: rgba(120, 120, 120, 0.1);
+  --xp-danger: #dc2626;
+  --xp-warn: #b45309;
+  box-sizing: border-box;
+  min-width: 0;
+}
+.xp-fields *,
+.xp-panel *,
+.xp-ingredients * {
+  box-sizing: border-box;
+}
+
+/* ---------- Form fields ---------- */
+.xp-fields {
+  border: 1px solid var(--xp-line);
+  border-radius: 10px;
+  padding: 12px;
+  margin: 8px 0;
+  display: grid;
+  gap: 10px;
+}
+.xp-fields legend {
+  font-weight: 700;
+  padding: 0 6px;
+}
+.xp-mode {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.xp-mode button {
+  border: 1px solid var(--xp-line);
+  background: var(--xp-soft);
+  color: inherit;
+  border-radius: 8px;
+  padding: 10px 8px;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+  display: grid;
+  gap: 2px;
+  min-height: 44px;
+}
+.xp-mode button small {
+  font-weight: 400;
+  opacity: 0.75;
+  font-size: 12px;
+}
+.xp-mode button.is-on {
+  border-color: var(--xp-accent, var(--xp-accent-default));
+  box-shadow: inset 0 0 0 1px var(--xp-accent, var(--xp-accent-default));
+}
+.xp-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+}
+.xp-field {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+.xp-field label {
+  font-size: 13px;
+  font-weight: 600;
+  opacity: 0.85;
+}
+.xp-fields input,
+.xp-fields select,
+.xp-panel input,
+.xp-panel select,
+.xp-ingredients input {
+  font: inherit;
+  font-size: 16px;
+  width: 100%;
+  min-width: 0;
+  min-height: 40px;
+  padding: 6px 8px;
+  border: 1px solid var(--xp-line);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.92);
+  color: #111;
+}
+.xp-span {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+  gap: 6px;
+}
+.xp-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.xp-chips button {
+  border: 1px solid var(--xp-line);
+  background: transparent;
+  color: inherit;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  min-height: 32px;
+}
+.xp-chips button.is-on {
+  background: var(--xp-accent, var(--xp-accent-default));
+  border-color: var(--xp-accent, var(--xp-accent-default));
+  color: var(--xp-accent-ink, #fff);
+}
+.xp-summary {
+  margin: 0;
+  display: grid;
+  gap: 4px;
+  background: var(--xp-soft);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 14px;
+}
+.xp-summary div {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 4px 12px;
+}
+.xp-summary dt {
+  font-weight: 600;
+}
+.xp-summary dd {
+  margin: 0;
+}
+.xp-summary dd span {
+  opacity: 0.7;
+}
+.xp-hint {
+  margin: 0;
+  font-size: 13px;
+  opacity: 0.8;
+}
+
+/* ---------- Expiring soon panel ---------- */
+.xp-panel {
+  background: #fff;
+  color: #1f2937;
+  border-radius: 12px;
+  border-left: 4px solid var(--xp-danger);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.12);
+  padding: 14px 16px;
+  margin: 12px 0;
+  display: grid;
+  gap: 10px;
+}
+.xp-panel-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 12px;
+}
+.xp-panel-head h3 {
+  margin: 0;
+  font-size: 18px;
+}
+.xp-panel-head span {
+  font-size: 13px;
+  color: var(--xp-danger);
+  font-weight: 600;
+}
+.xp-subtitle {
+  margin: 4px 0 0;
+  font-size: 15px;
+}
+.xp-stock {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.xp-stock li {
+  background: #fef3c7;
+  color: #78350f;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 13px;
+  display: grid;
+}
+.xp-stock li.is-expired {
+  background: #fee2e2;
+  color: #7f1d1d;
+}
+.xp-suggestions {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 10px;
+}
+.xp-suggestion {
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 10px;
+  display: grid;
+  gap: 8px;
+  align-content: start;
+}
+.xp-suggestion.is-combo {
+  border-color: var(--xp-accent, var(--xp-accent-default));
+  box-shadow: 0 0 0 1px var(--xp-accent, var(--xp-accent-default));
+}
+.xp-suggestion-head {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+}
+.xp-suggestion-head img,
+.xp-thumb {
+  width: 52px;
+  height: 52px;
+  border-radius: 8px;
+  object-fit: cover;
+  background: #f3f4f6;
+}
+.xp-badge {
+  display: inline-block;
+  margin-left: 6px;
+  background: var(--xp-accent, var(--xp-accent-default));
+  color: var(--xp-accent-ink, #fff);
+  border-radius: 999px;
+  padding: 1px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  vertical-align: middle;
+}
+.xp-uses {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: #6b7280;
+  overflow-wrap: anywhere;
+}
+.xp-offer-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+  align-items: end;
+}
+.xp-was {
+  text-decoration: line-through;
+  color: #6b7280;
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+}
+.xp-apply,
+.xp-add {
+  font: inherit;
+  font-weight: 700;
+  border: none;
+  border-radius: 8px;
+  min-height: 44px;
+  padding: 8px 12px;
+  cursor: pointer;
+  background: var(--xp-accent, var(--xp-accent-default));
+  color: var(--xp-accent-ink, #fff);
+}
+.xp-apply:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+.xp-live {
+  margin: 0;
+  font-size: 13px;
+  color: #15803d;
+  font-weight: 600;
+}
+.xp-error {
+  margin: 0;
+  color: var(--xp-danger);
+  font-size: 13px;
+}
+.xp-notice {
+  margin: 0;
+  background: #dcfce7;
+  color: #14532d;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 14px;
+}
+.xp-running {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+.xp-running li {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px 10px;
+  font-size: 14px;
+}
+.xp-running button {
+  font: inherit;
+  font-size: 13px;
+  border: 1px solid #d1d5db;
+  background: #fff;
+  border-radius: 6px;
+  padding: 6px 10px;
+  cursor: pointer;
+  min-height: 36px;
+}
+.xp-panel .xp-hint {
+  color: #4b5563;
+}
+
+/* ---------- Ingredients editor ---------- */
+.xp-ingredients {
+  display: grid;
+  gap: 8px;
+  border: 1px dashed var(--xp-line);
+  border-radius: 10px;
+  padding: 10px;
+}
+.xp-ingredients-head {
+  display: grid;
+  gap: 2px;
+}
+.xp-ingredients-head span {
+  font-weight: 700;
+}
+.xp-ingredients-head small {
+  opacity: 0.75;
+}
+.xp-ingredient-row {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(64px, 1fr) auto 40px;
+  gap: 6px;
+  align-items: center;
+}
+.xp-unit {
+  font-size: 13px;
+  opacity: 0.8;
+  white-space: nowrap;
+}
+.xp-remove {
+  width: 40px;
+  height: 40px;
+  border-radius: 6px;
+  border: 1px solid var(--xp-line);
+  background: transparent;
+  color: inherit;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+}
+.xp-warn {
+  grid-column: 1 / -1;
+  color: var(--xp-warn);
+  font-size: 12px;
+}
+.xp-add {
+  justify-self: start;
+  min-height: 40px;
+}
+
+@media (max-width: 480px) {
+  .xp-offer-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .xp-suggestions {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .xp-ingredient-row {
+    grid-template-columns: minmax(0, 1fr) 72px 40px;
+  }
+  .xp-ingredient-row .xp-unit {
+    display: none;
+  }
+}

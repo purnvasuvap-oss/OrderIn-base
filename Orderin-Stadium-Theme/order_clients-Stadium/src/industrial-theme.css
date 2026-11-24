@@ -21,6 +21,7 @@
 html { background: var(--ink); }
 body, #root {
   min-height: 100vh;
+  min-height: 100dvh;
   color: var(--ivory);
   font-family: Inter, "Segoe UI", sans-serif;
   background-color: var(--ink);
@@ -125,7 +126,8 @@ tbody tr:hover td, .table-row:hover { background: rgba(195,138,90,.13) !importan
 .tab-button.active { color: var(--gold) !important; background: rgba(195,138,90,.16) !important; }
 
 /* Login and section gates */
-.sub-login { background: transparent !important; min-height: 100vh; }
+.sub-login { background: transparent !important; min-height: 100vh;
+ min-height: 100dvh; }
 .sub-login-left { background: linear-gradient(145deg, #1e1e20, #0f0f11 72%) !important; border-right: 1px solid rgba(195,138,90,.35); box-shadow: inset -1px 0 rgba(255,255,255,.08), 18px 0 45px rgba(0,0,0,.28); }
 .sub-login-right { background: transparent !important; }
 .sub-restaurant-name, .sub-login-card h3 { color: var(--ivory) !important; font-family: Cinzel, Georgia, serif; }
