@@ -17,17 +17,7 @@
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>
     <div id="root"></div>
-    <!-- Hidden container for reCAPTCHA verification -->
-    <div id="recaptcha-container" style="display: none;"></div>
-    <!-- Optional: Paste your reCAPTCHA v2 site key here for local testing.
-         Replace the string below with your site key or set VITE_RECAPTCHA_SITE_KEY in environment.
-         Example: window.__RECAPTCHA_SITE_KEY = '6Le7Z_0cAAAA...'; -->
-    <script>
-      // Development reCAPTCHA v2 site key (explicitly injected so client uses v2)
-      window.__RECAPTCHA_SITE_KEY = '6LcR4B8sAAAAAKleO8K1gJmiJpnNmDYXnr6J-8yz';
-    </script>
-    <!-- Load reCAPTCHA v2 (required for real phone auth SMS delivery) -->
-    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+    <!-- Customer login is name+phone → Firestore (no Firebase phone OTP / reCAPTCHA). -->
     <script type="module" src="/src/index.jsx"></script>
   </body>
 </html>

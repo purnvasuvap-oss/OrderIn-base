@@ -1,6 +1,15 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
 import { Mail, Lock, Eye, EyeOff, ArrowRight, Sparkles } from 'lucide-react';
+import { auth } from '../config/firebase';
+
+const USE_FIREBASE_AUTH = import.meta.env.VITE_USE_FIREBASE_AUTH === 'true';
+// Live orderin-admin.web.app currently ships passcode "12345678". Prefer
+// VITE_ADMIN_PASSCODE at build time; keep that live value as the last-resort
+// default so a redeploy without secrets does not lock operators out again.
+const ADMIN_PASSCODE =
+  (import.meta.env.VITE_ADMIN_PASSCODE as string | undefined)?.trim() || '12345678';
 
 export const LoginPage = () => {
   const navigate = useNavigate();
@@ -10,21 +19,49 @@ export const LoginPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const handleLogin = (e: React.FormEvent) => {
+  const finishPasscodeLogin = () => {
+    sessionStorage.setItem('orderin_admin_auth', 'true');
+    navigate('/dashboard', { replace: true });
+  };
+
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    
-    // Validate password
-    if (password !== '123456789') {
-      setError('Invalid password. Please enter the correct password.');
-      return;
-    }
-    
     setIsLoading(true);
-    setTimeout(() => {
+
+    try {
+      if (USE_FIREBASE_AUTH) {
+        const cred = await signInWithEmailAndPassword(auth, email.trim(), password);
+        const token = await cred.user.getIdTokenResult(true);
+        const role = String(token.claims.role || '');
+        if (role !== 'platformAdmin' && role !== 'owner') {
+          await signOut(auth);
+          setError('This login is not an OrderIn admin.');
+          return;
+        }
+        sessionStorage.removeItem('orderin_admin_auth');
+        navigate('/dashboard', { replace: true });
+        return;
+      }
+
+      if (password !== ADMIN_PASSCODE) {
+        setError('Invalid password. Please enter the correct password.');
+        return;
+      }
+
+      finishPasscodeLogin();
+    } catch (err) {
+      const code = typeof err === 'object' && err && 'code' in err ? String((err as { code?: string }).code) : '';
+      if (code === 'auth/unauthorized-domain') {
+        setError('This domain is not authorized for Firebase Auth. Add it in Firebase Console → Authentication → Settings → Authorized domains.');
+      } else if (code === 'auth/invalid-credential' || code === 'auth/wrong-password' || code === 'auth/user-not-found' || code === 'auth/invalid-email') {
+        setError('Invalid email or password.');
+      } else {
+        setError('Invalid password. Please enter the correct password.');
+      }
+    } finally {
       setIsLoading(false);
-      navigate('/dashboard', { replace: true });
-    }, 600);
+    }
   };
 
   return (
@@ -464,89 +501,23 @@ export const LoginPage = () => {
             </button>
           </form>
 
-          {/* Divider */}
+          {/* Auth mode note — do not claim "any password"; that broke live logins */}
           <div style={{
             height: '1px',
             background: 'linear-gradient(90deg, transparent, rgba(6, 182, 212, 0.3), transparent)',
           }}></div>
-
-          {/* Demo Credentials Section */}
-          <div style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '0.75rem',
+          <p style={{
+            textAlign: 'center',
+            fontSize: '0.75rem',
+            color: '#94a3b8',
+            fontWeight: '500',
+            lineHeight: 1.5,
             animation: 'slideInUp 1s ease',
           }}>
-            <p style={{
-              textAlign: 'center',
-              fontSize: '0.8rem',
-              color: '#cbd5e1',
-              fontWeight: '600',
-              letterSpacing: '0.05em',
-            }}>
-              ✨ Demo Credentials - Use Any Values
-            </p>
-
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: '1fr 1fr',
-              gap: '0.75rem',
-            }}>
-              {/* Email Card */}
-              <div style={{
-                position: 'relative',
-                background: 'linear-gradient(135deg, rgba(6, 182, 212, 0.1) 0%, rgba(6, 182, 212, 0.05) 100%)',
-                border: '1.5px solid rgba(6, 182, 212, 0.4)',
-                borderRadius: '12px',
-                padding: '1rem',
-                transition: 'all 0.3s ease',
-                cursor: 'pointer',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '0.5rem',
-              }}
-              onMouseEnter={(e) => {
-                (e.currentTarget as HTMLElement).style.borderColor = 'rgba(6, 182, 212, 0.7)';
-                (e.currentTarget as HTMLElement).style.background = 'linear-gradient(135deg, rgba(6, 182, 212, 0.15) 0%, rgba(6, 182, 212, 0.08) 100%)';
-                (e.currentTarget as HTMLElement).style.boxShadow = '0 8px 20px rgba(6, 182, 212, 0.15)';
-              }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLElement).style.borderColor = 'rgba(6, 182, 212, 0.4)';
-                (e.currentTarget as HTMLElement).style.background = 'linear-gradient(135deg, rgba(6, 182, 212, 0.1) 0%, rgba(6, 182, 212, 0.05) 100%)';
-                (e.currentTarget as HTMLElement).style.boxShadow = 'none';
-              }}>
-                <p style={{ fontSize: '0.8rem', fontWeight: '700', color: '#06b6d4' }}>📧 Email</p>
-                <p style={{ fontSize: '0.85rem', color: '#cffafe', fontFamily: 'monospace', fontWeight: '500' }}>admin@orderin.com</p>
-              </div>
-
-              {/* Password Card */}
-              <div style={{
-                position: 'relative',
-                background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.1) 0%, rgba(168, 85, 247, 0.05) 100%)',
-                border: '1.5px solid rgba(168, 85, 247, 0.4)',
-                borderRadius: '12px',
-                padding: '1rem',
-                transition: 'all 0.3s ease',
-                cursor: 'pointer',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '0.5rem',
-              }}
-              onMouseEnter={(e) => {
-                (e.currentTarget as HTMLElement).style.borderColor = 'rgba(168, 85, 247, 0.7)';
-                (e.currentTarget as HTMLElement).style.background = 'linear-gradient(135deg, rgba(168, 85, 247, 0.15) 0%, rgba(168, 85, 247, 0.08) 100%)';
-                (e.currentTarget as HTMLElement).style.boxShadow = '0 8px 20px rgba(168, 85, 247, 0.15)';
-              }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLElement).style.borderColor = 'rgba(168, 85, 247, 0.4)';
-                (e.currentTarget as HTMLElement).style.background = 'linear-gradient(135deg, rgba(168, 85, 247, 0.1) 0%, rgba(168, 85, 247, 0.05) 100%)';
-                (e.currentTarget as HTMLElement).style.boxShadow = 'none';
-              }}>
-                <p style={{ fontSize: '0.8rem', fontWeight: '700', color: '#a855f7' }}>🔐 Password</p>
-                <p style={{ fontSize: '0.85rem', color: '#e9d5ff', fontWeight: '500', fontFamily: 'monospace' }}>123456789</p>
-              </div>
-            </div>
-          </div>
+            {USE_FIREBASE_AUTH
+              ? 'Sign in with a Firebase Auth user that has role platformAdmin or owner.'
+              : 'Use the admin passcode configured for this deployment (VITE_ADMIN_PASSCODE).'}
+          </p>
 
           {/* Features Highlight */}
           <div style={{

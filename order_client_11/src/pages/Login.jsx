@@ -59,7 +59,12 @@ export default function Login() {
       }
     } catch (error) {
       console.error("Error during login:", error);
-      alert("Login failed. Please try again.");
+      const code = error && error.code ? String(error.code) : "";
+      if (code.includes("permission-denied")) {
+        alert("Login failed: Firestore permission denied. Deployed security rules may be blocking credential reads.");
+      } else {
+        alert("Login failed. Please try again.");
+      }
     }
   };
 
