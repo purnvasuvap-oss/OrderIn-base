@@ -257,7 +257,7 @@
 
 1. **Run dev server**: `npm run dev`
 2. **Open browser**: http://localhost:5173/
-3. **Test login**: Any email/password
+3. **Test login**: Password must match `VITE_ADMIN_PASSCODE` (or Firebase Auth admin user when enabled)
 4. **Navigate**: Use sidebar
 5. **Search**: Use topbar search
 6. **Filter**: Use date picker

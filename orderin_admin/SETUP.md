@@ -56,7 +56,8 @@ http://localhost:5173/
 
 ### 2. Login
 - Navigate to the login page
-- Enter any email/password (no validation required)
+- Passcode mode (default): email can be any value; password must match `VITE_ADMIN_PASSCODE` (live site currently uses `12345678`)
+- Firebase Auth mode (`VITE_USE_FIREBASE_AUTH=true`): use a Firebase user with custom claim `role=platformAdmin` or `owner`
 - Click "Sign In" → redirects to Dashboard
 
 ### 3. Explore Features
